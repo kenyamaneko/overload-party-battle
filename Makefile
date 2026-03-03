@@ -1,65 +1,48 @@
-.PHONY: build test test-unit lint vet fmt \
-       run run-local run-battle \
-       generate clean help
-
-# ─── Environment ─────────────────────────────────────────
-ifneq (,$(wildcard .env))
-    include .env
-    export
-endif
+.PHONY: build run test test-coverage clean restore help
 
 # ─── Config ──────────────────────────────────────────────
-APP    := overload-party-battle
-MODULE := github.com/kenyamaneko/$(APP)
+SLN     := OverloadParty.Battle.slnx
+SERVER  := src/OverloadParty.Battle.Server
+TESTS   := tests/OverloadParty.Battle.Tests
 
 # ─── Common Repo ─────────────────────────────────────────
 COMMON_DIR  ?= $(CURDIR)/../overload-party-common
 CLIENT_DIR  ?= $(CURDIR)/../overload-party-client
 GATEWAY_DIR ?= $(CURDIR)/../overload-party-gateway
 
+# ─── Build ───────────────────────────────────────────────
+restore:  ## Restore NuGet packages
+	dotnet restore $(SLN)
+
+build:  ## Build the solution
+	dotnet build $(SLN)
+
+# ─── Run ─────────────────────────────────────────────────
+run:  ## Run local dev server (port 9002, in-memory mock repos)
+	ASPNETCORE_ENVIRONMENT=Development BATTLE_MODE=local \
+		dotnet run --project $(SERVER)
+
+# ─── Test ────────────────────────────────────────────────
+test:  ## Run all tests
+	dotnet test $(TESTS)
+
+test-coverage:  ## Run tests with code coverage report
+	dotnet test $(TESTS) --collect:"XPlat Code Coverage" --results-directory .coverage
+
 # ─── Code Generation ────────────────────────────────────
-generate:  ## Generate cards.json, constants, cardno_gen.go, CARDS.md
+generate:  ## Generate cards.json / constants from common repo
 	python3 $(COMMON_DIR)/scripts/generate_from_yaml.py \
 		--gateway-dir $(GATEWAY_DIR) \
 		--battle-dir $(CURDIR) \
 		--client-dir $(CLIENT_DIR)
 
-# ─── Build ───────────────────────────────────────────────
-build:  ## Build Docker image
-	docker build -t $(APP) .
-
-# ─── Test & Lint ─────────────────────────────────────────
-test: test-unit  ## Run all tests
-
-test-unit:  ## Run unit tests
-	go test ./internal/... -count=1 -race
-
-lint:  ## Run golangci-lint
-	golangci-lint run ./...
-
-vet:  ## Run go vet
-	go vet ./...
-
-fmt:  ## Format code
-	goimports -w -local $(MODULE) .
-
-# ─── Run ─────────────────────────────────────────────────
-run: run-local  ## Run battle server (alias)
-
-run-local:  ## Run local battle server (no DB/Firebase, in-memory mock repos)
-	go run ./cmd/local
-
-run-battle:  ## Run battle server (PostgreSQL mode)
-	DATABASE_URL="postgresql://dev:dev@localhost:5432/overload_party" \
-	ENV=dev \
-	go run ./cmd/main
-
 # ─── Misc ────────────────────────────────────────────────
 clean:  ## Remove build artifacts
-	rm -rf bin/ local
+	dotnet clean $(SLN) -v q
+	rm -rf .coverage
 
 help:  ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-22s\033[0m %s\n", $$1, $$2}'
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
 
 .DEFAULT_GOAL := help

@@ -1,0 +1,21 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OverloadParty.Battle.Models\OverloadParty.Battle.Models.csproj" />
+    <ProjectReference Include="..\OverloadParty.Battle.Engine\OverloadParty.Battle.Engine.csproj" />
+    <ProjectReference Include="..\OverloadParty.Battle.Npc\OverloadParty.Battle.Npc.csproj" />
+    <ProjectReference Include="..\OverloadParty.Battle.Data\OverloadParty.Battle.Data.csproj" />
+    <ProjectReference Include="..\OverloadParty.Battle.Matchmaking\OverloadParty.Battle.Matchmaking.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>

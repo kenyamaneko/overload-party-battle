@@ -7,9 +7,10 @@
 .vscode/
 *.swp
 
-# Binary
+# .NET
 bin/
-/local
+obj/
+.coverage/
 
 # Claude
 .claude/
