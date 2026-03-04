@@ -1,4 +1,4 @@
-namespace OverloadParty.Battle.Data;
+namespace OverloadParty.Battle.Engine;
 
 public interface IGameConfigRepository
 {

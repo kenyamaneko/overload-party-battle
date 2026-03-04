@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Data;
+namespace OverloadParty.Battle.Engine;
 
 public interface IPlayerRepository
 {

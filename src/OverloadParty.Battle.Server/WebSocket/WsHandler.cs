@@ -1,5 +1,4 @@
 using System.Net.WebSockets;
-using OverloadParty.Battle.Data;
 
 namespace OverloadParty.Battle.Server.WebSocket;
 

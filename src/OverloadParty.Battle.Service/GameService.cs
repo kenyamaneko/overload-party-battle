@@ -1,5 +1,5 @@
+using System.Linq;
 using Microsoft.Extensions.Logging;
-using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Matchmaking;
@@ -144,7 +144,7 @@ public class GameService
             await _playerService.CheckAndIncrementBattleCount(playerID, ct);
 
         var playerCards = await _deckRepo.GetDeckCardNos(playerID, deckID, ct);
-        if (playerCards.Count == 0)
+        if (!playerCards.Any())
             throw new InvalidOperationException("deck is empty");
 
         var npcDeck = NpcDecks.GetDeck(npcFaction)
@@ -385,7 +385,7 @@ public class GameService
                     break;
                 case Phase.End:
                     var ids = _npcAI.DecideDiscard(state, npcPlayerNum);
-                    if (ids.Count == 0)
+                    if (!ids.Any())
                     {
                         _logger.LogWarning("NPC in end phase but no discard needed (game={GameID})", gameID);
                         return;
