@@ -1,4 +1,5 @@
 using System.Text.Json;
+using OverloadParty.Battle.Data.Json;
 
 namespace OverloadParty.Battle.Server.WebSocket;
 
@@ -13,5 +14,6 @@ public static class JsonOptions
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         PropertyNameCaseInsensitive = true,
         DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        Converters = { new Data.Json.ZoneJsonConverterFactory() },
     };
 }

@@ -112,4 +112,10 @@ public class MockGameRepository : IGameRepository
             return Task.FromResult(_events.GetValueOrDefault(gameID) ?? []);
         }
     }
+
+    public Task CreateMatch(Match match, CancellationToken ct = default)
+    {
+        // No-op for mock
+        return Task.CompletedTask;
+    }
 }

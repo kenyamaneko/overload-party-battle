@@ -1,6 +1,8 @@
 using System.Text.Json;
+using Npgsql;
 using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Data.Mock;
+using OverloadParty.Battle.Data.Pg;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Matchmaking;
@@ -32,11 +34,21 @@ if (isLocalDev)
     builder.Services.AddSingleton<IPlayerRepository>(mockPlayerRepo);
     builder.Services.AddSingleton<IDeckRepository>(mockDeckRepo);
     builder.Services.AddSingleton<IGameConfigRepository>(mockGameConfigRepo);
+    // ICardRepository registered after CardCache is built (below)
 }
 else
 {
-    // TODO: Register Dapper/PostgreSQL implementations
-    throw new InvalidOperationException("Production mode not yet implemented. Use ASPNETCORE_ENVIRONMENT=Development or BATTLE_MODE=local");
+    // PostgreSQL repositories
+    var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
+        ?? Environment.GetEnvironmentVariable("DATABASE_URL")
+        ?? throw new InvalidOperationException("DATABASE_URL or ConnectionStrings:DefaultConnection not set");
+    var dataSource = NpgsqlDataSource.Create(connStr);
+    builder.Services.AddSingleton(dataSource);
+    builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
+    builder.Services.AddSingleton<IPlayerRepository>(sp => new PgPlayerRepository(sp.GetRequiredService<NpgsqlDataSource>()));
+    builder.Services.AddSingleton<IDeckRepository>(sp => new PgDeckRepository(sp.GetRequiredService<NpgsqlDataSource>()));
+    builder.Services.AddSingleton<ICardRepository>(sp => new PgCardRepository(sp.GetRequiredService<NpgsqlDataSource>()));
+    builder.Services.AddSingleton<IGameConfigRepository>(sp => new PgGameConfigRepository(sp.GetRequiredService<NpgsqlDataSource>()));
 }
 
 // ─── Card cache ─────────────────────────────────────────────
@@ -44,6 +56,9 @@ else
 var cardCache = new CardCache();
 builder.Services.AddSingleton<ICardCache>(cardCache);
 builder.Services.AddSingleton(cardCache);
+
+if (isLocalDev)
+    builder.Services.AddSingleton<ICardRepository>(new MockCardRepository(cardCache));
 
 // ─── Engine ─────────────────────────────────────────────────
 
@@ -127,6 +142,13 @@ if (isLocalDev)
     {
         app.Logger.LogWarning("Cards file not found at {Path}", cardsPath);
     }
+}
+else
+{
+    // Production: load cards from database
+    var cardRepo = app.Services.GetRequiredService<ICardRepository>();
+    await cardCache.LoadFromRepository(cardRepo);
+    app.Logger.LogInformation("Loaded {Count} cards from database", cardCache.Count);
 }
 
 // ─── Matchmaking background service ─────────────────────────
