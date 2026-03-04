@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Engine.Effects;
 
@@ -84,11 +85,11 @@ public static class ChainResolver
     /// </summary>
     public static bool CanChainReactive(GameState state)
     {
-        if (state.ChainStack.Count == 0) return false;
+        if (!state.ChainStack.Any()) return false;
         if (state.ChainStack.Count >= GameConstants.MaxChainLevel) return false;
 
         // Last entry must not be reactive
-        var last = state.ChainStack[^1];
+        var last = state.ChainStack.Last();
         return last.ActionType != "reactive";
     }
 

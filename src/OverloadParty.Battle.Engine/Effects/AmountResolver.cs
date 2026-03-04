@@ -99,12 +99,7 @@ public class BackendScaledAmount(long baseVal, long perBackend, long maxBonus) :
     public long Resolve(OpContext ctx)
     {
         var oppField = ctx.OpponentField;
-        int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (oppField.Backend[i] is { FaceUp: true })
-                count++;
-        }
+        int count = oppField.Backend.Count(r => r.FaceUp);
         long bonus = Math.Min((long)count * perBackend, maxBonus);
         return baseVal + bonus;
     }

@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine;
@@ -18,12 +19,12 @@ public static class TurnManager
         var playerNum = state.ActivePlayer;
         var repo = state.GetRepository(playerNum);
 
-        if (repo.Count == 0)
+        if (!repo.Any())
             throw new GameRuleException("repository_out");
 
         // Draw top card
-        var drawnCard = repo[0];
-        repo.RemoveAt(0);
+        var drawnCard = repo.First();
+        repo.Remove(drawnCard);
 
         // Assign new instance ID and add to hand
         var hand = state.GetHand(playerNum);
@@ -74,10 +75,9 @@ public static class TurnManager
 
         // 2. Generate yield from backend data resources
         long totalYield = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        foreach (var res in field.Backend)
         {
-            if (field.Backend[i] is not { FaceUp: true } res) continue;
-            if (res.MigratingFrom is not null) continue;
+            if (!res.FaceUp || res.MigratingFrom is not null) continue;
 
             var card = cc.Get(res.CardID);
             if (card is null || !card.IsDataType) continue;
@@ -110,7 +110,7 @@ public static class TurnManager
             resource.MonetizedAmount = 0;
         }
 
-        foreach (var (support, _) in FieldHelpers.AllSupports(field))
+        foreach (var support in FieldHelpers.AllSupports(field))
         {
             support.EffectUsedThisTurn = false;
         }
@@ -155,7 +155,7 @@ public static class TurnManager
         }
 
         // Decrement deploy countdown for support cards
-        foreach (var (support, _) in FieldHelpers.AllSupports(field))
+        foreach (var support in FieldHelpers.AllSupports(field))
         {
             if (support.DeployingTurnsLeft > 0)
             {

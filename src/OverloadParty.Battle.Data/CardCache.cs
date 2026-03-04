@@ -82,11 +82,7 @@ public class CardCache : ICardCache
 
     private void ReplaceCards(List<CardDefinition> cards)
     {
-        var dict = new Dictionary<long, CardDefinition>(cards.Count);
-        foreach (var card in cards)
-        {
-            dict[card.CardNo] = card;
-        }
+        var dict = cards.ToDictionary(c => c.CardNo);
 
         _lock.EnterWriteLock();
         try { _cards = dict; }

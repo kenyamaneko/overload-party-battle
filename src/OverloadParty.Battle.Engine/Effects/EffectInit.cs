@@ -467,18 +467,15 @@ public static class EffectInit
         if (octx.Target is null) return;
 
         var field = octx.MyField;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            var res = field.Frontend[i];
-            if (res is null || res.InstanceID == octx.Source?.InstanceID) continue;
-
-            var card = octx.CardCache.Get(res.CardID);
-            if (card is not null && card.Faction == GameConstants.FactionSugar && card.IsComputeType)
+        var ally = field.Frontend
+            .Where(r => r.InstanceID != octx.Source?.InstanceID)
+            .FirstOrDefault(r =>
             {
-                octx.Target.Damage += 200;
-                break;
-            }
-        }
+                var card = octx.CardCache.Get(r.CardID);
+                return card is not null && card.Faction == GameConstants.FactionSugar && card.IsComputeType;
+            });
+        if (ally is not null)
+            octx.Target.Damage += 200;
     }
 
     /// <summary>
@@ -590,19 +587,9 @@ public static class EffectInit
         // Update the resource on the deployer's field
         long deployerNum = octx.State.OpponentOf(octx.PlayerNum);
         var field = octx.GetField(deployerNum);
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { } r && r.InstanceID == target.InstanceID)
-            {
-                r.TemporaryEffects = target.TemporaryEffects;
-                break;
-            }
-            if (field.Backend[i] is { } rb && rb.InstanceID == target.InstanceID)
-            {
-                rb.TemporaryEffects = target.TemporaryEffects;
-                break;
-            }
-        }
+        var found = FieldHelpers.FindResourceByID(field, target.InstanceID);
+        if (found is { } f)
+            f.Resource.TemporaryEffects = target.TemporaryEffects;
     }
 
     /// <summary>
@@ -645,12 +632,6 @@ public static class EffectInit
     /// </summary>
     private static int CountDeployedThisTurn(Field field, long currentTurn)
     {
-        int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { } fr && fr.DeployedOnTurn == currentTurn) count++;
-            if (field.Backend[i] is { } br && br.DeployedOnTurn == currentTurn) count++;
-        }
-        return count;
+        return FieldHelpers.AllResources(field).Count(r => r.DeployedOnTurn == currentTurn);
     }
 }

@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Processors;
@@ -11,7 +12,7 @@ public static class DistributeYieldProcessor
         if (TurnManager.IsFirstTurn(state.CurrentTurn))
             throw new GameRuleException("cannot distribute yield on first turn");
 
-        if (req.Distributions.Count == 0)
+        if (!req.Distributions.Any())
             throw new GameRuleException("no distributions provided");
 
         var field = state.GetField(playerNum);
@@ -28,7 +29,7 @@ public static class DistributeYieldProcessor
             if (result is null)
                 throw new GameRuleException($"resource {dist.InstanceID} not found");
 
-            var (resource, zone, _) = result.Value;
+            var (resource, zone) = result.Value;
             if (zone != Zone.Backend)
                 throw new GameRuleException("can only distribute yield from backend resources");
 

@@ -160,16 +160,12 @@ public class GameEngine
         // Handle game over
         if (actionResult.GameOver)
         {
-            string winnerID;
-            if (actionResult.WinnerNum == 0)
+            var winnerID = actionResult.WinnerNum switch
             {
-                // Draw - use empty winner
-                winnerID = "";
-            }
-            else
-            {
-                winnerID = actionResult.WinnerNum == 1 ? game.Player1ID : game.Player2ID;
-            }
+                0 => "",
+                1 => game.Player1ID,
+                _ => game.Player2ID,
+            };
             await _repo.FinishGame(gameID, winnerID, ct);
         }
 

@@ -246,12 +246,7 @@ public static class TestFactory
 
     public static Field MakeField()
     {
-        return new Field
-        {
-            Frontend = new ResourceInstance?[3],
-            Backend = new ResourceInstance?[3],
-            Support = new SupportInstance?[3],
-        };
+        return new Field();
     }
 
     // ─── GameState Builder ────────────────────────────────────

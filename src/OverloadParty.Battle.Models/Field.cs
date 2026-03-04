@@ -5,9 +5,9 @@ namespace OverloadParty.Battle.Models;
 /// </summary>
 public class Field
 {
-    public ResourceInstance?[] Frontend { get; set; } = new ResourceInstance?[GameConstants.SlotsPerZone];
-    public ResourceInstance?[] Backend { get; set; } = new ResourceInstance?[GameConstants.SlotsPerZone];
-    public SupportInstance?[] Support { get; set; } = new SupportInstance?[GameConstants.SlotsPerZone];
+    public Zone<ResourceInstance> Frontend { get; set; } = new();
+    public Zone<ResourceInstance> Backend { get; set; } = new();
+    public Zone<SupportInstance> Support { get; set; } = new();
     public bool IncidentPlayedThisTurn { get; set; }
     public bool HasHadActiveResource { get; set; }
 }

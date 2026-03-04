@@ -8,31 +8,25 @@ namespace OverloadParty.Battle.Engine;
 public static class FieldHelpers
 {
     /// <summary>
-    /// Find a resource on the field by InstanceID. Returns (resource, zone, index) or null.
+    /// Find a resource on the field by InstanceID. Returns (resource, zone) or null.
     /// </summary>
-    public static (ResourceInstance Resource, Zone Zone, int Index)? FindResourceByID(Field field, string instanceID)
+    public static (ResourceInstance Resource, Zone Zone)? FindResourceByID(Field field, string instanceID)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { } fr && fr.InstanceID == instanceID)
-                return (fr, Zone.Frontend, i);
-            if (field.Backend[i] is { } br && br.InstanceID == instanceID)
-                return (br, Zone.Backend, i);
-        }
+        var fr = field.Frontend.FirstOrDefault(r => r.InstanceID == instanceID);
+        if (fr is not null) return (fr, Zone.Frontend);
+
+        var br = field.Backend.FirstOrDefault(r => r.InstanceID == instanceID);
+        if (br is not null) return (br, Zone.Backend);
+
         return null;
     }
 
     /// <summary>
     /// Find a support instance by InstanceID.
     /// </summary>
-    public static (SupportInstance Support, int Index)? FindSupportByID(Field field, string instanceID)
+    public static SupportInstance? FindSupportByID(Field field, string instanceID)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Support[i] is { } s && s.InstanceID == instanceID)
-                return (s, i);
-        }
-        return null;
+        return field.Support.FirstOrDefault(s => s.InstanceID == instanceID);
     }
 
     /// <summary>
@@ -40,12 +34,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool HasFrontendResources(Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { FaceUp: true })
-                return true;
-        }
-        return false;
+        return field.Frontend.Any(r => r.FaceUp);
     }
 
     /// <summary>
@@ -53,14 +42,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool HasAnyActiveResources(Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { FaceUp: true })
-                return true;
-            if (field.Backend[i] is { FaceUp: true })
-                return true;
-        }
-        return false;
+        return field.Frontend.Concat(field.Backend).Any(r => r.FaceUp);
     }
 
     /// <summary>
@@ -76,20 +58,8 @@ public static class FieldHelpers
     /// </summary>
     public static bool RemoveResourceFromField(Field field, string instanceID)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { } fr && fr.InstanceID == instanceID)
-            {
-                field.Frontend[i] = null;
-                return true;
-            }
-            if (field.Backend[i] is { } br && br.InstanceID == instanceID)
-            {
-                field.Backend[i] = null;
-                return true;
-            }
-        }
-        return false;
+        return field.Frontend.Remove(r => r.InstanceID == instanceID)
+            || field.Backend.Remove(r => r.InstanceID == instanceID);
     }
 
     /// <summary>
@@ -97,13 +67,7 @@ public static class FieldHelpers
     /// </summary>
     public static IEnumerable<ResourceInstance> AllFaceUpResources(Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { FaceUp: true } fr)
-                yield return fr;
-            if (field.Backend[i] is { FaceUp: true } br)
-                yield return br;
-        }
+        return field.Frontend.Concat(field.Backend).Where(r => r.FaceUp);
     }
 
     /// <summary>
@@ -111,25 +75,15 @@ public static class FieldHelpers
     /// </summary>
     public static IEnumerable<ResourceInstance> AllResources(Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { } fr)
-                yield return fr;
-            if (field.Backend[i] is { } br)
-                yield return br;
-        }
+        return field.Frontend.Concat(field.Backend);
     }
 
     /// <summary>
     /// Enumerate all support instances.
     /// </summary>
-    public static IEnumerable<(SupportInstance Support, int Index)> AllSupports(Field field)
+    public static IEnumerable<SupportInstance> AllSupports(Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Support[i] is { } s)
-                yield return (s, i);
-        }
+        return field.Support;
     }
 
     /// <summary>

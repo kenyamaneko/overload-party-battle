@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Engine.Effects;
 
@@ -22,10 +23,10 @@ public static class ActivateEffectProcessor
         }
 
         // Try support zone
-        var supportResult = FieldHelpers.FindSupportByID(field, req.InstanceID);
-        if (supportResult is not null)
+        var support = FieldHelpers.FindSupportByID(field, req.InstanceID);
+        if (support is not null)
         {
-            return ActivateSupportEffect(state, game, playerNum, field, supportResult.Value, req, cc, effects);
+            return ActivateSupportEffect(state, game, playerNum, field, support, req, cc, effects);
         }
 
         throw new GameRuleException($"resource {req.InstanceID} not found on field");
@@ -33,10 +34,10 @@ public static class ActivateEffectProcessor
 
     private static ActionResult ActivateResourceEffect(
         GameState state, Game game, long playerNum,
-        (ResourceInstance Resource, Zone Zone, int Index) found,
+        (ResourceInstance Resource, Zone Zone) found,
         ActivateEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
-        var (source, _, _) = found;
+        var source = found.Resource;
         var card = cc.MustGet(source.CardID);
 
         if (!effects.Has(card.CardNo, TriggerType.Activate))
@@ -97,17 +98,16 @@ public static class ActivateEffectProcessor
             }
         });
         if (req.TargetInstanceID is not null)
-            events[0].EventData!["targetId"] = req.TargetInstanceID;
+            events.First().EventData!["targetId"] = req.TargetInstanceID;
 
         return new ActionResult { Events = events, StateUpdated = true };
     }
 
     private static ActionResult ActivateSupportEffect(
         GameState state, Game game, long playerNum,
-        Field field, (SupportInstance Support, int Index) found,
+        Field field, SupportInstance support,
         ActivateEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
-        var (support, _) = found;
         var card = cc.MustGet(support.CardID);
 
         if (!effects.Has(card.CardNo, TriggerType.Activate))

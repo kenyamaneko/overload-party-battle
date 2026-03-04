@@ -26,20 +26,15 @@ public static class ActionEvaluator
             return (0, false, null);
 
         // Evaluate categories — use the highest priority among all
-        int maxPri = 0;
-        bool use = false;
-        foreach (var cat in info.Categories)
-        {
-            var (pri, ok) = EvaluateCategory(cat, info, ctx);
-            if (ok)
-            {
-                use = true;
-                if (pri > maxPri) maxPri = pri;
-            }
-        }
+        var evaluated = info.Categories
+            .Select(cat => EvaluateCategory(cat, info, ctx))
+            .Where(r => r.Use)
+            .ToList();
 
-        if (!use)
+        if (evaluated.Count == 0)
             return (0, false, null);
+
+        int maxPri = evaluated.Max(r => r.Priority);
 
         // Target selection
         Dictionary<string, object>? choiceData = null;
@@ -150,26 +145,14 @@ public static class ActionEvaluator
     public static bool CheckConditions(
         List<EffectCondition> conditions, DecisionContext ctx, ICardCache cc)
     {
-        foreach (var cond in conditions)
+        return conditions.All(cond => cond.Type switch
         {
-            switch (cond.Type)
-            {
-                case "min_budget":
-                    if (ctx.Budget < cond.Value) return false;
-                    break;
-                case "max_budget":
-                    if (ctx.Budget > cond.Value) return false;
-                    break;
-                case "faction_count":
-                    var count = CountFactionOnField(ctx.Field, cond.Faction!, cc);
-                    if (count < cond.Value) return false;
-                    break;
-                case "opponent_backend":
-                    if (!HasFaceUpBackend(ctx.OppField)) return false;
-                    break;
-            }
-        }
-        return true;
+            "min_budget" => ctx.Budget >= cond.Value,
+            "max_budget" => ctx.Budget <= cond.Value,
+            "faction_count" => CountFactionOnField(ctx.Field, cond.Faction!, cc) >= cond.Value,
+            "opponent_backend" => HasFaceUpBackend(ctx.OppField),
+            _ => true,
+        });
     }
 
     /// <summary>
@@ -207,30 +190,12 @@ public static class ActionEvaluator
 
     private static int CountFactionOnField(Field field, string faction, ICardCache cc)
     {
-        int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { FaceUp: true } fr)
-            {
-                var card = cc.Get(fr.CardID);
-                if (card?.Faction == faction) count++;
-            }
-            if (field.Backend[i] is { FaceUp: true } br)
-            {
-                var card = cc.Get(br.CardID);
-                if (card?.Faction == faction) count++;
-            }
-        }
-        return count;
+        return FieldHelpers.AllFaceUpResources(field)
+            .Count(r => cc.Get(r.CardID)?.Faction == faction);
     }
 
     private static bool HasFaceUpBackend(Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Backend[i] is { FaceUp: true })
-                return true;
-        }
-        return false;
+        return field.Backend.Any(r => r.FaceUp);
     }
 }

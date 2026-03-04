@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Service;
@@ -109,7 +110,7 @@ public class WsManager
             if (_gameMembers.TryGetValue(gameID, out var members))
             {
                 members.Remove(playerID);
-                if (members.Count == 0)
+                if (!members.Any())
                     _gameMembers.Remove(gameID);
             }
         }

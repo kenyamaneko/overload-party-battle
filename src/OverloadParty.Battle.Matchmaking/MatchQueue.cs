@@ -63,9 +63,9 @@ public class MatchQueue
     {
         lock (_lock)
         {
-            var list = new List<QueueEntry>(_entries.Values);
-            list.Sort((a, b) => a.JoinedAt.CompareTo(b.JoinedAt));
-            return list;
+            return _entries.Values
+                .OrderBy(e => e.JoinedAt)
+                .ToList();
         }
     }
 

@@ -11,17 +11,6 @@ public class NpcDeckDefinition
 
 public static class NpcDecks
 {
-    public static readonly Dictionary<string, NpcDeckDefinition> Decks = new()
-    {
-        [GameConstants.FactionSD] = SDDeck,
-        [GameConstants.FactionTenki] = TenkiDeck,
-        [GameConstants.FactionSugar] = SugarDeck,
-        [GameConstants.FactionTuners] = TunersDeck,
-    };
-
-    public static NpcDeckDefinition? GetDeck(string faction)
-        => Decks.GetValueOrDefault(faction);
-
     public static readonly NpcDeckDefinition SDDeck = new()
     {
         Name = "SD Standard",
@@ -76,4 +65,15 @@ public static class NpcDecks
             2, 2, 3, 3, 3, 3,
         ],
     };
+
+    public static readonly Dictionary<string, NpcDeckDefinition> Decks = new()
+    {
+        [GameConstants.FactionSD] = SDDeck,
+        [GameConstants.FactionTenki] = TenkiDeck,
+        [GameConstants.FactionSugar] = SugarDeck,
+        [GameConstants.FactionTuners] = TunersDeck,
+    };
+
+    public static NpcDeckDefinition? GetDeck(string faction)
+        => Decks.GetValueOrDefault(faction);
 }

@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
 
@@ -10,10 +11,7 @@ public static class ActionFilter
 {
     public static List<AvailableAction> FilterByType(List<AvailableAction> actions, string actionType)
     {
-        var result = new List<AvailableAction>();
-        foreach (var a in actions)
-            if (a.Type == actionType) result.Add(a);
-        return result;
+        return actions.Where(a => a.Type == actionType).ToList();
     }
 
     /// <summary>
@@ -49,15 +47,12 @@ public static class ActionFilter
             if (z is not null) return z;
         }
 
-        return available.Count > 0 ? available[0] : null;
+        return available.FirstOrDefault();
     }
 
     public static string? PickSupportZone(List<string>? validZones, HashSet<string> usedZones)
     {
-        if (validZones is null) return null;
-        foreach (var z in validZones)
-            if (z.StartsWith("support_") && !usedZones.Contains(z)) return z;
-        return null;
+        return validZones?.FirstOrDefault(z => z.StartsWith("support_") && !usedZones.Contains(z));
     }
 
     public static SlotPosition? ParseZoneStr(string zone)
@@ -70,12 +65,12 @@ public static class ActionFilter
 
     public static long ResolveCardNoForInstance(string instanceId, Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { } r && r.InstanceID == instanceId) return r.CardID;
-            if (field.Backend[i] is { } b && b.InstanceID == instanceId) return b.CardID;
-            if (field.Support[i] is { } s && s.InstanceID == instanceId) return s.CardID;
-        }
+        var resource = FieldHelpers.AllResources(field).FirstOrDefault(r => r.InstanceID == instanceId);
+        if (resource is not null) return resource.CardID;
+
+        var support = field.Support.FirstOrDefault(s => s.InstanceID == instanceId);
+        if (support is not null) return support.CardID;
+
         return 0;
     }
 
@@ -84,14 +79,10 @@ public static class ActionFilter
     /// </summary>
     public static string? FindBestTargetFromValid(List<string>? validTargets, Field oppField)
     {
-        if (validTargets is null || validTargets.Count == 0) return null;
+        if (validTargets?.Any() != true) return null;
 
-        var resMap = new Dictionary<string, ResourceInstance>();
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (oppField.Frontend[i] is { } fr) resMap[fr.InstanceID] = fr;
-            if (oppField.Backend[i] is { } br) resMap[br.InstanceID] = br;
-        }
+        var resMap = FieldHelpers.AllResources(oppField)
+            .ToDictionary(r => r.InstanceID);
 
         string? bestId = null;
         long bestAV = long.MaxValue;
@@ -105,17 +96,12 @@ public static class ActionFilter
 
     private static List<string> FilterZones(List<string> validZones, HashSet<string> usedZones)
     {
-        var result = new List<string>();
-        foreach (var z in validZones)
-            if (!usedZones.Contains(z)) result.Add(z);
-        return result;
+        return validZones.Where(z => !usedZones.Contains(z)).ToList();
     }
 
     private static string? FirstWithPrefix(List<string> zones, string prefix)
     {
-        foreach (var z in zones)
-            if (z.StartsWith(prefix)) return z;
-        return null;
+        return zones.FirstOrDefault(z => z.StartsWith(prefix));
     }
 }
 

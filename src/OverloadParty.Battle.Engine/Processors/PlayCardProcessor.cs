@@ -254,11 +254,11 @@ public static class PlayCardProcessor
 
         // Find all support cards with TriggerOnEnemyDeploy, sorted by DeployOrder
         var reactiveSupports = FieldHelpers.AllSupports(oppField)
-            .Where(s => effects.Has(cc.MustGet(s.Support.CardID).CardNo, TriggerType.OnEnemyDeploy))
-            .OrderBy(s => s.Support.DeployOrder)
+            .Where(s => effects.Has(cc.MustGet(s.CardID).CardNo, TriggerType.OnEnemyDeploy))
+            .OrderBy(s => s.DeployOrder)
             .ToList();
 
-        foreach (var (support, idx) in reactiveSupports)
+        foreach (var support in reactiveSupports)
         {
             var supCard = cc.MustGet(support.CardID);
             var handler = effects.Get(supCard.CardNo, TriggerType.OnEnemyDeploy);

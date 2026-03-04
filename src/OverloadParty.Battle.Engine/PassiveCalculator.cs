@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine;
@@ -50,21 +51,15 @@ public static class PassiveCalculator
     private static long CalculateTPPerBackendDB(ResourceInstance instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
         int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        foreach (var res in field.Backend.Where(r => r.FaceUp))
         {
-            if (field.Backend[i] is not { FaceUp: true } res) continue;
             if (cfg.ExcludeSelf && res.InstanceID == instance.InstanceID) continue;
 
             var resCard = cc.Get(res.CardID);
             if (resCard is null) continue;
+            if (resCard.CardType is not ("Database" or "CacheDB" or "Datawarehouse")) continue;
 
-            bool isDB = resCard.CardType is "Database" or "CacheDB" or "Datawarehouse";
-            if (!isDB) continue;
-
-            if (cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo))
-                count += 2;
-            else
-                count++;
+            count += cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo) ? 2 : 1;
         }
         return cfg.BonusPerCard * count;
     }
@@ -72,26 +67,21 @@ public static class PassiveCalculator
     private static long CalculateTPPerBackendData(ResourceInstance instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
         int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        foreach (var res in field.Backend.Where(r => r.FaceUp))
         {
-            if (field.Backend[i] is not { FaceUp: true } res) continue;
             if (cfg.ExcludeSelf && res.InstanceID == instance.InstanceID) continue;
 
             var resCard = cc.Get(res.CardID);
-            if (resCard is null) continue;
-            if (!resCard.IsDataType) continue;
+            if (resCard is null || !resCard.IsDataType) continue;
 
-            if (cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo))
-                count += 2;
-            else
-                count++;
+            count += cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo) ? 2 : 1;
         }
         return cfg.BonusPerCard * count;
     }
 
     private static long CalculateTPIfCardTypeOnField(Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
-        if (cfg.CardTypes is null || cfg.CardTypes.Count == 0) return 0;
+        if (cfg.CardTypes?.Any() != true) return 0;
 
         foreach (var res in FieldHelpers.AllFaceUpResources(field))
         {
@@ -110,28 +100,22 @@ public static class PassiveCalculator
     private static long CalculateYieldPerOtherDB(ResourceInstance instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
         int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        foreach (var res in field.Backend.Where(r => r.FaceUp))
         {
-            if (field.Backend[i] is not { FaceUp: true } res) continue;
             if (res.InstanceID == instance.InstanceID) continue; // Always exclude self
 
             var resCard = cc.Get(res.CardID);
             if (resCard is null) continue;
+            if (resCard.CardType is not ("Database" or "CacheDB" or "Datawarehouse")) continue;
 
-            bool isDB = resCard.CardType is "Database" or "CacheDB" or "Datawarehouse";
-            if (!isDB) continue;
-
-            if (cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo))
-                count += 2;
-            else
-                count++;
+            count += cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo) ? 2 : 1;
         }
         return cfg.BonusPerCard * count;
     }
 
     private static long CalculateYieldIfCardOnField(Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
-        if (cfg.SpecificCardNos is null || cfg.SpecificCardNos.Count == 0) return 0;
+        if (cfg.SpecificCardNos?.Any() != true) return 0;
 
         foreach (var res in FieldHelpers.AllFaceUpResources(field))
         {
@@ -147,12 +131,8 @@ public static class PassiveCalculator
     public static long CalculatePlatformBonus(ResourceInstance instance, Field field, string statType, ICardCache cc)
     {
         long total = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        foreach (var support in field.Support.Where(s => !s.FaceDown && s.DeployingTurnsLeft <= 0))
         {
-            if (field.Support[i] is not { } support) continue;
-            if (support.FaceDown) continue;
-            if (support.DeployingTurnsLeft > 0) continue;
-
             var supCard = cc.Get(support.CardID);
             if (supCard is null) continue;
 
@@ -185,7 +165,7 @@ public static class PassiveCalculator
             return 0;
 
         // Check card type match
-        if (cfg.TargetCardTypes is { Count: > 0 } types && !types.Contains(targetCard.CardType))
+        if (cfg.TargetCardTypes?.Any() == true && !cfg.TargetCardTypes.Contains(targetCard.CardType))
             return 0;
 
         return cfg.Bonus;

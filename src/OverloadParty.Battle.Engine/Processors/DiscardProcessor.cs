@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Processors;
@@ -30,7 +31,7 @@ public static class DiscardProcessor
             }
         }
 
-        if (discardSet.Count > 0)
+        if (discardSet.Any())
             throw new GameRuleException($"some cards not found in hand: {string.Join(", ", discardSet)}");
 
         // Move discarded cards to trash

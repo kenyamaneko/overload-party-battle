@@ -14,7 +14,7 @@ public static class ScaleUpProcessor
         if (result is null)
             throw new GameRuleException($"resource {req.InstanceID} not found");
 
-        var (resource, zone, idx) = result.Value;
+        var resource = result.Value.Resource;
         var card = cc.MustGet(resource.CardID);
 
         if (!card.Resizable)

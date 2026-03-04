@@ -11,70 +11,39 @@ public static class EffectHelpers
 
     public static int CountFactionCards(Field field, string faction, ICardCache cc)
     {
-        int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { FaceUp: true } fres)
-            {
-                var card = cc.Get(fres.CardID);
-                if (card?.Faction == faction) count++;
-            }
-            if (field.Backend[i] is { FaceUp: true } bres)
-            {
-                var card = cc.Get(bres.CardID);
-                if (card?.Faction == faction) count++;
-            }
-            if (field.Support[i] is { } sup && sup.DeployingTurnsLeft <= 0)
-            {
-                var card = cc.Get(sup.CardID);
-                if (card?.Faction == faction) count++;
-            }
-        }
-        return count;
+        var resourceCount = FieldHelpers.AllFaceUpResources(field)
+            .Count(r => cc.Get(r.CardID)?.Faction == faction);
+
+        var supportCount = field.Support
+            .Count(s => s.DeployingTurnsLeft <= 0 && cc.Get(s.CardID)?.Faction == faction);
+
+        return resourceCount + supportCount;
     }
 
     public static int CountOpponentBackend(GameState state, long playerNum)
     {
         long oppNum = state.OpponentOf(playerNum);
         var field = state.GetField(oppNum);
-        int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Backend[i] is not null) count++;
-        }
-        return count;
+        return field.Backend.Count();
     }
 
     private static readonly HashSet<long> SecurityPlatformCardNos = [15, 37, 84];
 
     public static bool HasSecurityPlatform(Field field, ICardCache cc)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Support[i] is { } sup && SecurityPlatformCardNos.Contains(sup.CardID))
-                return true;
-        }
-        return false;
+        return field.Support
+            .Any(sup => SecurityPlatformCardNos.Contains(sup.CardID));
     }
 
     public static bool HasCardTypeOnField(Field field, string cardType, string? faction, ICardCache cc)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        return FieldHelpers.AllFaceUpResources(field).Any(r =>
         {
-            if (field.Frontend[i] is { FaceUp: true } fres)
-            {
-                var card = cc.Get(fres.CardID);
-                if (card is not null && card.CardType == cardType && (faction is null or { Length: 0 } || card.Faction == faction))
-                    return true;
-            }
-            if (field.Backend[i] is { FaceUp: true } bres)
-            {
-                var card = cc.Get(bres.CardID);
-                if (card is not null && card.CardType == cardType && (faction is null or { Length: 0 } || card.Faction == faction))
-                    return true;
-            }
-        }
-        return false;
+            var card = cc.Get(r.CardID);
+            return card is not null
+                && card.CardType == cardType
+                && (faction is null or { Length: 0 } || card.Faction == faction);
+        });
     }
 
     // --- Deploy Helpers ---
@@ -84,37 +53,22 @@ public static class EffectHelpers
         if (FieldHelpers.IsComputeType(cardType))
         {
             // Prefer frontend, fallback backend
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (field.Frontend[i] is null) { field.Frontend[i] = instance; return; }
-            }
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (field.Backend[i] is null) { field.Backend[i] = instance; return; }
-            }
+            if (field.Frontend.TryPlace(instance)) return;
+            if (field.Backend.TryPlace(instance)) return;
             throw new GameRuleException("No empty slot for compute resource");
         }
 
         if (cardType == "ObjectStorage")
         {
             // Prefer backend, fallback frontend
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (field.Backend[i] is null) { field.Backend[i] = instance; return; }
-            }
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (field.Frontend[i] is null) { field.Frontend[i] = instance; return; }
-            }
+            if (field.Backend.TryPlace(instance)) return;
+            if (field.Frontend.TryPlace(instance)) return;
             throw new GameRuleException("No empty slot for ObjectStorage");
         }
 
         if (FieldHelpers.IsDataType(cardType))
         {
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (field.Backend[i] is null) { field.Backend[i] = instance; return; }
-            }
+            if (field.Backend.TryPlace(instance)) return;
             throw new GameRuleException("No empty backend slot");
         }
 

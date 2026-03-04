@@ -98,30 +98,17 @@ public class AllOwnSelector : ISelector
 
     internal static List<ResourceInstance> FilterResources(Field field, string? zone, string? faction, ICardCache cc)
     {
-        var results = new List<ResourceInstance>();
-        IEnumerable<ResourceInstance?> candidates;
-
-        if (zone == "frontend")
-            candidates = field.Frontend;
-        else if (zone == "backend")
-            candidates = field.Backend;
-        else
-            candidates = field.Frontend.Concat(field.Backend);
-
-        foreach (var res in candidates)
+        IEnumerable<ResourceInstance> candidates = zone switch
         {
-            if (res is null || !res.FaceUp) continue;
+            "frontend" => field.Frontend,
+            "backend" => field.Backend,
+            _ => field.Frontend.Concat(field.Backend),
+        };
 
-            if (faction is { Length: > 0 })
-            {
-                var card = cc.Get(res.CardID);
-                if (card?.Faction != faction) continue;
-            }
-
-            results.Add(res);
-        }
-
-        return results;
+        return candidates
+            .Where(r => r.FaceUp)
+            .Where(r => faction is not { Length: > 0 } || cc.Get(r.CardID)?.Faction == faction)
+            .ToList();
     }
 }
 

@@ -18,7 +18,7 @@ public static class AttackProcessor
         if (attackerResult is null)
             throw new GameRuleException($"attacker {req.AttackerInstanceID} not found on field");
 
-        var (attacker, attackerZone, _) = attackerResult.Value;
+        var (attacker, attackerZone) = attackerResult.Value;
         if (attackerZone != Zone.Frontend)
             throw new GameRuleException("attacker must be on frontend");
 
@@ -37,7 +37,7 @@ public static class AttackProcessor
         if (defenderResult is null)
             throw new GameRuleException($"defender {req.TargetInstanceID} not found on opponent field");
 
-        var (defender, defenderZone, _) = defenderResult.Value;
+        var (defender, defenderZone) = defenderResult.Value;
         if (!defender.FaceUp)
             throw new GameRuleException("cannot attack face-down resource");
 
@@ -169,13 +169,13 @@ public static class AttackProcessor
         var reactiveSupports = FieldHelpers.AllSupports(defenderField)
             .Where(s =>
             {
-                var card = cc.Get(s.Support.CardID);
+                var card = cc.Get(s.CardID);
                 return card is not null && effects.Has(card.CardNo, TriggerType.Reactive);
             })
-            .OrderBy(s => s.Support.DeployOrder)
+            .OrderBy(s => s.DeployOrder)
             .ToList();
 
-        foreach (var (support, idx) in reactiveSupports)
+        foreach (var support in reactiveSupports)
         {
             var supCard = cc.MustGet(support.CardID);
             var handler = effects.Get(supCard.CardNo, TriggerType.Reactive);

@@ -106,12 +106,10 @@ public class EffectRegistry : IEffectRegistry
         var reg = GetRegistration(cardNo, trigger);
         if (reg?.Ops is null) return null;
 
-        foreach (var op in reg.Ops)
-        {
-            if (op is Ops.BranchOnChoiceOp branch)
-                return [.. branch.Branches.Keys];
-        }
-        return null;
+        return reg.Ops
+            .OfType<Ops.BranchOnChoiceOp>()
+            .Select(branch => branch.Branches.Keys.ToList())
+            .FirstOrDefault();
     }
 
     /// <summary>
@@ -119,12 +117,9 @@ public class EffectRegistry : IEffectRegistry
     /// </summary>
     public List<long> CardNosForTrigger(TriggerType trigger)
     {
-        var nos = new List<long>();
-        foreach (var key in _handlers.Keys)
-        {
-            if (key.Trigger == trigger)
-                nos.Add(key.CardNo);
-        }
-        return nos;
+        return _handlers.Keys
+            .Where(key => key.Trigger == trigger)
+            .Select(key => key.CardNo)
+            .ToList();
     }
 }

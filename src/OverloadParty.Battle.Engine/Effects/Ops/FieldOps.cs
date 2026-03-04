@@ -79,14 +79,9 @@ public class RevealTrapOp : IEffectOp
     public void Execute(OpContext ctx)
     {
         var oppField = ctx.OpponentField;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (oppField.Support[i] is { FaceDown: true } support)
-            {
-                support.FaceDown = false;
-                return;
-            }
-        }
+        var faceDown = oppField.Support.FirstOrDefault(s => s.FaceDown);
+        if (faceDown is not null)
+            faceDown.FaceDown = false;
     }
 }
 
@@ -99,19 +94,17 @@ public class DestroyPlatformOp : IEffectOp
         // Get choice from ChoiceData if available
         var instanceId = ctx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
 
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        var target = oppField.Support.FirstOrDefault(s =>
         {
-            if (oppField.Support[i] is not { } support) continue;
+            var card = ctx.CardCache.Get(s.CardID);
+            if (card?.CardType != "Platform") return false;
+            return instanceId is null || s.InstanceID == instanceId;
+        });
 
-            var card = ctx.CardCache.Get(support.CardID);
-            if (card?.CardType != "Platform") continue;
-
-            if (instanceId is not null && support.InstanceID != instanceId)
-                continue;
-
-            FieldHelpers.AddToTrash(ctx.State, ctx.OpponentNum, support.CardID, support.InstanceID);
-            oppField.Support[i] = null;
-            return;
+        if (target is not null)
+        {
+            FieldHelpers.AddToTrash(ctx.State, ctx.OpponentNum, target.CardID, target.InstanceID);
+            oppField.Support.Remove(s => s.InstanceID == target.InstanceID);
         }
     }
 }

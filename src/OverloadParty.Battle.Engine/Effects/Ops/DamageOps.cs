@@ -63,7 +63,7 @@ public class IncidentDamageOp(ISelector sel, IAmountResolver value, IAmountResol
         // Check for ISMS Certification in support zone
         var ownerNum = FindOwner(target, ctx);
         var field = ctx.GetField(ownerNum);
-        foreach (var (support, _) in FieldHelpers.AllSupports(field))
+        foreach (var support in FieldHelpers.AllSupports(field))
         {
             if (support.CardID == ISMSCertCardNo && !support.FaceDown)
                 reduction += IncidentReductionAmount;

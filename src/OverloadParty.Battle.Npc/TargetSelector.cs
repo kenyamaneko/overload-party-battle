@@ -13,27 +13,9 @@ public static class TargetSelector
     /// </summary>
     public static string? WeakestInZone(Field field, string? zone)
     {
-        ResourceInstance? best = null;
-        long bestAV = long.MaxValue;
-
-        if (zone is null or "" or "frontend")
-        {
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (field.Frontend[i] is not { FaceUp: true } r) continue;
-                if (r.EffectiveAV < bestAV) { bestAV = r.EffectiveAV; best = r; }
-            }
-        }
-        if (zone is null or "" or "backend")
-        {
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (field.Backend[i] is not { FaceUp: true } r) continue;
-                if (r.EffectiveAV < bestAV) { bestAV = r.EffectiveAV; best = r; }
-            }
-        }
-
-        return best?.InstanceID;
+        return FaceUpInZone(field, zone)
+            .MinBy(r => r.EffectiveAV)
+            ?.InstanceID;
     }
 
     /// <summary>
@@ -41,23 +23,9 @@ public static class TargetSelector
     /// </summary>
     public static string? StrongestInZone(Field field, string? zone, ICardCache cc)
     {
-        ResourceInstance? best = null;
-        long bestValue = 0;
-
-        void Scan(ResourceInstance?[] resources)
-        {
-            foreach (var r in resources)
-            {
-                if (r is null || !r.FaceUp) continue;
-                long val = ResourceValue(r, cc);
-                if (val > bestValue) { bestValue = val; best = r; }
-            }
-        }
-
-        if (zone is null or "" or "frontend") Scan(field.Frontend);
-        if (zone is null or "" or "backend") Scan(field.Backend);
-
-        return best?.InstanceID;
+        return FaceUpInZone(field, zone)
+            .MaxBy(r => ResourceValue(r, cc))
+            ?.InstanceID;
     }
 
     /// <summary>
@@ -65,84 +33,43 @@ public static class TargetSelector
     /// </summary>
     public static string? MostDamagedOwn(Field field)
     {
-        ResourceInstance? best = null;
-        long bestDamage = 0;
-
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { FaceUp: true } fr && fr.Damage > bestDamage)
-            { bestDamage = fr.Damage; best = fr; }
-            if (field.Backend[i] is { FaceUp: true } br && br.Damage > bestDamage)
-            { bestDamage = br.Damage; best = br; }
-        }
-
-        return best is { Damage: > 0 } ? best.InstanceID : null;
+        return FieldHelpers.AllFaceUpResources(field)
+            .Where(r => r.Damage > 0)
+            .MaxBy(r => r.Damage)
+            ?.InstanceID;
     }
 
     public static int CountAllResources(Field field)
     {
-        int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { FaceUp: true }) count++;
-            if (field.Backend[i] is { FaceUp: true }) count++;
-        }
-        return count;
+        return FieldHelpers.AllFaceUpResources(field).Count();
     }
 
     public static int CountResourcesInZone(Field field, string? zone)
     {
-        int count = 0;
-        if (zone is null or "" or "frontend")
-        {
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-                if (field.Frontend[i] is { FaceUp: true }) count++;
-        }
-        if (zone is null or "" or "backend")
-        {
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-                if (field.Backend[i] is { FaceUp: true }) count++;
-        }
-        return count;
+        return FaceUpInZone(field, zone).Count();
     }
 
     public static bool HasDamagedResource(Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { FaceUp: true, Damage: > 0 }) return true;
-            if (field.Backend[i] is { FaceUp: true, Damage: > 0 }) return true;
-        }
-        return false;
+        return FieldHelpers.AllFaceUpResources(field).Any(r => r.Damage > 0);
     }
 
     public static bool HasFaceDownSupport(Field field)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            if (field.Support[i] is { FaceDown: true }) return true;
-        return false;
+        return field.Support.Any(s => s.FaceDown);
     }
 
     public static bool HasPlatform(Field field, ICardCache cc)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Support[i] is not { } sup) continue;
-            var card = cc.Get(sup.CardID);
-            if (card?.CardType == "Platform") return true;
-        }
-        return false;
+        return field.Support
+            .Any(sup => cc.Get(sup.CardID)?.CardType == "Platform");
     }
 
     public static string? FirstPlatformId(Field field, ICardCache cc)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Support[i] is not { } sup) continue;
-            var card = cc.Get(sup.CardID);
-            if (card?.CardType == "Platform") return sup.InstanceID;
-        }
-        return null;
+        return field.Support
+            .FirstOrDefault(sup => cc.Get(sup.CardID)?.CardType == "Platform")
+            ?.InstanceID;
     }
 
     public static long ResourceValue(ResourceInstance r, ICardCache cc)
@@ -152,5 +79,15 @@ public static class TargetSelector
         var card = cc.Get(r.CardID);
         if (card is null) return 0;
         return card.IsComputeType ? card.BaseThroughput : card.IsDataType ? card.BaseYield : 0;
+    }
+
+    // ─── Private helpers ────────────────────────────────────────
+
+    private static IEnumerable<ResourceInstance> FaceUpInZone(Field field, string? zone)
+    {
+        var sources = Enumerable.Empty<ResourceInstance>();
+        if (zone is null or "" or "frontend") sources = sources.Concat(field.Frontend);
+        if (zone is null or "" or "backend") sources = sources.Concat(field.Backend);
+        return sources.Where(r => r.FaceUp);
     }
 }

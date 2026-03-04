@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
@@ -159,11 +160,11 @@ public class StandardAi : INpcStrategy
                 ["cardInstanceId"] = c.Action.HandInstanceID!,
                 ["position"] = ActionFilter.ParseZoneStr(zone)!,
             };
-            if (c.Action.ChoiceOptions is { Count: > 0 })
+            if (c.Action.ChoiceOptions?.Any() == true)
             {
                 var choice = DeployChoiceFor(c.Card.CardNo);
                 if (choice == "")
-                    choice = c.Action.ChoiceOptions[0];
+                    choice = c.Action.ChoiceOptions.First();
                 payload["choiceData"] = new Dictionary<string, string> { ["option"] = choice };
             }
 
@@ -194,7 +195,7 @@ public class StandardAi : INpcStrategy
             // select from the pre-validated ValidTargets
             if (a.EffectTargetType == "Choice" && choice is null)
             {
-                if (a.ValidTargets is not { Count: > 0 }) continue;
+                if (a.ValidTargets?.Any() != true) continue;
                 var target = SelectTargetFromValid(cardNo, a.ValidTargets, ctx);
                 if (target is null) continue;
                 choice = new Dictionary<string, object> { ["instanceId"] = target };
@@ -221,7 +222,7 @@ public class StandardAi : INpcStrategy
 
     private string? SelectTargetFromValid(long cardNo, List<string> validTargets, DecisionContext ctx)
     {
-        if (validTargets.Count == 0) return null;
+        if (!validTargets.Any()) return null;
 
         var validSet = new HashSet<string>(validTargets);
 
@@ -235,7 +236,7 @@ public class StandardAi : INpcStrategy
         }
 
         // Fallback: first valid target
-        return validTargets[0];
+        return validTargets.FirstOrDefault();
     }
 
     // ─── Battle actions ─────────────────────────────────────────
@@ -292,7 +293,7 @@ public class StandardAi : INpcStrategy
     protected static List<NpcAction> DoDistributeYieldActions(List<AvailableAction> available, long insightPool)
     {
         var yieldActions = ActionFilter.FilterByType(available, "distribute_yield");
-        if (yieldActions.Count == 0) return [];
+        if (!yieldActions.Any()) return [];
 
         var dists = new List<Dictionary<string, object>>();
         var remaining = insightPool;
@@ -312,7 +313,7 @@ public class StandardAi : INpcStrategy
             }
         }
 
-        if (dists.Count == 0) return [];
+        if (!dists.Any()) return [];
 
         return
         [

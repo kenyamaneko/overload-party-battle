@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Effects.Ops;
@@ -12,8 +13,8 @@ public class DrawCardsOp(int count) : IEffectOp
         int toDraw = Math.Min(count, repo.Count);
         for (int i = 0; i < toDraw; i++)
         {
-            var card = repo[0];
-            repo.RemoveAt(0);
+            var card = repo.First();
+            repo.Remove(card);
             hand.Add(new HandCard
             {
                 InstanceID = ctx.State.NextInstanceID(),
@@ -32,24 +33,23 @@ public class SearchRepoOp : IEffectOp
         var repo = ctx.State.GetRepository(ctx.PlayerNum);
         var hand = ctx.State.GetHand(ctx.PlayerNum);
 
-        // Find first matching card in repository
-        for (int i = 0; i < repo.Count; i++)
+        var found = repo.FirstOrDefault(card =>
         {
-            var card = ctx.CardCache.Get(repo[i].CardID);
-            if (card is null) continue;
+            var definition = ctx.CardCache.Get(card.CardID);
+            if (definition is null) return false;
+            if (Faction is { Length: > 0 } faction && definition.Faction != faction)
+                return false;
+            return true;
+        });
 
-            if (Faction is { Length: > 0 } faction && card.Faction != faction)
-                continue;
+        if (found is null) return;
 
-            var found = repo[i];
-            repo.RemoveAt(i);
-            hand.Add(new HandCard
-            {
-                InstanceID = ctx.State.NextInstanceID(),
-                CardID = found.CardID,
-            });
-            return;
-        }
+        repo.Remove(found);
+        hand.Add(new HandCard
+        {
+            InstanceID = ctx.State.NextInstanceID(),
+            CardID = found.CardID,
+        });
     }
 }
 
@@ -72,15 +72,11 @@ public class TrashToHandOp : IEffectOp
     public void Execute(OpContext ctx)
     {
         var trash = ctx.State.GetTrash(ctx.PlayerNum);
-        if (trash.Count == 0) return;
+        if (!trash.Any()) return;
 
         // Get choice from ChoiceData
         var instanceId = ctx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
-        if (instanceId is null && trash.Count > 0)
-        {
-            // Default: take first
-            instanceId = trash[0].InstanceID;
-        }
+        instanceId ??= trash.First().InstanceID;
 
         var idx = trash.FindIndex(c => c.InstanceID == instanceId);
         if (idx < 0) return;

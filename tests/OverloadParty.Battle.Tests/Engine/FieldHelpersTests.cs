@@ -21,7 +21,6 @@ public class FieldHelpersTests
         var result = FieldHelpers.FindResourceByID(field, "inst_1");
         Assert.NotNull(result);
         Assert.Equal(Zone.Frontend, result.Value.Zone);
-        Assert.Equal(1, result.Value.Index);
         Assert.Same(res, result.Value.Resource);
     }
 
@@ -35,7 +34,6 @@ public class FieldHelpersTests
         var result = FieldHelpers.FindResourceByID(field, "inst_2");
         Assert.NotNull(result);
         Assert.Equal(Zone.Backend, result.Value.Zone);
-        Assert.Equal(2, result.Value.Index);
     }
 
     [Fact]
@@ -55,7 +53,7 @@ public class FieldHelpersTests
 
         var result = FieldHelpers.FindSupportByID(field, "sup_1");
         Assert.NotNull(result);
-        Assert.Equal(0, result.Value.Index);
+        Assert.Equal("sup_1", result.InstanceID);
     }
 
     [Fact]

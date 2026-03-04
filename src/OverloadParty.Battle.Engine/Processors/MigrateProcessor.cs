@@ -19,8 +19,8 @@ public static class MigrateProcessor
         if (targetResult is null)
             throw new GameRuleException($"target {req.TargetInstanceID} not found");
 
-        var (source, _, _) = sourceResult.Value;
-        var (target, _, _) = targetResult.Value;
+        var source = sourceResult.Value.Resource;
+        var target = targetResult.Value.Resource;
 
         // Validations
         if (!source.FaceUp)

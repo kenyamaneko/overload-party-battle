@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
@@ -143,25 +144,17 @@ public static class GameStateView
 
     private static OpponentField BuildOpponentField(Field field)
     {
-        var result = new OpponentField();
-
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        return new OpponentField
         {
-            result.Frontend[i] = HideResourceIfFaceDown(field.Frontend[i]);
-            result.Backend[i] = HideResourceIfFaceDown(field.Backend[i]);
-
-            if (field.Support[i] is { } sup)
+            Frontend = field.Frontend.ToArray().Select(HideResourceIfFaceDown).ToArray(),
+            Backend = field.Backend.ToArray().Select(HideResourceIfFaceDown).ToArray(),
+            Support = field.Support.ToArray().Select(sup => sup is null ? null : new HiddenSupportInstance
             {
-                result.Support[i] = new HiddenSupportInstance
-                {
-                    InstanceID = sup.InstanceID,
-                    FaceDown = sup.FaceDown,
-                    CardID = sup.FaceDown ? null : sup.CardID,
-                };
-            }
-        }
-
-        return result;
+                InstanceID = sup.InstanceID,
+                FaceDown = sup.FaceDown,
+                CardID = sup.FaceDown ? null : sup.CardID,
+            }).ToArray(),
+        };
     }
 
     private static ResourceInstance? HideResourceIfFaceDown(ResourceInstance? res)

@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Engine.Effects;
 
@@ -91,7 +92,7 @@ public static class AvailableActions
                     if (res.Attachments.Count < GameConstants.MaxAttachments)
                         targets.Add(res.InstanceID);
                 }
-                if (targets.Count > 0)
+                if (targets.Any())
                 {
                     yield return new AvailableAction
                     {
@@ -116,41 +117,17 @@ public static class AvailableActions
 
             // Frontend eligibility
             if (FieldHelpers.IsFrontendEligible(card.CardType))
-            {
-                for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-                {
-                    if (field.Frontend[i] is null)
-                    {
-                        validZones.Add($"frontend_{i}");
-                    }
-                }
-            }
+                validZones.AddRange(field.Frontend.EmptySlotIndices().Select(i => $"frontend_{i}"));
 
             // Backend eligibility
             if (FieldHelpers.IsBackendEligible(card.CardType))
-            {
-                for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-                {
-                    if (field.Backend[i] is null)
-                    {
-                        validZones.Add($"backend_{i}");
-                    }
-                }
-            }
+                validZones.AddRange(field.Backend.EmptySlotIndices().Select(i => $"backend_{i}"));
 
             // Support zone eligibility
             if (FieldHelpers.IsSupportType(card.CardType))
-            {
-                for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-                {
-                    if (field.Support[i] is null)
-                    {
-                        validZones.Add($"support_{i}");
-                    }
-                }
-            }
+                validZones.AddRange(field.Support.EmptySlotIndices().Select(i => $"support_{i}"));
 
-            if (validZones.Count > 0)
+            if (validZones.Any())
             {
                 yield return new AvailableAction
                 {
@@ -170,30 +147,15 @@ public static class AvailableActions
         bool oppHasFrontend = FieldHelpers.HasFrontendResources(oppField);
         var validTargets = new List<string>();
 
-        if (oppHasFrontend)
-        {
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (oppField.Frontend[i] is { FaceUp: true } res)
-                    validTargets.Add(res.InstanceID);
-            }
-        }
-        else
-        {
-            for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-            {
-                if (oppField.Backend[i] is { FaceUp: true } res)
-                    validTargets.Add(res.InstanceID);
-            }
-        }
+        var targetZone = oppHasFrontend ? oppField.Frontend : oppField.Backend;
+        foreach (var res in targetZone.Where(r => r.FaceUp))
+            validTargets.Add(res.InstanceID);
 
-        if (validTargets.Count == 0) yield break;
+        if (!validTargets.Any()) yield break;
 
         // Find eligible attackers
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        foreach (var attacker in myField.Frontend.Where(r => r.FaceUp))
         {
-            if (myField.Frontend[i] is not { FaceUp: true } attacker) continue;
-
             var attackerCard = cc.Get(attacker.CardID);
             if (attackerCard is null || !attackerCard.IsComputeType) continue;
             if (attacker.HasAttacked) continue;
@@ -246,9 +208,8 @@ public static class AvailableActions
         if (TurnManager.IsFirstTurn(state.CurrentTurn)) yield break;
         if (insightPool <= 0) yield break;
 
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        foreach (var res in field.Backend.Where(r => r.FaceUp))
         {
-            if (field.Backend[i] is not { FaceUp: true } res) continue;
             if (res.MigratingFrom is not null) continue;
 
             var card = cc.Get(res.CardID);
@@ -292,7 +253,7 @@ public static class AvailableActions
         }
 
         // Support zone
-        foreach (var (support, _) in FieldHelpers.AllSupports(myField))
+        foreach (var support in FieldHelpers.AllSupports(myField))
         {
             if (support.DeployingTurnsLeft > 0) continue;
             if (support.EffectUsedThisTurn) continue;
@@ -337,7 +298,7 @@ public static class AvailableActions
                 validTargets.Add(target.InstanceID);
             }
 
-            if (validTargets.Count > 0)
+            if (validTargets.Any())
             {
                 yield return new AvailableAction
                 {

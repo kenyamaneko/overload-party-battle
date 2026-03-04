@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
@@ -140,11 +141,11 @@ public class FactionAi : StandardAi
                 ["cardInstanceId"] = c.Action.HandInstanceID!,
                 ["position"] = ActionFilter.ParseZoneStr(zone)!,
             };
-            if (c.Action.ChoiceOptions is { Count: > 0 })
+            if (c.Action.ChoiceOptions?.Any() == true)
             {
                 var choice = DeployChoiceFor(c.Card.CardNo);
                 if (choice == "")
-                    choice = c.Action.ChoiceOptions[0];
+                    choice = c.Action.ChoiceOptions.First();
                 payload["choiceData"] = new Dictionary<string, string> { ["option"] = choice };
             }
 
@@ -160,24 +161,13 @@ public class FactionAi : StandardAi
 
     private static bool HasCardOnField(Field field, long cardNo)
     {
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Frontend[i] is { } fr && fr.CardID == cardNo) return true;
-            if (field.Backend[i] is { } br && br.CardID == cardNo) return true;
-        }
-        return false;
+        return FieldHelpers.AllResources(field).Any(r => r.CardID == cardNo);
     }
 
     private static readonly HashSet<long> TenkiDBCardNos = [29, 30, 31, 32, 33];
 
     private static int CountTenkiDBOnField(Field field)
     {
-        int count = 0;
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
-        {
-            if (field.Backend[i] is { } res && TenkiDBCardNos.Contains(res.CardID))
-                count++;
-        }
-        return count;
+        return field.Backend.Count(res => TenkiDBCardNos.Contains(res.CardID));
     }
 }

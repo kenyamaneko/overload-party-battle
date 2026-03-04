@@ -1,3 +1,4 @@
+using System.Linq;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Effects.Ops;
@@ -222,22 +223,18 @@ public class DeployFromRepoOp : IEffectOp
     {
         var repo = ctx.State.GetRepository(ctx.PlayerNum);
 
-        long cardNo = -1;
-        int repoIdx = -1;
-        for (int i = 0; i < repo.Count; i++)
+        var match = repo.FirstOrDefault(candidate =>
         {
-            var card = ctx.CardCache.Get(repo[i].CardID);
-            if (card is null) continue;
-            if (Filter is not null && !Filter(card)) continue;
-            cardNo = repo[i].CardID;
-            repoIdx = i;
-            break;
-        }
+            var definition = ctx.CardCache.Get(candidate.CardID);
+            if (definition is null) return false;
+            if (Filter is not null && !Filter(definition)) return false;
+            return true;
+        });
 
-        if (repoIdx == -1) return; // No match — optional deploy
+        if (match is null) return;
 
-        repo.RemoveAt(repoIdx);
-        var cardDef = ctx.CardCache.MustGet(cardNo);
+        repo.Remove(match);
+        var cardDef = ctx.CardCache.MustGet(match.CardID);
         var field = ctx.GetField(ctx.PlayerNum);
         var instance = FieldHelpers.CreateResourceInstance(cardDef, ctx.State.NextInstanceID(), ctx.State.CurrentTurn);
 
