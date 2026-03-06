@@ -31,9 +31,9 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        Assert.Equal(GameConstants.InitialBudget, state.Player1Budget);
-        Assert.Equal(GameConstants.InitialBudget, state.Player2Budget);
-        Assert.Equal(5000, state.Player1Budget);
+        state.Player1Budget.Should().Be(GameConstants.InitialBudget);
+        state.Player2Budget.Should().Be(GameConstants.InitialBudget);
+        state.Player1Budget.Should().Be(5000);
     }
 
     [Fact]
@@ -44,12 +44,12 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        Assert.Equal(0, state.Player1InsightPool);
-        Assert.Equal(0, state.Player2InsightPool);
+        state.Player1InsightPool.Should().Be(0);
+        state.Player2InsightPool.Should().Be(0);
     }
 
     /// <summary>
-    /// Rulebook §2: 初期手札 5枚
+    /// 初期手札 5枚
     /// </summary>
     [Fact]
     public void CreateNewGame_Deals5Cards_PerPlayer()
@@ -59,13 +59,13 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        Assert.Equal(GameConstants.InitialHandSize, state.Player1Hand.Count);
-        Assert.Equal(5, state.Player1Hand.Count);
-        Assert.Equal(5, state.Player2Hand.Count);
+        state.Player1Hand.Should().HaveCount(GameConstants.InitialHandSize);
+        state.Player1Hand.Should().HaveCount(5);
+        state.Player2Hand.Should().HaveCount(5);
     }
 
     /// <summary>
-    /// Rulebook §2: 30枚 - 5枚手札 = 25枚リポジトリ
+    /// 30枚 - 5枚手札 = 25枚リポジトリ
     /// </summary>
     [Fact]
     public void CreateNewGame_RemainingCards_GoToRepository()
@@ -75,8 +75,8 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        Assert.Equal(25, state.Player1Repository.Count);
-        Assert.Equal(25, state.Player2Repository.Count);
+        state.Player1Repository.Should().HaveCount(25);
+        state.Player2Repository.Should().HaveCount(25);
     }
 
     [Fact]
@@ -90,8 +90,8 @@ public class GameInitializerTests
         int total1 = state.Player1Hand.Count + state.Player1Repository.Count;
         int total2 = state.Player2Hand.Count + state.Player2Repository.Count;
 
-        Assert.Equal(GameConstants.DeckSize, total1);
-        Assert.Equal(GameConstants.DeckSize, total2);
+        total1.Should().Be(GameConstants.DeckSize);
+        total2.Should().Be(GameConstants.DeckSize);
     }
 
     [Fact]
@@ -102,8 +102,8 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        Assert.Equal(1, state.CurrentTurn);
-        Assert.Equal(Phase.Draw, state.CurrentPhase);
+        state.CurrentTurn.Should().Be(1);
+        state.CurrentPhase.Should().Be(Phase.Draw);
     }
 
     [Fact]
@@ -113,10 +113,10 @@ public class GameInitializerTests
         var deck = TestFactory.MakeDeck(1, 2, 3);
 
         var (_, state1) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
-        Assert.Equal(1, state1.ActivePlayer);
+        state1.ActivePlayer.Should().Be(1);
 
         var (_, state2) = GameInitializer.CreateNewGame("g2", "p1", "p2", deck, deck, 2, cc);
-        Assert.Equal(2, state2.ActivePlayer);
+        state2.ActivePlayer.Should().Be(2);
     }
 
     [Fact]
@@ -127,7 +127,7 @@ public class GameInitializerTests
 
         var (game, _) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        Assert.Equal(GameStatus.Playing, game.Status);
+        game.Status.Should().Be(GameStatus.Playing);
     }
 
     [Fact]
@@ -138,8 +138,8 @@ public class GameInitializerTests
 
         var (game, _) = GameInitializer.CreateNewGame("g1", "alice", "bob", deck, deck, 1, cc);
 
-        Assert.Equal("alice", game.Player1ID);
-        Assert.Equal("bob", game.Player2ID);
+        game.Player1ID.Should().Be("alice");
+        game.Player2ID.Should().Be("bob");
     }
 
     /// <summary>
@@ -162,7 +162,7 @@ public class GameInitializerTests
             .ToList();
 
         var expectedSorted = deckCards.OrderBy(x => x).ToList();
-        Assert.Equal(expectedSorted, allP1CardIds);
+        allP1CardIds.Should().Equal(expectedSorted);
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public class GameInitializerTests
             .Concat(state.Player2Repository.Select(r => r.InstanceID))
             .ToList();
 
-        Assert.Equal(allIds.Distinct().Count(), allIds.Count);
+        allIds.Should().OnlyHaveUniqueItems();
     }
 
     [Fact]
@@ -190,9 +190,9 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        Assert.Equal(GameConstants.InitialTimeBank, state.Player1TimeBank);
-        Assert.Equal(GameConstants.InitialTimeBank, state.Player2TimeBank);
-        Assert.Equal(480, state.Player1TimeBank);
+        state.Player1TimeBank.Should().Be(GameConstants.InitialTimeBank);
+        state.Player2TimeBank.Should().Be(GameConstants.InitialTimeBank);
+        state.Player1TimeBank.Should().Be(480);
     }
 
     [Fact]
@@ -203,8 +203,8 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        Assert.All(state.Player1Field.Frontend, slot => Assert.Null(slot));
-        Assert.All(state.Player1Field.Backend, slot => Assert.Null(slot));
-        Assert.All(state.Player1Field.Support, slot => Assert.Null(slot));
+        state.Player1Field.Frontend.Should().AllSatisfy(slot => slot.Should().BeNull());
+        state.Player1Field.Backend.Should().AllSatisfy(slot => slot.Should().BeNull());
+        state.Player1Field.Support.Should().AllSatisfy(slot => slot.Should().BeNull());
     }
 }

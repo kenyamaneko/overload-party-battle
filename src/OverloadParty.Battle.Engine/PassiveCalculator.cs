@@ -57,7 +57,7 @@ public static class PassiveCalculator
 
             var resCard = cc.Get(res.CardID);
             if (resCard is null) continue;
-            if (resCard.CardType is not ("Database" or "CacheDB" or "Datawarehouse")) continue;
+            if (resCard.CardType is not (CardTypes.Database or CardTypes.CacheDB)) continue;
 
             count += cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo) ? 2 : 1;
         }
@@ -106,7 +106,7 @@ public static class PassiveCalculator
 
             var resCard = cc.Get(res.CardID);
             if (resCard is null) continue;
-            if (resCard.CardType is not ("Database" or "CacheDB" or "Datawarehouse")) continue;
+            if (resCard.CardType is not (CardTypes.Database or CardTypes.CacheDB)) continue;
 
             count += cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo) ? 2 : 1;
         }

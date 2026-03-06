@@ -18,8 +18,8 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.BudgetGain));
-        Assert.Single(info.Categories);
+        info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
+        info.Categories.Should().ContainSingle();
     }
 
     [Fact]
@@ -28,7 +28,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.BudgetPenalty));
+        info.HasCategory(EffectCategory.BudgetPenalty).Should().BeTrue();
     }
 
     // ─── Insight Ops ──────────────────────────────────────────
@@ -39,7 +39,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new GainInsightOp(new StaticAmount(200)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.InsightGain));
+        info.HasCategory(EffectCategory.InsightGain).Should().BeTrue();
     }
 
     [Fact]
@@ -48,7 +48,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new AbsorbInsightOp(new StaticAmount(150)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.InsightAbsorb));
+        info.HasCategory(EffectCategory.InsightAbsorb).Should().BeTrue();
     }
 
     // ─── Damage Ops ───────────────────────────────────────────
@@ -60,9 +60,9 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new DealDamageOp(sel, new StaticAmount(400)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.SingleDamage));
-        Assert.Equal(EffectTargetType.Choice, info.TargetType);
-        Assert.Equal("frontend", info.TargetZone);
+        info.HasCategory(EffectCategory.SingleDamage).Should().BeTrue();
+        info.TargetType.Should().Be(EffectTargetType.Choice);
+        info.TargetZone.Should().Be("frontend");
     }
 
     [Fact]
@@ -72,8 +72,8 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new DealDamageOp(sel, new StaticAmount(200)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.AoEDamage));
-        Assert.Equal(EffectTargetType.AllOpp, info.TargetType);
+        info.HasCategory(EffectCategory.AoEDamage).Should().BeTrue();
+        info.TargetType.Should().Be(EffectTargetType.AllOpp);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new DealDamageOp(SourceSelector.Instance, new StaticAmount(100)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.Equal(EffectTargetType.Self, info.TargetType);
+        info.TargetType.Should().Be(EffectTargetType.Self);
     }
 
     // ─── Buff / Debuff ────────────────────────────────────────
@@ -93,8 +93,8 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new ApplyBuffOp(SourceSelector.Instance, "buff_tp", new StaticAmount(200), "this_turn") };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.Buff));
-        Assert.Equal(EffectTargetType.Self, info.TargetType);
+        info.HasCategory(EffectCategory.Buff).Should().BeTrue();
+        info.TargetType.Should().Be(EffectTargetType.Self);
     }
 
     [Fact]
@@ -104,8 +104,8 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new ApplyBuffOp(sel, "debuff_tp", new StaticAmount(100), "this_turn") };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.Debuff));
-        Assert.Equal(EffectTargetType.Choice, info.TargetType);
+        info.HasCategory(EffectCategory.Debuff).Should().BeTrue();
+        info.TargetType.Should().Be(EffectTargetType.Choice);
     }
 
     [Fact]
@@ -114,8 +114,8 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new ApplyBuffOp(new AllOpponentSelector(), "debuff_tp", new StaticAmount(50), "this_turn") };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.Debuff));
-        Assert.Equal(EffectTargetType.AllOpp, info.TargetType);
+        info.HasCategory(EffectCategory.Debuff).Should().BeTrue();
+        info.TargetType.Should().Be(EffectTargetType.AllOpp);
     }
 
     // ─── Heal ─────────────────────────────────────────────────
@@ -126,7 +126,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new HealDamageOp(SourceSelector.Instance, new StaticAmount(500)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.Heal));
+        info.HasCategory(EffectCategory.Heal).Should().BeTrue();
     }
 
     // ─── Card Movement ────────────────────────────────────────
@@ -137,7 +137,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new DrawCardsOp(2) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.Draw));
+        info.HasCategory(EffectCategory.Draw).Should().BeTrue();
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new SearchRepoOp() };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.Search));
+        info.HasCategory(EffectCategory.Search).Should().BeTrue();
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new DeployFromHandOp() };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.DeployFree));
+        info.HasCategory(EffectCategory.DeployFree).Should().BeTrue();
     }
 
     [Fact]
@@ -164,7 +164,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new DeployFromRepoOp() };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.DeployFree));
+        info.HasCategory(EffectCategory.DeployFree).Should().BeTrue();
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new TrashToHandOp() };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.RecoverCard));
+        info.HasCategory(EffectCategory.RecoverCard).Should().BeTrue();
     }
 
     // ─── Field Ops ────────────────────────────────────────────
@@ -184,7 +184,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new RevealTrapOp() };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.RevealTrap));
+        info.HasCategory(EffectCategory.RevealTrap).Should().BeTrue();
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new DestroyPlatformOp() };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.DestroyPlatform));
+        info.HasCategory(EffectCategory.DestroyPlatform).Should().BeTrue();
     }
 
     // ─── Reactive Control ─────────────────────────────────────
@@ -204,7 +204,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { SetCancelActionOp.Instance };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.CancelAction));
+        info.HasCategory(EffectCategory.CancelAction).Should().BeTrue();
     }
 
     [Fact]
@@ -213,7 +213,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new SurviveDestructionOp(1) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.Survive));
+        info.HasCategory(EffectCategory.Survive).Should().BeTrue();
     }
 
     // ─── Conditions ───────────────────────────────────────────
@@ -224,10 +224,10 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new RequireBudgetOp(1000), new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.Single(info.Conditions);
-        Assert.Equal("min_budget", info.Conditions[0].Type);
-        Assert.Equal(1000, info.Conditions[0].Value);
-        Assert.True(info.HasCategory(EffectCategory.BudgetGain));
+        info.Conditions.Should().ContainSingle();
+        info.Conditions[0].Type.Should().Be("min_budget");
+        info.Conditions[0].Value.Should().Be(1000);
+        info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
     }
 
     [Fact]
@@ -236,9 +236,9 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new RequireMaxBudgetOp(2000) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.Single(info.Conditions);
-        Assert.Equal("max_budget", info.Conditions[0].Type);
-        Assert.Equal(2000, info.Conditions[0].Value);
+        info.Conditions.Should().ContainSingle();
+        info.Conditions[0].Type.Should().Be("max_budget");
+        info.Conditions[0].Value.Should().Be(2000);
     }
 
     [Fact]
@@ -247,10 +247,10 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new RequireFactionCountOp("SD", 3) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.Single(info.Conditions);
-        Assert.Equal("faction_count", info.Conditions[0].Type);
-        Assert.Equal(3, info.Conditions[0].Value);
-        Assert.Equal("SD", info.Conditions[0].Faction);
+        info.Conditions.Should().ContainSingle();
+        info.Conditions[0].Type.Should().Be("faction_count");
+        info.Conditions[0].Value.Should().Be(3);
+        info.Conditions[0].Faction.Should().Be("SD");
     }
 
     // ─── Branching ────────────────────────────────────────────
@@ -266,8 +266,8 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new BranchOnChoiceOp(branches) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasBranch);
-        Assert.True(info.HasCategory(EffectCategory.Heal));
+        info.HasBranch.Should().BeTrue();
+        info.HasCategory(EffectCategory.Heal).Should().BeTrue();
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new IfConditionOp(_ => true, then) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.BudgetGain));
+        info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
     }
 
     // ─── CustomFnTagged ───────────────────────────────────────
@@ -296,10 +296,10 @@ public class EffectClassifierTests
         };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.True(info.HasCategory(EffectCategory.Draw));
-        Assert.True(info.HasCategory(EffectCategory.Search));
-        Assert.Equal(EffectTargetType.Self, info.TargetType);
-        Assert.Equal("backend", info.TargetZone);
+        info.HasCategory(EffectCategory.Draw).Should().BeTrue();
+        info.HasCategory(EffectCategory.Search).Should().BeTrue();
+        info.TargetType.Should().Be(EffectTargetType.Self);
+        info.TargetZone.Should().Be("backend");
     }
 
     // ─── Multiple Ops ─────────────────────────────────────────
@@ -315,10 +315,10 @@ public class EffectClassifierTests
         };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.Equal(3, info.Categories.Count);
-        Assert.True(info.HasCategory(EffectCategory.BudgetGain));
-        Assert.True(info.HasCategory(EffectCategory.Draw));
-        Assert.True(info.HasCategory(EffectCategory.Heal));
+        info.Categories.Should().HaveCount(3);
+        info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
+        info.HasCategory(EffectCategory.Draw).Should().BeTrue();
+        info.HasCategory(EffectCategory.Heal).Should().BeTrue();
     }
 
     /// <summary>
@@ -334,6 +334,6 @@ public class EffectClassifierTests
         };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        Assert.Single(info.Categories);
+        info.Categories.Should().ContainSingle();
     }
 }

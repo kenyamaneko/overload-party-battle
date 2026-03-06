@@ -15,3 +15,6 @@ obj/
 # Claude
 .claude/
 CLAUDE.md
+
+# Symlinks
+docs

@@ -78,6 +78,31 @@ public class EffectRegistry : IEffectRegistry
         return _handlers.ContainsKey((cardNo, trigger));
     }
 
+    public BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger)
+    {
+        var reg = GetRegistration(cardNo, trigger);
+        if (reg?.Ops is null) return null;
+
+        long? minBudget = null;
+        long? maxBudget = null;
+
+        foreach (var op in reg.Ops)
+        {
+            switch (op)
+            {
+                case Ops.RequireBudgetOp rb:
+                    minBudget = rb.Min;
+                    break;
+                case Ops.RequireMaxBudgetOp rmb:
+                    maxBudget = rmb.Max;
+                    break;
+            }
+        }
+
+        if (minBudget is null && maxBudget is null) return null;
+        return new BudgetRequirement { MinBudget = minBudget, MaxBudget = maxBudget };
+    }
+
     public void AddPassive(PassiveDef passive)
     {
         _passives.Add(passive);

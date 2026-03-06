@@ -20,8 +20,8 @@ public class ChainResolverTests
 
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
 
-        Assert.Single(state.ChainStack);
-        Assert.Equal(1, state.ChainStack[0].ChainLevel);
+        state.ChainStack.Should().ContainSingle();
+        state.ChainStack[0].ChainLevel.Should().Be(1);
     }
 
     [Fact]
@@ -32,13 +32,13 @@ public class ChainResolverTests
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "reactive" });
 
-        Assert.Equal(2, state.ChainStack.Count);
-        Assert.Equal(1, state.ChainStack[0].ChainLevel);
-        Assert.Equal(2, state.ChainStack[1].ChainLevel);
+        state.ChainStack.Should().HaveCount(2);
+        state.ChainStack[0].ChainLevel.Should().Be(1);
+        state.ChainStack[1].ChainLevel.Should().Be(2);
     }
 
     /// <summary>
-    /// Rulebook: 最大チェーン数 = 3
+    /// 最大チェーン数 = 3
     /// </summary>
     [Fact]
     public void PushToChain_MaxChainLevel_Throws()
@@ -51,11 +51,11 @@ public class ChainResolverTests
 
         var ex = Assert.Throws<GameRuleException>(() =>
             ChainResolver.PushToChain(state, new ChainEntry { ActionType = "reactive" }));
-        Assert.Contains("chain stack full", ex.Message);
+        ex.Message.Should().Contain("chain stack full");
     }
 
     /// <summary>
-    /// Rulebook: リアクティブに対して、別のリアクティブをチェーンすることはできない
+    /// リアクティブに対して、別のリアクティブをチェーンすることはできない
     /// </summary>
     [Fact]
     public void PushToChain_ReactiveOnUnresolvedReactive_Throws()
@@ -67,7 +67,7 @@ public class ChainResolverTests
 
         var ex = Assert.Throws<GameRuleException>(() =>
             ChainResolver.PushToChain(state, new ChainEntry { ActionType = "reactive" }));
-        Assert.Contains("cannot chain reactive on unresolved reactive", ex.Message);
+        ex.Message.Should().Contain("cannot chain reactive on unresolved reactive");
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class ChainResolverTests
 
         // Should not throw — previous reactive is already resolved
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "activate" });
-        Assert.Equal(3, state.ChainStack.Count);
+        state.ChainStack.Should().HaveCount(3);
     }
 
     // ─── CanChainReactive ─────────────────────────────────────
@@ -92,7 +92,7 @@ public class ChainResolverTests
     public void CanChainReactive_EmptyChain_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState();
-        Assert.False(ChainResolver.CanChainReactive(state));
+        ChainResolver.CanChainReactive(state).Should().BeFalse();
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class ChainResolverTests
         var state = TestFactory.MakeGameState();
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
 
-        Assert.True(ChainResolver.CanChainReactive(state));
+        ChainResolver.CanChainReactive(state).Should().BeTrue();
     }
 
     [Fact]
@@ -111,7 +111,7 @@ public class ChainResolverTests
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "reactive" });
 
-        Assert.False(ChainResolver.CanChainReactive(state));
+        ChainResolver.CanChainReactive(state).Should().BeFalse();
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class ChainResolverTests
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "activate" });
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "activate" });
 
-        Assert.False(ChainResolver.CanChainReactive(state));
+        ChainResolver.CanChainReactive(state).Should().BeFalse();
     }
 
     // ─── IsChainActive ────────────────────────────────────────
@@ -131,7 +131,7 @@ public class ChainResolverTests
     public void IsChainActive_NoEntries_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState();
-        Assert.False(ChainResolver.IsChainActive(state));
+        ChainResolver.IsChainActive(state).Should().BeFalse();
     }
 
     [Fact]
@@ -140,7 +140,7 @@ public class ChainResolverTests
         var state = TestFactory.MakeGameState();
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
 
-        Assert.True(ChainResolver.IsChainActive(state));
+        ChainResolver.IsChainActive(state).Should().BeTrue();
     }
 
     [Fact]
@@ -150,7 +150,7 @@ public class ChainResolverTests
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
         state.ChainStack[0].Resolved = true;
 
-        Assert.False(ChainResolver.IsChainActive(state));
+        ChainResolver.IsChainActive(state).Should().BeFalse();
     }
 
     // ─── ChainActionToTrigger ─────────────────────────────────
@@ -161,6 +161,6 @@ public class ChainResolverTests
     [InlineData("unknown", TriggerType.Activate)]
     public void ChainActionToTrigger_MapsCorrectly(string action, TriggerType expected)
     {
-        Assert.Equal(expected, ChainResolver.ChainActionToTrigger(action));
+        ChainResolver.ChainActionToTrigger(action).Should().Be(expected);
     }
 }

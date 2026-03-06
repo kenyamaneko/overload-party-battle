@@ -18,19 +18,19 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_ZeroRaw_ReturnsZero()
     {
-        Assert.Equal(0, StatCalculator.EffectiveElasticBonus(0, 500));
+        StatCalculator.EffectiveElasticBonus(0, 500).Should().Be(0);
     }
 
     [Fact]
     public void EffectiveElasticBonus_ZeroScale_ReturnsRaw()
     {
-        Assert.Equal(100, StatCalculator.EffectiveElasticBonus(100, 0));
+        StatCalculator.EffectiveElasticBonus(100, 0).Should().Be(100);
     }
 
     [Fact]
     public void EffectiveElasticBonus_NegativeRaw_ReturnsNegative()
     {
-        Assert.Equal(-100, StatCalculator.EffectiveElasticBonus(-100, 500));
+        StatCalculator.EffectiveElasticBonus(-100, 500).Should().Be(-100);
     }
 
     /// <summary>
@@ -40,8 +40,7 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_RulebookExample_1Trigger()
     {
-        long result = StatCalculator.EffectiveElasticBonus(100, 500);
-        Assert.Equal(91, result);
+        StatCalculator.EffectiveElasticBonus(100, 500).Should().Be(91);
     }
 
     /// <summary>
@@ -50,8 +49,7 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_RulebookExample_5Triggers()
     {
-        long result = StatCalculator.EffectiveElasticBonus(500, 500);
-        Assert.Equal(346, result);
+        StatCalculator.EffectiveElasticBonus(500, 500).Should().Be(346);
     }
 
     /// <summary>
@@ -60,8 +58,7 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_RulebookExample_10Triggers()
     {
-        long result = StatCalculator.EffectiveElasticBonus(1000, 500);
-        Assert.Equal(549, result);
+        StatCalculator.EffectiveElasticBonus(1000, 500).Should().Be(549);
     }
 
     /// <summary>
@@ -70,8 +67,7 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_RulebookExample_20Triggers()
     {
-        long result = StatCalculator.EffectiveElasticBonus(2000, 500);
-        Assert.Equal(804, result);
+        StatCalculator.EffectiveElasticBonus(2000, 500).Should().Be(804);
     }
 
     // ─── CalculateEffectiveTP ─────────────────────────────────
@@ -85,8 +81,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, maxTP: 600, currentTP: 600);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(600, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(600);
     }
 
     /// <summary>
@@ -101,8 +96,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Medium);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(1400, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1400);
     }
 
     /// <summary>
@@ -117,8 +111,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Large);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(2100, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(2100);
     }
 
     /// <summary>
@@ -134,8 +127,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(900, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(900);
     }
 
     /// <summary>
@@ -151,8 +143,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.R);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(450, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(450);
     }
 
     /// <summary>
@@ -167,8 +158,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Medium, family: InstanceFamily.C);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(1800, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1800);
     }
 
     /// <summary>
@@ -184,9 +174,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 2, elasticBonus: 100, maxTP: 500, currentTP: 500);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        // 500 + 91 = 591
-        Assert.Equal(591, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(591); // 500 + 91
     }
 
     /// <summary>
@@ -201,8 +189,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 2, elasticBonus: 500, maxTP: 500, currentTP: 500);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(846, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(846);
     }
 
     /// <summary>
@@ -217,8 +204,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 100);
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(0, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(0);
     }
 
     /// <summary>
@@ -234,8 +220,7 @@ public class StatCalculatorTests
         var resource = TestFactory.MakeResource(cardId: 1);
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = "buff_tp", Value = 200 });
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(800, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(800);
     }
 
     /// <summary>
@@ -251,8 +236,7 @@ public class StatCalculatorTests
         var resource = TestFactory.MakeResource(cardId: 1);
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = "debuff_tp", Value = 700 });
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(0, tp);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(0);
     }
 
     // ─── CalculateEffectiveYield ──────────────────────────────
@@ -266,8 +250,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 100, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
 
-        long yield = StatCalculator.CalculateEffectiveYield(resource, field, cc);
-        Assert.Equal(400, yield);
+        StatCalculator.CalculateEffectiveYield(resource, field, cc).Should().Be(400);
     }
 
     [Fact]
@@ -279,8 +262,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1);
 
-        long yield = StatCalculator.CalculateEffectiveYield(resource, field, cc);
-        Assert.Equal(0, yield);
+        StatCalculator.CalculateEffectiveYield(resource, field, cc).Should().Be(0);
     }
 
     // ─── CalculateMaxAV ───────────────────────────────────────
@@ -300,8 +282,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: 1, rank: rank, family: family);
 
-        long av = StatCalculator.CalculateMaxAV(resource, cc);
-        Assert.Equal(expected, av);
+        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(expected);
     }
 
     /// <summary>
@@ -315,8 +296,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.R);
 
-        long av = StatCalculator.CalculateMaxAV(resource, cc);
-        Assert.Equal(2100, av);
+        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(2100);
     }
 
     /// <summary>
@@ -330,8 +310,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
 
-        long av = StatCalculator.CalculateMaxAV(resource, cc);
-        Assert.Equal(1050, av);
+        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(1050);
     }
 
     /// <summary>
@@ -345,8 +324,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
 
-        long av = StatCalculator.CalculateMaxAV(resource, cc);
-        Assert.Equal(1012, av);
+        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(1012);
     }
 
     // ─── ApplyElasticBonus ────────────────────────────────────
@@ -361,7 +339,7 @@ public class StatCalculatorTests
         var resource = TestFactory.MakeResource(cardId: 2, elasticBonus: 0);
         StatCalculator.ApplyElasticBonus(resource, card);
 
-        Assert.Equal(100, resource.ElasticBonus);
+        resource.ElasticBonus.Should().Be(100);
     }
 
     [Fact]
@@ -371,7 +349,7 @@ public class StatCalculatorTests
         var resource = TestFactory.MakeResource(cardId: 1, elasticBonus: 0);
         StatCalculator.ApplyElasticBonus(resource, card);
 
-        Assert.Equal(0, resource.ElasticBonus);
+        resource.ElasticBonus.Should().Be(0);
     }
 
     // ─── Truncate ─────────────────────────────────────────────
@@ -383,7 +361,7 @@ public class StatCalculatorTests
     [InlineData(-1.5, -1)]
     public void Truncate_TruncatesTowardsZero(double input, long expected)
     {
-        Assert.Equal(expected, StatCalculator.Truncate(input));
+        StatCalculator.Truncate(input).Should().Be(expected);
     }
 
     // ─── Platform bonus integration ───────────────────────────
@@ -408,8 +386,7 @@ public class StatCalculatorTests
         var resource = TestFactory.MakeResource(cardId: 1);
         field.Frontend[0] = resource;
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(750, tp); // 600 + 150
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(750); // 600 + 150
     }
 
     // ─── Attachment bonus integration ─────────────────────────
@@ -433,7 +410,6 @@ public class StatCalculatorTests
         resource.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = 300 });
         field.Frontend[0] = resource;
 
-        long tp = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        Assert.Equal(800, tp); // 600 + 200
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(800); // 600 + 200
     }
 }

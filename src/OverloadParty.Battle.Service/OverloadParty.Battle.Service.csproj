@@ -8,7 +8,6 @@
     <ProjectReference Include="..\OverloadParty.Battle.Models\OverloadParty.Battle.Models.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Engine\OverloadParty.Battle.Engine.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Npc\OverloadParty.Battle.Npc.csproj" />
-    <ProjectReference Include="..\OverloadParty.Battle.Matchmaking\OverloadParty.Battle.Matchmaking.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

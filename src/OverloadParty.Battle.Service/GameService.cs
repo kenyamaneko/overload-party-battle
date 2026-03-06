@@ -2,7 +2,6 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
-using OverloadParty.Battle.Matchmaking;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 
@@ -53,7 +52,6 @@ public class GameService
     private readonly IGameRepository _gameRepo;
     private readonly IDeckRepository _deckRepo;
     private readonly ICardCache _cardCache;
-    private readonly MatchQueue _queue;
     private readonly PlayerService? _playerService;
     private readonly ILogger<GameService> _logger;
 
@@ -77,7 +75,6 @@ public class GameService
         IGameRepository gameRepo,
         IDeckRepository deckRepo,
         ICardCache cardCache,
-        MatchQueue queue,
         ILogger<GameService> logger,
         PlayerService? playerService = null)
     {
@@ -85,7 +82,6 @@ public class GameService
         _gameRepo = gameRepo;
         _deckRepo = deckRepo;
         _cardCache = cardCache;
-        _queue = queue;
         _logger = logger;
         _playerService = playerService;
     }
@@ -96,36 +92,23 @@ public class GameService
     public void SetNpcAI(INpcStrategy ai) => _npcAI = ai;
 
     public void SetActionObserver(Action<string, string, Dictionary<string, object>?> obs) => _actionObserver = obs;
-    public void SetBattleEventObserver(Action<string, BattleEvent> obs) => _battleEventObserver = obs;
-
-    // ─── Matchmaking ────────────────────────────────────────────
-
-    public async Task JoinQueue(string playerID, long deckID, CancellationToken ct = default)
-    {
-        if (_playerService is not null)
-            await _playerService.CheckAndIncrementBattleCount(playerID, ct);
-        _queue.Join(playerID, deckID);
-    }
-
-    public void LeaveQueue(string playerID) => _queue.Leave(playerID);
-
     // ─── Game creation ──────────────────────────────────────────
 
     /// <summary>
-    /// Creates a new PvP game from a matchmaking result.
+    /// Creates a new PvP game from matchmaking parameters (now called by Gateway).
     /// </summary>
-    public async Task<Game> CreateGameFromMatch(MatchResult result, CancellationToken ct = default)
+    public async Task<Game> CreateGameFromMatch(string player1ID, long player1Deck, string player2ID, long player2Deck, CancellationToken ct = default)
     {
-        var deck1Cards = await _deckRepo.GetDeckCardNos(result.Player1ID, result.Player1Deck, ct);
-        var deck2Cards = await _deckRepo.GetDeckCardNos(result.Player2ID, result.Player2Deck, ct);
+        var deck1Cards = await _deckRepo.GetDeckCardNos(player1ID, player1Deck, ct);
+        var deck2Cards = await _deckRepo.GetDeckCardNos(player2ID, player2Deck, ct);
 
-        var deck1 = new DeckSnapshot { DeckID = result.Player1Deck.ToString(), Cards = deck1Cards };
-        var deck2 = new DeckSnapshot { DeckID = result.Player2Deck.ToString(), Cards = deck2Cards };
+        var deck1 = new DeckSnapshot { DeckID = player1Deck.ToString(), Cards = deck1Cards };
+        var deck2 = new DeckSnapshot { DeckID = player2Deck.ToString(), Cards = deck2Cards };
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
         var gameID = await _engine.CreateNewGame(
-            result.Player1ID, result.Player2ID, deck1, deck2, firstPlayer, ct);
+            player1ID, player2ID, deck1, deck2, firstPlayer, ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
@@ -219,6 +202,26 @@ public class GameService
     public Task<ClientGameState?> GetGameStateForPlayer(
         string gameID, string playerID, CancellationToken ct = default)
         => GetStateForPlayer(gameID, playerID, ct);
+
+    public async Task<TurnControls?> GetTurnControlsForPlayer(
+        string gameID, string playerID, CancellationToken ct = default)
+    {
+        var game = await _gameRepo.GetGame(gameID, ct);
+        if (game is null) return null;
+
+        var state = await _gameRepo.GetGameState(gameID, ct);
+        if (state is null) return null;
+
+        long playerNum;
+        if (playerID == game.Player1ID) playerNum = 1;
+        else if (playerID == game.Player2ID) playerNum = 2;
+        else return null;
+
+        if (state.ActivePlayer != playerNum) return null;
+
+        var hand = state.GetHand(playerNum);
+        return AvailableActions.ComputeTurnControls(state, hand);
+    }
 
     // ─── Post-game ──────────────────────────────────────────────
 
@@ -369,8 +372,8 @@ public class GameService
             var hand = state.GetHand(npcPlayerNum);
             var budget = state.GetBudget(npcPlayerNum);
             var insightPool = state.GetInsightPool(npcPlayerNum);
-            var available = AvailableActions.Compute(
-                state, game, npcPlayerNum,
+            var available = AvailableActions.GetAllAvailableActions(
+                state,
                 myField, oppField, hand, budget, insightPool,
                 _cardCache, _engine.EffectRegistry);
 

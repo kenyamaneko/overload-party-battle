@@ -63,9 +63,9 @@ public static class StatCalculator
         long tempDebuff = 0;
         foreach (var eff in instance.TemporaryEffects)
         {
-            if (eff.EffectType == "buff_tp")
+            if (eff.EffectType == EffectTypes.BuffTP)
                 tempBonus += eff.Value;
-            else if (eff.EffectType == "debuff_tp")
+            else if (eff.EffectType == EffectTypes.DebuffTP)
                 tempDebuff += eff.Value;
         }
 
@@ -116,9 +116,9 @@ public static class StatCalculator
         long tempDebuff = 0;
         foreach (var eff in instance.TemporaryEffects)
         {
-            if (eff.EffectType == "buff_yield")
+            if (eff.EffectType == EffectTypes.BuffYield)
                 tempBonus += eff.Value;
-            else if (eff.EffectType == "debuff_yield")
+            else if (eff.EffectType == EffectTypes.DebuffYield)
                 tempDebuff += eff.Value;
         }
 

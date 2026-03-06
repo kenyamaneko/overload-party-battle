@@ -18,10 +18,7 @@ public class FieldHelpersTests
         var res = TestFactory.MakeResource(instanceId: "inst_1");
         field.Frontend[1] = res;
 
-        var result = FieldHelpers.FindResourceByID(field, "inst_1");
-        Assert.NotNull(result);
-        Assert.Equal(Zone.Frontend, result.Value.Zone);
-        Assert.Same(res, result.Value.Resource);
+        FieldHelpers.FindResourceByID(field, "inst_1").Should().BeSameAs(res);
     }
 
     [Fact]
@@ -31,16 +28,41 @@ public class FieldHelpersTests
         var res = TestFactory.MakeResource(instanceId: "inst_2");
         field.Backend[2] = res;
 
-        var result = FieldHelpers.FindResourceByID(field, "inst_2");
-        Assert.NotNull(result);
-        Assert.Equal(Zone.Backend, result.Value.Zone);
+        FieldHelpers.FindResourceByID(field, "inst_2").Should().BeSameAs(res);
     }
 
     [Fact]
     public void FindResourceByID_NotFound_ReturnsNull()
     {
         var field = TestFactory.MakeField();
-        Assert.Null(FieldHelpers.FindResourceByID(field, "nonexistent"));
+        FieldHelpers.FindResourceByID(field, "nonexistent").Should().BeNull();
+    }
+
+    // ─── FindResourceZone ────────────────────────────────────
+
+    [Fact]
+    public void FindResourceZone_Frontend()
+    {
+        var field = TestFactory.MakeField();
+        field.Frontend[1] = TestFactory.MakeResource(instanceId: "inst_1");
+
+        FieldHelpers.FindResourceZone(field, "inst_1").Should().Be(Zone.Frontend);
+    }
+
+    [Fact]
+    public void FindResourceZone_Backend()
+    {
+        var field = TestFactory.MakeField();
+        field.Backend[2] = TestFactory.MakeResource(instanceId: "inst_2");
+
+        FieldHelpers.FindResourceZone(field, "inst_2").Should().Be(Zone.Backend);
+    }
+
+    [Fact]
+    public void FindResourceZone_NotFound_ReturnsNull()
+    {
+        var field = TestFactory.MakeField();
+        FieldHelpers.FindResourceZone(field, "nonexistent").Should().BeNull();
     }
 
     // ─── FindSupportByID ──────────────────────────────────────
@@ -52,21 +74,21 @@ public class FieldHelpersTests
         field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = 200 };
 
         var result = FieldHelpers.FindSupportByID(field, "sup_1");
-        Assert.NotNull(result);
-        Assert.Equal("sup_1", result.InstanceID);
+        result.Should().NotBeNull();
+        result!.InstanceID.Should().Be("sup_1");
     }
 
     [Fact]
     public void FindSupportByID_NotFound_ReturnsNull()
     {
         var field = TestFactory.MakeField();
-        Assert.Null(FieldHelpers.FindSupportByID(field, "nonexistent"));
+        FieldHelpers.FindSupportByID(field, "nonexistent").Should().BeNull();
     }
 
     // ─── HasFrontendResources ─────────────────────────────────
 
     /// <summary>
-    /// Rulebook §3: 裏向きカードは「いないものとみなす」
+    /// 裏向きカードは「いないものとみなす」
     /// Face-down cards don't count as frontend resources.
     /// </summary>
     [Fact]
@@ -75,7 +97,7 @@ public class FieldHelpersTests
         var field = TestFactory.MakeField();
         field.Frontend[0] = TestFactory.MakeResource(faceUp: false, deployLeft: 2);
 
-        Assert.False(FieldHelpers.HasFrontendResources(field));
+        FieldHelpers.HasFrontendResources(field).Should().BeFalse();
     }
 
     [Fact]
@@ -85,14 +107,14 @@ public class FieldHelpersTests
         field.Frontend[0] = TestFactory.MakeResource(faceUp: false);
         field.Frontend[1] = TestFactory.MakeResource(instanceId: "inst_2", faceUp: true);
 
-        Assert.True(FieldHelpers.HasFrontendResources(field));
+        FieldHelpers.HasFrontendResources(field).Should().BeTrue();
     }
 
     [Fact]
     public void HasFrontendResources_Empty_ReturnsFalse()
     {
         var field = TestFactory.MakeField();
-        Assert.False(FieldHelpers.HasFrontendResources(field));
+        FieldHelpers.HasFrontendResources(field).Should().BeFalse();
     }
 
     // ─── HasAnyActiveResources ────────────────────────────────
@@ -103,7 +125,7 @@ public class FieldHelpersTests
         var field = TestFactory.MakeField();
         field.Backend[0] = TestFactory.MakeResource(faceUp: true);
 
-        Assert.True(FieldHelpers.HasAnyActiveResources(field));
+        FieldHelpers.HasAnyActiveResources(field).Should().BeTrue();
     }
 
     [Fact]
@@ -113,7 +135,7 @@ public class FieldHelpersTests
         field.Frontend[0] = TestFactory.MakeResource(faceUp: false);
         field.Backend[0] = TestFactory.MakeResource(instanceId: "inst_2", faceUp: false);
 
-        Assert.False(FieldHelpers.HasAnyActiveResources(field));
+        FieldHelpers.HasAnyActiveResources(field).Should().BeFalse();
     }
 
     // ─── RemoveResourceFromField ──────────────────────────────
@@ -124,8 +146,8 @@ public class FieldHelpersTests
         var field = TestFactory.MakeField();
         field.Frontend[1] = TestFactory.MakeResource(instanceId: "inst_1");
 
-        Assert.True(FieldHelpers.RemoveResourceFromField(field, "inst_1"));
-        Assert.Null(field.Frontend[1]);
+        FieldHelpers.RemoveResourceFromField(field, "inst_1").Should().BeTrue();
+        field.Frontend[1].Should().BeNull();
     }
 
     [Fact]
@@ -134,15 +156,15 @@ public class FieldHelpersTests
         var field = TestFactory.MakeField();
         field.Backend[2] = TestFactory.MakeResource(instanceId: "inst_2");
 
-        Assert.True(FieldHelpers.RemoveResourceFromField(field, "inst_2"));
-        Assert.Null(field.Backend[2]);
+        FieldHelpers.RemoveResourceFromField(field, "inst_2").Should().BeTrue();
+        field.Backend[2].Should().BeNull();
     }
 
     [Fact]
     public void RemoveResourceFromField_NotFound_ReturnsFalse()
     {
         var field = TestFactory.MakeField();
-        Assert.False(FieldHelpers.RemoveResourceFromField(field, "nonexistent"));
+        FieldHelpers.RemoveResourceFromField(field, "nonexistent").Should().BeFalse();
     }
 
     // ─── AllFaceUpResources ───────────────────────────────────
@@ -157,12 +179,12 @@ public class FieldHelpersTests
         field.Backend[1] = TestFactory.MakeResource(instanceId: "fd_2", faceUp: false);
 
         var result = FieldHelpers.AllFaceUpResources(field).ToList();
-        Assert.Equal(2, result.Count);
-        Assert.Contains(result, r => r.InstanceID == "fu_1");
-        Assert.Contains(result, r => r.InstanceID == "fu_2");
+        result.Should().HaveCount(2);
+        result.Should().Contain(r => r.InstanceID == "fu_1");
+        result.Should().Contain(r => r.InstanceID == "fu_2");
     }
 
-    // ─── Zone eligibility (Rulebook §3) ──────────────────────
+    // ─── Zone eligibility ─────────────────────────────────────
 
     /// <summary>
     /// Frontend: Compute, Container, Orchestrator, Serverless, AI/ML, ObjectStorage
@@ -179,7 +201,7 @@ public class FieldHelpersTests
     [InlineData("Platform", false)]
     public void IsFrontendEligible_CorrectTypes(string cardType, bool expected)
     {
-        Assert.Equal(expected, FieldHelpers.IsFrontendEligible(cardType));
+        FieldHelpers.IsFrontendEligible(cardType).Should().Be(expected);
     }
 
     /// <summary>
@@ -190,12 +212,11 @@ public class FieldHelpersTests
     [InlineData("Database", true)]
     [InlineData("ObjectStorage", true)]
     [InlineData("CacheDB", true)]
-    [InlineData("Datawarehouse", true)]
     [InlineData("Platform", false)]
     [InlineData("Strategy", false)]
     public void IsBackendEligible_CorrectTypes(string cardType, bool expected)
     {
-        Assert.Equal(expected, FieldHelpers.IsBackendEligible(cardType));
+        FieldHelpers.IsBackendEligible(cardType).Should().Be(expected);
     }
 
     // ─── Card type classification ─────────────────────────────
@@ -209,18 +230,17 @@ public class FieldHelpersTests
     [InlineData("Database", false)]
     public void IsComputeType_Correct(string cardType, bool expected)
     {
-        Assert.Equal(expected, FieldHelpers.IsComputeType(cardType));
+        FieldHelpers.IsComputeType(cardType).Should().Be(expected);
     }
 
     [Theory]
     [InlineData("Database", true)]
     [InlineData("ObjectStorage", true)]
     [InlineData("CacheDB", true)]
-    [InlineData("Datawarehouse", true)]
     [InlineData("Compute", false)]
     public void IsDataType_Correct(string cardType, bool expected)
     {
-        Assert.Equal(expected, FieldHelpers.IsDataType(cardType));
+        FieldHelpers.IsDataType(cardType).Should().Be(expected);
     }
 
     [Theory]
@@ -230,7 +250,7 @@ public class FieldHelpersTests
     [InlineData("Platform", false)]
     public void IsImmediateType_Correct(string cardType, bool expected)
     {
-        Assert.Equal(expected, FieldHelpers.IsImmediateType(cardType));
+        FieldHelpers.IsImmediateType(cardType).Should().Be(expected);
     }
 
     // ─── CreateResourceInstance ───────────────────────────────
@@ -244,9 +264,9 @@ public class FieldHelpersTests
         var card = TestFactory.ServerlessCard();
         var res = FieldHelpers.CreateResourceInstance(card, "inst_1", 1);
 
-        Assert.True(res.FaceUp);
-        Assert.Equal(0, res.DeployingTurnsLeft);
-        Assert.Equal(Rank.Small, res.Rank);
+        res.FaceUp.Should().BeTrue();
+        res.DeployingTurnsLeft.Should().Be(0);
+        res.Rank.Should().Be(Rank.Small);
     }
 
     /// <summary>
@@ -258,9 +278,9 @@ public class FieldHelpersTests
         var card = TestFactory.ComputeCard(deployTurns: 1);
         var res = FieldHelpers.CreateResourceInstance(card, "inst_1", 3);
 
-        Assert.False(res.FaceUp);
-        Assert.Equal(1, res.DeployingTurnsLeft);
-        Assert.Equal(3, res.DeployedOnTurn);
+        res.FaceUp.Should().BeFalse();
+        res.DeployingTurnsLeft.Should().Be(1);
+        res.DeployedOnTurn.Should().Be(3);
     }
 
     [Fact]
@@ -269,10 +289,10 @@ public class FieldHelpersTests
         var card = TestFactory.ComputeCard(tp: 700, av: 1400);
         var res = FieldHelpers.CreateResourceInstance(card, "inst_1", 1);
 
-        Assert.Equal(700, res.MaxTP);
-        Assert.Equal(700, res.CurrentTP);
-        Assert.Equal(1400, res.MaxAV);
-        Assert.Equal(1400, res.CurrentAV);
+        res.MaxTP.Should().Be(700);
+        res.CurrentTP.Should().Be(700);
+        res.MaxAV.Should().Be(1400);
+        res.CurrentAV.Should().Be(1400);
     }
 
     [Fact]
@@ -281,10 +301,10 @@ public class FieldHelpersTests
         var card = TestFactory.DataCard(yield: 500, av: 800);
         var res = FieldHelpers.CreateResourceInstance(card, "inst_1", 1);
 
-        Assert.Equal(500, res.MaxYield);
-        Assert.Equal(500, res.CurrentYield);
-        Assert.Equal(800, res.MaxAV);
-        Assert.Equal(800, res.CurrentAV);
+        res.MaxYield.Should().Be(500);
+        res.CurrentYield.Should().Be(500);
+        res.MaxAV.Should().Be(800);
+        res.CurrentAV.Should().Be(800);
     }
 
     // ─── AddToTrash ───────────────────────────────────────────
@@ -295,19 +315,19 @@ public class FieldHelpersTests
         var state = TestFactory.MakeGameState();
 
         FieldHelpers.AddToTrash(state, 1, 42, "inst_42");
-        Assert.Single(state.Player1Trash);
-        Assert.Equal(42, state.Player1Trash[0].CardID);
-        Assert.Empty(state.Player2Trash);
+        state.Player1Trash.Should().ContainSingle()
+            .Which.CardID.Should().Be(42);
+        state.Player2Trash.Should().BeEmpty();
     }
 
-    // ─── 3 slots per zone (Rulebook §3) ──────────────────────
+    // ─── 3 slots per zone ─────────────────────────────────────
 
     [Fact]
     public void Field_HasThreeSlotsPerZone()
     {
         var field = TestFactory.MakeField();
-        Assert.Equal(3, field.Frontend.Length);
-        Assert.Equal(3, field.Backend.Length);
-        Assert.Equal(3, field.Support.Length);
+        field.Frontend.Length.Should().Be(3);
+        field.Backend.Length.Should().Be(3);
+        field.Support.Length.Should().Be(3);
     }
 }

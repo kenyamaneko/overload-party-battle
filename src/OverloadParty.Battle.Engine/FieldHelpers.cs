@@ -8,16 +8,21 @@ namespace OverloadParty.Battle.Engine;
 public static class FieldHelpers
 {
     /// <summary>
-    /// Find a resource on the field by InstanceID. Returns (resource, zone) or null.
+    /// Find a resource on the field by InstanceID.
     /// </summary>
-    public static (ResourceInstance Resource, Zone Zone)? FindResourceByID(Field field, string instanceID)
+    public static ResourceInstance? FindResourceByID(Field field, string instanceID)
     {
-        var fr = field.Frontend.FirstOrDefault(r => r.InstanceID == instanceID);
-        if (fr is not null) return (fr, Zone.Frontend);
+        return field.Frontend.FirstOrDefault(r => r.InstanceID == instanceID)
+            ?? field.Backend.FirstOrDefault(r => r.InstanceID == instanceID);
+    }
 
-        var br = field.Backend.FirstOrDefault(r => r.InstanceID == instanceID);
-        if (br is not null) return (br, Zone.Backend);
-
+    /// <summary>
+    /// Find the zone (Frontend/Backend) of a resource by InstanceID.
+    /// </summary>
+    public static Zone? FindResourceZone(Field field, string instanceID)
+    {
+        if (field.Frontend.Any(r => r.InstanceID == instanceID)) return Zone.Frontend;
+        if (field.Backend.Any(r => r.InstanceID == instanceID)) return Zone.Backend;
         return null;
     }
 
@@ -91,7 +96,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsFrontendEligible(string cardType)
     {
-        return cardType is "Compute" or "Container" or "Orchestrator" or "Serverless" or "AI/ML" or "ObjectStorage";
+        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl or CardTypes.ObjectStorage;
     }
 
     /// <summary>
@@ -99,8 +104,8 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsBackendEligible(string cardType)
     {
-        return cardType is "Compute" or "Container" or "Orchestrator" or "Serverless" or "AI/ML"
-            or "Database" or "ObjectStorage" or "CacheDB" or "Datawarehouse";
+        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl
+            or CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
     }
 
     /// <summary>
@@ -108,7 +113,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsSupportType(string cardType)
     {
-        return cardType is "Platform" or "Reactive" or "Strategy" or "Incident" or "Attachment";
+        return cardType is CardTypes.Platform or CardTypes.Reactive or CardTypes.Strategy or CardTypes.Incident or CardTypes.Attachment;
     }
 
     /// <summary>
@@ -116,7 +121,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsImmediateType(string cardType)
     {
-        return cardType is "Strategy" or "Incident";
+        return cardType is CardTypes.Strategy or CardTypes.Incident;
     }
 
     /// <summary>
@@ -124,7 +129,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsComputeType(string cardType)
     {
-        return cardType is "Compute" or "Container" or "Orchestrator" or "Serverless" or "AI/ML";
+        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl;
     }
 
     /// <summary>
@@ -132,7 +137,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsDataType(string cardType)
     {
-        return cardType is "Database" or "ObjectStorage" or "CacheDB" or "Datawarehouse";
+        return cardType is CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
     }
 
     /// <summary>
@@ -186,11 +191,11 @@ public static class FieldHelpers
         if (destroyed.MigrationTarget is null) return;
 
         // Find the target and clear its MigratingFrom
-        var targetResult = FindResourceByID(field, destroyed.MigrationTarget);
-        if (targetResult is { } t)
+        var target = FindResourceByID(field, destroyed.MigrationTarget);
+        if (target is not null)
         {
-            t.Resource.MigratingFrom = null;
-            t.Resource.MigratingOnTurn = 0;
+            target.MigratingFrom = null;
+            target.MigratingOnTurn = 0;
         }
     }
 }

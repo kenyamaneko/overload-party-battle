@@ -16,10 +16,10 @@ public static class ActivateEffectProcessor
         var field = state.GetField(playerNum);
 
         // Try to find as resource first
-        var resourceResult = FieldHelpers.FindResourceByID(field, req.InstanceID);
-        if (resourceResult is not null)
+        var resource = FieldHelpers.FindResourceByID(field, req.InstanceID);
+        if (resource is not null)
         {
-            return ActivateResourceEffect(state, game, playerNum, resourceResult.Value, req, cc, effects);
+            return ActivateResourceEffect(state, game, playerNum, resource, req, cc, effects);
         }
 
         // Try support zone
@@ -34,39 +34,18 @@ public static class ActivateEffectProcessor
 
     private static ActionResult ActivateResourceEffect(
         GameState state, Game game, long playerNum,
-        (ResourceInstance Resource, Zone Zone) found,
+        ResourceInstance source,
         ActivateEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
-        var source = found.Resource;
-        var card = cc.MustGet(source.CardID);
-
-        if (!effects.Has(card.CardNo, TriggerType.Activate))
-            throw new GameRuleException($"card {card.CardNo} has no activate effect");
-
-        if (source.EffectUsedThisTurn)
-            throw new GameRuleException("effect already used this turn");
-
-        if (FieldHelpers.HasTemporaryEffect(source, "cannot_operate"))
-            throw new GameRuleException("resource cannot operate");
+        var card = ValidateResourceActivation(source, cc, effects);
 
         // Find target if specified
         ResourceInstance? target = null;
         if (req.TargetInstanceID is { } targetId)
         {
-            // Search own field first
-            var ownResult = FieldHelpers.FindResourceByID(state.GetField(playerNum), targetId);
-            if (ownResult is not null)
-            {
-                target = ownResult.Value.Resource;
-            }
-            else
-            {
-                // Search opponent field
-                var oppResult = FieldHelpers.FindResourceByID(
-                    state.GetField(state.OpponentOf(playerNum)), targetId);
-                if (oppResult is not null)
-                    target = oppResult.Value.Resource;
-            }
+            // Search own field first, then opponent field
+            target = FieldHelpers.FindResourceByID(state.GetField(playerNum), targetId)
+                  ?? FieldHelpers.FindResourceByID(state.GetField(state.OpponentOf(playerNum)), targetId);
         }
 
         var handler = effects.Get(card.CardNo, TriggerType.Activate)!;
@@ -89,7 +68,7 @@ public static class ActivateEffectProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = "activate_effect",
+            EventType = WireActionTypes.ActivateEffect,
             PlayerID = playerId,
             EventData = new Dictionary<string, object>
             {
@@ -131,7 +110,7 @@ public static class ActivateEffectProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = "activate_effect",
+            EventType = WireActionTypes.ActivateEffect,
             PlayerID = playerId,
             EventData = new Dictionary<string, object>
             {
@@ -141,5 +120,20 @@ public static class ActivateEffectProcessor
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
+    }
+
+    private static CardDefinition ValidateResourceActivation(
+        ResourceInstance source, ICardCache cc, IEffectRegistry effects)
+    {
+        var card = cc.MustGet(source.CardID);
+
+        if (!effects.Has(card.CardNo, TriggerType.Activate))
+            throw new GameRuleException($"card {card.CardNo} has no activate effect");
+        if (source.EffectUsedThisTurn)
+            throw new GameRuleException("effect already used this turn");
+        if (FieldHelpers.HasTemporaryEffect(source, EffectTypes.CannotOperate))
+            throw new GameRuleException("resource cannot operate");
+
+        return card;
     }
 }

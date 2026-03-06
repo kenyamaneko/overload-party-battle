@@ -5,7 +5,6 @@
     <ProjectReference Include="..\OverloadParty.Battle.Engine\OverloadParty.Battle.Engine.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Service\OverloadParty.Battle.Service.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Data\OverloadParty.Battle.Data.csproj" />
-    <ProjectReference Include="..\OverloadParty.Battle.Matchmaking\OverloadParty.Battle.Matchmaking.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Npc\OverloadParty.Battle.Npc.csproj" />
   </ItemGroup>
 

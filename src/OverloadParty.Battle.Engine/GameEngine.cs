@@ -189,8 +189,8 @@ public class GameEngine
         long budget = state.GetBudget(playerNum);
         long insightPool = state.GetInsightPool(playerNum);
 
-        return AvailableActions.Compute(
-            state, game, playerNum, myField, oppField, hand, budget, insightPool, _cardCache, _effects);
+        return AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, hand, budget, insightPool, _cardCache, _effects);
     }
 
     /// <summary>

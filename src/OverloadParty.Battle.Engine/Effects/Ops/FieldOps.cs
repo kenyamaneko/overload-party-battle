@@ -97,7 +97,7 @@ public class DestroyPlatformOp : IEffectOp
         var target = oppField.Support.FirstOrDefault(s =>
         {
             var card = ctx.CardCache.Get(s.CardID);
-            if (card?.CardType != "Platform") return false;
+            if (card?.CardType != CardTypes.Platform) return false;
             return instanceId is null || s.InstanceID == instanceId;
         });
 

@@ -46,15 +46,13 @@ public class ByChoiceSelector : ISelector
         if (instanceId is null) return [];
 
         var field = Owner == "opponent" ? ctx.OpponentField : ctx.MyField;
-        var result = FieldHelpers.FindResourceByID(field, instanceId);
-        if (result is null) return [];
-
-        var resource = result.Value.Resource;
+        var resource = FieldHelpers.FindResourceByID(field, instanceId);
+        if (resource is null) return [];
 
         // Apply filters
         if (Zone is { } z)
         {
-            var actualZone = result.Value.Zone.ToWireString();
+            var actualZone = FieldHelpers.FindResourceZone(field, instanceId)?.ToWireString();
             if (actualZone != z) return [];
         }
 

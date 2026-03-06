@@ -2,7 +2,7 @@
 
 クラウドインフラをテーマにしたカードゲーム「Overload Party」のバトルサーバー。
 
-ASP.NET Core + WebSocket で構築。ゲームエンジン・エフェクトシステム・NPC AI を含む。
+ASP.NET Core によるゲームエンジン API バックエンド。エフェクトシステム・NPC AIを含むステートレスな対戦ロジックを提供します。
 
 ## 必要環境
 
@@ -32,8 +32,7 @@ src/
 ├── OverloadParty.Battle.Npc/           # NPC AI（ルールベース + 陣営別戦略）
 ├── OverloadParty.Battle.Data/          # リポジトリ（Dapper / Mock）
 ├── OverloadParty.Battle.Service/       # サービス層（ゲーム操作ファサード）
-├── OverloadParty.Battle.Matchmaking/   # マッチメイキング（FIFO キュー）
-└── OverloadParty.Battle.Server/        # ASP.NET Core エントリポイント + WebSocket
+└── OverloadParty.Battle.Server/        # ASP.NET Core エントリポイント (REST API)
 tests/
 └── OverloadParty.Battle.Tests/         # xUnit テスト
 ```
@@ -41,7 +40,7 @@ tests/
 ## アーキテクチャ
 
 ```
-Server (ASP.NET, WebSocket)
+Server (ASP.NET REST API)
     ↓
 Service (ゲーム操作ファサード)
     ↓
@@ -72,5 +71,4 @@ Engine / Effects / NPC は NuGet パッケージに依存せず、`System.*` の
 - DB 不要（in-memory mock リポジトリ）
 - Firebase 不要（`dev-token-{uid}` 形式のトークンで認証）
 - NPC 対戦が即時プレイ可能
-- WebSocket: `ws://localhost:9002/ws?token=dev-token-player1`
-- REST: `/api/dev/cards`, `/api/dev/status`, `/health`
+- REST: `/api/v1/games/npc`, `/api/v1/games/{id}/actions`, `/health` 等

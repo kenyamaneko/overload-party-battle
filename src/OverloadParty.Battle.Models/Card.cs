@@ -31,17 +31,17 @@ public class CardDefinition
     /// <summary>
     /// Returns whether this card type falls under the Compute category.
     /// </summary>
-    public bool IsComputeType => CardType is "Compute" or "Container" or "Orchestrator" or "Serverless" or "AI/ML";
+    public bool IsComputeType => CardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl;
 
     /// <summary>
     /// Returns whether this card type falls under the Data category.
     /// </summary>
-    public bool IsDataType => CardType is "Database" or "ObjectStorage" or "CacheDB" or "Datawarehouse";
+    public bool IsDataType => CardType is CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
 
     /// <summary>
     /// Returns whether this card type falls under the Support category.
     /// </summary>
-    public bool IsSupportType => CardType is "Platform" or "Attachment" or "Strategy" or "Reactive" or "Incident";
+    public bool IsSupportType => CardType is CardTypes.Platform or CardTypes.Attachment or CardTypes.Strategy or CardTypes.Reactive or CardTypes.Incident;
 
     /// <summary>
     /// Base throughput from stats. Returns 0 for non-compute cards.

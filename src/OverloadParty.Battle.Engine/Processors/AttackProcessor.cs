@@ -13,49 +13,18 @@ public static class AttackProcessor
         var opponentNum = state.OpponentOf(playerNum);
         var oppField = state.GetField(opponentNum);
 
-        // Find and validate attacker
-        var attackerResult = FieldHelpers.FindResourceByID(myField, req.AttackerInstanceID);
-        if (attackerResult is null)
-            throw new GameRuleException($"attacker {req.AttackerInstanceID} not found on field");
-
-        var (attacker, attackerZone) = attackerResult.Value;
-        if (attackerZone != Zone.Frontend)
-            throw new GameRuleException("attacker must be on frontend");
-
-        var attackerCard = cc.MustGet(attacker.CardID);
-        if (!attackerCard.IsComputeType)
-            throw new GameRuleException("only compute resources can attack");
-        if (!attacker.FaceUp)
-            throw new GameRuleException("attacker must be face-up");
-        if (attacker.HasAttacked)
-            throw new GameRuleException("attacker has already attacked this turn");
-        if (FieldHelpers.HasTemporaryEffect(attacker, "cannot_operate"))
-            throw new GameRuleException("attacker cannot operate");
-
-        // Find and validate defender
-        var defenderResult = FieldHelpers.FindResourceByID(oppField, req.TargetInstanceID);
-        if (defenderResult is null)
-            throw new GameRuleException($"defender {req.TargetInstanceID} not found on opponent field");
-
-        var (defender, defenderZone) = defenderResult.Value;
-        if (!defender.FaceUp)
-            throw new GameRuleException("cannot attack face-down resource");
-
-        // Targeting rules: can't attack backend if opponent has frontend resources
-        if (defenderZone == Zone.Backend && FieldHelpers.HasFrontendResources(oppField))
-            throw new GameRuleException("cannot attack backend while opponent has frontend resources");
+        var (attacker, attackerCard) = ValidateAttacker(myField, req.AttackerInstanceID, cc);
+        var defender = ValidateDefender(oppField, req.TargetInstanceID);
 
         // Calculate damage
         long damage = StatCalculator.CalculateEffectiveTP(attacker, myField, cc);
 
         var events = new List<GameEvent>();
-        bool cancelled = false;
 
         // Fire reactive effects (opponent's support zone)
-        var (reactCancelled, reactiveEvents) = FireReactives(
+        var (cancelled, reactiveEvents) = FireReactives(
             state, game, opponentNum, oppField, attacker, defender, cc, effects);
         events.AddRange(reactiveEvents);
-        cancelled = reactCancelled;
 
         var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
 
@@ -66,7 +35,7 @@ public static class AttackProcessor
             events.Add(new GameEvent
             {
                 GameID = game.GameID,
-                EventType = "attack",
+                EventType = WireActionTypes.Attack,
                 PlayerID = playerId,
                 EventData = new Dictionary<string, object>
                 {
@@ -142,7 +111,7 @@ public static class AttackProcessor
         events.Add(new GameEvent
         {
             GameID = game.GameID,
-            EventType = "attack",
+            EventType = WireActionTypes.Attack,
             PlayerID = playerId,
             EventData = new Dictionary<string, object>
             {
@@ -155,6 +124,43 @@ public static class AttackProcessor
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
+    }
+
+    private static (ResourceInstance Attacker, CardDefinition Card) ValidateAttacker(
+        Field field, string instanceId, ICardCache cc)
+    {
+        var attacker = FieldHelpers.FindResourceByID(field, instanceId)
+            ?? throw new GameRuleException($"attacker {instanceId} not found on field");
+
+        if (FieldHelpers.FindResourceZone(field, instanceId) != Zone.Frontend)
+            throw new GameRuleException("attacker must be on frontend");
+
+        var card = cc.MustGet(attacker.CardID);
+        if (!card.IsComputeType)
+            throw new GameRuleException("only compute resources can attack");
+        if (!attacker.FaceUp)
+            throw new GameRuleException("attacker must be face-up");
+        if (attacker.HasAttacked)
+            throw new GameRuleException("attacker has already attacked this turn");
+        if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate))
+            throw new GameRuleException("attacker cannot operate");
+
+        return (attacker, card);
+    }
+
+    private static ResourceInstance ValidateDefender(Field oppField, string instanceId)
+    {
+        var defender = FieldHelpers.FindResourceByID(oppField, instanceId)
+            ?? throw new GameRuleException($"defender {instanceId} not found on opponent field");
+
+        if (!defender.FaceUp)
+            throw new GameRuleException("cannot attack face-down resource");
+
+        if (FieldHelpers.FindResourceZone(oppField, instanceId) == Zone.Backend
+            && FieldHelpers.HasFrontendResources(oppField))
+            throw new GameRuleException("cannot attack backend while opponent has frontend resources");
+
+        return defender;
     }
 
     private static (bool Cancelled, List<GameEvent> Events) FireReactives(

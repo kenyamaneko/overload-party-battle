@@ -29,7 +29,7 @@ public static class ActionFilter
             z = FirstWithPrefix(available, "backend_");
             if (z is not null) return z;
         }
-        else if (cardDef.CardType == "ObjectStorage")
+        else if (cardDef.CardType == CardTypes.ObjectStorage)
         {
             var z = FirstWithPrefix(available, "backend_");
             if (z is not null) return z;

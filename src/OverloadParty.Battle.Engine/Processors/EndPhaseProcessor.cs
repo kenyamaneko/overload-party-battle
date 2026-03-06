@@ -27,7 +27,7 @@ public static class EndPhaseProcessor
                 events.Add(new GameEvent
                 {
                     GameID = game.GameID,
-                    EventType = "phase_change",
+                    EventType = WireActionTypes.PhaseChange,
                     PlayerID = playerId,
                     EventData = new Dictionary<string, object>
                     {
@@ -63,7 +63,7 @@ public static class EndPhaseProcessor
             events.Add(new GameEvent
             {
                 GameID = game.GameID,
-                EventType = "phase_end",
+                EventType = WireActionTypes.PhaseEnd,
                 PlayerID = playerId,
                 EventData = new Dictionary<string, object>
                 {
@@ -106,7 +106,7 @@ public static class EndPhaseProcessor
         return new GameEvent
         {
             GameID = gameID,
-            EventType = "turn_end",
+            EventType = WireActionTypes.TurnEnd,
             PlayerID = playerId,
             EventData = new Dictionary<string, object>
             {

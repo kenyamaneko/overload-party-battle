@@ -17,17 +17,17 @@ public class EffectRegistryTests
         registry.Register(1, TriggerType.Deploy, _ => { called = true; return new EffectResult(); });
 
         var handler = registry.Get(1, TriggerType.Deploy);
-        Assert.NotNull(handler);
+        handler.Should().NotBeNull();
 
-        handler(null!); // just to verify it's callable
-        Assert.True(called);
+        handler!(null!); // just to verify it's callable
+        called.Should().BeTrue();
     }
 
     [Fact]
     public void Get_Unregistered_ReturnsNull()
     {
         var registry = new EffectRegistry();
-        Assert.Null(registry.Get(999, TriggerType.Deploy));
+        registry.Get(999, TriggerType.Deploy).Should().BeNull();
     }
 
     [Fact]
@@ -36,14 +36,14 @@ public class EffectRegistryTests
         var registry = new EffectRegistry();
         registry.Register(1, TriggerType.Activate, _ => new EffectResult());
 
-        Assert.True(registry.Has(1, TriggerType.Activate));
+        registry.Has(1, TriggerType.Activate).Should().BeTrue();
     }
 
     [Fact]
     public void Has_Unregistered_ReturnsFalse()
     {
         var registry = new EffectRegistry();
-        Assert.False(registry.Has(1, TriggerType.Activate));
+        registry.Has(1, TriggerType.Activate).Should().BeFalse();
     }
 
     [Fact]
@@ -54,9 +54,9 @@ public class EffectRegistryTests
         registry.RegisterComposed(42, TriggerType.Deploy, ops);
 
         var reg = registry.GetRegistration(42, TriggerType.Deploy);
-        Assert.NotNull(reg);
-        Assert.NotNull(reg.Ops);
-        Assert.Single(reg.Ops);
+        reg.Should().NotBeNull();
+        reg!.Ops.Should().NotBeNull();
+        reg.Ops.Should().ContainSingle();
     }
 
     [Fact]
@@ -68,9 +68,9 @@ public class EffectRegistryTests
             new DrawCardsOp(1));
 
         var info = registry.GetEffectInfo(42, TriggerType.Deploy);
-        Assert.NotNull(info);
-        Assert.True(info.HasCategory(EffectCategory.BudgetGain));
-        Assert.True(info.HasCategory(EffectCategory.Draw));
+        info.Should().NotBeNull();
+        info!.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
+        info.HasCategory(EffectCategory.Draw).Should().BeTrue();
     }
 
     [Fact]
@@ -79,8 +79,7 @@ public class EffectRegistryTests
         var registry = new EffectRegistry();
         registry.Register(42, TriggerType.Deploy, _ => new EffectResult());
 
-        var info = registry.GetEffectInfo(42, TriggerType.Deploy);
-        Assert.Null(info);
+        registry.GetEffectInfo(42, TriggerType.Deploy).Should().BeNull();
     }
 
     [Fact]
@@ -95,10 +94,10 @@ public class EffectRegistryTests
         registry.RegisterComposed(7, TriggerType.Activate, new BranchOnChoiceOp(branches));
 
         var options = registry.GetChoiceOptions(7, TriggerType.Activate);
-        Assert.NotNull(options);
-        Assert.Equal(2, options.Count);
-        Assert.Contains("use", options);
-        Assert.Contains("redis", options);
+        options.Should().NotBeNull();
+        options.Should().HaveCount(2);
+        options.Should().Contain("use");
+        options.Should().Contain("redis");
     }
 
     [Fact]
@@ -108,8 +107,7 @@ public class EffectRegistryTests
         registry.RegisterComposed(42, TriggerType.Deploy,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)));
 
-        var options = registry.GetChoiceOptions(42, TriggerType.Deploy);
-        Assert.Null(options);
+        registry.GetChoiceOptions(42, TriggerType.Deploy).Should().BeNull();
     }
 
     [Fact]
@@ -121,9 +119,9 @@ public class EffectRegistryTests
         registry.Register(3, TriggerType.Activate, _ => new EffectResult());
 
         var nos = registry.CardNosForTrigger(TriggerType.Deploy);
-        Assert.Equal(2, nos.Count);
-        Assert.Contains(1, nos);
-        Assert.Contains(2, nos);
+        nos.Should().HaveCount(2);
+        nos.Should().Contain(1);
+        nos.Should().Contain(2);
     }
 
     [Fact]
@@ -133,21 +131,20 @@ public class EffectRegistryTests
         registry.AddPassive(new PassiveDef { CardNo = 10, PassiveType = "tp_bonus", Value = 200 });
         registry.AddPassive(new PassiveDef { CardNo = 11, PassiveType = "yield_bonus", Value = 100 });
 
-        Assert.Equal(2, registry.PassiveCount);
-        var passives = registry.GetPassives();
-        Assert.Equal(2, passives.Count);
+        registry.PassiveCount.Should().Be(2);
+        registry.GetPassives().Should().HaveCount(2);
     }
 
     [Fact]
     public void RegistrationCount_TracksHandlers()
     {
         var registry = new EffectRegistry();
-        Assert.Equal(0, registry.RegistrationCount);
+        registry.RegistrationCount.Should().Be(0);
 
         registry.Register(1, TriggerType.Deploy, _ => new EffectResult());
         registry.Register(1, TriggerType.Activate, _ => new EffectResult());
 
-        Assert.Equal(2, registry.RegistrationCount);
+        registry.RegistrationCount.Should().Be(2);
     }
 
     /// <summary>
@@ -162,6 +159,6 @@ public class EffectRegistryTests
 
         var handler = registry.Get(1, TriggerType.Deploy)!;
         var result = handler(null!);
-        Assert.True(result.CancelAction);
+        result.CancelAction.Should().BeTrue();
     }
 }

@@ -2,7 +2,6 @@
   <Folder Name="/src/">
     <Project Path="src/OverloadParty.Battle.Data/OverloadParty.Battle.Data.csproj" />
     <Project Path="src/OverloadParty.Battle.Engine/OverloadParty.Battle.Engine.csproj" />
-    <Project Path="src/OverloadParty.Battle.Matchmaking/OverloadParty.Battle.Matchmaking.csproj" />
     <Project Path="src/OverloadParty.Battle.Models/OverloadParty.Battle.Models.csproj" />
     <Project Path="src/OverloadParty.Battle.Npc/OverloadParty.Battle.Npc.csproj" />
     <Project Path="src/OverloadParty.Battle.Server/OverloadParty.Battle.Server.csproj" />

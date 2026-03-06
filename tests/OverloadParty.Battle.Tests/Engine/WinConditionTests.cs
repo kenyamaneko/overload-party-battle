@@ -23,9 +23,9 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(2, winner);
-        Assert.Equal("budget_zero", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(2);
+        reason.Should().Be("budget_zero");
     }
 
     [Fact]
@@ -36,9 +36,9 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(1, winner);
-        Assert.Equal("budget_zero", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(1);
+        reason.Should().Be("budget_zero");
     }
 
     [Fact]
@@ -50,9 +50,9 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(2, winner);
-        Assert.Equal("budget_zero", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(2);
+        reason.Should().Be("budget_zero");
     }
 
     // ─── System Down ──────────────────────────────────────────
@@ -69,13 +69,13 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(2, winner);
-        Assert.Equal("system_down", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(2);
+        reason.Should().Be("system_down");
     }
 
     /// <summary>
-    /// Rulebook: 稼働実績フラグが true のプレイヤーにのみ適用
+    /// 稼働実績フラグが true のプレイヤーにのみ適用
     /// Never-deployed player should not trigger system down.
     /// </summary>
     [Fact]
@@ -88,7 +88,7 @@ public class WinConditionTests
         state.Player1Field.HasHadActiveResource = false;
 
         var (_, _, gameOver) = WinConditionChecker.Check(state, game);
-        Assert.False(gameOver);
+        gameOver.Should().BeFalse();
     }
 
     [Fact]
@@ -98,13 +98,13 @@ public class WinConditionTests
         state.Player1Field.HasHadActiveResource = true;
         state.Player1Field.Backend[0] = TestFactory.MakeResource(faceUp: true);
 
-        Assert.False(WinConditionChecker.IsSystemDown(state, 1));
+        WinConditionChecker.IsSystemDown(state, 1).Should().BeFalse();
     }
 
     // ─── Turn Limit ───────────────────────────────────────────
 
     /// <summary>
-    /// Rulebook: T30 → Budget 多い方が勝利
+    /// T30 → Budget 多い方が勝利
     /// </summary>
     [Fact]
     public void Check_TurnLimit_HigherBudgetWins()
@@ -114,9 +114,9 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(1, winner);
-        Assert.Equal("turn_limit", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(1);
+        reason.Should().Be("turn_limit");
     }
 
     [Fact]
@@ -127,13 +127,13 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(2, winner);
-        Assert.Equal("turn_limit", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(2);
+        reason.Should().Be("turn_limit");
     }
 
     /// <summary>
-    /// Rulebook: 同額なら引き分け
+    /// 同額なら引き分け
     /// </summary>
     [Fact]
     public void Check_TurnLimit_EqualBudget_Draw()
@@ -143,9 +143,9 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(0, winner);
-        Assert.Equal("draw", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(0);
+        reason.Should().Be("draw");
     }
 
     [Fact]
@@ -155,7 +155,7 @@ public class WinConditionTests
         var game = TestFactory.MakeGame();
 
         var (_, _, gameOver) = WinConditionChecker.Check(state, game);
-        Assert.False(gameOver);
+        gameOver.Should().BeFalse();
     }
 
     // ─── Timeout ──────────────────────────────────────────────
@@ -169,9 +169,9 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(2, winner);
-        Assert.Equal("timeout", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(2);
+        reason.Should().Be("timeout");
     }
 
     [Fact]
@@ -183,15 +183,15 @@ public class WinConditionTests
 
         var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
 
-        Assert.True(gameOver);
-        Assert.Equal(1, winner);
-        Assert.Equal("timeout", reason);
+        gameOver.Should().BeTrue();
+        winner.Should().Be(1);
+        reason.Should().Be("timeout");
     }
 
     // ─── Launch Failure ───────────────────────────────────────
 
     /// <summary>
-    /// Rulebook: 自分の3ターン目（先攻T5、後攻T6）のエンドフェーズ終了時に
+    /// 自分の3ターン目（先攻T5、後攻T6）のエンドフェーズ終了時に
     /// 一度も表向きリソースが存在しなかった場合に敗北。
     /// personalTurn = (currentTurn + 1) / 2
     /// Turn 5 → personalTurn = 3 (先攻)
@@ -202,7 +202,7 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(turn: 5);
         state.Player1Field.HasHadActiveResource = false;
 
-        Assert.True(WinConditionChecker.CheckLaunchFailure(state, 1));
+        WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeTrue();
     }
 
     /// <summary>
@@ -214,7 +214,7 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(turn: 6);
         state.Player2Field.HasHadActiveResource = false;
 
-        Assert.True(WinConditionChecker.CheckLaunchFailure(state, 2));
+        WinConditionChecker.CheckLaunchFailure(state, 2).Should().BeTrue();
     }
 
     [Fact]
@@ -223,7 +223,7 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(turn: 3); // personalTurn = 2
         state.Player1Field.HasHadActiveResource = false;
 
-        Assert.False(WinConditionChecker.CheckLaunchFailure(state, 1));
+        WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeFalse();
     }
 
     [Fact]
@@ -232,7 +232,7 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(turn: 5);
         state.Player1Field.HasHadActiveResource = true;
 
-        Assert.False(WinConditionChecker.CheckLaunchFailure(state, 1));
+        WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeFalse();
     }
 
     // ─── Priority: Budget checked before SystemDown ───────────
@@ -246,7 +246,7 @@ public class WinConditionTests
         var game = TestFactory.MakeGame();
 
         var (_, reason, _) = WinConditionChecker.Check(state, game);
-        Assert.Equal("budget_zero", reason);
+        reason.Should().Be("budget_zero");
     }
 
     // ─── No win condition ─────────────────────────────────────
@@ -262,6 +262,6 @@ public class WinConditionTests
         var game = TestFactory.MakeGame();
 
         var (_, _, gameOver) = WinConditionChecker.Check(state, game);
-        Assert.False(gameOver);
+        gameOver.Should().BeFalse();
     }
 }

@@ -22,27 +22,7 @@ public static class DistributeYieldProcessor
 
         foreach (var dist in req.Distributions)
         {
-            if (dist.Amount <= 0)
-                throw new GameRuleException("distribution amount must be positive");
-
-            var result = FieldHelpers.FindResourceByID(field, dist.InstanceID);
-            if (result is null)
-                throw new GameRuleException($"resource {dist.InstanceID} not found");
-
-            var (resource, zone) = result.Value;
-            if (zone != Zone.Backend)
-                throw new GameRuleException("can only distribute yield from backend resources");
-
-            var card = cc.MustGet(resource.CardID);
-            if (!card.IsComputeType)
-                throw new GameRuleException("can only distribute yield from compute resources");
-
-            // Throughput limit
-            long effectiveTP = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-            long remaining = effectiveTP - resource.MonetizedAmount;
-
-            if (dist.Amount > remaining)
-                throw new GameRuleException($"distribution amount {dist.Amount} exceeds remaining capacity {remaining}");
+            var (resource, card) = ValidateDistribution(field, dist, cc);
 
             resource.MonetizedAmount += dist.Amount;
             totalDistributed += dist.Amount;
@@ -66,7 +46,7 @@ public static class DistributeYieldProcessor
                 new GameEvent
                 {
                     GameID = game.GameID,
-                    EventType = "distribute_yield",
+                    EventType = WireActionTypes.DistributeYield,
                     PlayerID = playerId,
                     EventData = new Dictionary<string, object>
                     {
@@ -76,5 +56,29 @@ public static class DistributeYieldProcessor
             ],
             StateUpdated = true,
         };
+    }
+
+    private static (ResourceInstance Resource, CardDefinition Card) ValidateDistribution(
+        Field field, YieldDistribution dist, ICardCache cc)
+    {
+        if (dist.Amount <= 0)
+            throw new GameRuleException("distribution amount must be positive");
+
+        var resource = FieldHelpers.FindResourceByID(field, dist.InstanceID)
+            ?? throw new GameRuleException($"resource {dist.InstanceID} not found");
+
+        if (FieldHelpers.FindResourceZone(field, dist.InstanceID) != Zone.Backend)
+            throw new GameRuleException("can only distribute yield from backend resources");
+
+        var card = cc.MustGet(resource.CardID);
+        if (!card.IsComputeType)
+            throw new GameRuleException("can only distribute yield from compute resources");
+
+        long effectiveTP = StatCalculator.CalculateEffectiveTP(resource, field, cc);
+        long remaining = effectiveTP - resource.MonetizedAmount;
+        if (dist.Amount > remaining)
+            throw new GameRuleException($"distribution amount {dist.Amount} exceeds remaining capacity {remaining}");
+
+        return (resource, card);
     }
 }

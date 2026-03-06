@@ -183,11 +183,11 @@ public static class TurnManager
             if (state.CurrentTurn - resource.MigratingOnTurn < 2) continue;
 
             // Find and remove the source resource
-            var sourceResult = FieldHelpers.FindResourceByID(field, sourceID);
-            if (sourceResult is { } src)
+            var src = FieldHelpers.FindResourceByID(field, sourceID);
+            if (src is not null)
             {
                 FieldHelpers.RemoveResourceFromField(field, sourceID);
-                FieldHelpers.AddToTrash(state, playerNum, src.Resource.CardID, sourceID);
+                FieldHelpers.AddToTrash(state, playerNum, src.CardID, sourceID);
             }
 
             completions.Add((sourceID, resource.InstanceID, resource.CardID));

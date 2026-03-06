@@ -10,38 +10,7 @@ public static class MigrateProcessor
     {
         var field = state.GetField(playerNum);
 
-        // Find source and target
-        var sourceResult = FieldHelpers.FindResourceByID(field, req.SourceInstanceID);
-        if (sourceResult is null)
-            throw new GameRuleException($"source {req.SourceInstanceID} not found");
-
-        var targetResult = FieldHelpers.FindResourceByID(field, req.TargetInstanceID);
-        if (targetResult is null)
-            throw new GameRuleException($"target {req.TargetInstanceID} not found");
-
-        var source = sourceResult.Value.Resource;
-        var target = targetResult.Value.Resource;
-
-        // Validations
-        if (!source.FaceUp)
-            throw new GameRuleException("source must be face-up");
-        if (!target.FaceUp)
-            throw new GameRuleException("target must be face-up");
-
-        if (source.MigrationTarget is not null)
-            throw new GameRuleException("source is already migrating");
-        if (source.MigratingFrom is not null)
-            throw new GameRuleException("source is already a migration destination");
-        if (target.MigratingFrom is not null)
-            throw new GameRuleException("target is already a migration destination");
-        if (target.MigrationTarget is not null)
-            throw new GameRuleException("target is already migrating");
-
-        // Deploy turns validation: target must be >= source
-        var sourceCard = cc.MustGet(source.CardID);
-        var targetCard = cc.MustGet(target.CardID);
-        if (targetCard.DeployTurns < sourceCard.DeployTurns)
-            throw new GameRuleException("target deploy turns must be >= source deploy turns");
+        var (source, target) = ValidateMigration(field, req, cc);
 
         // Set migration relationship
         target.MigratingFrom = source.InstanceID;
@@ -56,7 +25,7 @@ public static class MigrateProcessor
                 new GameEvent
                 {
                     GameID = game.GameID,
-                    EventType = "migrate",
+                    EventType = WireActionTypes.Migrate,
                     PlayerID = playerId,
                     EventData = new Dictionary<string, object>
                     {
@@ -69,5 +38,34 @@ public static class MigrateProcessor
             ],
             StateUpdated = true,
         };
+    }
+
+    private static (ResourceInstance Source, ResourceInstance Target) ValidateMigration(
+        Field field, MigrateRequest req, ICardCache cc)
+    {
+        var source = FieldHelpers.FindResourceByID(field, req.SourceInstanceID)
+            ?? throw new GameRuleException($"source {req.SourceInstanceID} not found");
+        var target = FieldHelpers.FindResourceByID(field, req.TargetInstanceID)
+            ?? throw new GameRuleException($"target {req.TargetInstanceID} not found");
+
+        if (!source.FaceUp)
+            throw new GameRuleException("source must be face-up");
+        if (!target.FaceUp)
+            throw new GameRuleException("target must be face-up");
+        if (source.MigrationTarget is not null)
+            throw new GameRuleException("source is already migrating");
+        if (source.MigratingFrom is not null)
+            throw new GameRuleException("source is already a migration destination");
+        if (target.MigratingFrom is not null)
+            throw new GameRuleException("target is already a migration destination");
+        if (target.MigrationTarget is not null)
+            throw new GameRuleException("target is already migrating");
+
+        var sourceCard = cc.MustGet(source.CardID);
+        var targetCard = cc.MustGet(target.CardID);
+        if (targetCard.DeployTurns < sourceCard.DeployTurns)
+            throw new GameRuleException("target deploy turns must be >= source deploy turns");
+
+        return (source, target);
     }
 }

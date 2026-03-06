@@ -21,11 +21,11 @@ public static class PlayCardProcessor
         var cardDef = cc.MustGet(handCard.CardID);
 
         // Incident 1-per-turn limit
-        if (cardDef.CardType == "Incident" && field.IncidentPlayedThisTurn)
+        if (cardDef.CardType == CardTypes.Incident && field.IncidentPlayedThisTurn)
             throw new GameRuleException("incident already played this turn");
 
         // Attachment flow
-        if (cardDef.CardType == "Attachment")
+        if (cardDef.CardType == CardTypes.Attachment)
             return ProcessAttachCard(state, game, playerNum, hand, handIdx, handCard, cardDef, req, cc, effects);
 
         // Validate position
@@ -44,7 +44,7 @@ public static class PlayCardProcessor
             {
                 InstanceID = state.NextInstanceID(),
                 CardID = cardDef.CardNo,
-                FaceDown = cardDef.CardType == "Reactive",
+                FaceDown = cardDef.CardType == CardTypes.Reactive,
                 DeployingTurnsLeft = cardDef.DeployTurns,
                 DeployOrder = deployOrder,
             };
@@ -54,7 +54,7 @@ public static class PlayCardProcessor
             // Immediate cards (Strategy, Incident): execute and remove
             if (FieldHelpers.IsImmediateType(cardDef.CardType))
             {
-                if (cardDef.CardType == "Incident")
+                if (cardDef.CardType == CardTypes.Incident)
                     field.IncidentPlayedThisTurn = true;
 
                 // Fire activate trigger
@@ -131,7 +131,7 @@ public static class PlayCardProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = "play_card",
+            EventType = WireActionTypes.PlayCard,
             PlayerID = playerId,
             EventData = new Dictionary<string, object>
             {
@@ -154,11 +154,8 @@ public static class PlayCardProcessor
             throw new GameRuleException("attachment requires target instance ID");
 
         var field = state.GetField(playerNum);
-        var targetResult = FieldHelpers.FindResourceByID(field, req.TargetInstanceID);
-        if (targetResult is null)
-            throw new GameRuleException($"target resource {req.TargetInstanceID} not found");
-
-        var target = targetResult.Value.Resource;
+        var target = FieldHelpers.FindResourceByID(field, req.TargetInstanceID)
+            ?? throw new GameRuleException($"target resource {req.TargetInstanceID} not found");
         if (target.Attachments.Count >= GameConstants.MaxAttachments)
             throw new GameRuleException($"target already has max attachments ({GameConstants.MaxAttachments})");
 
@@ -197,7 +194,7 @@ public static class PlayCardProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = "attach_card",
+            EventType = WireActionTypes.AttachCard,
             PlayerID = playerId,
             EventData = new Dictionary<string, object>
             {

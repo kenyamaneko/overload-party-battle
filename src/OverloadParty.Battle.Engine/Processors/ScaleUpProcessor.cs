@@ -10,11 +10,8 @@ public static class ScaleUpProcessor
     {
         var field = state.GetField(playerNum);
 
-        var result = FieldHelpers.FindResourceByID(field, req.InstanceID);
-        if (result is null)
-            throw new GameRuleException($"resource {req.InstanceID} not found");
-
-        var resource = result.Value.Resource;
+        var resource = FieldHelpers.FindResourceByID(field, req.InstanceID)
+            ?? throw new GameRuleException($"resource {req.InstanceID} not found");
         var card = cc.MustGet(resource.CardID);
 
         if (!card.Resizable)
@@ -61,7 +58,7 @@ public static class ScaleUpProcessor
         var evt = new GameEvent
         {
             GameID = game.GameID,
-            EventType = "scale_up",
+            EventType = WireActionTypes.ScaleUp,
             PlayerID = playerId,
             EventData = new Dictionary<string, object>
             {

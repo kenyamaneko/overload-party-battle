@@ -1,0 +1,1745 @@
+using System.Linq;
+using OverloadParty.Battle.Engine;
+using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Effects.Ops;
+using OverloadParty.Battle.Models;
+
+namespace OverloadParty.Battle.Tests.Engine;
+
+public class AvailableActionsTests
+{
+    // ═══════════════════════════════════════════════════════════════
+    //  Phase gating — Main vs Battle
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void MainPhase_ReturnsPlayScaleDistributeActivateMigrateActions()
+    {
+        var cc = new TestCardCache();
+        var compute = TestFactory.ComputeCard(cardNo: 1);
+        var db = TestFactory.DataCard(cardNo: 100);
+        cc.Add(compute);
+        cc.Add(db);
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 5000);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = 1 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 100, cc, null);
+
+        // Main phase should include play_card, scale_up, distribute_yield, migrate
+        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard);
+        actions.Should().Contain(a => a.Type == WireActionTypes.ScaleUp);
+        actions.Should().Contain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().Contain(a => a.Type == WireActionTypes.Migrate);
+        // Main phase should NOT include attack
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+    }
+
+    [Fact]
+    public void BattlePhase_ReturnsAttackAndActivateOnly()
+    {
+        var cc = new TestCardCache();
+        var compute = TestFactory.ComputeCard(cardNo: 1);
+        cc.Add(compute);
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, p1Budget: 5000);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.Attack);
+        // Battle phase should NOT include play_card, scale_up, distribute_yield, migrate
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  PlayCard — ゾーン配置ルール
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void PlayCard_ComputeCanGoToFrontendAndBackend()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = 1 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    [Fact]
+    public void PlayCard_DatabaseCanOnlyGoToBackend()
+    {
+        // Database は Backend のみ
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardNo: 100, cardType: CardTypes.Database));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_db", CardID = 100 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_db");
+        playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    [Fact]
+    public void PlayCard_CacheDBCanOnlyGoToBackend()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardNo: 101, cardType: CardTypes.CacheDB));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_cache", CardID = 101 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_cache");
+        playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    [Fact]
+    public void PlayCard_ObjectStorageCanGoToFrontendAndBackend()
+    {
+        // ObjectStorage は Frontend / Backend 両方
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardNo: 102, cardType: CardTypes.ObjectStorage));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_os", CardID = 102 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_os");
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    [Fact]
+    public void PlayCard_AiMlCanGoToFrontendAndBackend()
+    {
+        // AI/ML は Frontend / Backend 両方
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 5, cardType: CardTypes.AiMl, deployTurns: 0));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_ai", CardID = 5 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_ai");
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    [Fact]
+    public void PlayCard_StrategyGoesToSupportZone()
+    {
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 50, CardName = "S", CardType = CardTypes.Strategy });
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_s", CardID = 50 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
+        playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
+    }
+
+    [Fact]
+    public void PlayCard_ReactiveGoesToSupportZone()
+    {
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 51, CardName = "R", CardType = CardTypes.Reactive });
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_r", CardID = 51 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_r");
+        playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
+    }
+
+    [Fact]
+    public void PlayCard_PlatformGoesToSupportZone()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.PlatformCard(cardNo: 200));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_p", CardID = 200 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_p");
+        playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
+    }
+
+    // ─── PlayCard: slot capacity ────────────────────────────────
+
+    [Fact]
+    public void PlayCard_ExcludedWhenAllSlotsOccupied()
+    {
+        // 各ゾーン上限3体、スロットが埋まっていれば配置不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        // Fill all frontend and backend slots
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_0");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+        myField.Frontend[2] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_2");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_0");
+        myField.Backend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+        myField.Backend[2] = TestFactory.MakeResource(cardId: 1, instanceId: "be_2");
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = 1 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+    }
+
+    [Fact]
+    public void PlayCard_SupportExcludedWhenAllSupportSlotsOccupied()
+    {
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 50, CardName = "S", CardType = CardTypes.Strategy });
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Support[0] = new SupportInstance { InstanceID = "s_0", CardID = 200 };
+        myField.Support[1] = new SupportInstance { InstanceID = "s_1", CardID = 200 };
+        myField.Support[2] = new SupportInstance { InstanceID = "s_2", CardID = 200 };
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_s", CardID = 50 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
+    }
+
+    [Fact]
+    public void PlayCard_OnlyOffersEmptySlots()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_0");
+        // Frontend slots 1,2 are empty; all backend slots are empty
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = 1 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+        playAction.ValidZones.Should().NotContain(z => z == "frontend_0");
+        playAction.ValidZones.Should().Contain(z => z == "frontend_1");
+        playAction.ValidZones.Should().Contain(z => z == "frontend_2");
+    }
+
+    // ─── PlayCard: Incident rules ───────────────────────────────
+
+    [Fact]
+    public void PlayCard_IncidentExcludedOnFirstTurn()
+    {
+        // 先攻T1ではインシデント使用不可
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 60, CardName = "I", CardType = CardTypes.Incident });
+
+        var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_i", CardID = 60 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_i");
+    }
+
+    [Fact]
+    public void PlayCard_IncidentAllowedOnLaterTurns()
+    {
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 60, CardName = "I", CardType = CardTypes.Incident });
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_i", CardID = 60 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_i");
+    }
+
+    [Fact]
+    public void PlayCard_IncidentExcludedWhenAlreadyPlayedThisTurn()
+    {
+        // インシデントは1ターン1枚まで
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 60, CardName = "I", CardType = CardTypes.Incident });
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.IncidentPlayedThisTurn = true;
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_i", CardID = 60 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_i");
+    }
+
+    // ─── PlayCard: Attachment ───────────────────────────────────
+
+    [Fact]
+    public void PlayCard_AttachmentTargetsFaceUpResources()
+    {
+        // Attachment はリソースに装備。ValidTargets を返す
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+        cc.Add(TestFactory.AttachmentCard(cardNo: 300));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_att", CardID = 300 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
+        playAction.ValidTargets.Should().Contain(t => t == "fe_1");
+        playAction.ValidZones.Should().BeNull();
+    }
+
+    [Fact]
+    public void PlayCard_AttachmentExcludesResourcesAtMaxAttachments()
+    {
+        // 各Resource のアタッチメントスロットは2つ。上限なら装備不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+        cc.Add(TestFactory.AttachmentCard(cardNo: 300));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var res = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+        res.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = 300 });
+        res.Attachments.Add(new AttachmentRef { InstanceID = "att_2", CardID = 300 });
+        myField.Frontend[0] = res;
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_att", CardID = 300 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        // No valid targets → no play action
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
+    }
+
+    [Fact]
+    public void PlayCard_AttachmentExcludesFaceDownResources()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+        cc.Add(TestFactory.AttachmentCard(cardNo: 300));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1", faceUp: false);
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_att", CardID = 300 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
+    }
+
+    [Fact]
+    public void PlayCard_EmptyHandReturnsNoPlayActions()
+    {
+        var cc = new TestCardCache();
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  ScaleUp — ランクアップルール
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void ScaleUp_ResizableSmallOffersmedium()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: true));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1", rank: Rank.Small);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        var scaleAction = actions.Single(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1");
+        scaleAction.TargetRank.Should().Be("medium");
+        scaleAction.NeedsFamily.Should().BeTrue(); // Instance Family 選択が必要
+    }
+
+    [Fact]
+    public void ScaleUp_ResizableMediumOffersLarge()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: true));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(
+            cardId: 1, instanceId: "fe_1", rank: Rank.Medium, family: InstanceFamily.M);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        var scaleAction = actions.Single(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1");
+        scaleAction.TargetRank.Should().Be("large");
+        scaleAction.NeedsFamily.Should().BeFalse(); // Medium→Large では不要
+    }
+
+    [Fact]
+    public void ScaleUp_ResizableLargeCannotScaleUp()
+    {
+        // large が最大ランク
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: true));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(
+            cardId: 1, instanceId: "fe_1", rank: Rank.Large, family: InstanceFamily.M);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1");
+    }
+
+    [Fact]
+    public void ScaleUp_NonResizableExcluded()
+    {
+        // Resizable でないカードはスケールアップ不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: false));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
+    }
+
+    [Fact]
+    public void ScaleUp_ElasticOnlyExcluded()
+    {
+        // Elastic-only カード（Resizable=false）は手動スケールアップ不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ElasticContainerCard(cardNo: 2));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 2, instanceId: "fe_2");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
+    }
+
+    [Fact]
+    public void ScaleUp_FaceDownResourceExcluded()
+    {
+        // 裏向きカードは「いないものとみなす」
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: true));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1", faceUp: false);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Attack — バトルルール
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void Attack_FrontendComputeCanAttack()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        var attack = actions.Single(a => a.Type == WireActionTypes.Attack);
+        attack.SourceInstanceID.Should().Be("my_1");
+        attack.ValidTargets.Should().Contain(t => t == "opp_1");
+    }
+
+    [Fact]
+    public void Attack_BackendResourceCannotAttack()
+    {
+        // バックエンドのリソースは攻撃できない
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+    }
+
+    [Fact]
+    public void Attack_FrontendObjectStorageCannotAttack()
+    {
+        // Object Storage をフロントエンドに置いた場合、攻撃できない
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardNo: 102, cardType: CardTypes.ObjectStorage));
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(
+            cardId: 102, instanceId: "os_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack && a.SourceInstanceID == "os_1");
+    }
+
+    [Fact]
+    public void Attack_AlreadyAttackedExcluded()
+    {
+        // 1ターンに1回攻撃
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+        attacker.HasAttacked = true;
+        myField.Frontend[0] = attacker;
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+    }
+
+    [Fact]
+    public void Attack_CannotOperateExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+        attacker.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.CannotOperate });
+        myField.Frontend[0] = attacker;
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+    }
+
+    [Fact]
+    public void Attack_FaceDownTargetsExcluded()
+    {
+        // 裏向きカードは攻撃対象にできない
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1", faceUp: false);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        // No face-up targets → no attack actions
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+    }
+
+    [Fact]
+    public void Attack_CanTargetBackendWhenNoFrontendFaceUp()
+    {
+        // フロントエンドに表向きリソースが0体ならバックエンドを攻撃可能
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+
+        var oppField = TestFactory.MakeField();
+        // Only face-down in frontend
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_fe", faceUp: false);
+        oppField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_be");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        var attack = actions.Single(a => a.Type == WireActionTypes.Attack);
+        attack.ValidTargets.Should().Contain(t => t == "opp_be");
+        attack.ValidTargets.Should().NotContain(t => t == "opp_fe");
+    }
+
+    [Fact]
+    public void Attack_CannotTargetBackendWhenFrontendHasFaceUp()
+    {
+        // フロントエンドに表向きリソースがいればバックエンドは攻撃不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_fe");
+        oppField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_be");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        var attack = actions.Single(a => a.Type == WireActionTypes.Attack);
+        attack.ValidTargets.Should().Contain(t => t == "opp_fe");
+        attack.ValidTargets.Should().NotContain(t => t == "opp_be");
+    }
+
+    [Fact]
+    public void Attack_MigratingResourceCannotAttack()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+        attacker.MigrationTarget = "some_target";
+        myField.Frontend[0] = attacker;
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+    }
+
+    [Fact]
+    public void Attack_FaceDownAttackerExcluded()
+    {
+        // 裏向きカードは攻撃できない
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "my_1", faceUp: false);
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  DistributeYield — 収益化ルール
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void DistributeYield_BackendComputeIncluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.DistributeYield && a.SourceInstanceID == "be_1");
+    }
+
+    [Fact]
+    public void DistributeYield_FrontendComputeExcluded()
+    {
+        // フロントエンドの Compute は収益化できない
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+    }
+
+    [Fact]
+    public void DistributeYield_BackendDatabaseExcluded()
+    {
+        // 収益化はComputeのみ。DatabaseはInsight生成源だがBudget変換はしない
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardNo: 100));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Backend[0] = TestFactory.MakeResource(
+            cardId: 100, instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+    }
+
+    [Fact]
+    public void DistributeYield_ExcludedOnFirstTurn()
+    {
+        // 先攻T1では収益化をスキップ
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
+
+        var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+    }
+
+    [Fact]
+    public void DistributeYield_ExcludedWhenInsightPoolZero()
+    {
+        // InsightプールからInsightを消費して変換。0なら変換不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+    }
+
+    [Fact]
+    public void DistributeYield_RemainingCapacityBasedOnTP()
+    {
+        // 各カードの変換上限 = スループット値
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var res = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+        res.MonetizedAmount = 200; // 既に200使用
+        myField.Backend[0] = res;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
+
+        var yieldAction = actions.Single(a => a.Type == WireActionTypes.DistributeYield);
+        yieldAction.RemainingCapacity.Should().Be(400); // 600 - 200 = 400
+    }
+
+    [Fact]
+    public void DistributeYield_ExcludedWhenCapacityFull()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var res = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+        res.MonetizedAmount = 600; // 全容量使用済み
+        myField.Backend[0] = res;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+    }
+
+    [Fact]
+    public void DistributeYield_MigratingResourceExcluded()
+    {
+        // マイグレーション中のリソースはロック状態（収益化不可）
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var res = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+        res.MigratingFrom = "some_source";
+        myField.Backend[0] = res;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  ActivateEffect — 効果発動ルール
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void ActivateEffect_ResourceWithEffectIncluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 10));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(10, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 10, instanceId: "res_10");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_10");
+    }
+
+    [Fact]
+    public void ActivateEffect_ResourceWithoutEffectExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var registry = new EffectRegistry();
+        // No effect registered for card 1
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+    }
+
+    [Fact]
+    public void ActivateEffect_EffectUsedThisTurnExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 10));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(10, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var res = TestFactory.MakeResource(cardId: 10, instanceId: "res_10");
+        res.EffectUsedThisTurn = true;
+        myField.Frontend[0] = res;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+    }
+
+    [Fact]
+    public void ActivateEffect_CannotOperateExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 10));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(10, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var res = TestFactory.MakeResource(cardId: 10, instanceId: "res_10");
+        res.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.CannotOperate });
+        myField.Frontend[0] = res;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+    }
+
+    [Fact]
+    public void ActivateEffect_MigratingResourceExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 10));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(10, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var res = TestFactory.MakeResource(cardId: 10, instanceId: "res_10");
+        res.MigrationTarget = "some_target";
+        myField.Frontend[0] = res;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+    }
+
+    [Fact]
+    public void ActivateEffect_SupportWithEffectIncluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.PlatformCard(cardNo: 200));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(200, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Support[0] = new SupportInstance
+        {
+            InstanceID = "sup_1", CardID = 200, DeployingTurnsLeft = 0
+        };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "sup_1");
+    }
+
+    [Fact]
+    public void ActivateEffect_DeployingSupportExcluded()
+    {
+        // デプロイ中のカードは稼働していない
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.PlatformCard(cardNo: 200));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(200, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Support[0] = new SupportInstance
+        {
+            InstanceID = "sup_1", CardID = 200, DeployingTurnsLeft = 1
+        };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+    }
+
+    [Fact]
+    public void ActivateEffect_SupportEffectUsedThisTurnExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.PlatformCard(cardNo: 200));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(200, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Support[0] = new SupportInstance
+        {
+            InstanceID = "sup_1", CardID = 200, DeployingTurnsLeft = 0, EffectUsedThisTurn = true
+        };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+    }
+
+    [Fact]
+    public void ActivateEffect_AvailableInBattlePhase()
+    {
+        // エフェクト発動はバトルフェーズでも可能
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 10));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(10, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 10, instanceId: "res_10");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_10");
+    }
+
+    // ─── ActivateEffect: budget filtering (既存テスト) ───────────
+
+    [Fact]
+    public void ActivateEffect_ExcludedWhenBudgetBelowMinimum()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 10, tp: 600, av: 1400));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(10, TriggerType.Activate,
+            new RequireBudgetOp(400),
+            new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 300);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 10, instanceId: "res_10");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 300, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_10");
+    }
+
+    [Fact]
+    public void ActivateEffect_IncludedWhenBudgetMeetsMinimum()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 10, tp: 600, av: 1400));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(10, TriggerType.Activate,
+            new RequireBudgetOp(400),
+            new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 500);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 10, instanceId: "res_10");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 500, 0, cc, registry);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_10");
+    }
+
+    [Fact]
+    public void ActivateEffect_ExcludedWhenBudgetExceedsMaximum()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 120, tp: 600, av: 1400));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(120, TriggerType.Activate,
+            new RequireMaxBudgetOp(1000),
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(900)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 1500);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 120, instanceId: "res_120");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 1500, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_120");
+    }
+
+    [Fact]
+    public void ActivateEffect_IncludedWhenBudgetWithinMaximum()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 120, tp: 600, av: 1400));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(120, TriggerType.Activate,
+            new RequireMaxBudgetOp(1000),
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(900)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 800);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 120, instanceId: "res_120");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 800, 0, cc, registry);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_120");
+    }
+
+    [Fact]
+    public void ActivateEffect_IncludedWhenNoBudgetRequirement()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 30, tp: 600, av: 1400));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(30, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 0);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 30, instanceId: "res_30");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 0, 0, cc, registry);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_30");
+    }
+
+    // ─── PlayCard: budget filtering for Strategy/Incident ───────
+
+    [Fact]
+    public void PlayStrategy_ExcludedWhenBudgetInsufficient()
+    {
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 50, CardName = "S", CardType = CardTypes.Strategy });
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(50, TriggerType.Activate,
+            new RequireBudgetOp(500),
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 200);
+        var hand = new List<HandCard> { new() { InstanceID = "hand_50", CardID = 50 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 200, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "hand_50");
+    }
+
+    [Fact]
+    public void PlayStrategy_IncludedWhenBudgetSufficient()
+    {
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 50, CardName = "S", CardType = CardTypes.Strategy });
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(50, TriggerType.Activate,
+            new RequireBudgetOp(500),
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 600);
+        var hand = new List<HandCard> { new() { InstanceID = "hand_50", CardID = 50 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 600, 0, cc, registry);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "hand_50");
+    }
+
+    [Fact]
+    public void PlayIncident_ExcludedWhenBudgetInsufficient()
+    {
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition { CardNo = 60, CardName = "I", CardType = CardTypes.Incident });
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(60, TriggerType.Activate,
+            new RequireBudgetOp(300),
+            new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 100);
+        var hand = new List<HandCard> { new() { InstanceID = "hand_60", CardID = 60 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 100, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "hand_60");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Migrate — マイグレーションルール
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void Migrate_FaceUpResourcesCanMigrate()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 1));
+        cc.Add(TestFactory.ComputeCard(cardNo: 2, deployTurns: 1, name: "Compute2"));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "res_1");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: 2, instanceId: "res_2");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_1");
+        actions.Should().Contain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_2");
+    }
+
+    [Fact]
+    public void Migrate_TargetDeployTurnsMustBeGreaterOrEqual()
+    {
+        // 新リソースのデプロイターン >= 旧リソースのデプロイターン
+        var cc = new TestCardCache();
+        var orchestrator = TestFactory.ComputeCard(cardNo: 4, cardType: CardTypes.Orchestrator, deployTurns: 2);
+        var serverless = TestFactory.ServerlessCard(cardNo: 3); // deployTurns: 0
+        cc.Add(orchestrator);
+        cc.Add(serverless);
+
+        var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 4, instanceId: "orch_1");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: 3, instanceId: "sless_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        // Orchestrator (DT=2) can migrate to Orchestrator (DT=2) — equal is OK, but can't migrate to itself
+        // Serverless (DT=0) → Orchestrator (DT=2): OK (target >= source)
+        var serverlessMigrate = actions.FirstOrDefault(
+            a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "sless_1");
+        serverlessMigrate.Should().NotBeNull();
+        serverlessMigrate!.ValidTargets.Should().Contain(t => t == "orch_1");
+
+        // Orchestrator (DT=2) → Serverless (DT=0): NG (target < source)
+        var orchMigrate = actions.FirstOrDefault(
+            a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "orch_1");
+        if (orchMigrate is not null)
+            orchMigrate.ValidTargets.Should().NotContain(t => t == "sless_1");
+    }
+
+    [Fact]
+    public void Migrate_FaceDownResourcesExcluded()
+    {
+        // 表向き（稼働中）であること
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "res_1", faceUp: false);
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "res_2");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        // Face-down resource is not a source
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_1");
+        // Face-down resource is not a valid target
+        var migrate = actions.FirstOrDefault(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_2");
+        if (migrate is not null)
+            migrate.ValidTargets.Should().NotContain(t => t == "res_1");
+    }
+
+    [Fact]
+    public void Migrate_AlreadyMigratingExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var res1 = TestFactory.MakeResource(cardId: 1, instanceId: "res_1");
+        res1.MigrationTarget = "res_2";
+        myField.Frontend[0] = res1;
+
+        var res2 = TestFactory.MakeResource(cardId: 1, instanceId: "res_2");
+        res2.MigratingFrom = "res_1";
+        myField.Frontend[1] = res2;
+
+        myField.Frontend[2] = TestFactory.MakeResource(cardId: 1, instanceId: "res_3");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        // Neither res_1 nor res_2 should appear as migrate sources
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_1");
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_2");
+    }
+
+    [Fact]
+    public void Migrate_SingleResourceCannotMigrate()
+    {
+        // マイグレーションにはソースとターゲットの2体が必要
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "res_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        // Cannot migrate to self → no migrate actions
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  TurnControls — ターン制御情報
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void TurnControls_MainPhaseCanEndPhase()
+    {
+        var state = TestFactory.MakeGameState(phase: Phase.Main);
+        var controls = AvailableActions.ComputeTurnControls(state, []);
+        controls.CanEndPhase.Should().BeTrue();
+        controls.DiscardRequired.Should().Be(0);
+    }
+
+    [Fact]
+    public void TurnControls_BattlePhaseCanEndPhase()
+    {
+        var state = TestFactory.MakeGameState(phase: Phase.Battle);
+        var controls = AvailableActions.ComputeTurnControls(state, []);
+        controls.CanEndPhase.Should().BeTrue();
+    }
+
+    [Fact]
+    public void TurnControls_EndPhaseRequiresDiscardWhenOverLimit()
+    {
+        // 手札上限6枚、超過分を捨てる
+        var state = TestFactory.MakeGameState(phase: Phase.End);
+        var hand = Enumerable.Range(0, 8)
+            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = 1 })
+            .ToList();
+
+        var controls = AvailableActions.ComputeTurnControls(state, hand);
+        controls.DiscardRequired.Should().Be(2); // 8 - 6 = 2
+    }
+
+    [Fact]
+    public void TurnControls_EndPhaseNoDiscardWhenWithinLimit()
+    {
+        var state = TestFactory.MakeGameState(phase: Phase.End);
+        var hand = Enumerable.Range(0, 5)
+            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = 1 })
+            .ToList();
+
+        var controls = AvailableActions.ComputeTurnControls(state, hand);
+        controls.DiscardRequired.Should().Be(0);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  PlayCard — フィールド埋まりパターン
+    //  フロントが満杯でもバックエンドに空きがあれば出せる、等
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void PlayCard_ComputeOnlyBackendWhenFrontendFull()
+    {
+        // フロントが3枠埋まっていてもバックエンドに空きがあればCompute配置可能
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_0");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+        myField.Frontend[2] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_2");
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = 1 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+        playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    [Fact]
+    public void PlayCard_DatabaseStillPlayableWhenFrontendFull()
+    {
+        // Database はそもそも Backend のみ。フロントが満杯でも関係ない
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardNo: 100));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_0");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+        myField.Frontend[2] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_2");
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_db", CardID = 100 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_db");
+    }
+
+    [Fact]
+    public void PlayCard_ComputeExcludedWhenBothZonesFull()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        for (int i = 0; i < 3; i++)
+        {
+            myField.Frontend[i] = TestFactory.MakeResource(cardId: 1, instanceId: $"fe_{i}");
+            myField.Backend[i] = TestFactory.MakeResource(cardId: 1, instanceId: $"be_{i}");
+        }
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = 1 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+    }
+
+    // ─── リソースタイプ別配置パターン ────────────────────────────
+
+    [Fact]
+    public void PlayCard_ContainerCanGoToFrontendAndBackend()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ElasticContainerCard(cardNo: 2));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_c", CardID = 2 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_c");
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    [Fact]
+    public void PlayCard_ServerlessCanGoToFrontendAndBackend()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ServerlessCard(cardNo: 3));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_s", CardID = 3 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    [Fact]
+    public void PlayCard_OrchestratorCanGoToFrontendAndBackend()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.OrchestratorCard(cardNo: 4));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var hand = new List<HandCard> { new() { InstanceID = "h_o", CardID = 4 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_o");
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
+        playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
+    }
+
+    // ─── Attachment 上限 ────────────────────────────────────────
+
+    [Fact]
+    public void PlayCard_AttachmentOnlyTargetsResourcesWithRoom()
+    {
+        // 2体いて1体がアタッチメント上限、もう1体が空きあり → 空きある方だけ
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+        cc.Add(TestFactory.AttachmentCard(cardNo: 300));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+
+        var fullRes = TestFactory.MakeResource(cardId: 1, instanceId: "full");
+        fullRes.Attachments.Add(new AttachmentRef { InstanceID = "a1", CardID = 300 });
+        fullRes.Attachments.Add(new AttachmentRef { InstanceID = "a2", CardID = 300 });
+        myField.Frontend[0] = fullRes;
+
+        var emptyRes = TestFactory.MakeResource(cardId: 1, instanceId: "empty");
+        myField.Frontend[1] = emptyRes;
+
+        var hand = new List<HandCard> { new() { InstanceID = "h_att", CardID = 300 } };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
+
+        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
+        playAction.ValidTargets.Should().NotContain(t => t == "full");
+        playAction.ValidTargets.Should().Contain(t => t == "empty");
+    }
+
+    // ─── ScaleUp 追加パターン ───────────────────────────────────
+
+    [Fact]
+    public void ScaleUp_ResizableElasticCanScaleUp()
+    {
+        // R+E カードは手動スケールアップも可能
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.OrchestratorCard(cardNo: 4)); // R+E
+
+        var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 4, instanceId: "orch_1", rank: Rank.Small);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "orch_1");
+    }
+
+    [Fact]
+    public void ScaleUp_DataCardResizableCanScaleUp()
+    {
+        // Resizable な Database もスケールアップ可能
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardNo: 100, resizable: true));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Backend[0] = TestFactory.MakeResource(
+            cardId: 100, instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        actions.Should().Contain(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "db_1");
+    }
+
+    // ─── Attack 追加パターン ────────────────────────────────────
+
+    [Fact]
+    public void Attack_MultipleAttackersEachGetOwnAction()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "my_2");
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Count(a => a.Type == WireActionTypes.Attack).Should().Be(2);
+        actions.Should().Contain(a => a.Type == WireActionTypes.Attack && a.SourceInstanceID == "my_1");
+        actions.Should().Contain(a => a.Type == WireActionTypes.Attack && a.SourceInstanceID == "my_2");
+    }
+
+    [Fact]
+    public void Attack_MigratingFromResourceCannotAttack()
+    {
+        // MigratingFrom が設定されているリソース（マイグレーション先）も攻撃不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "my_1");
+        attacker.MigratingFrom = "some_source";
+        myField.Frontend[0] = attacker;
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+    }
+
+    // ─── Migrate 追加パターン ───────────────────────────────────
+
+    [Fact]
+    public void Migrate_CrossZoneBetweenFrontendAndBackend()
+    {
+        // フロントエンドとバックエンドをまたいでマイグレーション可能
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "fe_1");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
+
+        // Frontend → Backend and Backend → Frontend should both be possible
+        var feMigrate = actions.Single(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "fe_1");
+        feMigrate.ValidTargets.Should().Contain(t => t == "be_1");
+
+        var beMigrate = actions.Single(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "be_1");
+        beMigrate.ValidTargets.Should().Contain(t => t == "fe_1");
+    }
+
+    // ─── DistributeYield 追加パターン ───────────────────────────
+
+    [Fact]
+    public void DistributeYield_FaceDownBackendComputeExcluded()
+    {
+        // 裏向きリソースは収益化できない（稼働していない）
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: false);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+    }
+
+    [Fact]
+    public void DistributeYield_MultipleBackendComputeEachGetAction()
+    {
+        // 複数のバックエンドComputeがある場合、それぞれにdistribute_yieldが生成される
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardNo: 2, tp: 500, name: "Compute2"));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Backend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "be_1");
+        myField.Backend[1] = TestFactory.MakeResource(cardId: 2, instanceId: "be_2");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
+
+        actions.Count(a => a.Type == WireActionTypes.DistributeYield).Should().Be(2);
+        var a1 = actions.Single(a => a.Type == WireActionTypes.DistributeYield && a.SourceInstanceID == "be_1");
+        var a2 = actions.Single(a => a.Type == WireActionTypes.DistributeYield && a.SourceInstanceID == "be_2");
+        a1.RemainingCapacity.Should().Be(600);
+        a2.RemainingCapacity.Should().Be(500);
+    }
+
+    // ─── ActivateEffect: FaceDown resource excluded ─────────────
+
+    [Fact]
+    public void ActivateEffect_FaceDownResourceExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardNo: 10));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed(10, TriggerType.Activate,
+            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: 10, instanceId: "res_10", faceUp: false);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+    }
+}

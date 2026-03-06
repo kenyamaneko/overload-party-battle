@@ -76,7 +76,7 @@ public static class ChainResolver
     public static TriggerType ChainActionToTrigger(string actionType) => actionType switch
     {
         "reactive" => TriggerType.Reactive,
-        "attack" => TriggerType.OnAttack,
+        WireActionTypes.Attack => TriggerType.OnAttack,
         _ => TriggerType.Activate
     };
 

@@ -133,8 +133,8 @@ public static class GameStateView
         // Compute available actions for the active player only
         if (state.ActivePlayer == playerNum && game.Status == GameStatus.Playing)
         {
-            myView.AvailableActions = AvailableActions.Compute(
-                state, game, playerNum,
+            myView.AvailableActions = AvailableActions.GetAllAvailableActions(
+                state,
                 myField, oppField, myHand, budget, insightPool,
                 cc, effects);
         }

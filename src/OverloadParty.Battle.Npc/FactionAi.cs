@@ -95,14 +95,14 @@ public class FactionAi : StandardAi
     private List<NpcAction> DoTenkiDeployActions(
         DecisionContext ctx, List<AvailableAction> available, HashSet<string> usedZones)
     {
-        var playActions = ActionFilter.FilterByType(available, "play_card");
+        var playActions = ActionFilter.FilterByType(available, WireActionTypes.PlayCard);
 
         var candidates = new List<(AvailableAction Action, CardDefinition Card, int BasePri, int AozoraPri)>();
         foreach (var a in playActions)
         {
             var card = CardCache.Get(a.CardID);
             if (card is null) continue;
-            if (FieldHelpers.IsImmediateType(card.CardType) || card.CardType == "Attachment") continue;
+            if (FieldHelpers.IsImmediateType(card.CardType) || card.CardType == CardTypes.Attachment) continue;
 
             int basePri = card.IsComputeType ? 0 : card.IsDataType ? 1 : 2;
 
@@ -149,7 +149,7 @@ public class FactionAi : StandardAi
                 payload["choiceData"] = new Dictionary<string, string> { ["option"] = choice };
             }
 
-            actions.Add(new NpcAction { ActionType = "play_card", Data = payload });
+            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = payload });
             deployed.Add(c.Action.HandInstanceID!);
             usedZones.Add(zone);
         }

@@ -62,13 +62,13 @@ public static class TargetSelector
     public static bool HasPlatform(Field field, ICardCache cc)
     {
         return field.Support
-            .Any(sup => cc.Get(sup.CardID)?.CardType == "Platform");
+            .Any(sup => cc.Get(sup.CardID)?.CardType == CardTypes.Platform);
     }
 
     public static string? FirstPlatformId(Field field, ICardCache cc)
     {
         return field.Support
-            .FirstOrDefault(sup => cc.Get(sup.CardID)?.CardType == "Platform")
+            .FirstOrDefault(sup => cc.Get(sup.CardID)?.CardType == CardTypes.Platform)
             ?.InstanceID;
     }
 

@@ -58,7 +58,7 @@ public static class EffectHelpers
             throw new GameRuleException("No empty slot for compute resource");
         }
 
-        if (cardType == "ObjectStorage")
+        if (cardType == CardTypes.ObjectStorage)
         {
             // Prefer backend, fallback frontend
             if (field.Backend.TryPlace(instance)) return;
@@ -124,9 +124,9 @@ public static class EffectHelpers
         => card => card.CardNo == cardNo;
 
     public static bool IsDBType(string cardType)
-        => cardType is "Database" or "CacheDB";
+        => cardType is CardTypes.Database or CardTypes.CacheDB;
 
     public static bool IsResourceType(string cardType)
-        => cardType is "Compute" or "Container" or "Orchestrator" or "Serverless" or "AI/ML"
-           or "Database" or "ObjectStorage" or "CacheDB" or "Datawarehouse";
+        => cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl
+           or CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
 }

@@ -90,7 +90,7 @@ public class StandardAi : INpcStrategy
     protected List<NpcAction> DoImmediateActions(
         DecisionContext ctx, List<AvailableAction> available, HashSet<string> usedZones)
     {
-        var playActions = ActionFilter.FilterByType(available, "play_card");
+        var playActions = ActionFilter.FilterByType(available, WireActionTypes.PlayCard);
 
         var candidates = new List<(AvailableAction Action, CardDefinition Card, int Priority, Dictionary<string, object>? Choice)>();
         foreach (var a in playActions)
@@ -121,7 +121,7 @@ public class StandardAi : INpcStrategy
             if (c.Choice is not null)
                 payload["choiceData"] = c.Choice;
 
-            actions.Add(new NpcAction { ActionType = "play_card", Data = payload });
+            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = payload });
             usedZones.Add(zone);
         }
         return actions;
@@ -132,14 +132,14 @@ public class StandardAi : INpcStrategy
     protected List<NpcAction> DoDeployActions(
         DecisionContext ctx, List<AvailableAction> available, HashSet<string> usedZones)
     {
-        var playActions = ActionFilter.FilterByType(available, "play_card");
+        var playActions = ActionFilter.FilterByType(available, WireActionTypes.PlayCard);
 
         var candidates = new List<(AvailableAction Action, CardDefinition Card, int Priority)>();
         foreach (var a in playActions)
         {
             var card = CardCache.Get(a.CardID);
             if (card is null) continue;
-            if (FieldHelpers.IsImmediateType(card.CardType) || card.CardType == "Attachment") continue;
+            if (FieldHelpers.IsImmediateType(card.CardType) || card.CardType == CardTypes.Attachment) continue;
 
             int pri = card.IsComputeType ? 0 : card.IsDataType ? 1 : 2;
             candidates.Add((a, card, pri));
@@ -168,7 +168,7 @@ public class StandardAi : INpcStrategy
                 payload["choiceData"] = new Dictionary<string, string> { ["option"] = choice };
             }
 
-            actions.Add(new NpcAction { ActionType = "play_card", Data = payload });
+            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = payload });
             deployed.Add(c.Action.HandInstanceID!);
             usedZones.Add(zone);
         }
@@ -179,7 +179,7 @@ public class StandardAi : INpcStrategy
 
     protected List<NpcAction> DecideActivateActions(DecisionContext ctx, List<AvailableAction> available)
     {
-        var activateActions = ActionFilter.FilterByType(available, "activate_effect");
+        var activateActions = ActionFilter.FilterByType(available, WireActionTypes.ActivateEffect);
 
         var candidates = new List<(AvailableAction Action, long CardNo, int Priority, Dictionary<string, object>? Choice)>();
         foreach (var a in activateActions)
@@ -215,7 +215,7 @@ public class StandardAi : INpcStrategy
             if (c.Choice is not null)
                 payload["choiceData"] = c.Choice;
 
-            actions.Add(new NpcAction { ActionType = "activate_effect", Data = payload });
+            actions.Add(new NpcAction { ActionType = WireActionTypes.ActivateEffect, Data = payload });
         }
         return actions;
     }
@@ -243,7 +243,7 @@ public class StandardAi : INpcStrategy
 
     protected static List<NpcAction> DoBattleActions(List<AvailableAction> available, Field oppField)
     {
-        var attackActions = ActionFilter.FilterByType(available, "attack");
+        var attackActions = ActionFilter.FilterByType(available, WireActionTypes.Attack);
         var actions = new List<NpcAction>();
 
         foreach (var a in attackActions)
@@ -253,7 +253,7 @@ public class StandardAi : INpcStrategy
 
             actions.Add(new NpcAction
             {
-                ActionType = "attack",
+                ActionType = WireActionTypes.Attack,
                 Data = new Dictionary<string, object>
                 {
                     ["attackerInstanceId"] = a.SourceInstanceID!,
@@ -270,7 +270,7 @@ public class StandardAi : INpcStrategy
 
     protected static List<NpcAction> DoScaleUpActions(List<AvailableAction> available, string family)
     {
-        var scaleActions = ActionFilter.FilterByType(available, "scale_up");
+        var scaleActions = ActionFilter.FilterByType(available, WireActionTypes.ScaleUp);
         var actions = new List<NpcAction>();
 
         foreach (var a in scaleActions)
@@ -283,7 +283,7 @@ public class StandardAi : INpcStrategy
             if (a.NeedsFamily)
                 payload["instanceFamily"] = family;
 
-            actions.Add(new NpcAction { ActionType = "scale_up", Data = payload });
+            actions.Add(new NpcAction { ActionType = WireActionTypes.ScaleUp, Data = payload });
         }
         return actions;
     }
@@ -292,7 +292,7 @@ public class StandardAi : INpcStrategy
 
     protected static List<NpcAction> DoDistributeYieldActions(List<AvailableAction> available, long insightPool)
     {
-        var yieldActions = ActionFilter.FilterByType(available, "distribute_yield");
+        var yieldActions = ActionFilter.FilterByType(available, WireActionTypes.DistributeYield);
         if (!yieldActions.Any()) return [];
 
         var dists = new List<Dictionary<string, object>>();
@@ -319,7 +319,7 @@ public class StandardAi : INpcStrategy
         [
             new NpcAction
             {
-                ActionType = "distribute_yield",
+                ActionType = WireActionTypes.DistributeYield,
                 Data = new Dictionary<string, object> { ["distributions"] = dists },
             }
         ];
@@ -328,7 +328,7 @@ public class StandardAi : INpcStrategy
     // ─── Helpers ────────────────────────────────────────────────
 
     protected static NpcAction MakeEndPhaseAction() =>
-        new() { ActionType = "end_phase", Data = new Dictionary<string, object>() };
+        new() { ActionType = WireActionTypes.EndPhase, Data = new Dictionary<string, object>() };
 
     protected static string DeployChoiceFor(long cardNo) => cardNo switch
     {

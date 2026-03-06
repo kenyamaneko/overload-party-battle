@@ -46,7 +46,7 @@ public static class DiscardProcessor
         events.Add(new GameEvent
         {
             GameID = game.GameID,
-            EventType = "discard_hand",
+            EventType = WireActionTypes.DiscardHand,
             PlayerID = playerId,
             EventData = new Dictionary<string, object>
             {

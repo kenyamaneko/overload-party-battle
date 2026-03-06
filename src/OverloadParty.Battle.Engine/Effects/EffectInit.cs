@@ -48,7 +48,7 @@ public static class EffectInit
         r.RegisterComposed(10, TriggerType.Activate,
             new RequireBudgetOp(400),
             new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)),
-            new ApplyBuffOp(SourceSelector.Instance, "buff_yield", SourceYieldAmount.Instance, "this_turn", "on_demand")
+            new ApplyBuffOp(SourceSelector.Instance, EffectTypes.BuffYield, SourceYieldAmount.Instance, "this_turn", "on_demand")
         );
 
         // #11 SD Cache - メリー: Cache Engine choice on deploy
@@ -56,7 +56,7 @@ public static class EffectInit
             new BranchOnChoiceOp(new Dictionary<string, List<IEffectOp>>
             {
                 ["memcached"] = [new GainBudgetOp(PlayerRef.Self, new StaticAmount(400))],
-                ["redis"] = [new ApplyBuffOp(SourceSelector.Instance, "buff_yield", new StaticAmount(200), "permanent", "cache_engine_redis")],
+                ["redis"] = [new ApplyBuffOp(SourceSelector.Instance, EffectTypes.BuffYield, new StaticAmount(200), "permanent", "cache_engine_redis")],
             })
         );
 
@@ -96,7 +96,7 @@ public static class EffectInit
             new RequireFactionCountOp(GameConstants.FactionSD, 3),
             new ApplyBuffOp(
                 new AllOwnSelector { Zone = GameConstants.ZoneFrontend, Faction = GameConstants.FactionSD },
-                "buff_tp", new StaticAmount(200), "this_turn", "sd_ecosystem")
+                EffectTypes.BuffTP, new StaticAmount(200), "this_turn", "sd_ecosystem")
         );
 
         // #121 SD Smile Delivery: Deploy from hand at cost 0
@@ -112,7 +112,7 @@ public static class EffectInit
         r.RegisterComposed(30, TriggerType.OnDestroy,
             new GuardFactionOp(GameConstants.FactionTenki, "data"),
             GuardNotSelfOp.Instance,
-            new ApplyBuffOp(SourceSelector.Instance, "buff_yield", new StaticAmount(400), "until_next_own_turn_end", "failover_group")
+            new ApplyBuffOp(SourceSelector.Instance, EffectTypes.BuffYield, new StaticAmount(400), "until_next_own_turn_end", "failover_group")
         );
 
         // #32 Tenki DB - 百花の天穹<コスモ>: deploy another from repo
@@ -160,7 +160,7 @@ public static class EffectInit
         r.RegisterComposed(46, TriggerType.Reactive,
             new DeployFromHandOp
             {
-                Filter = EffectHelpers.FactionAndTypeFilter(GameConstants.FactionTenki, ct => ct is "Compute" or "Container" or "Orchestrator" or "Serverless" or "AI/ML"),
+                Filter = EffectHelpers.FactionAndTypeFilter(GameConstants.FactionTenki, ct => ct is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl),
             }
         );
 
@@ -243,7 +243,7 @@ public static class EffectInit
             new BranchOnChoiceOp(new Dictionary<string, List<IEffectOp>>
             {
                 ["memcached"] = [new GainBudgetOp(PlayerRef.Self, new StaticAmount(400))],
-                ["redis"] = [new ApplyBuffOp(SourceSelector.Instance, "buff_yield", new StaticAmount(200), "permanent", "cache_engine_redis")],
+                ["redis"] = [new ApplyBuffOp(SourceSelector.Instance, EffectTypes.BuffYield, new StaticAmount(200), "permanent", "cache_engine_redis")],
             })
         );
     }
@@ -488,11 +488,10 @@ public static class EffectInit
             throw new GameRuleException("No instance chosen");
 
         var field = octx.MyField;
-        var result = FieldHelpers.FindResourceByID(field, instanceId);
-        if (result is null || result.Value.Zone != Zone.Frontend)
+        var target = FieldHelpers.FindResourceByID(field, instanceId);
+        if (target is null || FieldHelpers.FindResourceZone(field, instanceId) != Zone.Frontend)
             throw new GameRuleException("Target must be a frontend resource");
 
-        var target = result.Value.Resource;
         var card = octx.CardCache.Get(target.CardID);
         if (card is null || !card.IsComputeType)
             throw new GameRuleException("Target must be a Compute type");
@@ -501,7 +500,7 @@ public static class EffectInit
         {
             target.TemporaryEffects.Add(new TemporaryEffect
             {
-                EffectType = "buff_tp",
+                EffectType = EffectTypes.BuffTP,
                 Value = tp,
                 Duration = "this_turn",
                 SourceID = "veloce_batch",
@@ -519,15 +518,14 @@ public static class EffectInit
             throw new GameRuleException("No instance chosen");
 
         var oppField = octx.OpponentField;
-        var result = FieldHelpers.FindResourceByID(oppField, instanceId);
-        if (result is null || result.Value.Zone != Zone.Frontend)
+        var target = FieldHelpers.FindResourceByID(oppField, instanceId);
+        if (target is null || FieldHelpers.FindResourceZone(oppField, instanceId) != Zone.Frontend)
             throw new GameRuleException("Target must be opponent's frontend");
 
-        var target = result.Value.Resource;
         long debuffValue = target.CurrentTP is { } tp ? tp + 10000 : 10000;
         target.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = "debuff_tp",
+            EffectType = EffectTypes.DebuffTP,
             Value = debuffValue,
             Duration = "until_next_turn_end",
             SourceID = "config_error",
@@ -573,12 +571,12 @@ public static class EffectInit
 
         var targetCard = octx.CardCache.Get(target.CardID);
         if (targetCard is null) return;
-        if (!targetCard.IsComputeType && targetCard.CardType != "AI/ML") return;
+        if (!targetCard.IsComputeType && targetCard.CardType != CardTypes.AiMl) return;
         if (target.MaxTP is null || target.MaxTP < 900) return;
 
         target.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = "cannot_operate",
+            EffectType = EffectTypes.CannotOperate,
             Value = 1,
             Duration = "this_turn",
             SourceID = "rate_limiter",
@@ -588,8 +586,8 @@ public static class EffectInit
         long deployerNum = octx.State.OpponentOf(octx.PlayerNum);
         var field = octx.GetField(deployerNum);
         var found = FieldHelpers.FindResourceByID(field, target.InstanceID);
-        if (found is { } f)
-            f.Resource.TemporaryEffects = target.TemporaryEffects;
+        if (found is not null)
+            found.TemporaryEffects = target.TemporaryEffects;
     }
 
     /// <summary>
@@ -622,8 +620,7 @@ public static class EffectInit
             throw new GameRuleException("No redirect target chosen");
 
         var oppField = octx.OpponentField;
-        var result = FieldHelpers.FindResourceByID(oppField, instanceId);
-        if (result is null || result.Value.Zone != Zone.Frontend)
+        if (FieldHelpers.FindResourceZone(oppField, instanceId) != Zone.Frontend)
             throw new GameRuleException("Redirect target must be opponent's frontend");
     }
 

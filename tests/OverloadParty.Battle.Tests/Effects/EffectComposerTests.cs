@@ -36,7 +36,7 @@ public class EffectComposerTests
         var handler = EffectComposer.Compose(ops);
         handler(MakeContext());
 
-        Assert.Equal([1, 2, 3], order);
+        order.Should().Equal(1, 2, 3);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class EffectComposerTests
         var handler = EffectComposer.Compose(ops);
         handler(MakeContext(state));
 
-        Assert.Equal(5500, state.Player1Budget);
+        state.Player1Budget.Should().Be(5500);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class EffectComposerTests
         var handler = EffectComposer.Compose(ops);
         handler(MakeContext(state));
 
-        Assert.Equal(2200, state.Player2Budget);
+        state.Player2Budget.Should().Be(2200);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public class EffectComposerTests
         var handler = EffectComposer.Compose(ops);
         handler(MakeContext(state));
 
-        Assert.Equal(5500, state.Player1Budget);
+        state.Player1Budget.Should().Be(5500);
     }
 
     [Fact]
@@ -97,6 +97,6 @@ public class EffectComposerTests
         var handler = EffectComposer.Compose(ops);
         handler(MakeContext(state));
 
-        Assert.Equal(6000, state.Player1Budget);
+        state.Player1Budget.Should().Be(6000);
     }
 }

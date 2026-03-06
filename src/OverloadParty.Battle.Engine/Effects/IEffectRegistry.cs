@@ -32,6 +32,22 @@ public class EffectContext
 public delegate EffectResult EffectHandler(EffectContext ctx);
 
 /// <summary>
+/// Budget conditions extracted from an effect's ops.
+/// </summary>
+public class BudgetRequirement
+{
+    /// <summary>Minimum budget needed (from RequireBudgetOp). Null if no minimum.</summary>
+    public long? MinBudget { get; init; }
+
+    /// <summary>Maximum budget allowed (from RequireMaxBudgetOp). Null if no maximum.</summary>
+    public long? MaxBudget { get; init; }
+
+    public bool IsSatisfied(long budget) =>
+        (MinBudget is null || budget >= MinBudget) &&
+        (MaxBudget is null || budget <= MaxBudget);
+}
+
+/// <summary>
 /// Registry for looking up effect handlers by card number and trigger type.
 /// Engine depends only on this interface; implementation is in Effects/.
 /// </summary>
@@ -39,4 +55,9 @@ public interface IEffectRegistry
 {
     EffectHandler? Get(long cardNo, TriggerType trigger);
     bool Has(long cardNo, TriggerType trigger);
+
+    /// <summary>
+    /// Returns budget requirements for the given effect, or null if none.
+    /// </summary>
+    BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger);
 }
