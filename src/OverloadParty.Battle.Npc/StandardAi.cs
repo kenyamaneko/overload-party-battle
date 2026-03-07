@@ -11,8 +11,8 @@ namespace OverloadParty.Battle.Npc;
 /// </summary>
 public class StandardAi : INpcStrategy
 {
-    internal readonly ICardCache CardCache;
-    internal readonly IEffectRegistry Effects;
+    public ICardCache CardCache { get; }
+    protected readonly IEffectRegistry Effects;
 
     public StandardAi(ICardCache cardCache, IEffectRegistry effects)
     {

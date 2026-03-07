@@ -404,7 +404,7 @@ public static class EffectInit
                 "ransomware", new StaticAmount(1), "until_next_turn_end", "ransomware")
         );
 
-        // #112 Compliance Audit: TODO — re-implement with effect system
+        // #112 Compliance Audit: not yet implemented (requires target selection by card type category)
 
         // #113 レートリミット: cannot_operate on high-TP Compute/AI_ML
         r.RegisterComposed(113, TriggerType.OnEnemyDeploy,
