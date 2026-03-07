@@ -7,7 +7,10 @@ namespace OverloadParty.Battle.Engine.Effects.Ops;
 /// </summary>
 public class SetCancelActionOp : IEffectOp
 {
+    /// <summary>Shared singleton instance.</summary>
     public static readonly SetCancelActionOp Instance = new();
+
+    /// <inheritdoc />
     public void Execute(OpContext ctx) => ctx.CancelAction();
 }
 
@@ -17,8 +20,10 @@ public class SetCancelActionOp : IEffectOp
 /// </summary>
 public class SurviveDestructionOp(long surviveAV) : IEffectOp
 {
+    /// <summary>The AV the target will be left with after surviving.</summary>
     public long SurviveAV => surviveAV;
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         if (ctx.Target is null)
@@ -40,8 +45,10 @@ public class SurviveDestructionOp(long surviveAV) : IEffectOp
 /// </summary>
 public class BranchOnChoiceOp(Dictionary<string, List<IEffectOp>> branches) : IEffectOp
 {
+    /// <summary>Map of choice option keys to their op sequences.</summary>
     public Dictionary<string, List<IEffectOp>> Branches => branches;
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         string? option = null;
@@ -67,9 +74,13 @@ public class BranchOnChoiceOp(Dictionary<string, List<IEffectOp>> branches) : IE
 /// </summary>
 public class IfConditionOp(Func<OpContext, bool> cond, List<IEffectOp> then) : IEffectOp
 {
+    /// <summary>The condition predicate.</summary>
     public Func<OpContext, bool> Cond => cond;
+
+    /// <summary>Ops to execute when the condition is true.</summary>
     public List<IEffectOp> Then => then;
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         if (!cond(ctx)) { return; }
@@ -86,6 +97,7 @@ public class IfConditionOp(Func<OpContext, bool> cond, List<IEffectOp> then) : I
 /// </summary>
 public class CustomFnOp(Action<OpContext> fn) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx) => fn(ctx);
 }
 
@@ -94,9 +106,15 @@ public class CustomFnOp(Action<OpContext> fn) : IEffectOp
 /// </summary>
 public class CustomFnTaggedOp(Action<OpContext> fn) : IEffectOp
 {
+    /// <summary>Effect categories for NPC classification.</summary>
     public List<EffectCategory> Categories { get; init; } = [];
+
+    /// <summary>Target type hint for NPC classification.</summary>
     public EffectTargetType Target { get; init; } = EffectTargetType.None;
+
+    /// <summary>Zone hint for NPC classification.</summary>
     public string? Zone { get; init; }
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx) => fn(ctx);
 }

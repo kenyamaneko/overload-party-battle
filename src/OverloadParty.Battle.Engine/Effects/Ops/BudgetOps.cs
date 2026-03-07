@@ -2,10 +2,17 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
+/// <summary>
+/// Identifies which player an operation targets.
+/// </summary>
 public enum PlayerRef { Self, Opponent }
 
+/// <summary>
+/// Adds budget to a player.
+/// </summary>
 public class GainBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         long amount = value.Resolve(ctx);
@@ -15,8 +22,12 @@ public class GainBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
     }
 }
 
+/// <summary>
+/// Subtracts budget from a player.
+/// </summary>
 public class LoseBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         long amount = value.Resolve(ctx);

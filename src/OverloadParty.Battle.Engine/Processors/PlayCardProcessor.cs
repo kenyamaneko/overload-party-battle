@@ -3,12 +3,25 @@ using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
+/// <summary>
+/// Processes play-card actions, placing resources, supports, and attachments onto the field.
+/// </summary>
 public static class PlayCardProcessor
 {
     private record PlayContext(
         GameState State, Game Game, long PlayerNum,
         ICardCache CC, IEffectRegistry? Effects);
 
+    /// <summary>
+    /// Plays a card from the player's hand onto the field, handling resource, support, and attachment placement.
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="playerNum">The player number performing the action.</param>
+    /// <param name="req">The play card request containing card and placement details.</param>
+    /// <param name="cc">The card definition cache.</param>
+    /// <param name="effects">The optional effect registry for triggering deploy effects.</param>
+    /// <returns>The action result containing generated events and state update flag.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
         PlayCardRequest req, ICardCache cc, IEffectRegistry? effects)

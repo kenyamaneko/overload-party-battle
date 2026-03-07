@@ -8,8 +8,17 @@ namespace OverloadParty.Battle.Engine;
 /// </summary>
 public interface IGameRepository
 {
+    /// <summary>Creates a new game with its initial state.</summary>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="state">The initial game state.</param>
     Task CreateGame(Game game, GameState state, CancellationToken ct = default);
+
+    /// <summary>Returns the game metadata, or <c>null</c> if not found.</summary>
+    /// <param name="gameID">The game ID.</param>
     Task<Game?> GetGame(string gameID, CancellationToken ct = default);
+
+    /// <summary>Returns the current game state, or <c>null</c> if not found.</summary>
+    /// <param name="gameID">The game ID.</param>
     Task<GameState?> GetGameState(string gameID, CancellationToken ct = default);
 
     /// <summary>
@@ -19,9 +28,25 @@ public interface IGameRepository
     /// </summary>
     Task UpdateGameState(string gameID, Func<GameState, Task> fn, CancellationToken ct = default);
 
+    /// <summary>Persists a game event to the event log.</summary>
+    /// <param name="evt">The event to append.</param>
     Task AppendEvent(GameEvent evt, CancellationToken ct = default);
+
+    /// <summary>Marks the game as finished and records the winner.</summary>
+    /// <param name="gameID">The game ID.</param>
+    /// <param name="winnerID">The winning player's ID, or empty for a draw.</param>
     Task FinishGame(string gameID, string winnerID, CancellationToken ct = default);
+
+    /// <summary>Returns the total number of events recorded for a game.</summary>
+    /// <param name="gameID">The game ID.</param>
     Task<long> GetEventCount(string gameID, CancellationToken ct = default);
+
+    /// <summary>Updates the game's status (e.g. playing → finished).</summary>
+    /// <param name="gameID">The game ID.</param>
+    /// <param name="status">The new status.</param>
     Task UpdateGameStatus(string gameID, GameStatus status, CancellationToken ct = default);
+
+    /// <summary>Returns all events for a game in order.</summary>
+    /// <param name="gameID">The game ID.</param>
     Task<List<GameEvent>> GetEvents(string gameID, CancellationToken ct = default);
 }

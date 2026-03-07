@@ -2,8 +2,12 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
+/// <summary>
+/// Checks for and destroys any resources whose effective AV has reached zero or below.
+/// </summary>
 public class DestroyCheckOp(PlayerRef player) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         long playerNum = player == PlayerRef.Self ? ctx.PlayerNum : ctx.OpponentNum;
@@ -20,8 +24,12 @@ public class DestroyCheckOp(PlayerRef player) : IEffectOp
     }
 }
 
+/// <summary>
+/// Scales the source resource to the specified rank.
+/// </summary>
 public class ScaleToRankOp(string rank) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         if (ctx.Source is null) { return; }
@@ -31,8 +39,12 @@ public class ScaleToRankOp(string rank) : IEffectOp
     }
 }
 
+/// <summary>
+/// Reveals the first hidden reactive card in the opponent's support zone.
+/// </summary>
 public class RevealReactiveOp : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         var oppField = ctx.OpponentField;
@@ -41,8 +53,12 @@ public class RevealReactiveOp : IEffectOp
     }
 }
 
+/// <summary>
+/// Destroys a platform card in the opponent's support zone.
+/// </summary>
 public class DestroyPlatformOp : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         var oppField = ctx.OpponentField;

@@ -14,18 +14,31 @@ public class GameEngine
     private readonly ICardCache _cardCache;
     private IEffectRegistry? _effects;
 
+    /// <summary>Initializes a new instance of <see cref="GameEngine"/>.</summary>
+    /// <param name="repo">The game persistence layer.</param>
+    /// <param name="cardCache">Read-only card definitions.</param>
     public GameEngine(IGameRepository repo, ICardCache cardCache)
     {
         _repo = repo;
         _cardCache = cardCache;
     }
 
+    /// <summary>Injects the effect registry (card effect handlers). Must be called before processing actions that use effects.</summary>
+    /// <param name="registry">The effect registry to use.</param>
     public void SetEffectRegistry(IEffectRegistry registry) => _effects = registry;
+
+    /// <summary>Gets the currently configured effect registry, or <c>null</c> if not set.</summary>
     public IEffectRegistry? EffectRegistry => _effects;
 
     /// <summary>
-    /// Create a new game with shuffled decks.
+    /// Creates a new game with shuffled decks and initial hands.
     /// </summary>
+    /// <param name="player1ID">Player 1's ID.</param>
+    /// <param name="player2ID">Player 2's ID.</param>
+    /// <param name="deck1">Player 1's deck snapshot.</param>
+    /// <param name="deck2">Player 2's deck snapshot.</param>
+    /// <param name="firstPlayer">Which player goes first (1 or 2).</param>
+    /// <returns>The new game's ID.</returns>
     public async Task<string> CreateNewGame(
         string player1ID, string player2ID,
         DeckSnapshot deck1, DeckSnapshot deck2,
@@ -39,6 +52,12 @@ public class GameEngine
         return gameID;
     }
 
+    /// <summary>
+    /// Runs the draw-phase auto-advance for the active player.
+    /// Called at the start of each turn before player actions.
+    /// </summary>
+    /// <param name="gameID">The game ID.</param>
+    /// <returns>Non-null if the game ended (e.g. repository out).</returns>
     public async Task<GameOverResult?> RunAutoAdvance(
         string gameID, CancellationToken ct = default)
     {
@@ -72,8 +91,13 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Process a player action. Returns ActionResult.
+    /// Processes a player action (play card, attack, etc.) and persists the resulting events.
     /// </summary>
+    /// <param name="gameID">The game ID.</param>
+    /// <param name="playerID">The acting player's ID.</param>
+    /// <param name="actionType">The type of action to process.</param>
+    /// <param name="actionData">The action-specific request data.</param>
+    /// <returns>The result including events and possible game-over.</returns>
     public async Task<ActionResult> ProcessAction(
         string gameID, string playerID, ActionType actionType, object actionData,
         CancellationToken ct = default)
@@ -171,8 +195,11 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Compute available actions for a player.
+    /// Computes all valid actions available to a player in the current game state.
     /// </summary>
+    /// <param name="gameID">The game ID.</param>
+    /// <param name="playerNum">The player number (1 or 2).</param>
+    /// <returns>A list of available actions the player can take.</returns>
     public async Task<List<AvailableAction>> ComputeAvailableActions(
         string gameID, long playerNum, CancellationToken ct = default)
     {
@@ -192,8 +219,11 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Compute turn controls (can end phase, discard required).
+    /// Computes turn control information (whether the player can end the phase, discard count).
     /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="hand">The active player's hand.</param>
+    /// <returns>Turn controls for the UI.</returns>
     public TurnControls ComputeTurnControls(GameState state, List<HandCard> hand)
     {
         return AvailableActions.ComputeTurnControls(state, hand);

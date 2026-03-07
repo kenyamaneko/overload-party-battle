@@ -2,8 +2,19 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
+/// <summary>
+/// Processes phase advancement and end-of-turn logic including maintenance, insight generation, and turn switching.
+/// </summary>
 public static class EndPhaseProcessor
 {
+    /// <summary>
+    /// Advances the current phase and processes end-of-turn logic when entering the end phase.
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="playerNum">The player number ending their phase.</param>
+    /// <param name="cc">The card definition cache.</param>
+    /// <returns>The action result containing phase change events and possible game-over or discard requirements.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum, ICardCache cc)
     {

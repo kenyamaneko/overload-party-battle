@@ -2,8 +2,20 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
+/// <summary>
+/// Processes scale-up actions that change a resource's rank or instance family.
+/// </summary>
 public static class ScaleUpProcessor
 {
+    /// <summary>
+    /// Changes a resource's rank and optionally its instance family.
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="playerNum">The player number performing the action.</param>
+    /// <param name="req">The scale-up request containing target rank and optional instance family.</param>
+    /// <param name="cc">The card definition cache.</param>
+    /// <returns>The action result containing the scale-up event and state update flag.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
         ScaleUpRequest req, ICardCache cc)

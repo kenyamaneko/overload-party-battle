@@ -3,8 +3,18 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
+/// <summary>
+/// Processes the draw phase including deploy countdowns, migration completion, and card draw.
+/// </summary>
 public static class DrawPhaseProcessor
 {
+    /// <summary>
+    /// Executes draw phase logic: counts down deploy timers, completes migrations, draws a card, and checks win conditions.
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="cc">The card definition cache.</param>
+    /// <returns>A game-over result if a win condition is met; otherwise <c>null</c>.</returns>
     public static GameOverResult? Process(GameState state, Game game, ICardCache cc)
     {
         if (state.CurrentPhase != Phase.Draw) { return null; }

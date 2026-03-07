@@ -7,6 +7,11 @@ namespace OverloadParty.Battle.Engine.Effects;
 /// </summary>
 public interface ISelector
 {
+    /// <summary>
+    /// Selects target resources from the current pipeline context.
+    /// </summary>
+    /// <param name="ctx">The operation context.</param>
+    /// <returns>List of selected resource instances.</returns>
     List<ResourceInstance> Select(OpContext ctx);
 }
 
@@ -15,7 +20,10 @@ public interface ISelector
 /// </summary>
 public class SourceSelector : ISelector
 {
+    /// <summary>Shared singleton instance.</summary>
     public static readonly SourceSelector Instance = new();
+
+    /// <inheritdoc />
     public List<ResourceInstance> Select(OpContext ctx) =>
         ctx.Source is { } s ? [s] : [];
 }
@@ -25,7 +33,10 @@ public class SourceSelector : ISelector
 /// </summary>
 public class TargetSelector : ISelector
 {
+    /// <summary>Shared singleton instance.</summary>
     public static readonly TargetSelector Instance = new();
+
+    /// <inheritdoc />
     public List<ResourceInstance> Select(OpContext ctx) =>
         ctx.Target is { } t ? [t] : [];
 }
@@ -35,11 +46,19 @@ public class TargetSelector : ISelector
 /// </summary>
 public class ByChoiceSelector : ISelector
 {
+    /// <summary>Zone filter, or null for any zone.</summary>
     public string? Zone { get; init; }
-    public string? Faction { get; init; }
-    public string? CardType { get; init; }
-    public string Owner { get; init; } = "self"; // "self" or "opponent"
 
+    /// <summary>Faction filter, or null for any faction.</summary>
+    public string? Faction { get; init; }
+
+    /// <summary>Card type filter, or null for any type.</summary>
+    public string? CardType { get; init; }
+
+    /// <summary>Owner of the target: "self" or "opponent".</summary>
+    public string Owner { get; init; } = "self";
+
+    /// <inheritdoc />
     public List<ResourceInstance> Select(OpContext ctx)
     {
         var instanceId = GetChoiceInstanceId(ctx);
@@ -105,9 +124,13 @@ public class ByChoiceSelector : ISelector
 /// </summary>
 public class AllOwnSelector : ISelector
 {
+    /// <summary>Zone filter, or null for all zones.</summary>
     public string? Zone { get; init; }
+
+    /// <summary>Faction filter, or null for any faction.</summary>
     public string? Faction { get; init; }
 
+    /// <inheritdoc />
     public List<ResourceInstance> Select(OpContext ctx)
     {
         var field = ctx.MyField;
@@ -135,9 +158,13 @@ public class AllOwnSelector : ISelector
 /// </summary>
 public class AllOpponentSelector : ISelector
 {
+    /// <summary>Zone filter, or null for all zones.</summary>
     public string? Zone { get; init; }
+
+    /// <summary>Faction filter, or null for any faction.</summary>
     public string? Faction { get; init; }
 
+    /// <inheritdoc />
     public List<ResourceInstance> Select(OpContext ctx)
     {
         var field = ctx.OpponentField;

@@ -42,8 +42,13 @@ public enum EffectTargetType
 /// </summary>
 public class EffectCondition
 {
+    /// <summary>Condition type identifier (e.g. "min_budget", "faction_count").</summary>
     public string Type { get; init; } = "";
+
+    /// <summary>Numeric threshold for the condition.</summary>
     public long Value { get; init; }
+
+    /// <summary>Faction required by the condition, if applicable.</summary>
     public string? Faction { get; init; }
 }
 
@@ -52,12 +57,26 @@ public class EffectCondition
 /// </summary>
 public class EffectInfo
 {
+    /// <summary>Categories describing what this effect does.</summary>
     public List<EffectCategory> Categories { get; } = [];
+
+    /// <summary>How the NPC should select targets for this effect.</summary>
     public EffectTargetType TargetType { get; set; } = EffectTargetType.None;
+
+    /// <summary>Zone the effect targets, if applicable.</summary>
     public string? TargetZone { get; set; }
+
+    /// <summary>Prerequisites that must be met for the effect to fire.</summary>
     public List<EffectCondition> Conditions { get; } = [];
+
+    /// <summary>Whether the effect contains a branching choice.</summary>
     public bool HasBranch { get; set; }
 
+    /// <summary>
+    /// Checks whether this effect has the given category.
+    /// </summary>
+    /// <param name="cat">Category to check.</param>
+    /// <returns>True if the category is present.</returns>
     public bool HasCategory(EffectCategory cat) => Categories.Contains(cat);
 
     internal void AddCategory(EffectCategory cat)
@@ -87,6 +106,11 @@ public class EffectInfo
 /// </summary>
 public static class EffectClassifier
 {
+    /// <summary>
+    /// Classifies an array of ops into an <see cref="EffectInfo"/> for NPC decision-making.
+    /// </summary>
+    /// <param name="ops">The ops to classify.</param>
+    /// <returns>Classification result describing the effect's behavior.</returns>
     public static EffectInfo ClassifyOps(IEffectOp[] ops)
     {
         var info = new EffectInfo();

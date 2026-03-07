@@ -1,7 +1,11 @@
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
+/// <summary>
+/// Adds insight to the effect owner's pool.
+/// </summary>
 public class GainInsightOp(IAmountResolver value) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         long amount = value.Resolve(ctx);
@@ -10,8 +14,12 @@ public class GainInsightOp(IAmountResolver value) : IEffectOp
     }
 }
 
+/// <summary>
+/// Transfers insight from the opponent's pool to the effect owner's pool.
+/// </summary>
 public class AbsorbInsightOp(IAmountResolver value) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         long amount = value.Resolve(ctx);

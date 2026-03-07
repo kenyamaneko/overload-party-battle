@@ -184,6 +184,8 @@ public static class StatCalculator
         }
     }
 
+    /// <summary>Truncates a floating-point value to a long integer (floor towards zero).</summary>
+    /// <param name="val">The value to truncate.</param>
     public static long Truncate(double val) => (long)val;
 
     // ─── Passive bonuses ─────────────────────────────────────

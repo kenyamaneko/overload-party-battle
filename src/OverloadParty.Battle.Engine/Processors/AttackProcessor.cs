@@ -3,8 +3,21 @@ using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
+/// <summary>
+/// Processes attack actions where a frontend compute resource deals damage to an opponent's resource.
+/// </summary>
 public static class AttackProcessor
 {
+    /// <summary>
+    /// Executes an attack from a player's resource against an opponent's resource.
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="playerNum">The player number performing the attack.</param>
+    /// <param name="req">The attack request containing attacker and target instance IDs.</param>
+    /// <param name="cc">The card definition cache.</param>
+    /// <param name="effects">The optional effect registry for triggering reactive and on-attack effects.</param>
+    /// <returns>The action result containing attack events and state update flag.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
         AttackRequest req, ICardCache cc, IEffectRegistry? effects)

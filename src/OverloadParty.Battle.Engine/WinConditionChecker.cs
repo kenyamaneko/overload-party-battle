@@ -7,6 +7,12 @@ namespace OverloadParty.Battle.Engine;
 /// </summary>
 public static class WinConditionChecker
 {
+    /// <summary>
+    /// Checks all win conditions (budget zero, system down, turn limit, timeout).
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="game">The game metadata.</param>
+    /// <returns>Non-null if a win condition is met.</returns>
     public static GameOverResult? Check(GameState state, Game game)
     {
         if (state.Player1Budget <= 0)

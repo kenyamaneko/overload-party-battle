@@ -7,6 +7,11 @@ namespace OverloadParty.Battle.Engine.Effects;
 /// </summary>
 public static class EffectComposer
 {
+    /// <summary>
+    /// Composes an array of ops into a single effect handler.
+    /// </summary>
+    /// <param name="ops">The ops to compose.</param>
+    /// <returns>An <see cref="EffectHandler"/> that executes the ops in sequence.</returns>
     public static EffectHandler Compose(params IEffectOp[] ops)
     {
         // Capture a copy of the ops array
@@ -23,6 +28,11 @@ public static class EffectComposer
         };
     }
 
+    /// <summary>
+    /// Composes a list of ops into a single effect handler.
+    /// </summary>
+    /// <param name="ops">The ops to compose.</param>
+    /// <returns>An <see cref="EffectHandler"/> that executes the ops in sequence.</returns>
     public static EffectHandler Compose(List<IEffectOp> ops)
     {
         var opsCopy = ops.ToList();

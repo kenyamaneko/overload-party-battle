@@ -3,8 +3,20 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
+/// <summary>
+/// Processes monetize actions that distribute insight yield from backend compute resources into budget.
+/// </summary>
 public static class MonetizeProcessor
 {
+    /// <summary>
+    /// Distributes insight from backend compute resources to the player's budget.
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="playerNum">The player number performing the action.</param>
+    /// <param name="req">The monetize request containing distribution details.</param>
+    /// <param name="cc">The card definition cache.</param>
+    /// <returns>The action result containing the monetize event and state update flag.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
         MonetizeRequest req, ICardCache cc)

@@ -2,8 +2,20 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
+/// <summary>
+/// Processes migrate actions that transfer workload from one resource instance to another.
+/// </summary>
 public static class MigrateProcessor
 {
+    /// <summary>
+    /// Initiates a migration from a source resource to a target resource on the same field.
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="playerNum">The player number performing the migration.</param>
+    /// <param name="req">The migrate request containing source and target instance IDs.</param>
+    /// <param name="cc">The card definition cache.</param>
+    /// <returns>The action result containing the migrate event and state update flag.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
         MigrateRequest req, ICardCache cc)

@@ -9,6 +9,13 @@ public static class EffectHelpers
 {
     // --- Field Scanning ---
 
+    /// <summary>
+    /// Counts face-up resources and active supports of the given faction on a field.
+    /// </summary>
+    /// <param name="field">The field to scan.</param>
+    /// <param name="faction">Faction to match.</param>
+    /// <param name="cc">Card cache for definition lookups.</param>
+    /// <returns>Total count of matching resources and supports.</returns>
     public static int CountFactionCards(Field field, string faction, ICardCache cc)
     {
         var resourceCount = FieldHelpers.AllFaceUpResources(field)
@@ -20,6 +27,12 @@ public static class EffectHelpers
         return resourceCount + supportCount;
     }
 
+    /// <summary>
+    /// Counts the number of resources in the opponent's backend zone.
+    /// </summary>
+    /// <param name="state">Current game state.</param>
+    /// <param name="playerNum">The player whose opponent's backend is counted.</param>
+    /// <returns>Number of backend resources.</returns>
     public static int CountOpponentBackend(GameState state, long playerNum)
     {
         long oppNum = state.OpponentOf(playerNum);
@@ -27,6 +40,14 @@ public static class EffectHelpers
         return field.Backend.Count();
     }
 
+    /// <summary>
+    /// Checks whether a face-up resource of the given card type (and optionally faction) exists on the field.
+    /// </summary>
+    /// <param name="field">The field to scan.</param>
+    /// <param name="cardType">Card type to match.</param>
+    /// <param name="faction">Faction to match, or null/empty for any.</param>
+    /// <param name="cc">Card cache for definition lookups.</param>
+    /// <returns>True if a matching resource exists.</returns>
     public static bool HasCardTypeOnField(Field field, string cardType, string? faction, ICardCache cc)
     {
         return FieldHelpers.AllFaceUpResources(field).Any(r =>
@@ -40,18 +61,44 @@ public static class EffectHelpers
 
     // --- Filter constructors ---
 
+    /// <summary>
+    /// Creates a filter predicate matching cards of the given faction.
+    /// </summary>
+    /// <param name="faction">Faction to match (empty string matches all).</param>
+    /// <returns>A predicate for card definition filtering.</returns>
     public static Func<CardDefinition, bool> FactionFilter(string faction)
         => card => faction.Length == 0 || card.Faction == faction;
 
+    /// <summary>
+    /// Creates a filter predicate matching cards of the given faction and card type.
+    /// </summary>
+    /// <param name="faction">Faction to match (empty string matches all).</param>
+    /// <param name="isType">Predicate to test the card type string.</param>
+    /// <returns>A predicate for card definition filtering.</returns>
     public static Func<CardDefinition, bool> FactionAndTypeFilter(string faction, Func<string, bool> isType)
         => card => (faction.Length == 0 || card.Faction == faction) && isType(card.CardType);
 
+    /// <summary>
+    /// Creates a filter predicate matching a specific card number.
+    /// </summary>
+    /// <param name="cardNo">Card number to match.</param>
+    /// <returns>A predicate for card definition filtering.</returns>
     public static Func<CardDefinition, bool> CardNoFilter(long cardNo)
         => card => card.CardNo == cardNo;
 
+    /// <summary>
+    /// Returns whether the card type is a database type (Database or CacheDB).
+    /// </summary>
+    /// <param name="cardType">Card type string to check.</param>
+    /// <returns>True if the type is a database variant.</returns>
     public static bool IsDBType(string cardType)
         => cardType is CardTypes.Database or CardTypes.CacheDB;
 
+    /// <summary>
+    /// Returns whether the card type is a deployable resource type.
+    /// </summary>
+    /// <param name="cardType">Card type string to check.</param>
+    /// <returns>True if the type is a resource type.</returns>
     public static bool IsResourceType(string cardType)
         => cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl
            or CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;

@@ -7,6 +7,8 @@ namespace OverloadParty.Battle.Engine;
 /// </summary>
 public static class TurnManager
 {
+    /// <summary>Returns <c>true</c> if <paramref name="currentTurn"/> is the first turn (turn 1 skips battle phase).</summary>
+    /// <param name="currentTurn">The current turn number.</param>
     public static bool IsFirstTurn(long currentTurn) => currentTurn == 1;
 
     /// <summary>

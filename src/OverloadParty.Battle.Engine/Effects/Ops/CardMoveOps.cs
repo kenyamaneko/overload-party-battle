@@ -2,18 +2,27 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
+/// <summary>
+/// Draws cards from the player's deck into their hand.
+/// </summary>
 public class DrawCardsOp(int count) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         CardMoveHelpers.DrawCards(ctx.State, ctx.PlayerNum, count);
     }
 }
 
+/// <summary>
+/// Searches the player's repository and adds a matching card to hand.
+/// </summary>
 public class SearchRepoOp : IEffectOp
 {
+    /// <summary>Faction filter, or null for any faction.</summary>
     public string? Faction { get; init; }
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         CardMoveHelpers.SearchRepo(ctx.State, ctx.PlayerNum, card =>
@@ -28,16 +37,24 @@ public class SearchRepoOp : IEffectOp
     }
 }
 
+/// <summary>
+/// Adds a card (by resolved card number) to the player's hand.
+/// </summary>
 public class AddToHandOp(IAmountResolver cardNo) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         CardMoveHelpers.AddToHand(ctx.State, ctx.PlayerNum, cardNo.Resolve(ctx));
     }
 }
 
+/// <summary>
+/// Returns a card from the player's trash to their hand.
+/// </summary>
 public class TrashToHandOp : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         var trash = ctx.State.GetTrash(ctx.PlayerNum);
@@ -58,9 +75,13 @@ public class TrashToHandOp : IEffectOp
 /// </summary>
 public class DeployFromRepoOp : IEffectOp
 {
+    /// <summary>Optional filter to restrict which cards can be deployed.</summary>
     public Func<CardDefinition, bool>? Filter { get; init; }
+
+    /// <summary>Override AV for the deployed resource, or 0 to use default.</summary>
     public long OverrideAV { get; init; }
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         var repo = ctx.State.GetRepository(ctx.PlayerNum);
@@ -83,8 +104,10 @@ public class DeployFromRepoOp : IEffectOp
 /// </summary>
 public class DeployFromHandOp : IEffectOp
 {
+    /// <summary>Optional filter to restrict which cards can be deployed.</summary>
     public Func<CardDefinition, bool>? Filter { get; init; }
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         long? choiceCardNo = null;
@@ -128,6 +151,7 @@ public class DeployFromHandOp : IEffectOp
 /// </summary>
 public class DeployFromRepoSameCardOp(long overrideAV = 0) : IEffectOp
 {
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         if (ctx.Target is null)

@@ -9,18 +9,43 @@ namespace OverloadParty.Battle.Engine;
 /// </summary>
 public class AvailableAction
 {
+    /// <summary>The wire action type (e.g. "play_card", "attack").</summary>
     public string Type { get; set; } = "";
+
+    /// <summary>The instance ID of the hand card to play (play_card only).</summary>
     public string? HandInstanceID { get; set; }
+
+    /// <summary>The card definition number.</summary>
     public long CardID { get; set; }
+
+    /// <summary>Valid zone+slot combinations for placement (e.g. "frontend_0").</summary>
     public List<string>? ValidZones { get; set; }
+
+    /// <summary>The source resource/support instance ID (attack, scale_up, activate_effect, etc.).</summary>
     public string? SourceInstanceID { get; set; }
+
+    /// <summary>Valid target instance IDs (attack targets, attachment targets, etc.).</summary>
     public List<string>? ValidTargets { get; set; }
+
+    /// <summary>The target rank for scale-up actions.</summary>
     public string? TargetRank { get; set; }
+
+    /// <summary>The target instance family for scale-up actions.</summary>
     public string? InstanceFamily { get; set; }
+
+    /// <summary>Whether a family selection is required (scale-up to Medium/Large).</summary>
     public bool NeedsFamily { get; set; }
+
+    /// <summary>Remaining monetize capacity for the resource (monetize only).</summary>
     public long RemainingCapacity { get; set; }
+
+    /// <summary>The type of target the effect expects (activate_effect only).</summary>
     public string? EffectTargetType { get; set; }
+
+    /// <summary>Number of targets required for multi-target effects.</summary>
     public int RequiredCount { get; set; }
+
+    /// <summary>Selectable options for choice-based effects.</summary>
     public List<string>? ChoiceOptions { get; set; }
 }
 
@@ -29,7 +54,10 @@ public class AvailableAction
 /// </summary>
 public class TurnControls
 {
+    /// <summary>Whether the player can end the current phase.</summary>
     public bool CanEndPhase { get; set; }
+
+    /// <summary>Number of cards that must be discarded (0 if no discard needed).</summary>
     public int DiscardRequired { get; set; }
 }
 
@@ -38,6 +66,10 @@ public class TurnControls
 /// </summary>
 public static class AvailableActions
 {
+    /// <summary>Computes whether the player can end the phase and how many cards must be discarded.</summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="hand">The active player's hand.</param>
+    /// <returns>Turn control information for the UI.</returns>
     public static TurnControls ComputeTurnControls(GameState state, List<HandCard> hand)
     {
         return new TurnControls
@@ -49,6 +81,18 @@ public static class AvailableActions
         };
     }
 
+    /// <summary>
+    /// Enumerates all valid actions the active player can perform in the current phase.
+    /// </summary>
+    /// <param name="state">The current game state.</param>
+    /// <param name="myField">The active player's field.</param>
+    /// <param name="oppField">The opponent's field.</param>
+    /// <param name="hand">The active player's hand.</param>
+    /// <param name="budget">The active player's budget.</param>
+    /// <param name="insightPool">The active player's insight pool.</param>
+    /// <param name="cc">Card definitions cache.</param>
+    /// <param name="effects">Effect registry (may be null).</param>
+    /// <returns>A list of all valid actions.</returns>
     public static List<AvailableAction> GetAllAvailableActions(
         GameState state,
         Field myField, Field oppField, List<HandCard> hand,

@@ -7,8 +7,10 @@ namespace OverloadParty.Battle.Engine.Effects.Ops;
 /// </summary>
 public class RequireBudgetOp(long min) : IEffectOp
 {
+    /// <summary>Minimum budget required.</summary>
     public long Min => min;
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         long budget = ctx.State.GetBudget(ctx.PlayerNum);
@@ -24,8 +26,10 @@ public class RequireBudgetOp(long min) : IEffectOp
 /// </summary>
 public class RequireMaxBudgetOp(long max) : IEffectOp
 {
+    /// <summary>Maximum budget allowed.</summary>
     public long Max => max;
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         long budget = ctx.State.GetBudget(ctx.PlayerNum);
@@ -41,9 +45,13 @@ public class RequireMaxBudgetOp(long max) : IEffectOp
 /// </summary>
 public class RequireFactionCountOp(string faction, int min) : IEffectOp
 {
+    /// <summary>Faction to count.</summary>
     public string Faction => faction;
+
+    /// <summary>Minimum number of cards required.</summary>
     public int Min => min;
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         int count = EffectHelpers.CountFactionCards(ctx.MyField, faction, ctx.CardCache);
@@ -59,8 +67,10 @@ public class RequireFactionCountOp(string faction, int min) : IEffectOp
 /// </summary>
 public class RequireOpponentBackendOp : IEffectOp
 {
+    /// <summary>Shared singleton instance.</summary>
     public static readonly RequireOpponentBackendOp Instance = new();
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         int count = EffectHelpers.CountOpponentBackend(ctx.State, ctx.PlayerNum);
@@ -76,9 +86,13 @@ public class RequireOpponentBackendOp : IEffectOp
 /// </summary>
 public class GuardFactionOp(string faction, string? cardType = null) : IEffectOp
 {
+    /// <summary>Required faction.</summary>
     public string Faction => faction;
+
+    /// <summary>Required card type category, or null for any.</summary>
     public string? CardType => cardType;
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         if (ctx.Target is null)
@@ -115,8 +129,10 @@ public class GuardFactionOp(string faction, string? cardType = null) : IEffectOp
 /// </summary>
 public class GuardNotSelfOp : IEffectOp
 {
+    /// <summary>Shared singleton instance.</summary>
     public static readonly GuardNotSelfOp Instance = new();
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         if (ctx.Source is null || ctx.Target is null)
@@ -135,8 +151,10 @@ public class GuardNotSelfOp : IEffectOp
 /// </summary>
 public class GuardTargetAVOp(long maxAV) : IEffectOp
 {
+    /// <summary>Maximum AV threshold the target must be at or below.</summary>
     public long MaxAV => maxAV;
 
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         if (ctx.Target is null)

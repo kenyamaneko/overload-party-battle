@@ -9,6 +9,10 @@ namespace OverloadParty.Battle.Engine.Effects;
 /// </summary>
 public static class EffectInit
 {
+    /// <summary>
+    /// Registers all card effect handlers into the given registry.
+    /// </summary>
+    /// <param name="registry">The registry to populate.</param>
     public static void RegisterAllEffects(EffectRegistry registry)
     {
         RegisterSD(registry);
