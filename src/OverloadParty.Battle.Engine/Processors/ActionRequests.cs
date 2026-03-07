@@ -26,12 +26,12 @@ public class ScaleUpRequest
     public string? InstanceFamily { get; set; }
 }
 
-public class DistributeYieldRequest
+public class MonetizeRequest
 {
-    public List<YieldDistribution> Distributions { get; set; } = [];
+    public List<MonetizeDistribution> Distributions { get; set; } = [];
 }
 
-public class YieldDistribution
+public class MonetizeDistribution
 {
     public string InstanceID { get; set; } = "";
     public long Amount { get; set; }

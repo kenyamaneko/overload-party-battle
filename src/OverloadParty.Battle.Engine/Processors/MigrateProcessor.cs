@@ -17,7 +17,7 @@ public static class MigrateProcessor
         source.MigrationTarget = target.InstanceID;
         target.MigratingOnTurn = state.CurrentTurn;
 
-        var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
+        var playerId = game.GetPlayerID(playerNum);
         return new ActionResult
         {
             Events =
@@ -27,13 +27,13 @@ public static class MigrateProcessor
                     GameID = game.GameID,
                     EventType = WireActionTypes.Migrate,
                     PlayerID = playerId,
-                    EventData = new Dictionary<string, object>
+                    EventData = new MigrateEventData
                     {
-                        ["sourceInstanceId"] = req.SourceInstanceID,
-                        ["targetInstanceId"] = req.TargetInstanceID,
-                        ["sourceCardId"] = source.CardID,
-                        ["targetCardId"] = target.CardID,
-                    }
+                        SourceInstanceId = req.SourceInstanceID,
+                        TargetInstanceId = req.TargetInstanceID,
+                        SourceCardId = source.CardID,
+                        TargetCardId = target.CardID,
+                    }.ToDictionary()
                 }
             ],
             StateUpdated = true,
@@ -49,22 +49,36 @@ public static class MigrateProcessor
             ?? throw new GameRuleException($"target {req.TargetInstanceID} not found");
 
         if (!source.FaceUp)
+        {
             throw new GameRuleException("source must be face-up");
+        }
         if (!target.FaceUp)
+        {
             throw new GameRuleException("target must be face-up");
+        }
         if (source.MigrationTarget is not null)
+        {
             throw new GameRuleException("source is already migrating");
+        }
         if (source.MigratingFrom is not null)
+        {
             throw new GameRuleException("source is already a migration destination");
+        }
         if (target.MigratingFrom is not null)
+        {
             throw new GameRuleException("target is already a migration destination");
+        }
         if (target.MigrationTarget is not null)
+        {
             throw new GameRuleException("target is already migrating");
+        }
 
         var sourceCard = cc.MustGet(source.CardID);
         var targetCard = cc.MustGet(target.CardID);
         if (targetCard.DeployTurns < sourceCard.DeployTurns)
+        {
             throw new GameRuleException("target deploy turns must be >= source deploy turns");
+        }
 
         return (source, target);
     }

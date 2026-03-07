@@ -37,7 +37,12 @@ public class Zone<T> : IEnumerable<T> where T : class
     public int FindEmptySlot()
     {
         for (int i = 0; i < _slots.Length; i++)
-            if (_slots[i] is null) return i;
+        {
+            if (_slots[i] is null)
+            {
+                return i;
+            }
+        }
         return -1;
     }
 
@@ -63,7 +68,10 @@ public class Zone<T> : IEnumerable<T> where T : class
     public bool TryPlace(T item)
     {
         var slot = FindEmptySlot();
-        if (slot < 0) return false;
+        if (slot < 0)
+        {
+            return false;
+        }
         _slots[slot] = item;
         return true;
     }
@@ -74,8 +82,12 @@ public class Zone<T> : IEnumerable<T> where T : class
     public IEnumerable<int> EmptySlotIndices()
     {
         for (int i = 0; i < _slots.Length; i++)
+        {
             if (_slots[i] is null)
+            {
                 yield return i;
+            }
+        }
     }
 
     /// <summary>
@@ -89,8 +101,12 @@ public class Zone<T> : IEnumerable<T> where T : class
     public IEnumerator<T> GetEnumerator()
     {
         foreach (var slot in _slots)
+        {
             if (slot is not null)
+            {
                 yield return slot;
+            }
+        }
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

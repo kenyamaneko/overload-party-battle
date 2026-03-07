@@ -3,17 +3,21 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
-public static class DistributeYieldProcessor
+public static class MonetizeProcessor
 {
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
-        DistributeYieldRequest req, ICardCache cc)
+        MonetizeRequest req, ICardCache cc)
     {
         if (TurnManager.IsFirstTurn(state.CurrentTurn))
+        {
             throw new GameRuleException("cannot distribute yield on first turn");
+        }
 
         if (!req.Distributions.Any())
+        {
             throw new GameRuleException("no distributions provided");
+        }
 
         var field = state.GetField(playerNum);
         long insightPool = state.GetInsightPool(playerNum);
@@ -29,16 +33,20 @@ public static class DistributeYieldProcessor
 
             // Elastic scaling
             if (card.Elastic && card.ElasticIncrement > 0)
+            {
                 StatCalculator.ApplyElasticBonus(resource, card);
+            }
         }
 
         if (totalDistributed > insightPool)
+        {
             throw new GameRuleException($"total distribution {totalDistributed} exceeds insight pool {insightPool}");
+        }
 
         state.SetInsightPool(playerNum, insightPool - totalDistributed);
         state.SetBudget(playerNum, budget + totalDistributed);
 
-        var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
+        var playerId = game.GetPlayerID(playerNum);
         return new ActionResult
         {
             Events =
@@ -46,12 +54,12 @@ public static class DistributeYieldProcessor
                 new GameEvent
                 {
                     GameID = game.GameID,
-                    EventType = WireActionTypes.DistributeYield,
+                    EventType = WireActionTypes.Monetize,
                     PlayerID = playerId,
-                    EventData = new Dictionary<string, object>
+                    EventData = new MonetizeEventData
                     {
-                        ["totalAmount"] = totalDistributed,
-                    }
+                        TotalAmount = totalDistributed,
+                    }.ToDictionary()
                 }
             ],
             StateUpdated = true,
@@ -59,25 +67,33 @@ public static class DistributeYieldProcessor
     }
 
     private static (ResourceInstance Resource, CardDefinition Card) ValidateDistribution(
-        Field field, YieldDistribution dist, ICardCache cc)
+        Field field, MonetizeDistribution dist, ICardCache cc)
     {
         if (dist.Amount <= 0)
+        {
             throw new GameRuleException("distribution amount must be positive");
+        }
 
         var resource = FieldHelpers.FindResourceByID(field, dist.InstanceID)
             ?? throw new GameRuleException($"resource {dist.InstanceID} not found");
 
         if (FieldHelpers.FindResourceZone(field, dist.InstanceID) != Zone.Backend)
+        {
             throw new GameRuleException("can only distribute yield from backend resources");
+        }
 
         var card = cc.MustGet(resource.CardID);
         if (!card.IsComputeType)
+        {
             throw new GameRuleException("can only distribute yield from compute resources");
+        }
 
         long effectiveTP = StatCalculator.CalculateEffectiveTP(resource, field, cc);
         long remaining = effectiveTP - resource.MonetizedAmount;
         if (dist.Amount > remaining)
+        {
             throw new GameRuleException($"distribution amount {dist.Amount} exceeds remaining capacity {remaining}");
+        }
 
         return (resource, card);
     }

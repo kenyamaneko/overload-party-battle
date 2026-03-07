@@ -262,11 +262,11 @@ public class FieldHelpersTests
     public void CreateResourceInstance_ZeroDeployTurns_FaceUp()
     {
         var card = TestFactory.ServerlessCard();
-        var res = FieldHelpers.CreateResourceInstance(card, "inst_1", 1);
+        var res = ResourceHelpers.CreateResourceInstance(card, "inst_1", 1);
 
         res.FaceUp.Should().BeTrue();
         res.DeployingTurnsLeft.Should().Be(0);
-        res.Rank.Should().Be(Rank.Small);
+        res.Rank.Should().BeNull();
     }
 
     /// <summary>
@@ -276,7 +276,7 @@ public class FieldHelpersTests
     public void CreateResourceInstance_OneDeployTurn_FaceDown()
     {
         var card = TestFactory.ComputeCard(deployTurns: 1);
-        var res = FieldHelpers.CreateResourceInstance(card, "inst_1", 3);
+        var res = ResourceHelpers.CreateResourceInstance(card, "inst_1", 3);
 
         res.FaceUp.Should().BeFalse();
         res.DeployingTurnsLeft.Should().Be(1);
@@ -287,7 +287,7 @@ public class FieldHelpersTests
     public void CreateResourceInstance_ComputeCard_SetsTpStats()
     {
         var card = TestFactory.ComputeCard(tp: 700, av: 1400);
-        var res = FieldHelpers.CreateResourceInstance(card, "inst_1", 1);
+        var res = ResourceHelpers.CreateResourceInstance(card, "inst_1", 1);
 
         res.MaxTP.Should().Be(700);
         res.CurrentTP.Should().Be(700);
@@ -299,7 +299,7 @@ public class FieldHelpersTests
     public void CreateResourceInstance_DataCard_SetsYieldStats()
     {
         var card = TestFactory.DataCard(yield: 500, av: 800);
-        var res = FieldHelpers.CreateResourceInstance(card, "inst_1", 1);
+        var res = ResourceHelpers.CreateResourceInstance(card, "inst_1", 1);
 
         res.MaxYield.Should().Be(500);
         res.CurrentYield.Should().Be(500);
@@ -314,7 +314,7 @@ public class FieldHelpersTests
     {
         var state = TestFactory.MakeGameState();
 
-        FieldHelpers.AddToTrash(state, 1, 42, "inst_42");
+        CardMoveHelpers.AddToTrash(state, 1, 42, "inst_42");
         state.Player1Trash.Should().ContainSingle()
             .Which.CardID.Should().Be(42);
         state.Player2Trash.Should().BeEmpty();

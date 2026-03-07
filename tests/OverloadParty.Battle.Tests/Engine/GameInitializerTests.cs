@@ -150,8 +150,13 @@ public class GameInitializerTests
     public void CreateNewGame_ShufflePreservesAllCards()
     {
         var cc = SetupCardCache();
-        var deckCards = new List<long>();
-        for (int i = 0; i < 10; i++) { deckCards.Add(1); deckCards.Add(2); deckCards.Add(3); }
+        var deckCards = new List<DeckSnapshotCard>();
+        for (int i = 0; i < 10; i++)
+        {
+            deckCards.Add(new DeckSnapshotCard { CardNo = 1 });
+            deckCards.Add(new DeckSnapshotCard { CardNo = 2 });
+            deckCards.Add(new DeckSnapshotCard { CardNo = 3 });
+        }
         var deck = new DeckSnapshot { DeckID = "d1", Cards = deckCards };
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
@@ -161,7 +166,7 @@ public class GameInitializerTests
             .OrderBy(x => x)
             .ToList();
 
-        var expectedSorted = deckCards.OrderBy(x => x).ToList();
+        var expectedSorted = deckCards.Select(c => c.CardNo).OrderBy(x => x).ToList();
         allP1CardIds.Should().Equal(expectedSorted);
     }
 

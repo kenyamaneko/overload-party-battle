@@ -210,7 +210,7 @@ public static class TestFactory
     public static ResourceInstance MakeResource(
         long cardId = 1,
         string instanceId = "inst_1",
-        Rank rank = Rank.Small,
+        Rank? rank = Rank.Small,
         InstanceFamily? family = null,
         bool faceUp = true,
         long deployLeft = 0,
@@ -294,11 +294,11 @@ public static class TestFactory
     /// </summary>
     public static DeckSnapshot MakeDeck(params long[] cardNos)
     {
-        var cards = new List<long>();
+        var cards = new List<DeckSnapshotCard>();
         int idx = 0;
         while (cards.Count < GameConstants.DeckSize)
         {
-            cards.Add(cardNos[idx % cardNos.Length]);
+            cards.Add(new DeckSnapshotCard { CardNo = cardNos[idx % cardNos.Length] });
             idx++;
         }
         return new DeckSnapshot { DeckID = "deck-1", Cards = cards };

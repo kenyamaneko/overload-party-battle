@@ -66,7 +66,6 @@ public static class EnumExtensions
 
     public static string ToWireString(this GameStatus status) => status switch
     {
-        GameStatus.Waiting => "waiting",
         GameStatus.Playing => "playing",
         GameStatus.Finished => "finished",
         _ => throw new ArgumentOutOfRangeException(nameof(status))
@@ -74,7 +73,6 @@ public static class EnumExtensions
 
     public static GameStatus ParseGameStatus(string s) => s switch
     {
-        "waiting" => GameStatus.Waiting,
         "playing" => GameStatus.Playing,
         "finished" => GameStatus.Finished,
         _ => throw new ArgumentException($"Unknown game status: {s}")
@@ -88,7 +86,6 @@ public static class EnumExtensions
         WinReason.SystemDown => "system_down",
         WinReason.RepositoryOut => "repository_out",
         WinReason.Timeout => "timeout",
-        WinReason.Disconnect => "disconnect",
         WinReason.TurnLimit => "turn_limit",
         WinReason.Draw => "draw",
         WinReason.LaunchFailure => "launch_failure",
@@ -101,7 +98,6 @@ public static class EnumExtensions
         "system_down" => WinReason.SystemDown,
         "repository_out" => WinReason.RepositoryOut,
         "timeout" => WinReason.Timeout,
-        "disconnect" => WinReason.Disconnect,
         "turn_limit" => WinReason.TurnLimit,
         "draw" => WinReason.Draw,
         "launch_failure" => WinReason.LaunchFailure,
@@ -115,12 +111,13 @@ public static class EnumExtensions
         ActionType.PlayCard => WireActionTypes.PlayCard,
         ActionType.Attack => WireActionTypes.Attack,
         ActionType.ScaleUp => WireActionTypes.ScaleUp,
-        ActionType.DistributeYield => WireActionTypes.DistributeYield,
+        ActionType.Monetize => WireActionTypes.Monetize,
         ActionType.DiscardHand => WireActionTypes.DiscardHand,
         ActionType.ActivateEffect => WireActionTypes.ActivateEffect,
         ActionType.SetReactive => WireActionTypes.SetReactive,
         ActionType.Migrate => WireActionTypes.Migrate,
         ActionType.EndPhase => WireActionTypes.EndPhase,
+        ActionType.Forfeit => WireActionTypes.Forfeit,
         _ => throw new ArgumentOutOfRangeException(nameof(action))
     };
 
@@ -129,12 +126,13 @@ public static class EnumExtensions
         WireActionTypes.PlayCard => ActionType.PlayCard,
         WireActionTypes.Attack => ActionType.Attack,
         WireActionTypes.ScaleUp => ActionType.ScaleUp,
-        WireActionTypes.DistributeYield => ActionType.DistributeYield,
+        WireActionTypes.Monetize => ActionType.Monetize,
         WireActionTypes.DiscardHand => ActionType.DiscardHand,
         WireActionTypes.ActivateEffect => ActionType.ActivateEffect,
         WireActionTypes.SetReactive => ActionType.SetReactive,
         WireActionTypes.Migrate => ActionType.Migrate,
         WireActionTypes.EndPhase => ActionType.EndPhase,
+        WireActionTypes.Forfeit => ActionType.Forfeit,
         _ => throw new ArgumentException($"Unknown action type: {s}")
     };
 
@@ -142,17 +140,17 @@ public static class EnumExtensions
 
     public static string ToWireString(this Zone zone) => zone switch
     {
-        Zone.Frontend => "frontend",
-        Zone.Backend => "backend",
-        Zone.Support => "support",
+        Zone.Frontend => GameConstants.ZoneFrontend,
+        Zone.Backend => GameConstants.ZoneBackend,
+        Zone.Support => GameConstants.ZoneSupport,
         _ => throw new ArgumentOutOfRangeException(nameof(zone))
     };
 
     public static Zone ParseZone(string s) => s switch
     {
-        "frontend" => Zone.Frontend,
-        "backend" => Zone.Backend,
-        "support" => Zone.Support,
+        GameConstants.ZoneFrontend => Zone.Frontend,
+        GameConstants.ZoneBackend => Zone.Backend,
+        GameConstants.ZoneSupport => Zone.Support,
         _ => throw new ArgumentException($"Unknown zone: {s}")
     };
 

@@ -5,6 +5,10 @@ namespace OverloadParty.Battle.Engine.Processors;
 
 public static class PlayCardProcessor
 {
+    private record PlayContext(
+        GameState State, Game Game, long PlayerNum,
+        ICardCache CC, IEffectRegistry? Effects);
+
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
         PlayCardRequest req, ICardCache cc, IEffectRegistry? effects)
@@ -12,195 +16,225 @@ public static class PlayCardProcessor
         var hand = state.GetHand(playerNum);
         var field = state.GetField(playerNum);
 
-        // Find card in hand
         int handIdx = hand.FindIndex(h => h.InstanceID == req.CardInstanceID);
         if (handIdx < 0)
+        {
             throw new GameRuleException($"card {req.CardInstanceID} not in hand");
+        }
 
         var handCard = hand[handIdx];
         var cardDef = cc.MustGet(handCard.CardID);
 
-        // Incident 1-per-turn limit
-        if (cardDef.CardType == CardTypes.Incident && field.IncidentPlayedThisTurn)
+        if (cardDef.CardType == CardTypes.Incident && state.GetIncidentPlayedThisTurn(playerNum))
+        {
             throw new GameRuleException("incident already played this turn");
+        }
 
-        // Attachment flow
+        var ctx = new PlayContext(state, game, playerNum, cc, effects);
+
         if (cardDef.CardType == CardTypes.Attachment)
-            return ProcessAttachCard(state, game, playerNum, hand, handIdx, handCard, cardDef, req, cc, effects);
+        {
+            return ProcessAttachCard(ctx, hand, handIdx, handCard, cardDef, req);
+        }
 
-        // Validate position
         ValidatePlayPosition(cardDef, field, req);
 
-        // Remove from hand
         hand.RemoveAt(handIdx);
 
         var deployOrder = state.NextDeployOrder();
         var events = new List<GameEvent>();
 
+        bool cancelled = false;
         if (FieldHelpers.IsSupportType(cardDef.CardType))
         {
-            // Place in support zone
-            var support = new SupportInstance
-            {
-                InstanceID = state.NextInstanceID(),
-                CardID = cardDef.CardNo,
-                FaceDown = cardDef.CardType == CardTypes.Reactive,
-                DeployingTurnsLeft = cardDef.DeployTurns,
-                DeployOrder = deployOrder,
-            };
-
-            field.Support[req.Index] = support;
-
-            // Immediate cards (Strategy, Incident): execute and remove
-            if (FieldHelpers.IsImmediateType(cardDef.CardType))
-            {
-                if (cardDef.CardType == CardTypes.Incident)
-                    field.IncidentPlayedThisTurn = true;
-
-                // Fire activate trigger
-                if (effects?.Has(cardDef.CardNo, TriggerType.Activate) == true)
-                {
-                    var handler = effects.Get(cardDef.CardNo, TriggerType.Activate)!;
-                    var ctx = new EffectContext
-                    {
-                        State = state,
-                        Game = game,
-                        PlayerNum = playerNum,
-                        SupSource = support,
-                        CardCache = cc,
-                        ChoiceData = req.ChoiceData,
-                    };
-                    var effectResult = handler(ctx);
-                    events.AddRange(effectResult.Events);
-                }
-
-                // Remove from support zone after execution
-                field.Support[req.Index] = null;
-
-                // Move to trash
-                FieldHelpers.AddToTrash(state, playerNum, cardDef.CardNo, support.InstanceID);
-            }
+            PlaceSupport(ctx, field, cardDef, handCard, req, deployOrder, events);
         }
         else
         {
-            // Place resource on frontend or backend
-            var resource = FieldHelpers.CreateResourceInstance(cardDef, state.NextInstanceID(), state.CurrentTurn);
-            resource.DeployOrder = deployOrder;
-
-            if (resource.FaceUp)
-                field.HasHadActiveResource = true;
-
-            if (req.Zone == "frontend")
-                field.Frontend[req.Index] = resource;
-            else
-                field.Backend[req.Index] = resource;
-
-            // Fire deploy reactives (opponent's TriggerOnEnemyDeploy)
-            var (cancelled, reactiveEvents) = FireDeployReactives(
-                state, game, playerNum, resource, cc, effects);
-            events.AddRange(reactiveEvents);
-
-            if (cancelled)
-            {
-                // Remove the deployed resource and send to trash
-                FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
-                FieldHelpers.AddToTrash(state, playerNum, cardDef.CardNo, resource.InstanceID);
-            }
-            else
-            {
-                // Fire deploy trigger on the resource itself
-                if (effects?.Has(cardDef.CardNo, TriggerType.Deploy) == true)
-                {
-                    var handler = effects.Get(cardDef.CardNo, TriggerType.Deploy)!;
-                    var ctx = new EffectContext
-                    {
-                        State = state,
-                        Game = game,
-                        PlayerNum = playerNum,
-                        Source = resource,
-                        CardCache = cc,
-                        ChoiceData = req.ChoiceData,
-                    };
-                    var effectResult = handler(ctx);
-                    events.AddRange(effectResult.Events);
-                }
-            }
+            cancelled = PlaceResource(ctx, field, cardDef, handCard, req, deployOrder, events);
         }
 
-        var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
+        var playerId = game.GetPlayerID(playerNum);
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
             EventType = WireActionTypes.PlayCard,
             PlayerID = playerId,
-            EventData = new Dictionary<string, object>
+            EventData = new PlayCardEventData
             {
-                ["cardId"] = handCard.CardID,
-                ["zone"] = req.Zone,
-                ["index"] = req.Index,
-            }
+                CardId = handCard.CardID,
+                Zone = req.Zone,
+                Index = req.Index,
+                Cancelled = cancelled ? true : null,
+            }.ToDictionary(),
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
     }
 
+    private static void PlaceSupport(
+        PlayContext ctx, Field field,
+        CardDefinition cardDef, HandCard handCard, PlayCardRequest req,
+        long deployOrder, List<GameEvent> events)
+    {
+        var support = new SupportInstance
+        {
+            InstanceID = ctx.State.NextInstanceID(),
+            CardID = cardDef.CardNo,
+            ArtNo = handCard.ArtNo,
+            FaceUp = cardDef.CardType != CardTypes.Reactive,
+            DeployingTurnsLeft = cardDef.DeployTurns,
+            DeployOrder = deployOrder,
+        };
+
+        field.Support[req.Index] = support;
+
+        // Immediate cards (Strategy, Incident): execute and remove
+        if (FieldHelpers.IsImmediateType(cardDef.CardType))
+        {
+            if (cardDef.CardType == CardTypes.Incident)
+            {
+                ctx.State.SetIncidentPlayedThisTurn(ctx.PlayerNum, true);
+            }
+
+            // Fire activate trigger
+            if (ctx.Effects?.Has(cardDef.CardNo, TriggerType.Activate) == true)
+            {
+                var handler = ctx.Effects.Get(cardDef.CardNo, TriggerType.Activate)!;
+                var effectCtx = new EffectContext
+                {
+                    State = ctx.State,
+                    Game = ctx.Game,
+                    PlayerNum = ctx.PlayerNum,
+                    SupSource = support,
+                    CardCache = ctx.CC,
+                    ChoiceData = req.ChoiceData,
+                };
+                var effectResult = handler(effectCtx);
+                events.AddRange(effectResult.Events);
+            }
+
+            // Remove from support zone after execution
+            field.Support[req.Index] = null;
+
+            // Move to trash
+            CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardNo, support.InstanceID, support.ArtNo);
+        }
+    }
+
+    private static bool PlaceResource(
+        PlayContext ctx, Field field,
+        CardDefinition cardDef, HandCard handCard, PlayCardRequest req,
+        long deployOrder, List<GameEvent> events)
+    {
+        var resource = ResourceHelpers.CreateResourceInstance(cardDef, ctx.State.NextInstanceID(), ctx.State.CurrentTurn, handCard.ArtNo);
+        resource.DeployOrder = deployOrder;
+
+        if (resource.FaceUp)
+        {
+            ctx.State.SetHasHadActiveResource(ctx.PlayerNum, true);
+        }
+
+        if (req.Zone == GameConstants.ZoneFrontend)
+        {
+            field.Frontend[req.Index] = resource;
+        }
+        else
+        {
+            field.Backend[req.Index] = resource;
+        }
+
+        // Fire deploy reactives (opponent's TriggerOnEnemyDeploy)
+        var (cancelled, reactiveEvents) = FireDeployReactives(ctx, resource);
+        events.AddRange(reactiveEvents);
+
+        if (cancelled)
+        {
+            // Remove the deployed resource and send to trash
+            FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
+            CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardNo, resource.InstanceID, resource.ArtNo);
+            return true;
+        }
+
+        // Fire deploy trigger on the resource itself
+        if (ctx.Effects?.Has(cardDef.CardNo, TriggerType.Deploy) == true)
+        {
+            var handler = ctx.Effects.Get(cardDef.CardNo, TriggerType.Deploy)!;
+            var effectCtx = new EffectContext
+            {
+                State = ctx.State,
+                Game = ctx.Game,
+                PlayerNum = ctx.PlayerNum,
+                Source = resource,
+                CardCache = ctx.CC,
+                ChoiceData = req.ChoiceData,
+            };
+            var effectResult = handler(effectCtx);
+            events.AddRange(effectResult.Events);
+        }
+
+        return false;
+    }
+
     private static ActionResult ProcessAttachCard(
-        GameState state, Game game, long playerNum,
+        PlayContext ctx,
         List<HandCard> hand, int handIdx, HandCard handCard,
-        CardDefinition cardDef, PlayCardRequest req,
-        ICardCache cc, IEffectRegistry? effects)
+        CardDefinition cardDef, PlayCardRequest req)
     {
         if (req.TargetInstanceID is null)
+        {
             throw new GameRuleException("attachment requires target instance ID");
+        }
 
-        var field = state.GetField(playerNum);
+        var field = ctx.State.GetField(ctx.PlayerNum);
         var target = FieldHelpers.FindResourceByID(field, req.TargetInstanceID)
             ?? throw new GameRuleException($"target resource {req.TargetInstanceID} not found");
         if (target.Attachments.Count >= GameConstants.MaxAttachments)
+        {
             throw new GameRuleException($"target already has max attachments ({GameConstants.MaxAttachments})");
+        }
 
-        // Add attachment
-        var attachInstanceID = state.NextInstanceID();
+        var attachInstanceID = ctx.State.NextInstanceID();
         target.Attachments.Add(new AttachmentRef
         {
             InstanceID = attachInstanceID,
             CardID = cardDef.CardNo,
+            ArtNo = handCard.ArtNo,
         });
 
-        // Remove from hand
         hand.RemoveAt(handIdx);
 
         var events = new List<GameEvent>();
 
         // Fire deploy trigger for attachment
-        if (effects?.Has(cardDef.CardNo, TriggerType.Deploy) == true)
+        if (ctx.Effects?.Has(cardDef.CardNo, TriggerType.Deploy) == true)
         {
-            var handler = effects.Get(cardDef.CardNo, TriggerType.Deploy)!;
-            var ctx = new EffectContext
+            var handler = ctx.Effects.Get(cardDef.CardNo, TriggerType.Deploy)!;
+            var effectCtx = new EffectContext
             {
-                State = state,
-                Game = game,
-                PlayerNum = playerNum,
+                State = ctx.State,
+                Game = ctx.Game,
+                PlayerNum = ctx.PlayerNum,
                 Source = target,
                 Target = target,
-                CardCache = cc,
+                CardCache = ctx.CC,
                 ChoiceData = req.ChoiceData,
             };
-            var effectResult = handler(ctx);
+            var effectResult = handler(effectCtx);
             events.AddRange(effectResult.Events);
         }
 
-        var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
+        var playerId = ctx.Game.GetPlayerID(ctx.PlayerNum);
         events.Insert(0, new GameEvent
         {
-            GameID = game.GameID,
+            GameID = ctx.Game.GameID,
             EventType = WireActionTypes.AttachCard,
             PlayerID = playerId,
-            EventData = new Dictionary<string, object>
+            EventData = new AttachCardEventData
             {
-                ["cardId"] = handCard.CardID,
-                ["targetId"] = req.TargetInstanceID,
-            }
+                CardId = handCard.CardID,
+                TargetId = req.TargetInstanceID!,
+            }.ToDictionary(),
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
@@ -209,29 +243,43 @@ public static class PlayCardProcessor
     private static void ValidatePlayPosition(CardDefinition cardDef, Field field, PlayCardRequest req)
     {
         if (req.Index < 0 || req.Index >= GameConstants.SlotsPerZone)
+        {
             throw new GameRuleException($"invalid slot index {req.Index}");
+        }
 
         switch (req.Zone)
         {
-            case "frontend":
+            case GameConstants.ZoneFrontend:
                 if (!FieldHelpers.IsFrontendEligible(cardDef.CardType))
+                {
                     throw new GameRuleException($"{cardDef.CardType} cannot be placed in frontend");
+                }
                 if (field.Frontend[req.Index] is not null)
+                {
                     throw new GameRuleException($"frontend slot {req.Index} is occupied");
+                }
                 break;
 
-            case "backend":
+            case GameConstants.ZoneBackend:
                 if (!FieldHelpers.IsBackendEligible(cardDef.CardType))
+                {
                     throw new GameRuleException($"{cardDef.CardType} cannot be placed in backend");
+                }
                 if (field.Backend[req.Index] is not null)
+                {
                     throw new GameRuleException($"backend slot {req.Index} is occupied");
+                }
                 break;
 
-            case "support":
+            case GameConstants.ZoneSupport:
                 if (!FieldHelpers.IsSupportType(cardDef.CardType))
+                {
                     throw new GameRuleException($"{cardDef.CardType} cannot be placed in support");
+                }
                 if (field.Support[req.Index] is not null)
+                {
                     throw new GameRuleException($"support slot {req.Index} is occupied");
+                }
                 break;
 
             default:
@@ -240,49 +288,38 @@ public static class PlayCardProcessor
     }
 
     private static (bool Cancelled, List<GameEvent> Events) FireDeployReactives(
-        GameState state, Game game, long deployerNum,
-        ResourceInstance deployed, ICardCache cc, IEffectRegistry? effects)
+        PlayContext ctx, ResourceInstance deployed)
     {
-        if (effects is null) return (false, []);
+        if (ctx.Effects is null) { return (false, []); }
 
-        var opponentNum = state.OpponentOf(deployerNum);
-        var oppField = state.GetField(opponentNum);
+        var opponentNum = ctx.State.OpponentOf(ctx.PlayerNum);
+        var oppField = ctx.State.GetField(opponentNum);
         var allEvents = new List<GameEvent>();
 
-        // Find all support cards with TriggerOnEnemyDeploy, sorted by DeployOrder
-        var reactiveSupports = FieldHelpers.AllSupports(oppField)
-            .Where(s => effects.Has(cc.MustGet(s.CardID).CardNo, TriggerType.OnEnemyDeploy))
-            .OrderBy(s => s.DeployOrder)
-            .ToList();
+        // リアクティブは1つだけ発動する（セットが最も早いもの）
+        var reactive = FieldHelpers.AllSupports(oppField)
+            .Where(s => ctx.Effects.Has(ctx.CC.MustGet(s.CardID).CardNo, TriggerType.OnEnemyDeploy))
+            .MinBy(s => s.DeployOrder);
 
-        foreach (var support in reactiveSupports)
+        if (reactive is null) { return (false, allEvents); }
+
+        var handler = ctx.Effects.Get(ctx.CC.MustGet(reactive.CardID).CardNo, TriggerType.OnEnemyDeploy)!;
+        var effectCtx = new EffectContext
         {
-            var supCard = cc.MustGet(support.CardID);
-            var handler = effects.Get(supCard.CardNo, TriggerType.OnEnemyDeploy);
-            if (handler is null) continue;
+            State = ctx.State,
+            Game = ctx.Game,
+            PlayerNum = opponentNum,
+            SupSource = reactive,
+            Target = deployed,
+            CardCache = ctx.CC,
+        };
 
-            var ctx = new EffectContext
-            {
-                State = state,
-                Game = game,
-                PlayerNum = opponentNum,
-                SupSource = support,
-                Target = deployed,
-                CardCache = cc,
-            };
+        var result = handler(effectCtx);
+        allEvents.AddRange(result.Events);
 
-            var result = handler(ctx);
-            allEvents.AddRange(result.Events);
+        // リアクティブは伏せた状態でセットされるため、発動時に表向きにする
+        if (!reactive.FaceUp) { reactive.FaceUp = true; }
 
-            if (result.CancelAction)
-            {
-                // Flip reactive face-up
-                if (support.FaceDown)
-                    support.FaceDown = false;
-                return (true, allEvents);
-            }
-        }
-
-        return (false, allEvents);
+        return (result.CancelAction, allEvents);
     }
 }

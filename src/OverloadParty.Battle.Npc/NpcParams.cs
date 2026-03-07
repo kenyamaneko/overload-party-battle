@@ -37,6 +37,6 @@ public static class NpcParams
     public const int PriHeal = 50;
     public const int PriDeployFree = 75;
     public const int PriRecoverCard = 35;
-    public const int PriRevealTrap = 35;
+    public const int PriRevealReactive = 35;
     public const int PriDestroyPlatform = 70;
 }

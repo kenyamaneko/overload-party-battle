@@ -17,7 +17,7 @@ public static class EffectInit
         RegisterTuners(registry);
         RegisterNeutral(registry);
         RegisterIncidents(registry);
-        RegisterReactiveTraps(registry);
+        RegisterReactives(registry);
     }
 
     // ========================
@@ -60,8 +60,8 @@ public static class EffectInit
             })
         );
 
-        // #14 SD Guard: Reveal 1 opponent trap
-        r.RegisterComposed(14, TriggerType.Activate, new RevealTrapOp());
+        // #14 SD Guard: Reveal 1 opponent reactive
+        r.RegisterComposed(14, TriggerType.Activate, new RevealReactiveOp());
 
         // #15 SD Firewall: Block DDoS / Data Breach
         r.RegisterComposed(15, TriggerType.Reactive, SetCancelActionOp.Instance);
@@ -120,9 +120,9 @@ public static class EffectInit
             new DeployFromRepoOp { Filter = EffectHelpers.CardNoFilter(32) }
         );
 
-        // #36 Tenki Sentinel: Reveal trap + Incident damage -300
+        // #36 Tenki Sentinel: Reveal reactive + Incident damage -300
         r.RegisterComposed(36, TriggerType.Activate,
-            new RevealTrapOp(),
+            new RevealReactiveOp(),
             new ApplyBuffOp(new AllOwnSelector(), "incident_reduction", new StaticAmount(300), "this_turn", "sentinel")
         );
 
@@ -258,9 +258,9 @@ public static class EffectInit
             new DealDamageOp(SourceSelector.Instance, new StaticAmount(300))
         );
 
-        // #83 Tuners Guard: Reveal trap + conditional Incident reduction
+        // #83 Tuners Guard: Reveal reactive + conditional Incident reduction
         r.RegisterComposed(83, TriggerType.Activate,
-            new RevealTrapOp(),
+            new RevealReactiveOp(),
             new IfConditionOp(
                 octx =>
                 {
@@ -285,15 +285,14 @@ public static class EffectInit
 
         // #89 Tuners License: Full AV restore on Tuners DB
         r.RegisterComposed(89, TriggerType.Activate,
-            new HealDamageOp(
+            new FullHealOp(
                 new ByChoiceSelector
                 {
                     Zone = GameConstants.ZoneBackend,
                     Faction = GameConstants.FactionTuners,
                     CardType = "data",
                     Owner = "self",
-                },
-                new StaticAmount(0))
+                })
         );
 
         // #90 Tuners Failback: Deploy Tuners DB from hand when Tuners DB destroyed
@@ -401,17 +400,7 @@ public static class EffectInit
                 "ransomware", new StaticAmount(1), "until_next_turn_end", "ransomware")
         );
 
-        // #112 Compliance Audit: Budget -400 (or -800 without Security Platform)
-        r.RegisterComposed(112, TriggerType.Activate,
-            new IfConditionOp(
-                octx => EffectHelpers.HasSecurityPlatform(octx.OpponentField, octx.CardCache),
-                [new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(400))]
-            ),
-            new IfConditionOp(
-                octx => !EffectHelpers.HasSecurityPlatform(octx.OpponentField, octx.CardCache),
-                [new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(800))]
-            )
-        );
+        // #112 Compliance Audit: TODO — re-implement with effect system
 
         // #113 レートリミット: cannot_operate on high-TP Compute/AI_ML
         r.RegisterComposed(113, TriggerType.OnEnemyDeploy,
@@ -433,9 +422,9 @@ public static class EffectInit
     }
 
     // ========================
-    // Reactive Traps
+    // Reactives
     // ========================
-    private static void RegisterReactiveTraps(EffectRegistry r)
+    private static void RegisterReactives(EffectRegistry r)
     {
         // #115 フェイルオーバー: Deploy same type from hand when frontend destroyed
         r.RegisterComposed(115, TriggerType.Reactive,
@@ -464,7 +453,10 @@ public static class EffectInit
     /// </summary>
     private static void PubSubChainDamage(OpContext octx)
     {
-        if (octx.Target is null) return;
+        if (octx.Target is null)
+        {
+            return;
+        }
 
         var field = octx.MyField;
         var ally = field.Frontend
@@ -475,7 +467,9 @@ public static class EffectInit
                 return card is not null && card.Faction == GameConstants.FactionSugar && card.IsComputeType;
             });
         if (ally is not null)
+        {
             octx.Target.Damage += 200;
+        }
     }
 
     /// <summary>
@@ -485,16 +479,22 @@ public static class EffectInit
     {
         var instanceId = octx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
         if (instanceId is null)
+        {
             throw new GameRuleException("No instance chosen");
+        }
 
         var field = octx.MyField;
         var target = FieldHelpers.FindResourceByID(field, instanceId);
         if (target is null || FieldHelpers.FindResourceZone(field, instanceId) != Zone.Frontend)
+        {
             throw new GameRuleException("Target must be a frontend resource");
+        }
 
         var card = octx.CardCache.Get(target.CardID);
         if (card is null || !card.IsComputeType)
+        {
             throw new GameRuleException("Target must be a Compute type");
+        }
 
         if (target.CurrentTP is { } tp)
         {
@@ -515,12 +515,16 @@ public static class EffectInit
     {
         var instanceId = octx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
         if (instanceId is null)
+        {
             throw new GameRuleException("No instance chosen");
+        }
 
         var oppField = octx.OpponentField;
         var target = FieldHelpers.FindResourceByID(oppField, instanceId);
         if (target is null || FieldHelpers.FindResourceZone(oppField, instanceId) != Zone.Frontend)
+        {
             throw new GameRuleException("Target must be opponent's frontend");
+        }
 
         long debuffValue = target.CurrentTP is { } tp ? tp + 10000 : 10000;
         target.TemporaryEffects.Add(new TemporaryEffect
@@ -538,27 +542,45 @@ public static class EffectInit
     private static void FailoverDeploy(OpContext octx)
     {
         if (octx.Target is null)
+        {
             throw new GameRuleException("No target");
+        }
 
         long? choiceCardNo = null;
         if (octx.ChoiceData?.TryGetValue("cardNo", out var val) == true)
         {
-            if (val is long l) choiceCardNo = l;
-            else if (val is int i) choiceCardNo = i;
-            else if (long.TryParse(val?.ToString(), out var parsed)) choiceCardNo = parsed;
+            if (val is long l)
+            {
+                choiceCardNo = l;
+            }
+            else if (val is int i)
+            {
+                choiceCardNo = i;
+            }
+            else if (long.TryParse(val?.ToString(), out var parsed))
+            {
+                choiceCardNo = parsed;
+            }
         }
 
         if (choiceCardNo is null)
+        {
             throw new GameRuleException("No card chosen");
+        }
 
         var targetCard = octx.CardCache.Get(octx.Target.CardID);
         var choiceCard = octx.CardCache.Get(choiceCardNo.Value);
         if (targetCard is null || choiceCard is null)
+        {
             throw new GameRuleException("Card not found");
+        }
         if (choiceCard.CardType != targetCard.CardType)
+        {
             throw new GameRuleException("Must deploy same type as destroyed card");
+        }
 
-        EffectHelpers.DeployResourceFromHand(octx.State, octx.PlayerNum, choiceCardNo.Value, octx.CardCache, octx);
+        var field = octx.GetField(octx.PlayerNum);
+        ResourceHelpers.DeployFromHand(octx.State, octx.PlayerNum, field, choiceCardNo.Value, octx.CardCache);
     }
 
     /// <summary>
@@ -567,12 +589,24 @@ public static class EffectInit
     private static void RateLimiterFire(OpContext octx)
     {
         var target = octx.Target;
-        if (target is null) return;
+        if (target is null)
+        {
+            return;
+        }
 
         var targetCard = octx.CardCache.Get(target.CardID);
-        if (targetCard is null) return;
-        if (!targetCard.IsComputeType && targetCard.CardType != CardTypes.AiMl) return;
-        if (target.MaxTP is null || target.MaxTP < 900) return;
+        if (targetCard is null)
+        {
+            return;
+        }
+        if (!targetCard.IsComputeType && targetCard.CardType != CardTypes.AiMl)
+        {
+            return;
+        }
+        if (target.MaxTP is null || target.MaxTP < 900)
+        {
+            return;
+        }
 
         target.TemporaryEffects.Add(new TemporaryEffect
         {
@@ -587,7 +621,9 @@ public static class EffectInit
         var field = octx.GetField(deployerNum);
         var found = FieldHelpers.FindResourceByID(field, target.InstanceID);
         if (found is not null)
+        {
             found.TemporaryEffects = target.TemporaryEffects;
+        }
     }
 
     /// <summary>
@@ -596,16 +632,22 @@ public static class EffectInit
     private static void ThrottlingFire(OpContext octx)
     {
         if (octx.SupSource is { EffectUsedThisTurn: true })
+        {
             throw new GameRuleException("Already used this turn");
+        }
 
         long deployerNum = octx.State.OpponentOf(octx.PlayerNum);
         var field = octx.GetField(deployerNum);
         int count = CountDeployedThisTurn(field, octx.State.CurrentTurn);
         if (count != 3)
+        {
             throw new GameRuleException($"Not the 3rd deploy (count={count})");
+        }
 
         if (octx.SupSource is not null)
+        {
             octx.SupSource.EffectUsedThisTurn = true;
+        }
 
         octx.CancelAction();
     }
@@ -617,11 +659,15 @@ public static class EffectInit
     {
         var instanceId = octx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
         if (instanceId is null)
+        {
             throw new GameRuleException("No redirect target chosen");
+        }
 
         var oppField = octx.OpponentField;
         if (FieldHelpers.FindResourceZone(oppField, instanceId) != Zone.Frontend)
+        {
             throw new GameRuleException("Redirect target must be opponent's frontend");
+        }
     }
 
     /// <summary>

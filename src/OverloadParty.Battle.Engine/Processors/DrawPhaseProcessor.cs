@@ -1,0 +1,82 @@
+using System.Linq;
+using OverloadParty.Battle.Models;
+
+namespace OverloadParty.Battle.Engine.Processors;
+
+public static class DrawPhaseProcessor
+{
+    public static GameOverResult? Process(GameState state, Game game, ICardCache cc)
+    {
+        if (state.CurrentPhase != Phase.Draw) { return null; }
+
+        ProcessDeployCountdown(state);
+        ProcessMigrationCompletion(state);
+
+        if (!CanDraw(state))
+        {
+            return new GameOverResult(
+                state.OpponentOf(state.ActivePlayer),
+                WinReason.RepositoryOut.ToWireString());
+        }
+
+        CardMoveHelpers.DrawCards(state, state.ActivePlayer, 1);
+
+        TurnManager.AdvancePhase(state);
+
+        return WinConditionChecker.Check(state, game);
+    }
+
+    static bool CanDraw(GameState state) =>
+        state.GetRepository(state.ActivePlayer).Count > 0;
+
+    static void ProcessDeployCountdown(GameState state)
+    {
+        var playerNum = state.ActivePlayer;
+        var field = state.GetField(playerNum);
+
+        foreach (var resource in FieldHelpers.AllResources(field))
+        {
+            if (resource.DeployingTurnsLeft > 0)
+            {
+                resource.DeployingTurnsLeft--;
+                if (resource.DeployingTurnsLeft <= 0)
+                {
+                    resource.FaceUp = true;
+                    state.SetHasHadActiveResource(playerNum, true);
+                }
+            }
+        }
+
+        foreach (var support in FieldHelpers.AllSupports(field))
+        {
+            if (support.DeployingTurnsLeft > 0)
+            {
+                support.DeployingTurnsLeft--;
+            }
+        }
+    }
+
+    static void ProcessMigrationCompletion(GameState state)
+    {
+        var playerNum = state.ActivePlayer;
+        var field = state.GetField(playerNum);
+
+        foreach (var resource in FieldHelpers.AllResources(field))
+        {
+            if (resource.MigratingFrom is not { } sourceID) { continue; }
+
+            if (state.CurrentTurn - resource.MigratingOnTurn < 2)
+            { continue; }
+
+            var src = FieldHelpers.FindResourceByID(field, sourceID);
+            if (src is not null)
+            {
+                FieldHelpers.RemoveResourceFromField(field, sourceID);
+                CardMoveHelpers.AddToTrash(state, playerNum, src.CardID, sourceID, src.ArtNo);
+            }
+
+            resource.MigratingFrom = null;
+            resource.MigratingOnTurn = 0;
+        }
+    }
+}

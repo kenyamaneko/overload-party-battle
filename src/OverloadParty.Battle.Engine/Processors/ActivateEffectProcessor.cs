@@ -11,7 +11,9 @@ public static class ActivateEffectProcessor
         ActivateEffectRequest req, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null)
+        {
             throw new GameRuleException("effect system not initialized");
+        }
 
         var field = state.GetField(playerNum);
 
@@ -63,21 +65,20 @@ public static class ActivateEffectProcessor
         var result = handler(ctx);
         source.EffectUsedThisTurn = true;
 
-        var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
+        var playerId = game.GetPlayerID(playerNum);
         var events = new List<GameEvent>(result.Events);
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
             EventType = WireActionTypes.ActivateEffect,
             PlayerID = playerId,
-            EventData = new Dictionary<string, object>
+            EventData = new ActivateEffectEventData
             {
-                ["cardNo"] = card.CardNo,
-                ["sourceId"] = req.InstanceID,
-            }
+                CardNo = card.CardNo,
+                SourceId = req.InstanceID,
+                TargetId = req.TargetInstanceID,
+            }.ToDictionary(),
         });
-        if (req.TargetInstanceID is not null)
-            events.First().EventData!["targetId"] = req.TargetInstanceID;
 
         return new ActionResult { Events = events, StateUpdated = true };
     }
@@ -90,7 +91,9 @@ public static class ActivateEffectProcessor
         var card = cc.MustGet(support.CardID);
 
         if (!effects.Has(card.CardNo, TriggerType.Activate))
+        {
             throw new GameRuleException($"support card {card.CardNo} has no activate effect");
+        }
 
         var handler = effects.Get(card.CardNo, TriggerType.Activate)!;
         var ctx = new EffectContext
@@ -105,18 +108,18 @@ public static class ActivateEffectProcessor
 
         var result = handler(ctx);
 
-        var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
+        var playerId = game.GetPlayerID(playerNum);
         var events = new List<GameEvent>(result.Events);
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
             EventType = WireActionTypes.ActivateEffect,
             PlayerID = playerId,
-            EventData = new Dictionary<string, object>
+            EventData = new ActivateEffectEventData
             {
-                ["cardNo"] = card.CardNo,
-                ["sourceId"] = req.InstanceID,
-            }
+                CardNo = card.CardNo,
+                SourceId = req.InstanceID,
+            }.ToDictionary(),
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
@@ -128,11 +131,17 @@ public static class ActivateEffectProcessor
         var card = cc.MustGet(source.CardID);
 
         if (!effects.Has(card.CardNo, TriggerType.Activate))
+        {
             throw new GameRuleException($"card {card.CardNo} has no activate effect");
+        }
         if (source.EffectUsedThisTurn)
+        {
             throw new GameRuleException("effect already used this turn");
+        }
         if (FieldHelpers.HasTemporaryEffect(source, EffectTypes.CannotOperate))
+        {
             throw new GameRuleException("resource cannot operate");
+        }
 
         return card;
     }

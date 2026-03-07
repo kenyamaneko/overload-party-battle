@@ -24,9 +24,9 @@ public enum Rank
 
 public enum InstanceFamily
 {
-    M, // Balanced (1.0, 1.0)
-    C, // Compute-optimized (1.5 TP, 0.75 AV)
-    R  // Reliability (0.75 TP, 1.5 AV)
+    M, // Balanced
+    C, // Compute-optimized
+    R  // Reliability
 }
 
 public enum Faction
@@ -77,7 +77,6 @@ public enum Restriction
 
 public enum GameStatus
 {
-    Waiting,
     Playing,
     Finished
 }
@@ -88,7 +87,6 @@ public enum WinReason
     SystemDown,
     RepositoryOut,
     Timeout,
-    Disconnect,
     TurnLimit,
     Draw,
     LaunchFailure
@@ -99,12 +97,13 @@ public enum ActionType
     PlayCard,
     Attack,
     ScaleUp,
-    DistributeYield,
+    Monetize,
     DiscardHand,
     ActivateEffect,
     SetReactive,
     Migrate,
-    EndPhase
+    EndPhase,
+    Forfeit
 }
 
 public enum EventType
@@ -113,10 +112,10 @@ public enum EventType
     AttachCard,
     Attack,
     ScaleUp,
-    DistributeYield,
+    Monetize,
     DiscardHand,
     ActivateEffect,
-    TrapRevealed,
+    ReactiveRevealed,
     Migrate,
     MigrationComplete,
     PhaseChange,

@@ -34,8 +34,11 @@ public class SourceYieldAmount : IAmountResolver
     public static readonly SourceYieldAmount Instance = new();
     public long Resolve(OpContext ctx)
     {
-        if (ctx.Source is null) return 0;
-        return StatCalculator.CalculateEffectiveYield(ctx.Source, ctx.MyField, ctx.CardCache);
+        if (ctx.Source is null)
+        {
+            return 0;
+        }
+        return StatCalculator.CalculateEffectiveInsight(ctx.Source, ctx.MyField, ctx.CardCache);
     }
 }
 
@@ -47,7 +50,10 @@ public class TargetTPAmount : IAmountResolver
     public static readonly TargetTPAmount Instance = new();
     public long Resolve(OpContext ctx)
     {
-        if (ctx.Target is null) return 0;
+        if (ctx.Target is null)
+        {
+            return 0;
+        }
         return StatCalculator.CalculateEffectiveTP(ctx.Target, ctx.OpponentField, ctx.CardCache);
     }
 }
@@ -60,7 +66,10 @@ public class HalfMaxAVAmount : IAmountResolver
     public static readonly HalfMaxAVAmount Instance = new();
     public long Resolve(OpContext ctx)
     {
-        if (ctx.Target is null) return 0;
+        if (ctx.Target is null)
+        {
+            return 0;
+        }
         long half = (ctx.Target.MaxAV + 1) / 2;
         // Round to nearest 200
         return ((half + 99) / 200) * 200;
@@ -84,7 +93,10 @@ public class SLAPenaltyAmount : IAmountResolver
     public static readonly SLAPenaltyAmount Instance = new();
     public long Resolve(OpContext ctx)
     {
-        if (ctx.Target is null) return 0;
+        if (ctx.Target is null)
+        {
+            return 0;
+        }
         var card = ctx.CardCache.Get(ctx.Target.CardID);
         return card?.SLAPenalty ?? 0;
     }

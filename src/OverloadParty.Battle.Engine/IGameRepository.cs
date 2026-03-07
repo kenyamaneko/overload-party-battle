@@ -23,7 +23,5 @@ public interface IGameRepository
     Task FinishGame(string gameID, string winnerID, CancellationToken ct = default);
     Task<long> GetEventCount(string gameID, CancellationToken ct = default);
     Task UpdateGameStatus(string gameID, GameStatus status, CancellationToken ct = default);
-    Task UpdateWinLoss(string playerID, long wins, long losses, CancellationToken ct = default);
     Task<List<GameEvent>> GetEvents(string gameID, CancellationToken ct = default);
-    Task CreateMatch(Match match, CancellationToken ct = default);
 }

@@ -27,11 +27,16 @@ public class ZoneJsonConverter<T> : JsonConverter<Zone<T>> where T : class
     public override Zone<T>? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         var array = JsonSerializer.Deserialize<T?[]>(ref reader, options);
-        if (array is null) return null;
+        if (array is null)
+        {
+            return null;
+        }
 
         var zone = new Zone<T>(array.Length);
         for (int i = 0; i < array.Length; i++)
+        {
             zone[i] = array[i];
+        }
         return zone;
     }
 

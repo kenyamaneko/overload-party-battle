@@ -56,7 +56,7 @@ public static class TargetSelector
 
     public static bool HasFaceDownSupport(Field field)
     {
-        return field.Support.Any(s => s.FaceDown);
+        return field.Support.Any(s => !s.FaceUp);
     }
 
     public static bool HasPlatform(Field field, ICardCache cc)
@@ -74,10 +74,19 @@ public static class TargetSelector
 
     public static long ResourceValue(ResourceInstance r, ICardCache cc)
     {
-        if (r.CurrentTP is > 0) return r.CurrentTP.Value;
-        if (r.CurrentYield is > 0) return r.CurrentYield.Value;
+        if (r.CurrentTP is > 0)
+        {
+            return r.CurrentTP.Value;
+        }
+        if (r.CurrentYield is > 0)
+        {
+            return r.CurrentYield.Value;
+        }
         var card = cc.Get(r.CardID);
-        if (card is null) return 0;
+        if (card is null)
+        {
+            return 0;
+        }
         return card.IsComputeType ? card.BaseThroughput : card.IsDataType ? card.BaseYield : 0;
     }
 
@@ -86,8 +95,14 @@ public static class TargetSelector
     private static IEnumerable<ResourceInstance> FaceUpInZone(Field field, string? zone)
     {
         var sources = Enumerable.Empty<ResourceInstance>();
-        if (zone is null or "" or "frontend") sources = sources.Concat(field.Frontend);
-        if (zone is null or "" or "backend") sources = sources.Concat(field.Backend);
+        if (zone is null or "" or GameConstants.ZoneFrontend)
+        {
+            sources = sources.Concat(field.Frontend);
+        }
+        if (zone is null or "" or GameConstants.ZoneBackend)
+        {
+            sources = sources.Concat(field.Backend);
+        }
         return sources.Where(r => r.FaceUp);
     }
 }

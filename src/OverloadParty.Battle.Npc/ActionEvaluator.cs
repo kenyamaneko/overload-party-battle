@@ -19,11 +19,15 @@ public static class ActionEvaluator
     {
         var info = effects.GetEffectInfo(cardNo, trigger);
         if (info is null)
+        {
             return (0, false, null);
+        }
 
         // Check conditions (RequireBudget, RequireFactionCount, etc.)
         if (!CheckConditions(info.Conditions, ctx, cc))
+        {
             return (0, false, null);
+        }
 
         // Evaluate categories — use the highest priority among all
         var evaluated = info.Categories
@@ -32,7 +36,9 @@ public static class ActionEvaluator
             .ToList();
 
         if (evaluated.Count == 0)
+        {
             return (0, false, null);
+        }
 
         int maxPri = evaluated.Max(r => r.Priority);
 
@@ -42,7 +48,9 @@ public static class ActionEvaluator
         {
             var target = SelectTarget(info, ctx, cc);
             if (target is null)
+            {
                 return (0, false, null); // No valid target
+            }
             choiceData = new Dictionary<string, object> { ["instanceId"] = target };
         }
 
@@ -116,9 +124,9 @@ public static class ActionEvaluator
             case EffectCategory.RecoverCard:
                 return (NpcParams.PriRecoverCard, true);
 
-            case EffectCategory.RevealTrap:
+            case EffectCategory.RevealReactive:
                 return TargetSelector.HasFaceDownSupport(ctx.OppField)
-                    ? (NpcParams.PriRevealTrap, true)
+                    ? (NpcParams.PriRevealReactive, true)
                     : (0, false);
 
             case EffectCategory.DestroyPlatform:
@@ -164,23 +172,33 @@ public static class ActionEvaluator
 
         // Damage targets → weakest opponent resource (easiest to destroy)
         if (info.HasCategory(EffectCategory.SingleDamage))
+        {
             return TargetSelector.WeakestInZone(ctx.OppField, zone);
+        }
 
         // Debuff targets → strongest opponent resource (most impactful debuff)
         if (info.HasCategory(EffectCategory.Debuff))
+        {
             return TargetSelector.StrongestInZone(ctx.OppField, zone, cc);
+        }
 
         // Heal targets → most damaged own resource
         if (info.HasCategory(EffectCategory.Heal))
+        {
             return TargetSelector.MostDamagedOwn(ctx.Field);
+        }
 
         // Buff targets → strongest own resource (maximize value)
         if (info.HasCategory(EffectCategory.Buff))
+        {
             return TargetSelector.StrongestInZone(ctx.Field, zone, cc);
+        }
 
         // Destroy platform → first platform
         if (info.HasCategory(EffectCategory.DestroyPlatform))
+        {
             return TargetSelector.FirstPlatformId(ctx.OppField, cc);
+        }
 
         // Fallback: weakest opponent resource
         return TargetSelector.WeakestInZone(ctx.OppField, zone);

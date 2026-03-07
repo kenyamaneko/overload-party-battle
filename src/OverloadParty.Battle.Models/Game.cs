@@ -10,11 +10,18 @@ public class Game
     public string Player2ID { get; set; } = "";
     public DeckSnapshot? Player1DeckSnapshot { get; set; }
     public DeckSnapshot? Player2DeckSnapshot { get; set; }
-    public GameStatus Status { get; set; } = GameStatus.Waiting;
+    public GameStatus Status { get; set; } = GameStatus.Playing;
     public string? WinnerID { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
+
+    public string GetPlayerID(long playerNum) => playerNum switch
+    {
+        1 => Player1ID,
+        2 => Player2ID,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
 }
 
 /// <summary>
@@ -38,6 +45,8 @@ public class GameState
     public List<HandCard> Player1Repository { get; set; } = [];
     public List<HandCard> Player1Trash { get; set; } = [];
     public long Player1TimeBank { get; set; }
+    public bool Player1IncidentPlayedThisTurn { get; set; }
+    public bool Player1HasHadActiveResource { get; set; }
 
     // Player 2 state
     public long Player2Budget { get; set; }
@@ -47,6 +56,8 @@ public class GameState
     public List<HandCard> Player2Repository { get; set; } = [];
     public List<HandCard> Player2Trash { get; set; } = [];
     public long Player2TimeBank { get; set; }
+    public bool Player2IncidentPlayedThisTurn { get; set; }
+    public bool Player2HasHadActiveResource { get; set; }
 
     // Shared state
     public List<ChainEntry> ChainStack { get; set; } = [];
@@ -56,28 +67,156 @@ public class GameState
 
     // ─── Accessor helpers (by player number) ────────────────
 
-    public long GetBudget(long playerNum) => playerNum == 1 ? Player1Budget : Player2Budget;
-    public void SetBudget(long playerNum, long value) { if (playerNum == 1) Player1Budget = value; else Player2Budget = value; }
+    public long GetBudget(long playerNum) => playerNum switch
+    {
+        1 => Player1Budget,
+        2 => Player2Budget,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetBudget(long playerNum, long value)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1Budget = value; break;
+            case 2: Player2Budget = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
 
-    public long GetInsightPool(long playerNum) => playerNum == 1 ? Player1InsightPool : Player2InsightPool;
-    public void SetInsightPool(long playerNum, long value) { if (playerNum == 1) Player1InsightPool = value; else Player2InsightPool = value; }
+    public long GetInsightPool(long playerNum) => playerNum switch
+    {
+        1 => Player1InsightPool,
+        2 => Player2InsightPool,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetInsightPool(long playerNum, long value)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1InsightPool = value; break;
+            case 2: Player2InsightPool = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
 
-    public Field GetField(long playerNum) => playerNum == 1 ? Player1Field : Player2Field;
-    public void SetField(long playerNum, Field field) { if (playerNum == 1) Player1Field = field; else Player2Field = field; }
+    public Field GetField(long playerNum) => playerNum switch
+    {
+        1 => Player1Field,
+        2 => Player2Field,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetField(long playerNum, Field field)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1Field = field; break;
+            case 2: Player2Field = field; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
 
-    public List<HandCard> GetHand(long playerNum) => playerNum == 1 ? Player1Hand : Player2Hand;
-    public void SetHand(long playerNum, List<HandCard> hand) { if (playerNum == 1) Player1Hand = hand; else Player2Hand = hand; }
+    public List<HandCard> GetHand(long playerNum) => playerNum switch
+    {
+        1 => Player1Hand,
+        2 => Player2Hand,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetHand(long playerNum, List<HandCard> hand)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1Hand = hand; break;
+            case 2: Player2Hand = hand; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
 
-    public List<HandCard> GetRepository(long playerNum) => playerNum == 1 ? Player1Repository : Player2Repository;
-    public void SetRepository(long playerNum, List<HandCard> repo) { if (playerNum == 1) Player1Repository = repo; else Player2Repository = repo; }
+    public List<HandCard> GetRepository(long playerNum) => playerNum switch
+    {
+        1 => Player1Repository,
+        2 => Player2Repository,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetRepository(long playerNum, List<HandCard> repo)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1Repository = repo; break;
+            case 2: Player2Repository = repo; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
 
-    public List<HandCard> GetTrash(long playerNum) => playerNum == 1 ? Player1Trash : Player2Trash;
-    public void SetTrash(long playerNum, List<HandCard> trash) { if (playerNum == 1) Player1Trash = trash; else Player2Trash = trash; }
+    public List<HandCard> GetTrash(long playerNum) => playerNum switch
+    {
+        1 => Player1Trash,
+        2 => Player2Trash,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetTrash(long playerNum, List<HandCard> trash)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1Trash = trash; break;
+            case 2: Player2Trash = trash; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
 
-    public long GetTimeBank(long playerNum) => playerNum == 1 ? Player1TimeBank : Player2TimeBank;
-    public void SetTimeBank(long playerNum, long value) { if (playerNum == 1) Player1TimeBank = value; else Player2TimeBank = value; }
+    public long GetTimeBank(long playerNum) => playerNum switch
+    {
+        1 => Player1TimeBank,
+        2 => Player2TimeBank,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetTimeBank(long playerNum, long value)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1TimeBank = value; break;
+            case 2: Player2TimeBank = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
 
-    public long OpponentOf(long playerNum) => playerNum == 1 ? 2 : 1;
+    public bool GetIncidentPlayedThisTurn(long playerNum) => playerNum switch
+    {
+        1 => Player1IncidentPlayedThisTurn,
+        2 => Player2IncidentPlayedThisTurn,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetIncidentPlayedThisTurn(long playerNum, bool value)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1IncidentPlayedThisTurn = value; break;
+            case 2: Player2IncidentPlayedThisTurn = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
+
+    public bool GetHasHadActiveResource(long playerNum) => playerNum switch
+    {
+        1 => Player1HasHadActiveResource,
+        2 => Player2HasHadActiveResource,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    public void SetHasHadActiveResource(long playerNum, bool value)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1HasHadActiveResource = value; break;
+            case 2: Player2HasHadActiveResource = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
+
+    public long OpponentOf(long playerNum) => playerNum switch
+    {
+        1 => 2,
+        2 => 1,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
 
     /// <summary>
     /// Generate the next unique instance ID and increment the sequence.
@@ -112,14 +251,4 @@ public class GameEvent
     public string? PlayerID { get; set; }
     public Dictionary<string, object>? EventData { get; set; }
     public DateTime CreatedAt { get; set; }
-}
-
-/// <summary>
-/// GameConfig key-value pair from the game_configs table.
-/// </summary>
-public class GameConfig
-{
-    public string Key { get; set; } = "";
-    public string Value { get; set; } = "";
-    public DateTime UpdatedAt { get; set; }
 }

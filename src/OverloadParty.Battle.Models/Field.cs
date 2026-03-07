@@ -8,8 +8,6 @@ public class Field
     public Zone<ResourceInstance> Frontend { get; set; } = new();
     public Zone<ResourceInstance> Backend { get; set; } = new();
     public Zone<SupportInstance> Support { get; set; } = new();
-    public bool IncidentPlayedThisTurn { get; set; }
-    public bool HasHadActiveResource { get; set; }
 }
 
 /// <summary>
@@ -19,7 +17,8 @@ public class ResourceInstance
 {
     public string InstanceID { get; set; } = "";
     public long CardID { get; set; }
-    public Rank Rank { get; set; } = Rank.Small;
+    public long ArtNo { get; set; }
+    public Rank? Rank { get; set; }
     public InstanceFamily? InstanceFamily { get; set; }
     public bool FaceUp { get; set; }
     public long DeployingTurnsLeft { get; set; }
@@ -35,6 +34,7 @@ public class ResourceInstance
     public long MonetizedAmount { get; set; }
     public bool HasAttacked { get; set; }
     public bool EffectUsedThisTurn { get; set; }
+    public bool ScaleChangedThisTurn { get; set; }
     public long DeployedOnTurn { get; set; }
     public long DeployOrder { get; set; }
     public string? MigratingFrom { get; set; }
@@ -55,6 +55,7 @@ public class AttachmentRef
 {
     public string InstanceID { get; set; } = "";
     public long CardID { get; set; }
+    public long ArtNo { get; set; }
 }
 
 /// <summary>
@@ -75,7 +76,8 @@ public class SupportInstance
 {
     public string InstanceID { get; set; } = "";
     public long CardID { get; set; }
-    public bool FaceDown { get; set; }
+    public long ArtNo { get; set; }
+    public bool FaceUp { get; set; }
     public long DeployingTurnsLeft { get; set; }
     public long DeployOrder { get; set; }
     public bool EffectUsedThisTurn { get; set; }
@@ -88,6 +90,7 @@ public class HandCard
 {
     public string InstanceID { get; set; } = "";
     public long CardID { get; set; }
+    public long ArtNo { get; set; }
 }
 
 /// <summary>

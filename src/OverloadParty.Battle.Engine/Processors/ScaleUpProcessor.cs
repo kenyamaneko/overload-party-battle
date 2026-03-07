@@ -15,78 +15,59 @@ public static class ScaleUpProcessor
         var card = cc.MustGet(resource.CardID);
 
         if (!card.Resizable)
+        {
             throw new GameRuleException("card is not resizable");
+        }
+
+        // Cannot change type on the deploy turn
+        if (resource.DeployedOnTurn == state.CurrentTurn)
+        {
+            throw new GameRuleException("cannot change instance type on deploy turn");
+        }
+
+        // 1 type change per resource per turn
+        if (resource.ScaleChangedThisTurn)
+        {
+            throw new GameRuleException("instance type already changed this turn");
+        }
 
         var targetRank = EnumExtensions.ParseRank(req.TargetRank);
-        ValidateRankProgression(resource.Rank, targetRank);
+        var targetFamily = req.InstanceFamily is not null
+            ? EnumExtensions.ParseInstanceFamily(req.InstanceFamily)
+            : resource.InstanceFamily;
 
-        // Instance family required for Small → Medium
-        if (resource.Rank == Rank.Small && targetRank == Rank.Medium)
+        // Must have a family for Medium/Large
+        if (targetRank != Rank.Small && targetFamily is null)
         {
-            if (req.InstanceFamily is null)
-                throw new GameRuleException("instance family required for small to medium scale-up");
-
-            var family = EnumExtensions.ParseInstanceFamily(req.InstanceFamily);
-            resource.InstanceFamily = family;
+            throw new GameRuleException("instance family required for medium or large rank");
         }
 
-        // Update rank
-        resource.Rank = targetRank;
-
-        // Recalculate stats
-        resource.MaxAV = StatCalculator.CalculateMaxAV(resource, cc);
-        // CurrentAV adjusts based on damage
-        // (MaxAV changed but damage stays the same)
-
-        if (!card.Elastic)
+        // Validate that something actually changes
+        if (resource.Rank == targetRank && resource.InstanceFamily == targetFamily)
         {
-            if (card.IsComputeType)
-            {
-                long newTP = StatCalculator.RecalculateMaxTP(resource, card);
-                resource.MaxTP = newTP;
-                resource.CurrentTP = newTP;
-            }
-            if (card.IsDataType)
-            {
-                long newYield = StatCalculator.RecalculateMaxYield(resource, card);
-                resource.MaxYield = newYield;
-                resource.CurrentYield = newYield;
-            }
+            throw new GameRuleException("no change in instance type");
         }
 
-        var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
+        // Apply changes
+        resource.InstanceFamily = targetFamily;
+        resource.ScaleChangedThisTurn = true;
+
+        ResourceHelpers.ChangeRank(resource, targetRank, cc);
+
+        var playerId = game.GetPlayerID(playerNum);
         var evt = new GameEvent
         {
             GameID = game.GameID,
             EventType = WireActionTypes.ScaleUp,
             PlayerID = playerId,
-            EventData = new Dictionary<string, object>
+            EventData = new ScaleUpEventData
             {
-                ["instanceId"] = req.InstanceID,
-                ["targetRank"] = req.TargetRank,
-            }
+                InstanceId = req.InstanceID,
+                TargetRank = req.TargetRank,
+                InstanceFamily = req.InstanceFamily,
+            }.ToDictionary(),
         };
-        if (req.InstanceFamily is not null)
-            evt.EventData["instanceFamily"] = req.InstanceFamily;
 
         return new ActionResult { Events = [evt], StateUpdated = true };
-    }
-
-    private static void ValidateRankProgression(Rank current, Rank target)
-    {
-        if (current == target)
-            throw new GameRuleException($"already at rank {current.ToWireString()}");
-        if (current == Rank.Large)
-            throw new GameRuleException("already at maximum rank");
-
-        bool valid = (current, target) switch
-        {
-            (Rank.Small, Rank.Medium) => true,
-            (Rank.Medium, Rank.Large) => true,
-            _ => false
-        };
-
-        if (!valid)
-            throw new GameRuleException($"invalid rank progression: {current.ToWireString()} → {target.ToWireString()}");
     }
 }

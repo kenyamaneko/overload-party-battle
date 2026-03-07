@@ -58,10 +58,10 @@ public static class GameInitializer
         return (game, state);
     }
 
-    private static void DealCards(GameState state, long playerNum, List<long> cardNos, Random rng)
+    private static void DealCards(GameState state, long playerNum, List<DeckSnapshotCard> cards, Random rng)
     {
         // Shuffle
-        var shuffled = new List<long>(cardNos);
+        var shuffled = new List<DeckSnapshotCard>(cards);
         for (int i = shuffled.Count - 1; i > 0; i--)
         {
             int j = rng.Next(i + 1);
@@ -76,7 +76,8 @@ public static class GameInitializer
             hand.Add(new HandCard
             {
                 InstanceID = state.NextInstanceID(),
-                CardID = shuffled[i]
+                CardID = shuffled[i].CardNo,
+                ArtNo = shuffled[i].ArtNo,
             });
         }
 
@@ -87,7 +88,8 @@ public static class GameInitializer
             repo.Add(new HandCard
             {
                 InstanceID = state.NextInstanceID(),
-                CardID = shuffled[i]
+                CardID = shuffled[i].CardNo,
+                ArtNo = shuffled[i].ArtNo,
             });
         }
 

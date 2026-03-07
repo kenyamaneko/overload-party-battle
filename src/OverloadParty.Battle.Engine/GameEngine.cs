@@ -39,41 +39,36 @@ public class GameEngine
         return gameID;
     }
 
-    /// <summary>
-    /// Process automatic phases (draw) and check win conditions.
-    /// Returns (gameOver, winReason).
-    /// </summary>
-    public async Task<(bool GameOver, string? WinReason)> RunAutoAdvance(
+    public async Task<GameOverResult?> RunAutoAdvance(
         string gameID, CancellationToken ct = default)
     {
-        bool gameOver = false;
-        string? winReason = null;
+        GameOverResult? gameOverResult = null;
 
         await _repo.UpdateGameState(gameID, state =>
         {
             var game = _repo.GetGame(gameID, ct).GetAwaiter().GetResult()
                 ?? throw new GameRuleException($"game {gameID} not found");
 
-            var result = TurnManager.AutoAdvancePhases(state, game, _cardCache);
-            gameOver = result.GameOver;
-            winReason = result.WinReason;
+            gameOverResult = DrawPhaseProcessor.Process(state, game, _cardCache);
 
             return Task.CompletedTask;
         }, ct);
 
-        if (gameOver)
+        if (gameOverResult is not null)
         {
             var game = await _repo.GetGame(gameID, ct)
                 ?? throw new GameRuleException($"game {gameID} not found");
-            var state = await _repo.GetGameState(gameID, ct)
-                ?? throw new GameRuleException($"game state {gameID} not found");
 
-            var winnerNum = state.OpponentOf(state.ActivePlayer);
-            var winnerID = winnerNum == 1 ? game.Player1ID : game.Player2ID;
+            var winnerID = gameOverResult.WinnerNum switch
+            {
+                0 => "",
+                1 => game.Player1ID,
+                _ => game.Player2ID,
+            };
             await _repo.FinishGame(gameID, winnerID, ct);
         }
 
-        return (gameOver, winReason);
+        return gameOverResult;
     }
 
     /// <summary>
@@ -87,16 +82,26 @@ public class GameEngine
             ?? throw new GameRuleException($"game {gameID} not found");
 
         if (game.Status != GameStatus.Playing)
+        {
             throw new GameRuleException("game is not in playing state");
+        }
 
-        // Determine player number
-        long playerNum;
-        if (playerID == game.Player1ID)
-            playerNum = 1;
-        else if (playerID == game.Player2ID)
-            playerNum = 2;
-        else
-            throw new GameRuleException($"player {playerID} is not in this game");
+        long playerNum
+            = playerID == game.Player1ID ? 1
+            : playerID == game.Player2ID ? 2
+            : throw new GameRuleException($"player {playerID} is not in this game");
+
+        // Forfeit: immediate game over, no phase/turn restrictions
+        if (actionType == ActionType.Forfeit)
+        {
+            var opponentNum = playerNum == 1 ? 2 : 1;
+            var winnerID = game.GetPlayerID(opponentNum);
+            await _repo.FinishGame(gameID, winnerID, ct);
+            return new ActionResult
+            {
+                GameOver = new GameOverResult(opponentNum, WinReason.Timeout.ToWireString()),
+            };
+        }
 
         ActionResult actionResult = null!;
 
@@ -104,11 +109,15 @@ public class GameEngine
         {
             // Validate active player (except for SetReactive which can be done by non-active player)
             if (actionType != ActionType.SetReactive && state.ActivePlayer != playerNum)
+            {
                 throw new GameRuleException("not your turn");
+            }
 
             // Validate action allowed in current phase
-            if (!IsActionAllowedInPhase(state.CurrentPhase, actionType))
+            if (!TurnManager.IsActionAllowedInPhase(state.CurrentPhase, actionType))
+            {
                 throw new GameRuleException($"action {actionType.ToWireString()} not allowed in phase {state.CurrentPhase.ToWireString()}");
+            }
 
             // Dispatch to specific processor
             actionResult = actionType switch
@@ -119,8 +128,8 @@ public class GameEngine
                     state, game, playerNum, (AttackRequest)actionData, _cardCache, _effects),
                 ActionType.ScaleUp => ScaleUpProcessor.Process(
                     state, game, playerNum, (ScaleUpRequest)actionData, _cardCache),
-                ActionType.DistributeYield => DistributeYieldProcessor.Process(
-                    state, game, playerNum, (DistributeYieldRequest)actionData, _cardCache),
+                ActionType.Monetize => MonetizeProcessor.Process(
+                    state, game, playerNum, (MonetizeRequest)actionData, _cardCache),
                 ActionType.EndPhase => EndPhaseProcessor.Process(
                     state, game, playerNum, _cardCache),
                 ActionType.DiscardHand => DiscardProcessor.Process(
@@ -132,17 +141,7 @@ public class GameEngine
                 _ => throw new GameRuleException($"unknown action type: {actionType}")
             };
 
-            // Check win conditions after action
-            if (!actionResult.GameOver)
-            {
-                var (winnerNum, reason, gameOverCheck) = WinConditionChecker.Check(state, game);
-                if (gameOverCheck)
-                {
-                    actionResult.GameOver = true;
-                    actionResult.WinnerNum = winnerNum;
-                    actionResult.WinReason = reason;
-                }
-            }
+            actionResult.GameOver ??= WinConditionChecker.Check(state, game);
 
             return Task.CompletedTask;
         }, ct);
@@ -157,10 +156,9 @@ public class GameEngine
             await _repo.AppendEvent(evt, ct);
         }
 
-        // Handle game over
-        if (actionResult.GameOver)
+        if (actionResult.GameOver is { } over)
         {
-            var winnerID = actionResult.WinnerNum switch
+            var winnerID = over.WinnerNum switch
             {
                 0 => "",
                 1 => game.Player1ID,
@@ -199,18 +197,5 @@ public class GameEngine
     public TurnControls ComputeTurnControls(GameState state, List<HandCard> hand)
     {
         return AvailableActions.ComputeTurnControls(state, hand);
-    }
-
-    private static bool IsActionAllowedInPhase(Phase phase, ActionType action)
-    {
-        return phase switch
-        {
-            Phase.Main => action is ActionType.PlayCard or ActionType.ScaleUp or ActionType.DistributeYield
-                or ActionType.ActivateEffect or ActionType.Migrate or ActionType.EndPhase,
-            Phase.Battle => action is ActionType.Attack or ActionType.ActivateEffect
-                or ActionType.SetReactive or ActionType.EndPhase,
-            Phase.End => action is ActionType.DiscardHand,
-            _ => false,
-        };
     }
 }

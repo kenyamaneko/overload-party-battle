@@ -81,7 +81,10 @@ public class EffectRegistry : IEffectRegistry
     public BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger)
     {
         var reg = GetRegistration(cardNo, trigger);
-        if (reg?.Ops is null) return null;
+        if (reg?.Ops is null)
+        {
+            return null;
+        }
 
         long? minBudget = null;
         long? maxBudget = null;
@@ -99,7 +102,10 @@ public class EffectRegistry : IEffectRegistry
             }
         }
 
-        if (minBudget is null && maxBudget is null) return null;
+        if (minBudget is null && maxBudget is null)
+        {
+            return null;
+        }
         return new BudgetRequirement { MinBudget = minBudget, MaxBudget = maxBudget };
     }
 
@@ -119,7 +125,10 @@ public class EffectRegistry : IEffectRegistry
     public EffectInfo? GetEffectInfo(long cardNo, TriggerType trigger)
     {
         var reg = GetRegistration(cardNo, trigger);
-        if (reg?.Ops is null) return null;
+        if (reg?.Ops is null)
+        {
+            return null;
+        }
         return EffectClassifier.ClassifyOps(reg.Ops);
     }
 
@@ -129,7 +138,10 @@ public class EffectRegistry : IEffectRegistry
     public List<string>? GetChoiceOptions(long cardNo, TriggerType trigger)
     {
         var reg = GetRegistration(cardNo, trigger);
-        if (reg?.Ops is null) return null;
+        if (reg?.Ops is null)
+        {
+            return null;
+        }
 
         return reg.Ops
             .OfType<Ops.BranchOnChoiceOp>()

@@ -5,9 +5,9 @@ using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Data.Pg;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
-using OverloadParty.Battle.Server.Middleware;
 using OverloadParty.Battle.Service;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -24,14 +24,10 @@ if (isLocalDev)
 {
     // In-memory mock repositories
     var mockGameRepo = new MockGameRepository();
-    var mockPlayerRepo = new MockPlayerRepository();
     var mockDeckRepo = new MockDeckRepository();
-    var mockGameConfigRepo = new MockGameConfigRepository();
 
     builder.Services.AddSingleton<IGameRepository>(mockGameRepo);
-    builder.Services.AddSingleton<IPlayerRepository>(mockPlayerRepo);
     builder.Services.AddSingleton<IDeckRepository>(mockDeckRepo);
-    builder.Services.AddSingleton<IGameConfigRepository>(mockGameConfigRepo);
     // ICardRepository registered after CardCache is built (below)
 }
 else
@@ -43,10 +39,8 @@ else
     var dataSource = NpgsqlDataSource.Create(connStr);
     builder.Services.AddSingleton(dataSource);
     builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
-    builder.Services.AddSingleton<IPlayerRepository>(sp => new PgPlayerRepository(sp.GetRequiredService<NpgsqlDataSource>()));
     builder.Services.AddSingleton<IDeckRepository>(sp => new PgDeckRepository(sp.GetRequiredService<NpgsqlDataSource>()));
     builder.Services.AddSingleton<ICardRepository>(sp => new PgCardRepository(sp.GetRequiredService<NpgsqlDataSource>()));
-    builder.Services.AddSingleton<IGameConfigRepository>(sp => new PgGameConfigRepository(sp.GetRequiredService<NpgsqlDataSource>()));
 }
 
 // ─── Card cache ─────────────────────────────────────────────
@@ -56,7 +50,9 @@ builder.Services.AddSingleton<ICardCache>(cardCache);
 builder.Services.AddSingleton(cardCache);
 
 if (isLocalDev)
+{
     builder.Services.AddSingleton<ICardRepository>(new MockCardRepository(cardCache));
+}
 
 // ─── Engine ─────────────────────────────────────────────────
 
@@ -74,14 +70,7 @@ builder.Services.AddSingleton(sp =>
     return engine;
 });
 
-// ─── Matchmaking (Removed: Now handled by Gateway) ──────────
-
 // ─── Services ───────────────────────────────────────────────
-
-builder.Services.AddSingleton<PlayerService>(sp =>
-    new PlayerService(
-        sp.GetRequiredService<IPlayerRepository>(),
-        sp.GetRequiredService<IGameConfigRepository>()));
 
 builder.Services.AddSingleton<GameService>(sp =>
 {
@@ -90,19 +79,18 @@ builder.Services.AddSingleton<GameService>(sp =>
         sp.GetRequiredService<IGameRepository>(),
         sp.GetRequiredService<IDeckRepository>(),
         sp.GetRequiredService<ICardCache>(),
-        sp.GetRequiredService<ILogger<GameService>>(),
-        sp.GetRequiredService<PlayerService>());
+        sp.GetRequiredService<ILogger<GameService>>());
 
     // Set default NPC AI
     var cc = sp.GetRequiredService<ICardCache>();
     var engine = sp.GetRequiredService<GameEngine>();
     if (engine.EffectRegistry is EffectRegistry reg)
+    {
         svc.SetNpcAI(new StandardAi(cc, reg));
+    }
 
     return svc;
 });
-
-// ─── WebSocket (Removed: Now handled by Gateway) ────────────
 
 var app = builder.Build();
 
@@ -110,30 +98,21 @@ var app = builder.Build();
 
 if (isLocalDev)
 {
-    // Load cards from JSON file (same file as Go version)
-    var cardsPath = Path.Combine(app.Environment.ContentRootPath, "..", "..", "data", "cards_gen.json");
-    if (!File.Exists(cardsPath))
-    {
-        // Try alternate location
-        cardsPath = Path.Combine(app.Environment.ContentRootPath, "data", "cards_gen.json");
-    }
+    // Load cards from JSON file (path set via CARDS_JSON_PATH env var)
+    var cardsPath = Environment.GetEnvironmentVariable("CARDS_JSON_PATH")
+        ?? throw new InvalidOperationException("CARDS_JSON_PATH environment variable is not set");
 
-    if (File.Exists(cardsPath))
+    var jsonStr = await File.ReadAllTextAsync(cardsPath);
+    var cards = JsonSerializer.Deserialize<List<CardDefinition>>(jsonStr, new JsonSerializerOptions
     {
-        var jsonStr = await File.ReadAllTextAsync(cardsPath);
-        var cards = JsonSerializer.Deserialize<List<CardDefinition>>(jsonStr, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-            PropertyNameCaseInsensitive = true,
-        });
-        if (cards is not null)
-            cardCache.LoadFromList(cards);
-        app.Logger.LogInformation("Loaded {Count} cards from {Path}", cardCache.Count, cardsPath);
-    }
-    else
+        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+        PropertyNameCaseInsensitive = true,
+    });
+    if (cards is not null)
     {
-        app.Logger.LogWarning("Cards file not found at {Path}", cardsPath);
+        cardCache.LoadFromList(cards);
     }
+    app.Logger.LogInformation("Loaded {Count} cards from {Path}", cardCache.Count, cardsPath);
 }
 else
 {
@@ -143,11 +122,7 @@ else
     app.Logger.LogInformation("Loaded {Count} cards from database", cardCache.Count);
 }
 
-// ─── Matchmaking background service (Removed) ────────────────
-
 // ─── Middleware ──────────────────────────────────────────────
-
-// app.UseWebSockets(); (Removed)
 
 // CORS for development
 if (isLocalDev)
@@ -175,15 +150,26 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 var api = app.MapGroup("/api/v1");
 
-// Middleware for auth can be added here if needed, but Gateway already authenticates
-// and passes internal requests. For now, we assume internal network trust or simple auth.
-
-// Game Creation
+// NPC Game Creation
 api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
 {
     try
     {
         var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, req.NpcFaction);
+        return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
+    }
+    catch (Exception ex)
+    {
+        return Results.BadRequest(new { error = ex.Message });
+    }
+});
+
+// PvP Game Creation (called by Gateway after matchmaking)
+api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
+{
+    try
+    {
+        var game = await gameSvc.CreateGameFromMatch(req.Player1ID, req.Player1DeckID, req.Player2ID, req.Player2DeckID);
         return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
     }
     catch (Exception ex)
@@ -198,8 +184,14 @@ api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId
     try
     {
         var actionType = EnumExtensions.ParseActionType(req.ActionType);
-        var result = await gameSvc.ProcessAction(gameId, req.PlayerID, actionType, req.Data);
-        return Results.Ok(new { game_over = result.GameOver, winner_num = result.WinnerNum, win_reason = result.WinReason });
+        var actionData = ActionDataDeserializer.Deserialize(actionType, req.Data);
+        var result = await gameSvc.ProcessAction(gameId, req.PlayerID, actionType, actionData);
+        return Results.Ok(new
+        {
+            game_over = result.GameOver is not null,
+            winner_num = result.GameOver?.WinnerNum ?? 0,
+            win_reason = result.GameOver?.Reason,
+        });
     }
     catch (Exception ex)
     {
@@ -213,7 +205,7 @@ api.MapGet("/games/{gameId}/state/{playerId}", async (GameService gameSvc, strin
     try
     {
         var state = await gameSvc.GetGameStateForPlayer(gameId, playerId);
-        if (state == null) return Results.NotFound();
+        if (state == null) { return Results.NotFound(); }
         return Results.Ok(state);
     }
     catch (Exception ex)
@@ -228,7 +220,7 @@ api.MapGet("/games/{gameId}/controls/{playerId}", async (GameService gameSvc, st
     try
     {
         var controls = await gameSvc.GetTurnControlsForPlayer(gameId, playerId);
-        if (controls == null) return Results.Ok(null);
+        if (controls == null) { return Results.Ok(null); }
         return Results.Ok(new { can_end_phase = controls.CanEndPhase, discard_required = controls.DiscardRequired });
     }
     catch (Exception ex)
@@ -253,4 +245,29 @@ app.Logger.LogInformation("Battle server starting on port {Port} (mode={Mode})",
 app.Run();
 
 public record NpcBattleRequest(string PlayerID, long DeckID, string NpcFaction);
-public record GameActionRequest(string PlayerID, string ActionType, Dictionary<string, object> Data);
+public record PvpBattleRequest(string Player1ID, long Player1DeckID, string Player2ID, long Player2DeckID);
+public record GameActionRequest(string PlayerID, string ActionType, JsonElement Data);
+
+public static class ActionDataDeserializer
+{
+    private static readonly JsonSerializerOptions JsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
+
+    public static object Deserialize(ActionType actionType, JsonElement data) => actionType switch
+    {
+        ActionType.PlayCard => data.Deserialize<PlayCardRequest>(JsonOpts)!,
+        ActionType.Attack => data.Deserialize<AttackRequest>(JsonOpts)!,
+        ActionType.ScaleUp => data.Deserialize<ScaleUpRequest>(JsonOpts)!,
+        ActionType.Monetize => data.Deserialize<MonetizeRequest>(JsonOpts)!,
+        ActionType.DiscardHand => data.Deserialize<DiscardHandRequest>(JsonOpts)!,
+        ActionType.ActivateEffect => data.Deserialize<ActivateEffectRequest>(JsonOpts)!,
+        ActionType.Migrate => data.Deserialize<MigrateRequest>(JsonOpts)!,
+        ActionType.EndPhase => new object(),
+        ActionType.SetReactive => new object(),
+        ActionType.Forfeit => new object(),
+        _ => throw new ArgumentException($"unknown action type: {actionType}"),
+    };
+}

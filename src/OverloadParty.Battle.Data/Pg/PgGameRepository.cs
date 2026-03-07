@@ -54,7 +54,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(gameID);
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
-        if (!await reader.ReadAsync(ct)) return null;
+        if (!await reader.ReadAsync(ct))
+        {
+            return null;
+        }
         return ReadGame(reader);
     }
 
@@ -65,7 +68,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(gameID);
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
-        if (!await reader.ReadAsync(ct)) return null;
+        if (!await reader.ReadAsync(ct))
+        {
+            return null;
+        }
         return ReadGameState(reader);
     }
 
@@ -81,7 +87,9 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             cmd.Parameters.AddWithValue(gameID);
             await using var reader = await cmd.ExecuteReaderAsync(ct);
             if (!await reader.ReadAsync(ct))
+            {
                 throw new InvalidOperationException($"game state {gameID} not found");
+            }
             state = ReadGameState(reader);
         }
 
@@ -159,18 +167,6 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
-    public async Task UpdateWinLoss(string playerID, long wins, long losses, CancellationToken ct = default)
-    {
-        await using var conn = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand(@"
-            UPDATE players SET wins = $1, losses = $2, updated_at = $3 WHERE player_id = $4", conn);
-        cmd.Parameters.AddWithValue(wins);
-        cmd.Parameters.AddWithValue(losses);
-        cmd.Parameters.AddWithValue(DateTime.UtcNow);
-        cmd.Parameters.AddWithValue(playerID);
-        await cmd.ExecuteNonQueryAsync(ct);
-    }
-
     public async Task<List<GameEvent>> GetEvents(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -198,17 +194,6 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             });
         }
         return events;
-    }
-
-    public async Task CreateMatch(Match match, CancellationToken ct = default)
-    {
-        await using var conn = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand(@"
-            INSERT INTO matches (game_id, created_at)
-            VALUES ($1,$2) RETURNING match_id", conn);
-        cmd.Parameters.AddWithValue(match.GameID);
-        cmd.Parameters.AddWithValue(match.CreatedAt);
-        match.MatchID = (long)(await cmd.ExecuteScalarAsync(ct))!;
     }
 
     // ─── SQL constants ──────────────────────────────────────────

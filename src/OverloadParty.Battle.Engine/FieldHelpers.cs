@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine;
 
 /// <summary>
-/// Utility methods for searching and manipulating fields.
+/// フィールド上のリソース・サポートの検索・問い合わせを扱うヘルパー。
 /// </summary>
 public static class FieldHelpers
 {
@@ -21,8 +21,8 @@ public static class FieldHelpers
     /// </summary>
     public static Zone? FindResourceZone(Field field, string instanceID)
     {
-        if (field.Frontend.Any(r => r.InstanceID == instanceID)) return Zone.Frontend;
-        if (field.Backend.Any(r => r.InstanceID == instanceID)) return Zone.Backend;
+        if (field.Frontend.Any(r => r.InstanceID == instanceID)) { return Zone.Frontend; }
+        if (field.Backend.Any(r => r.InstanceID == instanceID)) { return Zone.Backend; }
         return null;
     }
 
@@ -141,46 +141,19 @@ public static class FieldHelpers
     }
 
     /// <summary>
-    /// Add a card to the player's trash.
+    /// サポートカードを破壊してトラッシュに移動する。
     /// </summary>
-    public static void AddToTrash(GameState state, long playerNum, long cardID, string instanceID)
+    public static bool DestroySupport(GameState state, long ownerNum, Field field, string instanceID)
     {
-        var trash = state.GetTrash(playerNum);
-        trash.Add(new HandCard { InstanceID = instanceID, CardID = cardID });
-    }
-
-    /// <summary>
-    /// Create a ResourceInstance from a card definition.
-    /// </summary>
-    public static ResourceInstance CreateResourceInstance(CardDefinition card, string instanceID, long deployTurn)
-    {
-        var resource = new ResourceInstance
+        var support = field.Support.FirstOrDefault(s => s.InstanceID == instanceID);
+        if (support is null)
         {
-            InstanceID = instanceID,
-            CardID = card.CardNo,
-            Rank = Rank.Small,
-            FaceUp = card.DeployTurns <= 0,
-            DeployingTurnsLeft = card.DeployTurns,
-            DeployedOnTurn = deployTurn,
-        };
-
-        // Set initial stats based on card type category
-        if (card.IsComputeType && card.ComputeStats is { } cs)
-        {
-            resource.MaxAV = cs.Availability;
-            resource.CurrentAV = cs.Availability;
-            resource.MaxTP = cs.Throughput;
-            resource.CurrentTP = cs.Throughput;
-        }
-        else if (card.IsDataType && card.DataStats is { } ds)
-        {
-            resource.MaxAV = ds.Availability;
-            resource.CurrentAV = ds.Availability;
-            resource.MaxYield = ds.Yield;
-            resource.CurrentYield = ds.Yield;
+            return false;
         }
 
-        return resource;
+        CardMoveHelpers.AddToTrash(state, ownerNum, support.CardID, support.InstanceID, support.ArtNo);
+        field.Support.Remove(s => s.InstanceID == instanceID);
+        return true;
     }
 
     /// <summary>
@@ -188,9 +161,8 @@ public static class FieldHelpers
     /// </summary>
     public static void ClearMigrationOnSourceDestroyed(Field field, ResourceInstance destroyed)
     {
-        if (destroyed.MigrationTarget is null) return;
+        if (destroyed.MigrationTarget is null) { return; }
 
-        // Find the target and clear its MigratingFrom
         var target = FindResourceByID(field, destroyed.MigrationTarget);
         if (target is not null)
         {

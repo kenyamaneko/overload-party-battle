@@ -20,7 +20,7 @@ public enum EffectCategory
     Search,
     DeployFree,
     RecoverCard,
-    RevealTrap,
+    RevealReactive,
     DestroyPlatform,
     CancelAction,
     Survive,
@@ -62,13 +62,18 @@ public class EffectInfo
 
     internal void AddCategory(EffectCategory cat)
     {
-        if (!HasCategory(cat)) Categories.Add(cat);
+        if (!HasCategory(cat))
+        {
+            Categories.Add(cat);
+        }
     }
 
     internal void MergeCategories(EffectInfo other)
     {
         foreach (var cat in other.Categories)
+        {
             AddCategory(cat);
+        }
         if (TargetType == EffectTargetType.None)
         {
             TargetType = other.TargetType;
@@ -86,7 +91,9 @@ public static class EffectClassifier
     {
         var info = new EffectInfo();
         foreach (var op in ops)
+        {
             ClassifyOp(info, op);
+        }
         return info;
     }
 
@@ -124,7 +131,8 @@ public static class EffectClassifier
                 break;
 
             // Heal
-            case HealDamageOp h:
+            case HealDamageOp:
+            case FullHealOp:
                 info.AddCategory(EffectCategory.Heal);
                 break;
 
@@ -152,8 +160,8 @@ public static class EffectClassifier
                 break;
 
             // Field
-            case RevealTrapOp:
-                info.AddCategory(EffectCategory.RevealTrap);
+            case RevealReactiveOp:
+                info.AddCategory(EffectCategory.RevealReactive);
                 break;
             case DestroyPlatformOp:
                 info.AddCategory(EffectCategory.DestroyPlatform);
@@ -198,11 +206,17 @@ public static class EffectClassifier
             // CustomFn with tags
             case CustomFnTaggedOp tagged:
                 foreach (var cat in tagged.Categories)
+                {
                     info.AddCategory(cat);
+                }
                 if (tagged.Target != EffectTargetType.None)
+                {
                     info.TargetType = tagged.Target;
+                }
                 if (tagged.Zone is not null)
+                {
                     info.TargetZone = tagged.Zone;
+                }
                 break;
         }
     }
@@ -287,6 +301,7 @@ public static class EffectClassifier
             DealDamageOp d => d.Selector,
             IncidentDamageOp i => i.Selector,
             HealDamageOp h => h.Selector,
+            FullHealOp f => f.Selector,
             ApplyBuffOp b => b.Selector,
             _ => null,
         };

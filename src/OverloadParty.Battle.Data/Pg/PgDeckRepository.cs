@@ -30,7 +30,9 @@ public class PgDeckRepository(NpgsqlDataSource ds) : IDeckRepository
         }
 
         foreach (var c in cards)
+        {
             c.DeckID = deck.DeckID;
+        }
 
         await BulkInsertDeckCards(conn, tx, cards, ct);
         await tx.CommitAsync(ct);
@@ -46,7 +48,9 @@ public class PgDeckRepository(NpgsqlDataSource ds) : IDeckRepository
         var decks = new List<Deck>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
+        {
             decks.Add(ReadDeck(reader));
+        }
         return decks;
     }
 
@@ -59,7 +63,10 @@ public class PgDeckRepository(NpgsqlDataSource ds) : IDeckRepository
         cmd.Parameters.AddWithValue(deckID);
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
-        if (!await reader.ReadAsync(ct)) return null;
+        if (!await reader.ReadAsync(ct))
+        {
+            return null;
+        }
         return ReadDeck(reader);
     }
 
@@ -67,7 +74,7 @@ public class PgDeckRepository(NpgsqlDataSource ds) : IDeckRepository
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
-            SELECT player_id, deck_id, card_no, illustration_variant, count
+            SELECT player_id, deck_id, card_no, art_no, count
             FROM deck_cards WHERE player_id = $1 AND deck_id = $2", conn);
         cmd.Parameters.AddWithValue(playerID);
         cmd.Parameters.AddWithValue(deckID);
@@ -81,51 +88,54 @@ public class PgDeckRepository(NpgsqlDataSource ds) : IDeckRepository
                 PlayerID = reader.GetString(0),
                 DeckID = reader.GetInt64(1),
                 CardNo = reader.GetInt64(2),
-                IllustrationVariant = reader.GetInt64(3),
+                ArtNo = reader.GetInt64(3),
                 Count = reader.GetInt32(4),
             });
         }
         return cards;
     }
 
-    public async Task<List<long>> GetDeckCardNos(string playerID, long deckID, CancellationToken ct = default)
+    public async Task<List<DeckSnapshotCard>> GetDeckCardNos(string playerID, long deckID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(
-            "SELECT card_no, count FROM deck_cards WHERE player_id = $1 AND deck_id = $2", conn);
+            "SELECT card_no, art_no, count FROM deck_cards WHERE player_id = $1 AND deck_id = $2", conn);
         cmd.Parameters.AddWithValue(playerID);
         cmd.Parameters.AddWithValue(deckID);
 
-        var cardNos = new List<long>();
+        var cards = new List<DeckSnapshotCard>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
         {
             var cardNo = reader.GetInt64(0);
-            var count = reader.GetInt32(1);
+            var variant = reader.GetInt64(1);
+            var count = reader.GetInt32(2);
             for (int i = 0; i < count; i++)
-                cardNos.Add(cardNo);
+            {
+                cards.Add(new DeckSnapshotCard { CardNo = cardNo, ArtNo = variant });
+            }
         }
-        return cardNos;
+        return cards;
     }
 
-    public async Task<List<PlayerCard>> GetPlayerCards(string playerID, CancellationToken ct = default)
+    public async Task<List<OwnedCard>> GetOwnedCards(string playerID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
-            SELECT player_id, card_no, illustration_variant, count
+            SELECT player_id, card_no, art_no, count
             FROM player_cards WHERE player_id = $1
-            ORDER BY card_no, illustration_variant", conn);
+            ORDER BY card_no, art_no", conn);
         cmd.Parameters.AddWithValue(playerID);
 
-        var cards = new List<PlayerCard>();
+        var cards = new List<OwnedCard>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
         {
-            cards.Add(new PlayerCard
+            cards.Add(new OwnedCard
             {
                 PlayerID = reader.GetString(0),
                 CardNo = reader.GetInt64(1),
-                IllustrationVariant = reader.GetInt64(2),
+                ArtNo = reader.GetInt64(2),
                 Count = reader.GetInt32(3),
             });
         }
@@ -198,21 +208,27 @@ public class PgDeckRepository(NpgsqlDataSource ds) : IDeckRepository
     private static async Task BulkInsertDeckCards(
         NpgsqlConnection conn, NpgsqlTransaction tx, List<DeckCard> cards, CancellationToken ct)
     {
-        if (cards.Count == 0) return;
+        if (cards.Count == 0)
+        {
+            return;
+        }
 
         var sb = new StringBuilder(
-            "INSERT INTO deck_cards (player_id, deck_id, card_no, illustration_variant, count) VALUES ");
+            "INSERT INTO deck_cards (player_id, deck_id, card_no, art_no, count) VALUES ");
 
         var cmd = new NpgsqlCommand { Connection = conn, Transaction = tx };
         for (int i = 0; i < cards.Count; i++)
         {
-            if (i > 0) sb.Append(',');
+            if (i > 0)
+            {
+                sb.Append(',');
+            }
             var b = i * 5 + 1;
             sb.Append($"(${b},${b + 1},${b + 2},${b + 3},${b + 4})");
             cmd.Parameters.AddWithValue(cards[i].PlayerID);
             cmd.Parameters.AddWithValue(cards[i].DeckID);
             cmd.Parameters.AddWithValue(cards[i].CardNo);
-            cmd.Parameters.AddWithValue(cards[i].IllustrationVariant);
+            cmd.Parameters.AddWithValue(cards[i].ArtNo);
             cmd.Parameters.AddWithValue(cards[i].Count);
         }
 

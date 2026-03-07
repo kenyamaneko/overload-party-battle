@@ -43,29 +43,44 @@ public class ByChoiceSelector : ISelector
     public List<ResourceInstance> Select(OpContext ctx)
     {
         var instanceId = GetChoiceInstanceId(ctx);
-        if (instanceId is null) return [];
+        if (instanceId is null)
+        {
+            return [];
+        }
 
         var field = Owner == "opponent" ? ctx.OpponentField : ctx.MyField;
         var resource = FieldHelpers.FindResourceByID(field, instanceId);
-        if (resource is null) return [];
+        if (resource is null)
+        {
+            return [];
+        }
 
         // Apply filters
         if (Zone is { } z)
         {
             var actualZone = FieldHelpers.FindResourceZone(field, instanceId)?.ToWireString();
-            if (actualZone != z) return [];
+            if (actualZone != z)
+            {
+                return [];
+            }
         }
 
         if (Faction is { Length: > 0 } faction)
         {
             var card = ctx.CardCache.Get(resource.CardID);
-            if (card?.Faction != faction) return [];
+            if (card?.Faction != faction)
+            {
+                return [];
+            }
         }
 
         if (CardType is { Length: > 0 } cardType)
         {
             var card = ctx.CardCache.Get(resource.CardID);
-            if (card?.CardType != cardType) return [];
+            if (card?.CardType != cardType)
+            {
+                return [];
+            }
         }
 
         return [resource];
@@ -73,9 +88,14 @@ public class ByChoiceSelector : ISelector
 
     private static string? GetChoiceInstanceId(OpContext ctx)
     {
-        if (ctx.ChoiceData is null) return null;
+        if (ctx.ChoiceData is null)
+        {
+            return null;
+        }
         if (ctx.ChoiceData.TryGetValue("instanceId", out var val))
+        {
             return val?.ToString();
+        }
         return null;
     }
 }
@@ -98,8 +118,8 @@ public class AllOwnSelector : ISelector
     {
         IEnumerable<ResourceInstance> candidates = zone switch
         {
-            "frontend" => field.Frontend,
-            "backend" => field.Backend,
+            GameConstants.ZoneFrontend => field.Frontend,
+            GameConstants.ZoneBackend => field.Backend,
             _ => field.Frontend.Concat(field.Backend),
         };
 

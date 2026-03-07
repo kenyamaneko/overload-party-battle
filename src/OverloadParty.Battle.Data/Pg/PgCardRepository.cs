@@ -22,7 +22,9 @@ public class PgCardRepository(NpgsqlDataSource ds) : ICardRepository
         var cards = new List<CardDefinition>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))
+        {
             cards.Add(ReadCardDefinition(reader));
+        }
         return cards;
     }
 
@@ -33,7 +35,10 @@ public class PgCardRepository(NpgsqlDataSource ds) : ICardRepository
         cmd.Parameters.AddWithValue(cardNo);
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
-        if (!await reader.ReadAsync(ct)) return null;
+        if (!await reader.ReadAsync(ct))
+        {
+            return null;
+        }
         return ReadCardDefinition(reader);
     }
 
@@ -72,9 +77,13 @@ public class PgCardRepository(NpgsqlDataSource ds) : ICardRepository
         if (statsJson is not null)
         {
             if (card.IsComputeType)
+            {
                 card.ComputeStats = JsonSerializer.Deserialize<ComputeStats>(statsJson, DbJsonOptions.Default);
+            }
             else if (card.IsDataType)
+            {
                 card.DataStats = JsonSerializer.Deserialize<DataStats>(statsJson, DbJsonOptions.Default);
+            }
         }
 
         return card;

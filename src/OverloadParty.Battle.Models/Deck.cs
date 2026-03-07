@@ -1,25 +1,11 @@
 namespace OverloadParty.Battle.Models;
 
-public class PlayerCard
+public class OwnedCard
 {
     public string PlayerID { get; set; } = "";
     public long CardNo { get; set; }
-    public long IllustrationVariant { get; set; }
+    public long ArtNo { get; set; }
     public int Count { get; set; }
-}
-
-public class PlayerCardWithDef
-{
-    public long CardNo { get; set; }
-    public long IllustrationVariant { get; set; }
-    public int Count { get; set; }
-    public string CardName { get; set; } = "";
-    public string Faction { get; set; } = "";
-    public string CardType { get; set; } = "";
-    public bool Resizable { get; set; }
-    public bool Elastic { get; set; }
-    public string? EffectText { get; set; }
-    public string Restriction { get; set; } = "";
 }
 
 public class Deck
@@ -40,12 +26,18 @@ public class DeckCard
     public string PlayerID { get; set; } = "";
     public long DeckID { get; set; }
     public long CardNo { get; set; }
-    public long IllustrationVariant { get; set; }
+    public long ArtNo { get; set; }
     public int Count { get; set; }
+}
+
+public class DeckSnapshotCard
+{
+    public long CardNo { get; set; }
+    public long ArtNo { get; set; }
 }
 
 public class DeckSnapshot
 {
     public string DeckID { get; set; } = "";
-    public List<long> Cards { get; set; } = [];
+    public List<DeckSnapshotCard> Cards { get; set; } = [];
 }

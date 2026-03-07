@@ -7,41 +7,47 @@ namespace OverloadParty.Battle.Engine;
 /// </summary>
 public static class WinConditionChecker
 {
-    /// <summary>
-    /// Check all win conditions. Returns (winnerNum, reason, gameOver).
-    /// winnerNum=0 means draw.
-    /// </summary>
-    public static (long WinnerNum, string Reason, bool GameOver) Check(GameState state, Game game)
+    public static GameOverResult? Check(GameState state, Game game)
     {
-        // 1. Budget Zero
         if (state.Player1Budget <= 0)
-            return (2, WinReason.BudgetZero.ToWireString(), true);
-        if (state.Player2Budget <= 0)
-            return (1, WinReason.BudgetZero.ToWireString(), true);
-
-        // 2. System Down (no face-up resources, but player has had active resources before)
-        if (IsSystemDown(state, 1))
-            return (2, WinReason.SystemDown.ToWireString(), true);
-        if (IsSystemDown(state, 2))
-            return (1, WinReason.SystemDown.ToWireString(), true);
-
-        // 3. Turn Limit (30 turns = 15 full rounds)
-        if (state.CurrentTurn >= GameConstants.MaxTurns)
         {
-            if (state.Player1Budget > state.Player2Budget)
-                return (1, WinReason.TurnLimit.ToWireString(), true);
-            if (state.Player2Budget > state.Player1Budget)
-                return (2, WinReason.TurnLimit.ToWireString(), true);
-            return (0, WinReason.Draw.ToWireString(), true);
+            return new GameOverResult(2, WinReason.BudgetZero.ToWireString());
+        }
+        if (state.Player2Budget <= 0)
+        {
+            return new GameOverResult(1, WinReason.BudgetZero.ToWireString());
         }
 
-        // 4. Timeout
-        if (state.Player1TimeBank <= 0)
-            return (2, WinReason.Timeout.ToWireString(), true);
-        if (state.Player2TimeBank <= 0)
-            return (1, WinReason.Timeout.ToWireString(), true);
+        if (IsSystemDown(state, 1))
+        {
+            return new GameOverResult(2, WinReason.SystemDown.ToWireString());
+        }
+        if (IsSystemDown(state, 2))
+        {
+            return new GameOverResult(1, WinReason.SystemDown.ToWireString());
+        }
 
-        return (0, "", false);
+        if (state.CurrentTurn >= GameConstants.MaxTurns)
+        {
+            long winnerNum = state.Player1Budget > state.Player2Budget ? 1
+                : state.Player2Budget > state.Player1Budget ? 2
+                : 0;
+            string reason = winnerNum == 0
+                ? WinReason.Draw.ToWireString()
+                : WinReason.TurnLimit.ToWireString();
+            return new GameOverResult(winnerNum, reason);
+        }
+
+        if (state.Player1TimeBank <= 0)
+        {
+            return new GameOverResult(2, WinReason.Timeout.ToWireString());
+        }
+        if (state.Player2TimeBank <= 0)
+        {
+            return new GameOverResult(1, WinReason.Timeout.ToWireString());
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -50,8 +56,11 @@ public static class WinConditionChecker
     /// </summary>
     public static bool IsSystemDown(GameState state, long playerNum)
     {
+        if (!state.GetHasHadActiveResource(playerNum))
+        {
+            return false;
+        }
         var field = state.GetField(playerNum);
-        if (!field.HasHadActiveResource) return false;
         return !FieldHelpers.HasAnyActiveResources(field);
     }
 
@@ -61,9 +70,11 @@ public static class WinConditionChecker
     public static bool CheckLaunchFailure(GameState state, long playerNum)
     {
         long personalTurn = (state.CurrentTurn + 1) / 2;
-        if (personalTurn < GameConstants.LaunchFailureTurn) return false;
+        if (personalTurn < GameConstants.LaunchFailureTurn)
+        {
+            return false;
+        }
 
-        var field = state.GetField(playerNum);
-        return !field.HasHadActiveResource;
+        return !state.GetHasHadActiveResource(playerNum);
     }
 }

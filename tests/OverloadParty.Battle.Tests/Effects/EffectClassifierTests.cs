@@ -56,13 +56,13 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_DealDamage_ByChoice_SingleDamage()
     {
-        var sel = new ByChoiceSelector { Zone = "frontend", Owner = "opponent" };
+        var sel = new ByChoiceSelector { Zone = GameConstants.ZoneFrontend, Owner = "opponent" };
         var ops = new IEffectOp[] { new DealDamageOp(sel, new StaticAmount(400)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
         info.HasCategory(EffectCategory.SingleDamage).Should().BeTrue();
         info.TargetType.Should().Be(EffectTargetType.Choice);
-        info.TargetZone.Should().Be("frontend");
+        info.TargetZone.Should().Be(GameConstants.ZoneFrontend);
     }
 
     [Fact]
@@ -179,12 +179,12 @@ public class EffectClassifierTests
     // ─── Field Ops ────────────────────────────────────────────
 
     [Fact]
-    public void Classify_RevealTrap()
+    public void Classify_RevealReactive()
     {
-        var ops = new IEffectOp[] { new RevealTrapOp() };
+        var ops = new IEffectOp[] { new RevealReactiveOp() };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        info.HasCategory(EffectCategory.RevealTrap).Should().BeTrue();
+        info.HasCategory(EffectCategory.RevealReactive).Should().BeTrue();
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public class EffectClassifierTests
             {
                 Categories = [EffectCategory.Draw, EffectCategory.Search],
                 Target = EffectTargetType.Self,
-                Zone = "backend",
+                Zone = GameConstants.ZoneBackend,
             }
         };
         var info = EffectClassifier.ClassifyOps(ops);
@@ -299,7 +299,7 @@ public class EffectClassifierTests
         info.HasCategory(EffectCategory.Draw).Should().BeTrue();
         info.HasCategory(EffectCategory.Search).Should().BeTrue();
         info.TargetType.Should().Be(EffectTargetType.Self);
-        info.TargetZone.Should().Be("backend");
+        info.TargetZone.Should().Be(GameConstants.ZoneBackend);
     }
 
     // ─── Multiple Ops ─────────────────────────────────────────

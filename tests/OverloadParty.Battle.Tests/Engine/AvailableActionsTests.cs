@@ -31,10 +31,10 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 100, cc, null);
 
-        // Main phase should include play_card, scale_up, distribute_yield, migrate
+        // Main phase should include play_card, scale_up, monetize, migrate
         actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard);
         actions.Should().Contain(a => a.Type == WireActionTypes.ScaleUp);
-        actions.Should().Contain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().Contain(a => a.Type == WireActionTypes.Monetize);
         actions.Should().Contain(a => a.Type == WireActionTypes.Migrate);
         // Main phase should NOT include attack
         actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
@@ -58,10 +58,10 @@ public class AvailableActionsTests
             state, myField, oppField, [], 5000, 0, cc, null);
 
         actions.Should().Contain(a => a.Type == WireActionTypes.Attack);
-        // Battle phase should NOT include play_card, scale_up, distribute_yield, migrate
+        // Battle phase should NOT include play_card, scale_up, monetize, migrate
         actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard);
         actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
-        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
         actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate);
     }
 
@@ -315,8 +315,8 @@ public class AvailableActionsTests
         cc.Add(new CardDefinition { CardNo = 60, CardName = "I", CardType = CardTypes.Incident });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        state.Player1IncidentPlayedThisTurn = true;
         var myField = TestFactory.MakeField();
-        myField.IncidentPlayedThisTurn = true;
 
         var hand = new List<HandCard> { new() { InstanceID = "h_i", CardID = 60 } };
 
@@ -410,7 +410,7 @@ public class AvailableActionsTests
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void ScaleUp_ResizableSmallOffersmedium()
+    public void ScaleUp_ResizableSmallOffersAllOptions()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: true));
@@ -422,13 +422,17 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        var scaleAction = actions.Single(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1");
-        scaleAction.TargetRank.Should().Be("medium");
-        scaleAction.NeedsFamily.Should().BeTrue(); // Instance Family 選択が必要
+        var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
+        // Medium×3 families + Large×3 families = 6 options
+        scaleActions.Should().HaveCount(6);
+        scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "M");
+        scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "C");
+        scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "R");
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
     }
 
     [Fact]
-    public void ScaleUp_ResizableMediumOffersLarge()
+    public void ScaleUp_ResizableMediumOffersAllOptions()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: true));
@@ -441,15 +445,17 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        var scaleAction = actions.Single(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1");
-        scaleAction.TargetRank.Should().Be("large");
-        scaleAction.NeedsFamily.Should().BeFalse(); // Medium→Large では不要
+        var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
+        // Small(1) + Medium×2 other families + Large×3 families = 6 options
+        scaleActions.Should().HaveCount(6);
+        scaleActions.Should().Contain(a => a.TargetRank == "small");
+        scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "C");
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
     }
 
     [Fact]
-    public void ScaleUp_ResizableLargeCannotScaleUp()
+    public void ScaleUp_ResizableLargeCanScaleDown()
     {
-        // large が最大ランク
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: true));
 
@@ -461,7 +467,12 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1");
+        var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
+        // Small(1) + Medium×3 families + Large×2 other families = 6 options
+        scaleActions.Should().HaveCount(6);
+        scaleActions.Should().Contain(a => a.TargetRank == "small");
+        scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "M");
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "C");
     }
 
     [Fact]
@@ -735,11 +746,11 @@ public class AvailableActionsTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  DistributeYield — 収益化ルール
+    //  Monetize — 収益化ルール
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void DistributeYield_BackendComputeIncluded()
+    public void Monetize_BackendComputeIncluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardNo: 1));
@@ -751,11 +762,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.DistributeYield && a.SourceInstanceID == "be_1");
+        actions.Should().Contain(a => a.Type == WireActionTypes.Monetize && a.SourceInstanceID == "be_1");
     }
 
     [Fact]
-    public void DistributeYield_FrontendComputeExcluded()
+    public void Monetize_FrontendComputeExcluded()
     {
         // フロントエンドの Compute は収益化できない
         var cc = new TestCardCache();
@@ -768,11 +779,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
     }
 
     [Fact]
-    public void DistributeYield_BackendDatabaseExcluded()
+    public void Monetize_BackendDatabaseExcluded()
     {
         // 収益化はComputeのみ。DatabaseはInsight生成源だがBudget変換はしない
         var cc = new TestCardCache();
@@ -786,11 +797,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
     }
 
     [Fact]
-    public void DistributeYield_ExcludedOnFirstTurn()
+    public void Monetize_ExcludedOnFirstTurn()
     {
         // 先攻T1では収益化をスキップ
         var cc = new TestCardCache();
@@ -803,11 +814,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
     }
 
     [Fact]
-    public void DistributeYield_ExcludedWhenInsightPoolZero()
+    public void Monetize_ExcludedWhenInsightPoolZero()
     {
         // InsightプールからInsightを消費して変換。0なら変換不可
         var cc = new TestCardCache();
@@ -820,11 +831,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
     }
 
     [Fact]
-    public void DistributeYield_RemainingCapacityBasedOnTP()
+    public void Monetize_RemainingCapacityBasedOnTP()
     {
         // 各カードの変換上限 = スループット値
         var cc = new TestCardCache();
@@ -839,12 +850,12 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
 
-        var yieldAction = actions.Single(a => a.Type == WireActionTypes.DistributeYield);
+        var yieldAction = actions.Single(a => a.Type == WireActionTypes.Monetize);
         yieldAction.RemainingCapacity.Should().Be(400); // 600 - 200 = 400
     }
 
     [Fact]
-    public void DistributeYield_ExcludedWhenCapacityFull()
+    public void Monetize_ExcludedWhenCapacityFull()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
@@ -858,11 +869,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
     }
 
     [Fact]
-    public void DistributeYield_MigratingResourceExcluded()
+    public void Monetize_MigratingResourceExcluded()
     {
         // マイグレーション中のリソースはロック状態（収益化不可）
         var cc = new TestCardCache();
@@ -877,7 +888,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1300,7 +1311,9 @@ public class AvailableActionsTests
         var orchMigrate = actions.FirstOrDefault(
             a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "orch_1");
         if (orchMigrate is not null)
+        {
             orchMigrate.ValidTargets.Should().NotContain(t => t == "sless_1");
+        }
     }
 
     [Fact]
@@ -1323,7 +1336,9 @@ public class AvailableActionsTests
         // Face-down resource is not a valid target
         var migrate = actions.FirstOrDefault(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_2");
         if (migrate is not null)
+        {
             migrate.ValidTargets.Should().NotContain(t => t == "res_1");
+        }
     }
 
     [Fact]
@@ -1679,10 +1694,10 @@ public class AvailableActionsTests
         beMigrate.ValidTargets.Should().Contain(t => t == "fe_1");
     }
 
-    // ─── DistributeYield 追加パターン ───────────────────────────
+    // ─── Monetize 追加パターン ───────────────────────────
 
     [Fact]
-    public void DistributeYield_FaceDownBackendComputeExcluded()
+    public void Monetize_FaceDownBackendComputeExcluded()
     {
         // 裏向きリソースは収益化できない（稼働していない）
         var cc = new TestCardCache();
@@ -1695,13 +1710,13 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.DistributeYield);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
     }
 
     [Fact]
-    public void DistributeYield_MultipleBackendComputeEachGetAction()
+    public void Monetize_MultipleBackendComputeEachGetAction()
     {
-        // 複数のバックエンドComputeがある場合、それぞれにdistribute_yieldが生成される
+        // 複数のバックエンドComputeがある場合、それぞれにmonetizeが生成される
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
         cc.Add(TestFactory.ComputeCard(cardNo: 2, tp: 500, name: "Compute2"));
@@ -1714,9 +1729,9 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
 
-        actions.Count(a => a.Type == WireActionTypes.DistributeYield).Should().Be(2);
-        var a1 = actions.Single(a => a.Type == WireActionTypes.DistributeYield && a.SourceInstanceID == "be_1");
-        var a2 = actions.Single(a => a.Type == WireActionTypes.DistributeYield && a.SourceInstanceID == "be_2");
+        actions.Count(a => a.Type == WireActionTypes.Monetize).Should().Be(2);
+        var a1 = actions.Single(a => a.Type == WireActionTypes.Monetize && a.SourceInstanceID == "be_1");
+        var a2 = actions.Single(a => a.Type == WireActionTypes.Monetize && a.SourceInstanceID == "be_2");
         a1.RemainingCapacity.Should().Be(600);
         a2.RemainingCapacity.Should().Be(500);
     }

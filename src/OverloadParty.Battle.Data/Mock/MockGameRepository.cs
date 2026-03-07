@@ -94,14 +94,10 @@ public class MockGameRepository : IGameRepository
         lock (_lock)
         {
             if (_games.TryGetValue(gameID, out var game))
+            {
                 game.Status = status;
+            }
         }
-        return Task.CompletedTask;
-    }
-
-    public Task UpdateWinLoss(string playerID, long wins, long losses, CancellationToken ct = default)
-    {
-        // No-op for mock
         return Task.CompletedTask;
     }
 
@@ -113,9 +109,4 @@ public class MockGameRepository : IGameRepository
         }
     }
 
-    public Task CreateMatch(Match match, CancellationToken ct = default)
-    {
-        // No-op for mock
-        return Task.CompletedTask;
-    }
 }

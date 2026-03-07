@@ -65,9 +65,13 @@ public class FactionAi : StandardAi
 
         // 2. Deploy resource cards (with faction ordering)
         if (_faction == GameConstants.FactionTenki)
+        {
             actions.AddRange(DoTenkiDeployActions(ctx, available, usedZones));
+        }
         else
+        {
             actions.AddRange(DoDeployActions(ctx, available, usedZones));
+        }
 
         // 3. Activate field resource/support effects
         actions.AddRange(DecideActivateActions(ctx, available));
@@ -75,10 +79,12 @@ public class FactionAi : StandardAi
         // 4. Scale up with faction-preferred instance family
         actions.AddRange(DoScaleUpActions(available, _instanceFamily));
 
-        // 5. Distribute Yield
+        // 5. Monetize
         var insightPool = state.GetInsightPool(npcPlayerNum);
         if (insightPool > 0)
-            actions.AddRange(DoDistributeYieldActions(available, insightPool));
+        {
+            actions.AddRange(DoMonetizeActions(available, insightPool));
+        }
 
         // 6. End phase
         actions.Add(MakeEndPhaseAction());
@@ -101,8 +107,14 @@ public class FactionAi : StandardAi
         foreach (var a in playActions)
         {
             var card = CardCache.Get(a.CardID);
-            if (card is null) continue;
-            if (FieldHelpers.IsImmediateType(card.CardType) || card.CardType == CardTypes.Attachment) continue;
+            if (card is null)
+            {
+                continue;
+            }
+            if (FieldHelpers.IsImmediateType(card.CardType) || card.CardType == CardTypes.Attachment)
+            {
+                continue;
+            }
 
             int basePri = card.IsComputeType ? 0 : card.IsDataType ? 1 : 2;
 
@@ -123,7 +135,9 @@ public class FactionAi : StandardAi
         candidates.Sort((a, b) =>
         {
             if (a.AozoraPri != b.AozoraPri)
+            {
                 return b.AozoraPri.CompareTo(a.AozoraPri);
+            }
             return a.BasePri.CompareTo(b.BasePri);
         });
 
@@ -131,21 +145,29 @@ public class FactionAi : StandardAi
         var deployed = new HashSet<string>();
         foreach (var c in candidates)
         {
-            if (deployed.Contains(c.Action.HandInstanceID!)) continue;
+            if (deployed.Contains(c.Action.HandInstanceID!))
+            {
+                continue;
+            }
 
             var zone = ActionFilter.PickBestZone(c.Action.ValidZones, c.Card, usedZones);
-            if (zone is null) continue;
+            if (zone is null)
+            {
+                continue;
+            }
 
             var payload = new Dictionary<string, object>
             {
                 ["cardInstanceId"] = c.Action.HandInstanceID!,
                 ["position"] = ActionFilter.ParseZoneStr(zone)!,
             };
-            if (c.Action.ChoiceOptions?.Any() == true)
+            if (c.Action.ChoiceOptions?.Count > 0)
             {
                 var choice = DeployChoiceFor(c.Card.CardNo);
                 if (choice == "")
+                {
                     choice = c.Action.ChoiceOptions.First();
+                }
                 payload["choiceData"] = new Dictionary<string, string> { ["option"] = choice };
             }
 

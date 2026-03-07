@@ -10,11 +10,13 @@ public static class WireActionTypes
     public const string PlayCard = "play_card";
     public const string Attack = "attack";
     public const string ScaleUp = "scale_up";
-    public const string DistributeYield = "distribute_yield";
+    public const string Monetize = "monetize";
     public const string ActivateEffect = "activate_effect";
     public const string Migrate = "migrate";
     public const string SetReactive = "set_reactive";
     public const string EndPhase = "end_phase";
+    public const string Forfeit = "forfeit";
+    public const string Reactive = "reactive";
 
     // ─── イベント専用（アクションとしては使わない） ──────────
     public const string AttachCard = "attach_card";

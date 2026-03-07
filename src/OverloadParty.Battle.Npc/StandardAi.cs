@@ -7,7 +7,7 @@ namespace OverloadParty.Battle.Npc;
 
 /// <summary>
 /// Default rule-based NPC strategy.
-/// Priority: immediate cards → deploy resources → activate effects → scale up → distribute Yield → end phase.
+/// Priority: immediate cards → deploy resources → activate effects → scale up → monetize → end phase.
 /// </summary>
 public class StandardAi : INpcStrategy
 {
@@ -44,10 +44,12 @@ public class StandardAi : INpcStrategy
         // 4. Scale up existing resources
         actions.AddRange(DoScaleUpActions(available, GetInstanceFamily()));
 
-        // 5. Distribute Yield
+        // 5. Monetize
         var insightPool = state.GetInsightPool(npcPlayerNum);
         if (insightPool > 0)
-            actions.AddRange(DoDistributeYieldActions(available, insightPool));
+        {
+            actions.AddRange(DoMonetizeActions(available, insightPool));
+        }
 
         // 6. End phase
         actions.Add(MakeEndPhaseAction());
@@ -65,7 +67,10 @@ public class StandardAi : INpcStrategy
     {
         var hand = state.GetHand(npcPlayerNum);
         var discardCount = hand.Count - GameConstants.HandLimit;
-        if (discardCount <= 0) return [];
+        if (discardCount <= 0)
+        {
+            return [];
+        }
 
         // Sort by maintenance cost ascending — discard cheapest cards first
         var values = new List<(string InstanceID, long Cost)>();
@@ -79,7 +84,9 @@ public class StandardAi : INpcStrategy
 
         var ids = new List<string>();
         for (int i = 0; i < discardCount && i < values.Count; i++)
+        {
             ids.Add(values[i].InstanceID);
+        }
         return ids;
     }
 
@@ -96,11 +103,17 @@ public class StandardAi : INpcStrategy
         foreach (var a in playActions)
         {
             var card = CardCache.Get(a.CardID);
-            if (card is null || !FieldHelpers.IsImmediateType(card.CardType)) continue;
+            if (card is null || !FieldHelpers.IsImmediateType(card.CardType))
+            {
+                continue;
+            }
 
             var (pri, use, choice) = ActionEvaluator.EvaluateCard(
                 card.CardNo, TriggerType.Activate, ctx, Effects, CardCache);
-            if (!use) continue;
+            if (!use)
+            {
+                continue;
+            }
 
             candidates.Add((a, card, pri, choice));
         }
@@ -111,7 +124,10 @@ public class StandardAi : INpcStrategy
         foreach (var c in candidates)
         {
             var zone = ActionFilter.PickSupportZone(c.Action.ValidZones, usedZones);
-            if (zone is null) continue;
+            if (zone is null)
+            {
+                continue;
+            }
 
             var payload = new Dictionary<string, object>
             {
@@ -119,7 +135,9 @@ public class StandardAi : INpcStrategy
                 ["position"] = ActionFilter.ParseZoneStr(zone)!,
             };
             if (c.Choice is not null)
+            {
                 payload["choiceData"] = c.Choice;
+            }
 
             actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = payload });
             usedZones.Add(zone);
@@ -138,8 +156,14 @@ public class StandardAi : INpcStrategy
         foreach (var a in playActions)
         {
             var card = CardCache.Get(a.CardID);
-            if (card is null) continue;
-            if (FieldHelpers.IsImmediateType(card.CardType) || card.CardType == CardTypes.Attachment) continue;
+            if (card is null)
+            {
+                continue;
+            }
+            if (FieldHelpers.IsImmediateType(card.CardType) || card.CardType == CardTypes.Attachment)
+            {
+                continue;
+            }
 
             int pri = card.IsComputeType ? 0 : card.IsDataType ? 1 : 2;
             candidates.Add((a, card, pri));
@@ -150,21 +174,29 @@ public class StandardAi : INpcStrategy
         var deployed = new HashSet<string>();
         foreach (var c in candidates)
         {
-            if (deployed.Contains(c.Action.HandInstanceID!)) continue;
+            if (deployed.Contains(c.Action.HandInstanceID!))
+            {
+                continue;
+            }
 
             var zone = ActionFilter.PickBestZone(c.Action.ValidZones, c.Card, usedZones);
-            if (zone is null) continue;
+            if (zone is null)
+            {
+                continue;
+            }
 
             var payload = new Dictionary<string, object>
             {
                 ["cardInstanceId"] = c.Action.HandInstanceID!,
                 ["position"] = ActionFilter.ParseZoneStr(zone)!,
             };
-            if (c.Action.ChoiceOptions?.Any() == true)
+            if (c.Action.ChoiceOptions?.Count > 0)
             {
                 var choice = DeployChoiceFor(c.Card.CardNo);
                 if (choice == "")
+                {
                     choice = c.Action.ChoiceOptions.First();
+                }
                 payload["choiceData"] = new Dictionary<string, string> { ["option"] = choice };
             }
 
@@ -185,19 +217,31 @@ public class StandardAi : INpcStrategy
         foreach (var a in activateActions)
         {
             var cardNo = ActionFilter.ResolveCardNoForInstance(a.SourceInstanceID!, ctx.Field);
-            if (cardNo == 0) continue;
+            if (cardNo == 0)
+            {
+                continue;
+            }
 
             var (pri, use, choice) = ActionEvaluator.EvaluateCard(
                 cardNo, TriggerType.Activate, ctx, Effects, CardCache);
-            if (!use) continue;
+            if (!use)
+            {
+                continue;
+            }
 
             // If effect needs target choice but evaluateCard didn't provide one,
             // select from the pre-validated ValidTargets
             if (a.EffectTargetType == "Choice" && choice is null)
             {
-                if (a.ValidTargets?.Any() != true) continue;
+                if (!(a.ValidTargets?.Count > 0))
+                {
+                    continue;
+                }
                 var target = SelectTargetFromValid(cardNo, a.ValidTargets, ctx);
-                if (target is null) continue;
+                if (target is null)
+                {
+                    continue;
+                }
                 choice = new Dictionary<string, object> { ["instanceId"] = target };
             }
 
@@ -213,7 +257,9 @@ public class StandardAi : INpcStrategy
                 ["instanceId"] = c.Action.SourceInstanceID!,
             };
             if (c.Choice is not null)
+            {
                 payload["choiceData"] = c.Choice;
+            }
 
             actions.Add(new NpcAction { ActionType = WireActionTypes.ActivateEffect, Data = payload });
         }
@@ -222,7 +268,10 @@ public class StandardAi : INpcStrategy
 
     private string? SelectTargetFromValid(long cardNo, List<string> validTargets, DecisionContext ctx)
     {
-        if (!validTargets.Any()) return null;
+        if (!validTargets.Any())
+        {
+            return null;
+        }
 
         var validSet = new HashSet<string>(validTargets);
 
@@ -232,7 +281,9 @@ public class StandardAi : INpcStrategy
         {
             var target = ActionEvaluator.SelectTarget(info, ctx, CardCache);
             if (target is not null && validSet.Contains(target))
+            {
                 return target;
+            }
         }
 
         // Fallback: first valid target
@@ -249,7 +300,10 @@ public class StandardAi : INpcStrategy
         foreach (var a in attackActions)
         {
             var target = ActionFilter.FindBestTargetFromValid(a.ValidTargets, oppField);
-            if (target is null) continue;
+            if (target is null)
+            {
+                continue;
+            }
 
             actions.Add(new NpcAction
             {
@@ -281,26 +335,34 @@ public class StandardAi : INpcStrategy
                 ["targetRank"] = a.TargetRank!,
             };
             if (a.NeedsFamily)
+            {
                 payload["instanceFamily"] = family;
+            }
 
             actions.Add(new NpcAction { ActionType = WireActionTypes.ScaleUp, Data = payload });
         }
         return actions;
     }
 
-    // ─── Distribute Yield actions ───────────────────────────────
+    // ─── Monetize actions ───────────────────────────────
 
-    protected static List<NpcAction> DoDistributeYieldActions(List<AvailableAction> available, long insightPool)
+    protected static List<NpcAction> DoMonetizeActions(List<AvailableAction> available, long insightPool)
     {
-        var yieldActions = ActionFilter.FilterByType(available, WireActionTypes.DistributeYield);
-        if (!yieldActions.Any()) return [];
+        var yieldActions = ActionFilter.FilterByType(available, WireActionTypes.Monetize);
+        if (!yieldActions.Any())
+        {
+            return [];
+        }
 
         var dists = new List<Dictionary<string, object>>();
         var remaining = insightPool;
 
         foreach (var a in yieldActions)
         {
-            if (remaining <= 0) break;
+            if (remaining <= 0)
+            {
+                break;
+            }
             var amount = Math.Min(a.RemainingCapacity, remaining);
             if (amount > 0)
             {
@@ -313,13 +375,16 @@ public class StandardAi : INpcStrategy
             }
         }
 
-        if (!dists.Any()) return [];
+        if (!dists.Any())
+        {
+            return [];
+        }
 
         return
         [
             new NpcAction
             {
-                ActionType = WireActionTypes.DistributeYield,
+                ActionType = WireActionTypes.Monetize,
                 Data = new Dictionary<string, object> { ["distributions"] = dists },
             }
         ];

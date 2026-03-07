@@ -19,32 +19,53 @@ public static class ActionFilter
     /// </summary>
     public static string? PickBestZone(List<string>? validZones, CardDefinition cardDef, HashSet<string> usedZones)
     {
-        if (validZones is null) return null;
+        if (validZones is null)
+        {
+            return null;
+        }
         var available = FilterZones(validZones, usedZones);
 
         if (cardDef.IsComputeType)
         {
             var z = FirstWithPrefix(available, "frontend_");
-            if (z is not null) return z;
+            if (z is not null)
+            {
+                return z;
+            }
             z = FirstWithPrefix(available, "backend_");
-            if (z is not null) return z;
+            if (z is not null)
+            {
+                return z;
+            }
         }
         else if (cardDef.CardType == CardTypes.ObjectStorage)
         {
             var z = FirstWithPrefix(available, "backend_");
-            if (z is not null) return z;
+            if (z is not null)
+            {
+                return z;
+            }
             z = FirstWithPrefix(available, "frontend_");
-            if (z is not null) return z;
+            if (z is not null)
+            {
+                return z;
+            }
         }
         else if (cardDef.IsDataType)
         {
             var z = FirstWithPrefix(available, "backend_");
-            if (z is not null) return z;
+            if (z is not null)
+            {
+                return z;
+            }
         }
         else if (cardDef.IsSupportType || FieldHelpers.IsImmediateType(cardDef.CardType))
         {
             var z = FirstWithPrefix(available, "support_");
-            if (z is not null) return z;
+            if (z is not null)
+            {
+                return z;
+            }
         }
 
         return available.FirstOrDefault();
@@ -58,18 +79,30 @@ public static class ActionFilter
     public static SlotPosition? ParseZoneStr(string zone)
     {
         int idx = zone.LastIndexOf('_');
-        if (idx < 0) return null;
-        if (!int.TryParse(zone[(idx + 1)..], out int index)) return null;
+        if (idx < 0)
+        {
+            return null;
+        }
+        if (!int.TryParse(zone[(idx + 1)..], out int index))
+        {
+            return null;
+        }
         return new SlotPosition { Zone = zone[..idx], Index = index };
     }
 
     public static long ResolveCardNoForInstance(string instanceId, Field field)
     {
         var resource = FieldHelpers.AllResources(field).FirstOrDefault(r => r.InstanceID == instanceId);
-        if (resource is not null) return resource.CardID;
+        if (resource is not null)
+        {
+            return resource.CardID;
+        }
 
         var support = field.Support.FirstOrDefault(s => s.InstanceID == instanceId);
-        if (support is not null) return support.CardID;
+        if (support is not null)
+        {
+            return support.CardID;
+        }
 
         return 0;
     }
@@ -79,7 +112,10 @@ public static class ActionFilter
     /// </summary>
     public static string? FindBestTargetFromValid(List<string>? validTargets, Field oppField)
     {
-        if (validTargets?.Any() != true) return null;
+        if (!(validTargets?.Count > 0))
+        {
+            return null;
+        }
 
         var resMap = FieldHelpers.AllResources(oppField)
             .ToDictionary(r => r.InstanceID);
@@ -88,7 +124,10 @@ public static class ActionFilter
         long bestAV = long.MaxValue;
         foreach (var id in validTargets)
         {
-            if (!resMap.TryGetValue(id, out var r)) continue;
+            if (!resMap.TryGetValue(id, out var r))
+            {
+                continue;
+            }
             if (r.EffectiveAV < bestAV) { bestAV = r.EffectiveAV; bestId = id; }
         }
         return bestId;

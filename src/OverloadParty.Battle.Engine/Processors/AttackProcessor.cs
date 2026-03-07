@@ -26,7 +26,7 @@ public static class AttackProcessor
             state, game, opponentNum, oppField, attacker, defender, cc, effects);
         events.AddRange(reactiveEvents);
 
-        var playerId = playerNum == 1 ? game.Player1ID : game.Player2ID;
+        var playerId = game.GetPlayerID(playerNum);
 
         if (cancelled)
         {
@@ -37,14 +37,14 @@ public static class AttackProcessor
                 GameID = game.GameID,
                 EventType = WireActionTypes.Attack,
                 PlayerID = playerId,
-                EventData = new Dictionary<string, object>
+                EventData = new AttackEventData
                 {
-                    ["attackerId"] = req.AttackerInstanceID,
-                    ["targetId"] = req.TargetInstanceID,
-                    ["damage"] = 0,
-                    ["destroyed"] = false,
-                    ["cancelled"] = true,
-                }
+                    AttackerId = req.AttackerInstanceID,
+                    TargetId = req.TargetInstanceID,
+                    Damage = 0,
+                    Destroyed = false,
+                    Cancelled = true,
+                }.ToDictionary(),
             });
             return new ActionResult { Events = events, StateUpdated = true };
         }
@@ -79,33 +79,20 @@ public static class AttackProcessor
             var defCard = cc.MustGet(defender.CardID);
             slaPenalty = defCard.SLAPenalty;
 
-            // Deduct SLA penalty from opponent's budget
-            long oppBudget = state.GetBudget(opponentNum);
-            state.SetBudget(opponentNum, oppBudget - slaPenalty);
-
             // Fire OnDestroy triggers
             var destroyEvents = FireOnDestroy(state, game, opponentNum, defender, myField, oppField, cc, effects);
             events.AddRange(destroyEvents);
 
-            // Clear migration links
-            FieldHelpers.ClearMigrationOnSourceDestroyed(oppField, defender);
-
-            // Move to trash (host + attachments)
-            FieldHelpers.AddToTrash(state, opponentNum, defender.CardID, defender.InstanceID);
-            foreach (var att in defender.Attachments)
-            {
-                FieldHelpers.AddToTrash(state, opponentNum, att.CardID, att.InstanceID);
-            }
-
-            // Remove from field
-            FieldHelpers.RemoveResourceFromField(oppField, defender.InstanceID);
+            ResourceHelpers.DestroyResource(state, opponentNum, oppField, defender, cc);
         }
         else
         {
             // Elastic scaling when attacked (frontend resources)
             var defCard = cc.MustGet(defender.CardID);
             if (defCard.Elastic)
+            {
                 StatCalculator.ApplyElasticBonus(defender, defCard);
+            }
         }
 
         events.Add(new GameEvent
@@ -113,14 +100,14 @@ public static class AttackProcessor
             GameID = game.GameID,
             EventType = WireActionTypes.Attack,
             PlayerID = playerId,
-            EventData = new Dictionary<string, object>
+            EventData = new AttackEventData
             {
-                ["attackerId"] = req.AttackerInstanceID,
-                ["targetId"] = req.TargetInstanceID,
-                ["damage"] = damage,
-                ["destroyed"] = destroyed,
-                ["slaPenalty"] = slaPenalty,
-            }
+                AttackerId = req.AttackerInstanceID,
+                TargetId = req.TargetInstanceID,
+                Damage = damage,
+                Destroyed = destroyed,
+                SlaPenalty = slaPenalty,
+            }.ToDictionary(),
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
@@ -133,17 +120,27 @@ public static class AttackProcessor
             ?? throw new GameRuleException($"attacker {instanceId} not found on field");
 
         if (FieldHelpers.FindResourceZone(field, instanceId) != Zone.Frontend)
+        {
             throw new GameRuleException("attacker must be on frontend");
+        }
 
         var card = cc.MustGet(attacker.CardID);
         if (!card.IsComputeType)
+        {
             throw new GameRuleException("only compute resources can attack");
+        }
         if (!attacker.FaceUp)
+        {
             throw new GameRuleException("attacker must be face-up");
+        }
         if (attacker.HasAttacked)
+        {
             throw new GameRuleException("attacker has already attacked this turn");
+        }
         if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate))
+        {
             throw new GameRuleException("attacker cannot operate");
+        }
 
         return (attacker, card);
     }
@@ -154,11 +151,15 @@ public static class AttackProcessor
             ?? throw new GameRuleException($"defender {instanceId} not found on opponent field");
 
         if (!defender.FaceUp)
+        {
             throw new GameRuleException("cannot attack face-down resource");
+        }
 
         if (FieldHelpers.FindResourceZone(oppField, instanceId) == Zone.Backend
             && FieldHelpers.HasFrontendResources(oppField))
+        {
             throw new GameRuleException("cannot attack backend while opponent has frontend resources");
+        }
 
         return defender;
     }
@@ -168,48 +169,41 @@ public static class AttackProcessor
         ResourceInstance attacker, ResourceInstance target,
         ICardCache cc, IEffectRegistry? effects)
     {
-        if (effects is null) return (false, []);
+        if (effects is null) { return (false, []); }
 
         var allEvents = new List<GameEvent>();
 
-        var reactiveSupports = FieldHelpers.AllSupports(defenderField)
+        // リアクティブは1つだけ発動する（セットが最も早いもの）
+        var reactive = FieldHelpers.AllSupports(defenderField)
             .Where(s =>
             {
                 var card = cc.Get(s.CardID);
                 return card is not null && effects.Has(card.CardNo, TriggerType.Reactive);
             })
-            .OrderBy(s => s.DeployOrder)
-            .ToList();
+            .MinBy(s => s.DeployOrder);
 
-        foreach (var support in reactiveSupports)
+        if (reactive is null) { return (false, allEvents); }
+
+        var supCard = cc.MustGet(reactive.CardID);
+        var handler = effects.Get(supCard.CardNo, TriggerType.Reactive)!;
+        var ctx = new EffectContext
         {
-            var supCard = cc.MustGet(support.CardID);
-            var handler = effects.Get(supCard.CardNo, TriggerType.Reactive);
-            if (handler is null) continue;
+            State = state,
+            Game = game,
+            PlayerNum = defenderPlayerNum,
+            SupSource = reactive,
+            Source = attacker,
+            Target = target,
+            CardCache = cc,
+        };
 
-            var ctx = new EffectContext
-            {
-                State = state,
-                Game = game,
-                PlayerNum = defenderPlayerNum,
-                SupSource = support,
-                Source = attacker,
-                Target = target,
-                CardCache = cc,
-            };
+        var result = handler(ctx);
+        allEvents.AddRange(result.Events);
 
-            var result = handler(ctx);
-            allEvents.AddRange(result.Events);
+        // リアクティブは伏せた状態でセットされるため、発動時に表向きにする
+        if (!reactive.FaceUp) { reactive.FaceUp = true; }
 
-            if (result.CancelAction)
-            {
-                if (support.FaceDown)
-                    support.FaceDown = false;
-                return (true, allEvents);
-            }
-        }
-
-        return (false, allEvents);
+        return (result.CancelAction, allEvents);
     }
 
     private static List<GameEvent> FireOnDestroy(
@@ -217,25 +211,27 @@ public static class AttackProcessor
         ResourceInstance destroyed, Field attackerField, Field ownerField,
         ICardCache cc, IEffectRegistry? effects)
     {
-        if (effects is null) return [];
+        if (effects is null) { return []; }
 
         var allEvents = new List<GameEvent>();
 
-        // Collect all resources with OnDestroy triggers
         var triggers = new List<(ResourceInstance Resource, long CardNo, long DeployOrder)>();
 
-        // The destroyed card itself
         var destroyedCard = cc.MustGet(destroyed.CardID);
         if (effects.Has(destroyedCard.CardNo, TriggerType.OnDestroy))
+        {
             triggers.Add((destroyed, destroyedCard.CardNo, destroyed.DeployOrder));
+        }
 
         // Allied resources (excluding the destroyed one)
         foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
         {
-            if (res.InstanceID == destroyed.InstanceID) continue;
+            if (res.InstanceID == destroyed.InstanceID) { continue; }
             var resCard = cc.MustGet(res.CardID);
             if (effects.Has(resCard.CardNo, TriggerType.OnDestroy))
+            {
                 triggers.Add((res, resCard.CardNo, res.DeployOrder));
+            }
         }
 
         // Sort by deploy order (earliest first)
@@ -244,7 +240,7 @@ public static class AttackProcessor
         foreach (var (resource, cardNo, _) in triggers)
         {
             var handler = effects.Get(cardNo, TriggerType.OnDestroy);
-            if (handler is null) continue;
+            if (handler is null) { continue; }
 
             var ctx = new EffectContext
             {

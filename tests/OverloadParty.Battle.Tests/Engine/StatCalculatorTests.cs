@@ -115,8 +115,8 @@ public class StatCalculatorTests
     }
 
     /// <summary>
-    /// Instance Family C: TP × 1.5
-    /// TP 600 at small with C family → 600 × 1 × 1.5 = 900
+    /// Instance Family C: TP × 1.3
+    /// TP 600 at small with C family → 600 × 1 × 1.3 = 780
     /// </summary>
     [Fact]
     public void CalculateEffectiveTP_FamilyC_MultipliesTP()
@@ -127,12 +127,12 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
 
-        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(900);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(780);
     }
 
     /// <summary>
-    /// Instance Family R: TP × 0.75
-    /// TP 600 at small with R family → 600 × 0.75 = 450
+    /// Instance Family R: TP × 0.7
+    /// TP 600 at small with R family → 600 × 0.7 = 420
     /// </summary>
     [Fact]
     public void CalculateEffectiveTP_FamilyR_ReducesTP()
@@ -143,11 +143,11 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.R);
 
-        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(450);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(420);
     }
 
     /// <summary>
-    /// Family C + medium rank: TP 600 × 2 × 1.5 = 1800
+    /// Family C + medium rank: TP 600 × 2 × 1.3 = 1560
     /// </summary>
     [Fact]
     public void CalculateEffectiveTP_FamilyC_MediumRank()
@@ -158,7 +158,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Medium, family: InstanceFamily.C);
 
-        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1800);
+        StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1560);
     }
 
     /// <summary>
@@ -239,10 +239,10 @@ public class StatCalculatorTests
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(0);
     }
 
-    // ─── CalculateEffectiveYield ──────────────────────────────
+    // ─── CalculateEffectiveInsight ──────────────────────────────
 
     [Fact]
-    public void CalculateEffectiveYield_BasicDB()
+    public void CalculateEffectiveInsight_BasicDB()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
@@ -250,11 +250,11 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 100, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
 
-        StatCalculator.CalculateEffectiveYield(resource, field, cc).Should().Be(400);
+        StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(400);
     }
 
     [Fact]
-    public void CalculateEffectiveYield_ComputeCard_ReturnsZero()
+    public void CalculateEffectiveInsight_ComputeCard_ReturnsZero()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardNo: 1));
@@ -262,7 +262,7 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: 1);
 
-        StatCalculator.CalculateEffectiveYield(resource, field, cc).Should().Be(0);
+        StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(0);
     }
 
     // ─── CalculateMaxAV ───────────────────────────────────────
@@ -286,7 +286,7 @@ public class StatCalculatorTests
     }
 
     /// <summary>
-    /// Family R: AV × 1.5 → 1400 × 1.5 = 2100
+    /// Family R: AV × 1.3 → 1400 × 1.3 = 1820
     /// </summary>
     [Fact]
     public void CalculateMaxAV_FamilyR_IncreasesAV()
@@ -296,11 +296,11 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.R);
 
-        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(2100);
+        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(1820);
     }
 
     /// <summary>
-    /// Family C: AV × 0.75 → 1400 × 0.75 = 1050
+    /// Family C: AV × 0.7 → 1400 × 0.7 = 979 (truncated)
     /// </summary>
     [Fact]
     public void CalculateMaxAV_FamilyC_DecreasesAV()
@@ -310,11 +310,11 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
 
-        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(1050);
+        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(979);
     }
 
     /// <summary>
-    /// Rulebook truncation: 1350 × 0.75 = 1012.5 → 1012
+    /// Rulebook truncation: 1350 × 0.7 = 944 (floating-point truncation)
     /// </summary>
     [Fact]
     public void CalculateMaxAV_Truncation()
@@ -324,7 +324,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
 
-        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(1012);
+        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(944);
     }
 
     // ─── ApplyElasticBonus ────────────────────────────────────
@@ -381,7 +381,7 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = 200, FaceDown = false, DeployingTurnsLeft = 0 };
+        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = 200, FaceUp = true, DeployingTurnsLeft = 0 };
 
         var resource = TestFactory.MakeResource(cardId: 1);
         field.Frontend[0] = resource;

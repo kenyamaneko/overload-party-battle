@@ -15,15 +15,19 @@ public static class ChainResolver
     public static void PushToChain(GameState state, ChainEntry entry)
     {
         if (state.ChainStack.Count >= GameConstants.MaxChainLevel)
+        {
             throw new GameRuleException($"chain stack full (max {GameConstants.MaxChainLevel})");
+        }
 
         // Reactive cannot chain on top of unresolved reactive
-        if (entry.ActionType == "reactive")
+        if (entry.ActionType == WireActionTypes.Reactive)
         {
             foreach (var existing in state.ChainStack)
             {
-                if (existing.ActionType == "reactive" && !existing.Resolved)
+                if (existing.ActionType == WireActionTypes.Reactive && !existing.Resolved)
+                {
                     throw new GameRuleException("cannot chain reactive on unresolved reactive");
+                }
             }
         }
 
@@ -44,7 +48,7 @@ public static class ChainResolver
         for (int i = stack.Count - 1; i >= 0; i--)
         {
             var entry = stack[i];
-            if (entry.Resolved) continue;
+            if (entry.Resolved) { continue; }
 
             var events = ResolveChainEntry(state, game, entry, cc, effects);
             allEvents.AddRange(events);
@@ -66,7 +70,7 @@ public static class ChainResolver
         var field = state.GetField(playerNum);
 
         var handler = effects.Get(0, trigger); // Lookup by source card
-        if (handler is null) return [];
+        if (handler is null) { return []; }
 
         // Build context and execute
         // TODO: Full implementation when effect system is complete
@@ -75,7 +79,7 @@ public static class ChainResolver
 
     public static TriggerType ChainActionToTrigger(string actionType) => actionType switch
     {
-        "reactive" => TriggerType.Reactive,
+        WireActionTypes.Reactive => TriggerType.Reactive,
         WireActionTypes.Attack => TriggerType.OnAttack,
         _ => TriggerType.Activate
     };
@@ -85,12 +89,12 @@ public static class ChainResolver
     /// </summary>
     public static bool CanChainReactive(GameState state)
     {
-        if (!state.ChainStack.Any()) return false;
-        if (state.ChainStack.Count >= GameConstants.MaxChainLevel) return false;
+        if (!state.ChainStack.Any()) { return false; }
+        if (state.ChainStack.Count >= GameConstants.MaxChainLevel) { return false; }
 
         // Last entry must not be reactive
         var last = state.ChainStack.Last();
-        return last.ActionType != "reactive";
+        return last.ActionType != WireActionTypes.Reactive;
     }
 
     /// <summary>

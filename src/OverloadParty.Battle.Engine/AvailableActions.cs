@@ -16,6 +16,7 @@ public class AvailableAction
     public string? SourceInstanceID { get; set; }
     public List<string>? ValidTargets { get; set; }
     public string? TargetRank { get; set; }
+    public string? InstanceFamily { get; set; }
     public bool NeedsFamily { get; set; }
     public long RemainingCapacity { get; set; }
     public string? EffectTargetType { get; set; }
@@ -60,8 +61,8 @@ public static class AvailableActions
         {
             case Phase.Main:
                 actions.AddRange(EnumeratePlayCardActions(state, myField, hand, budget, cc, effects));
-                actions.AddRange(EnumerateScaleUpActions(myField, cc));
-                actions.AddRange(EnumerateDistributeYieldActions(state, myField, insightPool, cc));
+                actions.AddRange(EnumerateScaleUpActions(state, myField, cc));
+                actions.AddRange(EnumerateMonetizeActions(state, myField, insightPool, cc));
                 actions.AddRange(EnumerateActivateEffectActions(myField, oppField, budget, cc, effects));
                 actions.AddRange(EnumerateMigrateActions(myField, cc));
                 break;
@@ -82,11 +83,10 @@ public static class AvailableActions
         foreach (var handCard in hand)
         {
             var card = cc.Get(handCard.CardID);
-            if (card is null) continue;
+            if (card is null) { continue; }
 
             var action = BuildPlayCardAction(state, field, handCard, card, budget, effects);
-            if (action is not null)
-                yield return action;
+            if (action is not null) { yield return action; }
         }
     }
 
@@ -127,16 +127,15 @@ public static class AvailableActions
 
         if (card.CardType == CardTypes.Incident)
         {
-            if (field.IncidentPlayedThisTurn) return null;
-            if (TurnManager.IsFirstTurn(state.CurrentTurn)) return null;
+            if (state.GetIncidentPlayedThisTurn(state.ActivePlayer)) { return null; }
+            if (TurnManager.IsFirstTurn(state.CurrentTurn)) { return null; }
         }
 
         // Strategy/Incident は即時発動 — budget 条件を満たさなければ除外
         if (FieldHelpers.IsImmediateType(card.CardType) && effects is not null)
         {
             var budgetReq = effects.GetBudgetRequirement(card.CardNo, TriggerType.Activate);
-            if (budgetReq is not null && !budgetReq.IsSatisfied(budget))
-                return null;
+            if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { return null; }
         }
 
         return BuildSupportSlotAction(field, handCard);
@@ -165,10 +164,14 @@ public static class AvailableActions
         var validZones = new List<string>();
 
         if (FieldHelpers.IsFrontendEligible(card.CardType))
+        {
             validZones.AddRange(field.Frontend.EmptySlotIndices().Select(i => $"frontend_{i}"));
+        }
 
         if (FieldHelpers.IsBackendEligible(card.CardType))
+        {
             validZones.AddRange(field.Backend.EmptySlotIndices().Select(i => $"backend_{i}"));
+        }
 
         // List<T> なので Any() ではなく Count で判定
         return validZones.Count > 0
@@ -191,18 +194,21 @@ public static class AvailableActions
 
         var targetZone = oppHasFrontend ? oppField.Frontend : oppField.Backend;
         foreach (var res in targetZone.Where(r => r.FaceUp))
+        {
             validTargets.Add(res.InstanceID);
+        }
 
-        if (!validTargets.Any()) yield break;
+        if (!validTargets.Any()) { yield break; }
 
         // Find eligible attackers
         foreach (var attacker in myField.Frontend.Where(r => r.FaceUp))
         {
             var attackerCard = cc.Get(attacker.CardID);
-            if (attackerCard is null || !attackerCard.IsComputeType) continue;
-            if (attacker.HasAttacked) continue;
-            if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate)) continue;
-            if (attacker.MigratingFrom is not null || attacker.MigrationTarget is not null) continue;
+            if (attackerCard is null || !attackerCard.IsComputeType) { continue; }
+            if (attacker.HasAttacked) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate)) { continue; }
+            if (attacker.MigratingFrom is not null
+                || attacker.MigrationTarget is not null) { continue; }
 
             yield return new AvailableAction
             {
@@ -213,57 +219,76 @@ public static class AvailableActions
         }
     }
 
-    private static IEnumerable<AvailableAction> EnumerateScaleUpActions(Field field, ICardCache cc)
+    private static readonly Rank[] AllRanks = [Rank.Small, Rank.Medium, Rank.Large];
+    private static readonly InstanceFamily[] AllFamilies = [InstanceFamily.M, InstanceFamily.C, InstanceFamily.R];
+
+    private static IEnumerable<AvailableAction> EnumerateScaleUpActions(GameState state, Field field, ICardCache cc)
     {
         foreach (var resource in FieldHelpers.AllFaceUpResources(field))
         {
             var card = cc.Get(resource.CardID);
-            if (card is null || !card.Resizable) continue;
-            if (card.Elastic && !card.Resizable) continue; // Elastic-only cards don't scale manually
+            if (card is null || !card.Resizable) { continue; }
 
-            if (resource.Rank == Rank.Small)
+            // Cannot change type on deploy turn or if already changed this turn
+            if (resource.DeployedOnTurn == state.CurrentTurn
+                || resource.ScaleChangedThisTurn) { continue; }
+
+            foreach (var rank in AllRanks)
             {
-                yield return new AvailableAction
+                if (rank == Rank.Small)
                 {
-                    Type = WireActionTypes.ScaleUp,
-                    SourceInstanceID = resource.InstanceID,
-                    TargetRank = "medium",
-                    NeedsFamily = true,
-                };
-            }
-            else if (resource.Rank == Rank.Medium)
-            {
-                yield return new AvailableAction
+                    // Small has no family; skip if already Small with no family
+                    if (resource.Rank == Rank.Small
+                        && resource.InstanceFamily is null) { continue; }
+
+                    yield return new AvailableAction
+                    {
+                        Type = WireActionTypes.ScaleUp,
+                        SourceInstanceID = resource.InstanceID,
+                        TargetRank = rank.ToWireString(),
+                    };
+                }
+                else
                 {
-                    Type = WireActionTypes.ScaleUp,
-                    SourceInstanceID = resource.InstanceID,
-                    TargetRank = "large",
-                    NeedsFamily = false,
-                };
+                    // Medium/Large: one action per family
+                    foreach (var family in AllFamilies)
+                    {
+                        if (resource.Rank == rank
+                            && resource.InstanceFamily == family) { continue;  }
+
+                        yield return new AvailableAction
+                        {
+                            Type = WireActionTypes.ScaleUp,
+                            SourceInstanceID = resource.InstanceID,
+                            TargetRank = rank.ToWireString(),
+                            InstanceFamily = family.ToWireString(),
+                        };
+                    }
+                }
             }
         }
     }
 
-    private static IEnumerable<AvailableAction> EnumerateDistributeYieldActions(
+    private static IEnumerable<AvailableAction> EnumerateMonetizeActions(
         GameState state, Field field, long insightPool, ICardCache cc)
     {
-        if (TurnManager.IsFirstTurn(state.CurrentTurn)) yield break;
-        if (insightPool <= 0) yield break;
+        if (TurnManager.IsFirstTurn(state.CurrentTurn)) { yield break; }
+        if (insightPool <= 0) { yield break; }
 
         foreach (var res in field.Backend.Where(r => r.FaceUp))
         {
-            if (res.MigratingFrom is not null) continue;
+            if (res.MigratingFrom is not null) { continue; }
 
             var card = cc.Get(res.CardID);
-            if (card is null || !card.IsComputeType) continue;
+            if (card is null || !card.IsComputeType) { continue; }
 
             long effectiveTP = StatCalculator.CalculateEffectiveTP(res, field, cc);
             long remaining = effectiveTP - res.MonetizedAmount;
-            if (remaining <= 0) continue;
+            if (remaining <= 0) { continue; }
 
             yield return new AvailableAction
             {
-                Type = WireActionTypes.DistributeYield,
+                Type = WireActionTypes.Monetize,
                 SourceInstanceID = res.InstanceID,
                 RemainingCapacity = remaining,
             };
@@ -273,22 +298,23 @@ public static class AvailableActions
     private static IEnumerable<AvailableAction> EnumerateActivateEffectActions(
         Field myField, Field oppField, long budget, ICardCache cc, IEffectRegistry? effects)
     {
-        if (effects is null) yield break;
+        if (effects is null) { yield break; }
 
         // Frontend and backend resources
         foreach (var resource in FieldHelpers.AllFaceUpResources(myField))
         {
-            if (resource.EffectUsedThisTurn) continue;
-            if (FieldHelpers.HasTemporaryEffect(resource, EffectTypes.CannotOperate)) continue;
-            if (resource.MigratingFrom is not null || resource.MigrationTarget is not null) continue;
+            if (resource.EffectUsedThisTurn) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(resource, EffectTypes.CannotOperate)) { continue; }
+            if (resource.MigratingFrom is not null
+                || resource.MigrationTarget is not null) { continue; }
 
             var card = cc.Get(resource.CardID);
-            if (card is null) continue;
-            if (!effects.Has(card.CardNo, TriggerType.Activate)) continue;
+            if (card is null) { continue; }
+            if (!effects.Has(card.CardNo, TriggerType.Activate)) { continue; }
 
             // budget 条件を満たさなければ除外
             var budgetReq = effects.GetBudgetRequirement(card.CardNo, TriggerType.Activate);
-            if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) continue;
+            if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
 
             yield return new AvailableAction
             {
@@ -301,16 +327,16 @@ public static class AvailableActions
         // Support zone
         foreach (var support in FieldHelpers.AllSupports(myField))
         {
-            if (support.DeployingTurnsLeft > 0) continue;
-            if (support.EffectUsedThisTurn) continue;
+            if (support.DeployingTurnsLeft > 0) { continue; }
+            if (support.EffectUsedThisTurn) { continue; }
 
             var card = cc.Get(support.CardID);
-            if (card is null) continue;
-            if (!effects.Has(card.CardNo, TriggerType.Activate)) continue;
+            if (card is null) { continue; }
+            if (!effects.Has(card.CardNo, TriggerType.Activate)) { continue; }
 
             // budget 条件を満たさなければ除外
             var budgetReq = effects.GetBudgetRequirement(card.CardNo, TriggerType.Activate);
-            if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) continue;
+            if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
 
             yield return new AvailableAction
             {
@@ -328,11 +354,11 @@ public static class AvailableActions
 
         foreach (var resource in FieldHelpers.AllFaceUpResources(field))
         {
-            if (resource.MigratingFrom is not null || resource.MigrationTarget is not null)
-                continue;
+            if (resource.MigratingFrom is not null
+                || resource.MigrationTarget is not null) { continue; }
 
             var card = cc.Get(resource.CardID);
-            if (card is null) continue;
+            if (card is null) { continue; }
 
             sources.Add((resource, card));
             targets.Add((resource, card));
@@ -343,8 +369,8 @@ public static class AvailableActions
             var validTargets = new List<string>();
             foreach (var (target, targetCard) in targets)
             {
-                if (target.InstanceID == source.InstanceID) continue;
-                if (targetCard.DeployTurns < sourceCard.DeployTurns) continue;
+                if (target.InstanceID == source.InstanceID) { continue; }
+                if (targetCard.DeployTurns < sourceCard.DeployTurns) { continue; }
                 validTargets.Add(target.InstanceID);
             }
 

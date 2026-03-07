@@ -8,38 +8,11 @@ using OverloadParty.Battle.Npc;
 namespace OverloadParty.Battle.Service;
 
 /// <summary>
-/// Display info for a player in a game.
-/// </summary>
-public class BattlePlayerInfo
-{
-    public required string PlayerID { get; init; }
-    public string Name { get; init; } = "";
-    public long Level { get; init; }
-}
-
-/// <summary>
-/// Emitted for banner-related events (battle_start, turn_start).
-/// </summary>
-public class BattleEvent
-{
-    public string Type { get; init; } = "";
-    // battle_start fields
-    public BattlePlayerInfo? Player1Info { get; init; }
-    public BattlePlayerInfo? Player2Info { get; init; }
-    public string? MatchType { get; init; }
-    // turn_start fields
-    public long Turn { get; init; }
-    public long ActivePlayer { get; init; }
-}
-
-/// <summary>
 /// Result of a player action.
 /// </summary>
 public class GameActionResult
 {
-    public bool GameOver { get; init; }
-    public long WinnerNum { get; init; }
-    public string? WinReason { get; init; }
+    public GameOverResult? GameOver { get; init; }
     public ClientGameState? State { get; init; }
 }
 
@@ -52,38 +25,24 @@ public class GameService
     private readonly IGameRepository _gameRepo;
     private readonly IDeckRepository _deckRepo;
     private readonly ICardCache _cardCache;
-    private readonly PlayerService? _playerService;
     private readonly ILogger<GameService> _logger;
 
     private INpcStrategy? _npcAI;
-    private Action<string, string, Dictionary<string, object>?>? _actionObserver;
-    private Action<string, BattleEvent>? _battleEventObserver;
 
     private const int MaxNPCIterations = 50;
-
-    private static readonly Dictionary<string, string> NpcDisplayNames = new()
-    {
-        ["SD"] = "Smile Delivery",
-        ["Tenki"] = "天気使い",
-        ["Sugar"] = "しゅがーLab",
-        ["Tuners"] = "調律部",
-    };
-    private const long NpcDisplayLevel = 50;
 
     public GameService(
         GameEngine engine,
         IGameRepository gameRepo,
         IDeckRepository deckRepo,
         ICardCache cardCache,
-        ILogger<GameService> logger,
-        PlayerService? playerService = null)
+        ILogger<GameService> logger)
     {
         _engine = engine;
         _gameRepo = gameRepo;
         _deckRepo = deckRepo;
         _cardCache = cardCache;
         _logger = logger;
-        _playerService = playerService;
     }
 
     /// <summary>
@@ -91,11 +50,10 @@ public class GameService
     /// </summary>
     public void SetNpcAI(INpcStrategy ai) => _npcAI = ai;
 
-    public void SetActionObserver(Action<string, string, Dictionary<string, object>?> obs) => _actionObserver = obs;
     // ─── Game creation ──────────────────────────────────────────
 
     /// <summary>
-    /// Creates a new PvP game from matchmaking parameters (now called by Gateway).
+    /// Creates a new PvP game from matchmaking parameters (called by Gateway).
     /// </summary>
     public async Task<Game> CreateGameFromMatch(string player1ID, long player1Deck, string player2ID, long player2Deck, CancellationToken ct = default)
     {
@@ -113,7 +71,7 @@ public class GameService
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
 
-        await PostCreateAdvance(game, "pvp", ct);
+        await PostCreateAdvance(game, ct);
         return game;
     }
 
@@ -123,12 +81,11 @@ public class GameService
     public async Task<Game> StartNPCBattle(
         string playerID, long deckID, string npcFaction, CancellationToken ct = default)
     {
-        if (_playerService is not null)
-            await _playerService.CheckAndIncrementBattleCount(playerID, ct);
-
         var playerCards = await _deckRepo.GetDeckCardNos(playerID, deckID, ct);
         if (!playerCards.Any())
+        {
             throw new InvalidOperationException("deck is empty");
+        }
 
         var npcDeck = NpcDecks.GetDeck(npcFaction)
             ?? throw new InvalidOperationException($"unknown NPC faction: {npcFaction}");
@@ -140,7 +97,9 @@ public class GameService
 
         // Create faction-specific AI
         if (_engine.EffectRegistry is EffectRegistry reg)
+        {
             _npcAI = FactionAi.GetFactionAi(npcFaction, _cardCache, reg);
+        }
 
         var gameID = await _engine.CreateNewGame(
             playerID, NpcConstants.PlayerId, deck1, deck2, firstPlayer, ct);
@@ -148,7 +107,7 @@ public class GameService
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
 
-        await PostCreateAdvance(game, "npc", ct);
+        await PostCreateAdvance(game, ct);
         return game;
     }
 
@@ -161,34 +120,17 @@ public class GameService
         string gameID, string playerID, ActionType actionType, object actionData,
         CancellationToken ct = default)
     {
-        var prevState = await _gameRepo.GetGameState(gameID, ct);
-        var prevTurn = prevState?.CurrentTurn ?? 0;
-
         var result = await _engine.ProcessAction(gameID, playerID, actionType, actionData, ct);
 
-        if (result.GameOver)
+        if (result.GameOver is { } over)
         {
-            await FinishGame(gameID, result.WinnerNum, ct);
+            await FinishGame(gameID, over.WinnerNum, ct);
             var state = await GetStateForPlayer(gameID, playerID, ct);
             return new GameActionResult
             {
-                GameOver = true,
-                WinnerNum = result.WinnerNum,
-                WinReason = result.WinReason,
+                GameOver = over,
                 State = state,
             };
-        }
-
-        // Emit turn_start if the turn changed
-        var postState = await _gameRepo.GetGameState(gameID, ct);
-        if (postState is not null && postState.CurrentTurn != prevTurn)
-        {
-            NotifyBattleEvent(gameID, new BattleEvent
-            {
-                Type = "turn_start",
-                Turn = postState.CurrentTurn,
-                ActivePlayer = postState.ActivePlayer,
-            });
         }
 
         await RunNPCTurnIfNeeded(gameID, ct);
@@ -207,17 +149,35 @@ public class GameService
         string gameID, string playerID, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct);
-        if (game is null) return null;
+        if (game is null)
+        {
+            return null;
+        }
 
         var state = await _gameRepo.GetGameState(gameID, ct);
-        if (state is null) return null;
+        if (state is null)
+        {
+            return null;
+        }
 
         long playerNum;
-        if (playerID == game.Player1ID) playerNum = 1;
-        else if (playerID == game.Player2ID) playerNum = 2;
-        else return null;
+        if (playerID == game.Player1ID)
+        {
+            playerNum = 1;
+        }
+        else if (playerID == game.Player2ID)
+        {
+            playerNum = 2;
+        }
+        else
+        {
+            return null;
+        }
 
-        if (state.ActivePlayer != playerNum) return null;
+        if (state.ActivePlayer != playerNum)
+        {
+            return null;
+        }
 
         var hand = state.GetHand(playerNum);
         return AvailableActions.ComputeTurnControls(state, hand);
@@ -228,90 +188,23 @@ public class GameService
     public async Task FinishGame(string gameID, long winnerNum, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct);
-        if (game is null) return;
-
-        // Don't track win/loss for NPC games
-        if (NpcConstants.IsNpcPlayer(game.Player1ID) || NpcConstants.IsNpcPlayer(game.Player2ID))
+        if (game is null)
+        {
             return;
+        }
 
-        var winnerID = winnerNum == 1 ? game.Player1ID : game.Player2ID;
-        var loserID = winnerNum == 1 ? game.Player2ID : game.Player1ID;
-
-        await _gameRepo.UpdateWinLoss(winnerID, 1, 0, ct);
-        await _gameRepo.UpdateWinLoss(loserID, 0, 1, ct);
+        // Win/Loss updates are no longer performed here as they can be derived from the games table
     }
 
     // ─── Private helpers ────────────────────────────────────────
 
-    private void NotifyAction(string gameID, string actionType, Dictionary<string, object>? data)
+    private async Task PostCreateAdvance(Game game, CancellationToken ct)
     {
-        _logger.LogDebug("NotifyAction game={GameID} action={Action}", gameID, actionType);
-        _actionObserver?.Invoke(gameID, actionType, data);
-    }
+        var result = await _engine.RunAutoAdvance(game.GameID, ct);
 
-    private void NotifyBattleEvent(string gameID, BattleEvent evt)
-    {
-        _logger.LogDebug("NotifyBattleEvent game={GameID} type={Type}", gameID, evt.Type);
-        _battleEventObserver?.Invoke(gameID, evt);
-    }
-
-    private BattlePlayerInfo BuildBattlePlayerInfo(Game game, string playerID)
-    {
-        if (NpcConstants.IsNpcPlayer(playerID))
+        if (result is null)
         {
-            var faction = NpcFactionFromGame(game, playerID);
-            var name = NpcDisplayNames.GetValueOrDefault(faction, "NPC");
-            return new BattlePlayerInfo { PlayerID = playerID, Name = name, Level = NpcDisplayLevel };
-        }
-
-        // For real players, a synchronous lookup is acceptable in this context
-        if (_playerService is not null)
-        {
-            var player = _playerService.GetPlayer(playerID).GetAwaiter().GetResult();
-            if (player is not null)
-                return new BattlePlayerInfo { PlayerID = playerID, Name = player.Username, Level = player.Level };
-        }
-
-        return new BattlePlayerInfo { PlayerID = playerID, Name = "Player", Level = 1 };
-    }
-
-    private static string NpcFactionFromGame(Game game, string playerID)
-    {
-        var snapshot = playerID == game.Player1ID
-            ? game.Player1DeckSnapshot
-            : game.Player2DeckSnapshot;
-        if (snapshot is null) return "";
-        return snapshot.DeckID.StartsWith("npc-") ? snapshot.DeckID[4..] : "";
-    }
-
-    private async Task PostCreateAdvance(Game game, string matchType, CancellationToken ct)
-    {
-        var gameID = game.GameID;
-
-        NotifyBattleEvent(gameID, new BattleEvent
-        {
-            Type = "battle_start",
-            Player1Info = BuildBattlePlayerInfo(game, game.Player1ID),
-            Player2Info = BuildBattlePlayerInfo(game, game.Player2ID),
-            MatchType = matchType,
-        });
-
-        var (gameOver, _) = await _engine.RunAutoAdvance(gameID, ct);
-
-        if (!gameOver)
-        {
-            var advState = await _gameRepo.GetGameState(gameID, ct);
-            if (advState is not null)
-            {
-                NotifyBattleEvent(gameID, new BattleEvent
-                {
-                    Type = "turn_start",
-                    Turn = advState.CurrentTurn,
-                    ActivePlayer = advState.ActivePlayer,
-                });
-            }
-
-            await RunNPCTurnIfNeeded(gameID, ct);
+            await RunNPCTurnIfNeeded(game.GameID, ct);
         }
     }
 
@@ -319,52 +212,74 @@ public class GameService
         string gameID, string playerID, CancellationToken ct)
     {
         var game = await _gameRepo.GetGame(gameID, ct);
-        if (game is null) return null;
+        if (game is null)
+        {
+            return null;
+        }
 
         var state = await _gameRepo.GetGameState(gameID, ct);
-        if (state is null) return null;
+        if (state is null)
+        {
+            return null;
+        }
 
         long playerNum;
-        if (playerID == game.Player1ID) playerNum = 1;
-        else if (playerID == game.Player2ID) playerNum = 2;
-        else return null;
+        if (playerID == game.Player1ID)
+        {
+            playerNum = 1;
+        }
+        else if (playerID == game.Player2ID)
+        {
+            playerNum = 2;
+        }
+        else
+        {
+            return null;
+        }
 
         return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
     }
 
     private async Task RunNPCTurnIfNeeded(string gameID, CancellationToken ct)
     {
-        if (_npcAI is null) return;
-
-        long prevTurn = 0;
+        if (_npcAI is null)
+        {
+            return;
+        }
 
         for (int i = 0; i < MaxNPCIterations; i++)
         {
             var game = await _gameRepo.GetGame(gameID, ct);
-            if (game is null || game.Status == GameStatus.Finished) return;
+            if (game is null || game.Status == GameStatus.Finished)
+            {
+                return;
+            }
 
             var state = await _gameRepo.GetGameState(gameID, ct);
-            if (state is null) return;
+            if (state is null)
+            {
+                return;
+            }
 
             // Determine NPC player number
             long npcPlayerNum;
-            if (game.Player1ID == NpcConstants.PlayerId) npcPlayerNum = 1;
-            else if (game.Player2ID == NpcConstants.PlayerId) npcPlayerNum = 2;
-            else return; // No NPC in this game
-
-            if (state.ActivePlayer != npcPlayerNum) return;
-
-            // Emit turn_start when the NPC's turn number changes
-            if (prevTurn != 0 && state.CurrentTurn != prevTurn)
+            if (game.Player1ID == NpcConstants.PlayerId)
             {
-                NotifyBattleEvent(gameID, new BattleEvent
-                {
-                    Type = "turn_start",
-                    Turn = state.CurrentTurn,
-                    ActivePlayer = state.ActivePlayer,
-                });
+                npcPlayerNum = 1;
             }
-            prevTurn = state.CurrentTurn;
+            else if (game.Player2ID == NpcConstants.PlayerId)
+            {
+                npcPlayerNum = 2;
+            }
+            else
+            {
+                return; // No NPC in this game
+            }
+
+            if (state.ActivePlayer != npcPlayerNum)
+            {
+                return;
+            }
 
             // Compute available actions
             var myField = state.GetField(npcPlayerNum);
@@ -414,9 +329,10 @@ public class GameService
                     var result = await _engine.ProcessAction(
                         gameID, NpcConstants.PlayerId, actionType, action.Data, ct);
 
-                    NotifyAction(gameID, action.ActionType, action.Data);
-
-                    if (result.GameOver) return;
+                    if (result.GameOver is not null)
+                    {
+                        return;
+                    }
                 }
                 catch (Exception ex)
                 {

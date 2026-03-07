@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// Helper functions used by effect ops for field scanning, card counting, and deployment.
+/// エフェクト固有のフィールド走査・カウント・フィルタ構築ヘルパー。
 /// </summary>
 public static class EffectHelpers
 {
@@ -27,14 +27,6 @@ public static class EffectHelpers
         return field.Backend.Count();
     }
 
-    private static readonly HashSet<long> SecurityPlatformCardNos = [15, 37, 84];
-
-    public static bool HasSecurityPlatform(Field field, ICardCache cc)
-    {
-        return field.Support
-            .Any(sup => SecurityPlatformCardNos.Contains(sup.CardID));
-    }
-
     public static bool HasCardTypeOnField(Field field, string cardType, string? faction, ICardCache cc)
     {
         return FieldHelpers.AllFaceUpResources(field).Any(r =>
@@ -44,72 +36,6 @@ public static class EffectHelpers
                 && card.CardType == cardType
                 && (faction is null or { Length: 0 } || card.Faction == faction);
         });
-    }
-
-    // --- Deploy Helpers ---
-
-    public static void PlaceResourceOnField(Field field, ResourceInstance instance, string cardType)
-    {
-        if (FieldHelpers.IsComputeType(cardType))
-        {
-            // Prefer frontend, fallback backend
-            if (field.Frontend.TryPlace(instance)) return;
-            if (field.Backend.TryPlace(instance)) return;
-            throw new GameRuleException("No empty slot for compute resource");
-        }
-
-        if (cardType == CardTypes.ObjectStorage)
-        {
-            // Prefer backend, fallback frontend
-            if (field.Backend.TryPlace(instance)) return;
-            if (field.Frontend.TryPlace(instance)) return;
-            throw new GameRuleException("No empty slot for ObjectStorage");
-        }
-
-        if (FieldHelpers.IsDataType(cardType))
-        {
-            if (field.Backend.TryPlace(instance)) return;
-            throw new GameRuleException("No empty backend slot");
-        }
-
-        throw new GameRuleException($"Card type {cardType} cannot be auto-deployed");
-    }
-
-    public static void DeployResourceFromHand(GameState state, long playerNum, long cardNo, ICardCache cc, OpContext octx)
-    {
-        var hand = state.GetHand(playerNum);
-        int handIdx = hand.FindIndex(c => c.CardID == cardNo);
-        if (handIdx < 0)
-            throw new GameRuleException($"Card {cardNo} not in hand");
-
-        hand.RemoveAt(handIdx);
-
-        var card = cc.MustGet(cardNo);
-        var field = octx.GetField(playerNum);
-        var instance = FieldHelpers.CreateResourceInstance(card, state.NextInstanceID(), state.CurrentTurn);
-        PlaceResourceOnField(field, instance, card.CardType);
-    }
-
-    public static void DeployResourceFromRepo(GameState state, long playerNum, long cardNo, long overrideAV, ICardCache cc, OpContext octx)
-    {
-        var repo = state.GetRepository(playerNum);
-        int repoIdx = repo.FindIndex(c => c.CardID == cardNo);
-        if (repoIdx < 0)
-            throw new GameRuleException($"Card {cardNo} not in repository");
-
-        repo.RemoveAt(repoIdx);
-
-        var card = cc.MustGet(cardNo);
-        var field = octx.GetField(playerNum);
-        var instance = FieldHelpers.CreateResourceInstance(card, state.NextInstanceID(), state.CurrentTurn);
-
-        if (overrideAV > 0)
-        {
-            instance.MaxAV = overrideAV;
-            instance.Damage = 0;
-        }
-
-        PlaceResourceOnField(field, instance, card.CardType);
     }
 
     // --- Filter constructors ---

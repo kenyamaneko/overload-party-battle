@@ -21,11 +21,11 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(p1Budget: 0, p2Budget: 3000);
         var game = TestFactory.MakeGame();
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(2);
-        reason.Should().Be("budget_zero");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(2);
+        result.Reason.Should().Be("budget_zero");
     }
 
     [Fact]
@@ -34,11 +34,11 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: -500);
         var game = TestFactory.MakeGame();
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(1);
-        reason.Should().Be("budget_zero");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(1);
+        result.Reason.Should().Be("budget_zero");
     }
 
     [Fact]
@@ -48,11 +48,11 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(p1Budget: 0, p2Budget: 0);
         var game = TestFactory.MakeGame();
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(2);
-        reason.Should().Be("budget_zero");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(2);
+        result.Reason.Should().Be("budget_zero");
     }
 
     // ─── System Down ──────────────────────────────────────────
@@ -64,14 +64,14 @@ public class WinConditionTests
         var game = TestFactory.MakeGame();
 
         // Player 1 had active resources before, but now all face-down
-        state.Player1Field.HasHadActiveResource = true;
+        state.Player1HasHadActiveResource = true;
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(faceUp: false);
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(2);
-        reason.Should().Be("system_down");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(2);
+        result.Reason.Should().Be("system_down");
     }
 
     /// <summary>
@@ -85,17 +85,16 @@ public class WinConditionTests
         var game = TestFactory.MakeGame();
 
         // Player 1 has never had an active resource
-        state.Player1Field.HasHadActiveResource = false;
+        state.Player1HasHadActiveResource = false;
 
-        var (_, _, gameOver) = WinConditionChecker.Check(state, game);
-        gameOver.Should().BeFalse();
+        WinConditionChecker.Check(state, game).Should().BeNull();
     }
 
     [Fact]
     public void IsSystemDown_WithFaceUpResource_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Field.HasHadActiveResource = true;
+        state.Player1HasHadActiveResource = true;
         state.Player1Field.Backend[0] = TestFactory.MakeResource(faceUp: true);
 
         WinConditionChecker.IsSystemDown(state, 1).Should().BeFalse();
@@ -112,11 +111,11 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(turn: 30, p1Budget: 3000, p2Budget: 2000);
         var game = TestFactory.MakeGame();
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(1);
-        reason.Should().Be("turn_limit");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(1);
+        result.Reason.Should().Be("turn_limit");
     }
 
     [Fact]
@@ -125,11 +124,11 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(turn: 30, p1Budget: 1000, p2Budget: 4000);
         var game = TestFactory.MakeGame();
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(2);
-        reason.Should().Be("turn_limit");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(2);
+        result.Reason.Should().Be("turn_limit");
     }
 
     /// <summary>
@@ -141,11 +140,11 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(turn: 30, p1Budget: 2500, p2Budget: 2500);
         var game = TestFactory.MakeGame();
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(0);
-        reason.Should().Be("draw");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(0);
+        result.Reason.Should().Be("draw");
     }
 
     [Fact]
@@ -154,8 +153,7 @@ public class WinConditionTests
         var state = TestFactory.MakeGameState(turn: 29);
         var game = TestFactory.MakeGame();
 
-        var (_, _, gameOver) = WinConditionChecker.Check(state, game);
-        gameOver.Should().BeFalse();
+        WinConditionChecker.Check(state, game).Should().BeNull();
     }
 
     // ─── Timeout ──────────────────────────────────────────────
@@ -167,11 +165,11 @@ public class WinConditionTests
         state.Player1TimeBank = 0;
         var game = TestFactory.MakeGame();
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(2);
-        reason.Should().Be("timeout");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(2);
+        result.Reason.Should().Be("timeout");
     }
 
     [Fact]
@@ -181,11 +179,11 @@ public class WinConditionTests
         state.Player2TimeBank = -10;
         var game = TestFactory.MakeGame();
 
-        var (winner, reason, gameOver) = WinConditionChecker.Check(state, game);
+        var result = WinConditionChecker.Check(state, game);
 
-        gameOver.Should().BeTrue();
-        winner.Should().Be(1);
-        reason.Should().Be("timeout");
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(1);
+        result.Reason.Should().Be("timeout");
     }
 
     // ─── Launch Failure ───────────────────────────────────────
@@ -200,7 +198,7 @@ public class WinConditionTests
     public void CheckLaunchFailure_Turn5_FirstPlayer_NoResources_True()
     {
         var state = TestFactory.MakeGameState(turn: 5);
-        state.Player1Field.HasHadActiveResource = false;
+        state.Player1HasHadActiveResource = false;
 
         WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeTrue();
     }
@@ -212,7 +210,7 @@ public class WinConditionTests
     public void CheckLaunchFailure_Turn6_SecondPlayer_NoResources_True()
     {
         var state = TestFactory.MakeGameState(turn: 6);
-        state.Player2Field.HasHadActiveResource = false;
+        state.Player2HasHadActiveResource = false;
 
         WinConditionChecker.CheckLaunchFailure(state, 2).Should().BeTrue();
     }
@@ -221,7 +219,7 @@ public class WinConditionTests
     public void CheckLaunchFailure_BeforeTurn3_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState(turn: 3); // personalTurn = 2
-        state.Player1Field.HasHadActiveResource = false;
+        state.Player1HasHadActiveResource = false;
 
         WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeFalse();
     }
@@ -230,7 +228,7 @@ public class WinConditionTests
     public void CheckLaunchFailure_HasDeployed_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState(turn: 5);
-        state.Player1Field.HasHadActiveResource = true;
+        state.Player1HasHadActiveResource = true;
 
         WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeFalse();
     }
@@ -241,12 +239,13 @@ public class WinConditionTests
     public void Check_BudgetZero_TakesPriority_OverSystemDown()
     {
         var state = TestFactory.MakeGameState(p1Budget: 0);
-        state.Player1Field.HasHadActiveResource = true;
+        state.Player1HasHadActiveResource = true;
         // No resources at all → would also be system down
         var game = TestFactory.MakeGame();
 
-        var (_, reason, _) = WinConditionChecker.Check(state, game);
-        reason.Should().Be("budget_zero");
+        var result = WinConditionChecker.Check(state, game);
+        result.Should().NotBeNull();
+        result!.Reason.Should().Be("budget_zero");
     }
 
     // ─── No win condition ─────────────────────────────────────
@@ -255,13 +254,12 @@ public class WinConditionTests
     public void Check_NormalState_NoGameOver()
     {
         var state = TestFactory.MakeGameState(turn: 5, p1Budget: 4000, p2Budget: 3500);
-        state.Player1Field.HasHadActiveResource = true;
+        state.Player1HasHadActiveResource = true;
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(faceUp: true);
-        state.Player2Field.HasHadActiveResource = true;
+        state.Player2HasHadActiveResource = true;
         state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "inst_2", faceUp: true);
         var game = TestFactory.MakeGame();
 
-        var (_, _, gameOver) = WinConditionChecker.Check(state, game);
-        gameOver.Should().BeFalse();
+        WinConditionChecker.Check(state, game).Should().BeNull();
     }
 }

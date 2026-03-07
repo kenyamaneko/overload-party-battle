@@ -12,14 +12,16 @@ public class MockDeckRepository : IDeckRepository
     private long _nextID = 1;
     private readonly Dictionary<(string PlayerID, long DeckID), Deck> _decks = new();
     private readonly Dictionary<(string PlayerID, long DeckID), List<DeckCard>> _deckCards = new();
-    private readonly Dictionary<string, List<PlayerCard>> _playerCards = new();
+    private readonly Dictionary<string, List<OwnedCard>> _playerCards = new();
 
     public Task Create(Deck deck, List<DeckCard> cards, CancellationToken ct = default)
     {
         lock (_lock)
         {
             if (deck.DeckID == 0)
+            {
                 deck.DeckID = _nextID++;
+            }
             _decks[(deck.PlayerID, deck.DeckID)] = deck;
             _deckCards[(deck.PlayerID, deck.DeckID)] = cards;
         }
@@ -45,21 +47,28 @@ public class MockDeckRepository : IDeckRepository
         lock (_lock) { return Task.FromResult(_deckCards.GetValueOrDefault((playerID, deckID)) ?? []); }
     }
 
-    public Task<List<long>> GetDeckCardNos(string playerID, long deckID, CancellationToken ct = default)
+    public Task<List<DeckSnapshotCard>> GetDeckCardNos(string playerID, long deckID, CancellationToken ct = default)
     {
         lock (_lock)
         {
             var cards = _deckCards.GetValueOrDefault((playerID, deckID));
-            if (cards is null) return Task.FromResult<List<long>>([]);
-            var nos = new List<long>();
+            if (cards is null)
+            {
+                return Task.FromResult<List<DeckSnapshotCard>>([]);
+            }
+            var result = new List<DeckSnapshotCard>();
             foreach (var c in cards)
+            {
                 for (int i = 0; i < c.Count; i++)
-                    nos.Add(c.CardNo);
-            return Task.FromResult(nos);
+                {
+                    result.Add(new DeckSnapshotCard { CardNo = c.CardNo, ArtNo = c.ArtNo });
+                }
+            }
+            return Task.FromResult(result);
         }
     }
 
-    public Task<List<PlayerCard>> GetPlayerCards(string playerID, CancellationToken ct = default)
+    public Task<List<OwnedCard>> GetOwnedCards(string playerID, CancellationToken ct = default)
     {
         lock (_lock) { return Task.FromResult(_playerCards.GetValueOrDefault(playerID) ?? []); }
     }

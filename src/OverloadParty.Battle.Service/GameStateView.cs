@@ -6,7 +6,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Service;
 
 /// <summary>
-/// Info-hidden game state sent to a player via WebSocket.
+/// Info-hidden game state for a specific player.
 /// </summary>
 public class ClientGameState
 {
@@ -32,6 +32,7 @@ public class PlayerView
     public required List<HandCard> Hand { get; init; }
     public int RepoCount { get; init; }
     public int TrashCount { get; init; }
+    public required List<HandCard> Trash { get; init; }
     public List<AvailableAction>? AvailableActions { get; set; }
 }
 
@@ -48,6 +49,7 @@ public class OpponentView
     public int HandCount { get; init; }
     public int RepoCount { get; init; }
     public int TrashCount { get; init; }
+    public required List<HandCard> Trash { get; init; }
 }
 
 /// <summary>
@@ -67,7 +69,7 @@ public class HiddenSupportInstance
 {
     public string InstanceID { get; init; } = "";
     public long? CardID { get; init; } // null if face-down
-    public bool FaceDown { get; init; }
+    public bool FaceUp { get; init; }
 }
 
 /// <summary>
@@ -99,6 +101,7 @@ public static class GameStateView
             Hand = myHand,
             RepoCount = myRepo.Count,
             TrashCount = myTrash.Count,
+            Trash = myTrash,
         };
 
         // Opponent view (hidden)
@@ -117,6 +120,7 @@ public static class GameStateView
             HandCount = oppHand.Count,
             RepoCount = oppRepo.Count,
             TrashCount = oppTrash.Count,
+            Trash = oppTrash,
         };
 
         var cgs = new ClientGameState
@@ -151,16 +155,22 @@ public static class GameStateView
             Support = field.Support.ToArray().Select(sup => sup is null ? null : new HiddenSupportInstance
             {
                 InstanceID = sup.InstanceID,
-                FaceDown = sup.FaceDown,
-                CardID = sup.FaceDown ? null : sup.CardID,
+                FaceUp = sup.FaceUp,
+                CardID = sup.FaceUp ? sup.CardID : null,
             }).ToArray(),
         };
     }
 
     private static ResourceInstance? HideResourceIfFaceDown(ResourceInstance? res)
     {
-        if (res is null) return null;
-        if (res.FaceUp) return res;
+        if (res is null)
+        {
+            return null;
+        }
+        if (res.FaceUp)
+        {
+            return res;
+        }
 
         // Hide all stats for face-down (still deploying) resources
         return new ResourceInstance
