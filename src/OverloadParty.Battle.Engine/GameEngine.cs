@@ -75,13 +75,7 @@ public class GameEngine
 
         if (gameOverResult is not null)
         {
-            var winnerID = gameOverResult.WinnerNum switch
-            {
-                0 => "",
-                1 => game.Player1ID,
-                _ => game.Player2ID,
-            };
-            await _repo.FinishGame(gameID, winnerID, ct);
+            await _repo.FinishGame(gameID, ResolveWinnerID(game, gameOverResult.WinnerNum), ct);
         }
 
         return gameOverResult;
@@ -179,17 +173,18 @@ public class GameEngine
 
         if (actionResult.GameOver is { } over)
         {
-            var winnerID = over.WinnerNum switch
-            {
-                0 => "",
-                1 => game.Player1ID,
-                _ => game.Player2ID,
-            };
-            await _repo.FinishGame(gameID, winnerID, ct);
+            await _repo.FinishGame(gameID, ResolveWinnerID(game, over.WinnerNum), ct);
         }
 
         return actionResult;
     }
+
+    private static string ResolveWinnerID(Game game, long winnerNum) => winnerNum switch
+    {
+        0 => "",
+        1 => game.Player1ID,
+        _ => game.Player2ID,
+    };
 
     /// <summary>
     /// Computes all valid actions available to a player in the current game state.

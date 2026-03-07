@@ -34,25 +34,28 @@ public static class MonetizeProcessor
         var field = state.GetField(playerNum);
         long insightPool = state.GetInsightPool(playerNum);
         long budget = state.GetBudget(playerNum);
-        long totalDistributed = 0;
 
-        foreach (var dist in req.Distributions)
+        // Validate all distributions before mutating any state
+        var validated = req.Distributions
+            .Select(dist => (dist, ValidateDistribution(field, dist, cc)))
+            .ToList();
+
+        long totalDistributed = req.Distributions.Sum(d => d.Amount);
+        if (totalDistributed > insightPool)
         {
-            var (resource, card) = ValidateDistribution(field, dist, cc);
+            throw new GameRuleException($"total distribution {totalDistributed} exceeds insight pool {insightPool}");
+        }
 
+        // Apply mutations after all validation passes
+        foreach (var (dist, (resource, card)) in validated)
+        {
             resource.MonetizedAmount += dist.Amount;
-            totalDistributed += dist.Amount;
 
             // Elastic scaling
             if (card.Elastic && card.ElasticIncrement > 0)
             {
                 StatCalculator.ApplyElasticBonus(resource, card);
             }
-        }
-
-        if (totalDistributed > insightPool)
-        {
-            throw new GameRuleException($"total distribution {totalDistributed} exceeds insight pool {insightPool}");
         }
 
         state.SetInsightPool(playerNum, insightPool - totalDistributed);

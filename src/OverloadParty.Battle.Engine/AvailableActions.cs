@@ -242,7 +242,7 @@ public static class AvailableActions
             validTargets.Add(res.InstanceID);
         }
 
-        if (!validTargets.Any()) { yield break; }
+        if (validTargets.Count == 0) { yield break; }
 
         // Find eligible attackers
         foreach (var attacker in myField.Frontend.Where(r => r.FaceUp))
@@ -418,7 +418,7 @@ public static class AvailableActions
                 validTargets.Add(target.InstanceID);
             }
 
-            if (validTargets.Any())
+            if (validTargets.Count > 0)
             {
                 yield return new AvailableAction
                 {

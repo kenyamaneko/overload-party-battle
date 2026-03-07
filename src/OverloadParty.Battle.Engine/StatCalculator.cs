@@ -53,17 +53,10 @@ public static class StatCalculator
         long passiveBonus = CalculatePassiveTPBonus(instance, field, cc);
         long attachmentBonus = CalculateAttachmentBonus(instance, GameConstants.StatTP, cc);
 
-        long tempBonus = 0;
-        long tempDebuff = 0;
-        foreach (var eff in instance.TemporaryEffects)
-        {
-            switch (eff.EffectType)
-            {
-                case EffectTypes.BuffTP:   tempBonus  += eff.Value; break;
-                case EffectTypes.DebuffTP: tempDebuff += eff.Value; break;
-                default: break; // yield等のTP以外のエフェクトはスキップ
-            }
-        }
+        long tempBonus = instance.TemporaryEffects
+            .Where(e => e.EffectType == EffectTypes.BuffTP).Sum(e => e.Value);
+        long tempDebuff = instance.TemporaryEffects
+            .Where(e => e.EffectType == EffectTypes.DebuffTP).Sum(e => e.Value);
 
         long total = baseValue + elasticBonus + platformBonus + passiveBonus + attachmentBonus + tempBonus - tempDebuff;
         return Math.Max(0, total);
@@ -100,17 +93,10 @@ public static class StatCalculator
         long passiveBonus = CalculatePassiveYieldBonus(instance, field, cc);
         long attachmentBonus = CalculateAttachmentBonus(instance, GameConstants.StatYield, cc);
 
-        long tempBonus = 0;
-        long tempDebuff = 0;
-        foreach (var eff in instance.TemporaryEffects)
-        {
-            switch (eff.EffectType)
-            {
-                case EffectTypes.BuffYield:   tempBonus  += eff.Value; break;
-                case EffectTypes.DebuffYield: tempDebuff += eff.Value; break;
-                default: break; // TP等のYield以外のエフェクトはスキップ
-            }
-        }
+        long tempBonus = instance.TemporaryEffects
+            .Where(e => e.EffectType == EffectTypes.BuffYield).Sum(e => e.Value);
+        long tempDebuff = instance.TemporaryEffects
+            .Where(e => e.EffectType == EffectTypes.DebuffYield).Sum(e => e.Value);
 
         long total = baseValue + elasticBonus + platformBonus + passiveBonus + attachmentBonus + tempBonus - tempDebuff;
         return Math.Max(0, total);
@@ -193,23 +179,13 @@ public static class StatCalculator
     static long CalculatePassiveTPBonus(ResourceInstance instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
-        long total = 0;
-        foreach (var pe in card.PassiveEffects)
-        {
-            total += ApplyPassiveEffect(pe, instance, field, cc, GameConstants.StatTP);
-        }
-        return total;
+        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, GameConstants.StatTP));
     }
 
     static long CalculatePassiveYieldBonus(ResourceInstance instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
-        long total = 0;
-        foreach (var pe in card.PassiveEffects)
-        {
-            total += ApplyPassiveEffect(pe, instance, field, cc, GameConstants.StatYield);
-        }
-        return total;
+        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, GameConstants.StatYield));
     }
 
     private static long ApplyPassiveEffect(PassiveEffect pe, ResourceInstance instance, Field field, ICardCache cc, string statType)

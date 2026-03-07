@@ -26,7 +26,6 @@ public class Game
 
 /// <summary>
 /// GameState holds the full mutable state of a game in progress.
-/// In Go this uses json.RawMessage for sub-structures; in C# we use typed objects.
 /// The Data layer handles serialization/deserialization to/from the DB.
 /// </summary>
 public class GameState

@@ -132,7 +132,6 @@ public class GameService
 
         if (result.GameOver is { } over)
         {
-            await FinishGame(gameID, over.WinnerNum, ct);
             var state = await GetStateForPlayer(gameID, playerID, ct);
             return new GameActionResult
             {
@@ -189,19 +188,6 @@ public class GameService
 
         var hand = state.GetHand(playerNum);
         return AvailableActions.ComputeTurnControls(state, hand);
-    }
-
-    // ─── Post-game ──────────────────────────────────────────────
-
-    public async Task FinishGame(string gameID, long winnerNum, CancellationToken ct = default)
-    {
-        var game = await _gameRepo.GetGame(gameID, ct);
-        if (game is null)
-        {
-            return;
-        }
-
-        // Win/Loss updates are no longer performed here as they can be derived from the games table
     }
 
     // ─── Private helpers ────────────────────────────────────────
