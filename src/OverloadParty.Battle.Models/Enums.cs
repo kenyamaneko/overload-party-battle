@@ -58,7 +58,6 @@ public enum CardType
     Database,
     ObjectStorage,
     CacheDB,
-    Datawarehouse,
 
     // Support types
     Platform,

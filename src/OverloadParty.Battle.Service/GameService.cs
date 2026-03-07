@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using OverloadParty.Battle.Engine;
@@ -27,7 +28,8 @@ public class GameService
     private readonly ICardCache _cardCache;
     private readonly ILogger<GameService> _logger;
 
-    private INpcStrategy? _npcAI;
+    private INpcStrategy? _defaultNpcAI;
+    private readonly ConcurrentDictionary<string, INpcStrategy> _npcStrategies = new();
 
     private const int MaxNPCIterations = 50;
 
@@ -46,9 +48,9 @@ public class GameService
     }
 
     /// <summary>
-    /// Sets the NPC AI strategy. Called once at startup.
+    /// Sets the default NPC AI strategy. Called once at startup.
     /// </summary>
-    public void SetNpcAI(INpcStrategy ai) => _npcAI = ai;
+    public void SetNpcAI(INpcStrategy ai) => _defaultNpcAI = ai;
 
     // ─── Game creation ──────────────────────────────────────────
 
@@ -95,14 +97,20 @@ public class GameService
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
-        // Create faction-specific AI
+        // Create faction-specific AI for this game
+        INpcStrategy? factionAI = null;
         if (_engine.EffectRegistry is EffectRegistry reg)
         {
-            _npcAI = FactionAi.GetFactionAi(npcFaction, _cardCache, reg);
+            factionAI = FactionAi.GetFactionAi(npcFaction, _cardCache, reg);
         }
 
         var gameID = await _engine.CreateNewGame(
             playerID, NpcConstants.PlayerId, deck1, deck2, firstPlayer, ct);
+
+        if (factionAI is not null)
+        {
+            _npcStrategies[gameID] = factionAI;
+        }
 
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
@@ -242,7 +250,11 @@ public class GameService
 
     private async Task RunNPCTurnIfNeeded(string gameID, CancellationToken ct)
     {
-        if (_npcAI is null)
+        if (!_npcStrategies.TryGetValue(gameID, out var npcAI))
+        {
+            npcAI = _defaultNpcAI;
+        }
+        if (npcAI is null)
         {
             return;
         }
@@ -296,13 +308,13 @@ public class GameService
             switch (state.CurrentPhase)
             {
                 case Phase.Main:
-                    actions = _npcAI.DecideMainPhaseActions(state, game, npcPlayerNum, available);
+                    actions = npcAI.DecideMainPhaseActions(state, game, npcPlayerNum, available);
                     break;
                 case Phase.Battle:
-                    actions = _npcAI.DecideBattlePhaseActions(state, game, npcPlayerNum, available);
+                    actions = npcAI.DecideBattlePhaseActions(state, game, npcPlayerNum, available);
                     break;
                 case Phase.End:
-                    var ids = _npcAI.DecideDiscard(state, npcPlayerNum);
+                    var ids = npcAI.DecideDiscard(state, npcPlayerNum);
                     if (!ids.Any())
                     {
                         _logger.LogWarning("NPC in end phase but no discard needed (game={GameID})", gameID);
@@ -331,6 +343,7 @@ public class GameService
 
                     if (result.GameOver is not null)
                     {
+                        _npcStrategies.TryRemove(gameID, out _);
                         return;
                     }
                 }

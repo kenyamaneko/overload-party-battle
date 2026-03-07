@@ -158,9 +158,14 @@ api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
         var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, req.NpcFaction);
         return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
     }
-    catch (Exception ex)
+    catch (GameRuleException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Unexpected error");
+        return Results.StatusCode(500);
     }
 });
 
@@ -172,9 +177,14 @@ api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
         var game = await gameSvc.CreateGameFromMatch(req.Player1ID, req.Player1DeckID, req.Player2ID, req.Player2DeckID);
         return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
     }
-    catch (Exception ex)
+    catch (GameRuleException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Unexpected error");
+        return Results.StatusCode(500);
     }
 });
 
@@ -193,9 +203,14 @@ api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId
             win_reason = result.GameOver?.Reason,
         });
     }
-    catch (Exception ex)
+    catch (GameRuleException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Unexpected error");
+        return Results.StatusCode(500);
     }
 });
 
@@ -208,9 +223,14 @@ api.MapGet("/games/{gameId}/state/{playerId}", async (GameService gameSvc, strin
         if (state == null) { return Results.NotFound(); }
         return Results.Ok(state);
     }
-    catch (Exception ex)
+    catch (GameRuleException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Unexpected error");
+        return Results.StatusCode(500);
     }
 });
 
@@ -223,9 +243,14 @@ api.MapGet("/games/{gameId}/controls/{playerId}", async (GameService gameSvc, st
         if (controls == null) { return Results.Ok(null); }
         return Results.Ok(new { can_end_phase = controls.CanEndPhase, discard_required = controls.DiscardRequired });
     }
-    catch (Exception ex)
+    catch (GameRuleException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Unexpected error");
+        return Results.StatusCode(500);
     }
 });
 

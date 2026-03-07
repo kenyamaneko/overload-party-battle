@@ -228,15 +228,19 @@ public class GameState
         return id;
     }
 
-    private long _nextDeployOrder;
+    /// <summary>
+    /// Monotonically increasing sequence for deploy order.
+    /// Must be persisted to survive state reload.
+    /// </summary>
+    public long NextDeployOrderSeq { get; set; }
 
     /// <summary>
     /// Generate the next deploy order value.
     /// </summary>
     public long NextDeployOrder()
     {
-        _nextDeployOrder++;
-        return _nextDeployOrder;
+        NextDeployOrderSeq++;
+        return NextDeployOrderSeq;
     }
 }
 

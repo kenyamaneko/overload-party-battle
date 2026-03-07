@@ -71,13 +71,14 @@ public static class DrawPhaseProcessor
         var playerNum = state.ActivePlayer;
         var field = state.GetField(playerNum);
 
-        foreach (var resource in FieldHelpers.AllResources(field))
+        var completedMigrations = FieldHelpers.AllResources(field)
+            .Where(r => r.MigratingFrom is not null
+                && state.CurrentTurn - r.MigratingOnTurn >= 2)
+            .ToList();
+
+        foreach (var resource in completedMigrations)
         {
-            if (resource.MigratingFrom is not { } sourceID) { continue; }
-
-            if (state.CurrentTurn - resource.MigratingOnTurn < 2)
-            { continue; }
-
+            var sourceID = resource.MigratingFrom!;
             var src = FieldHelpers.FindResourceByID(field, sourceID);
             if (src is not null)
             {

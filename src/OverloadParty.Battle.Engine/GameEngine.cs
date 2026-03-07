@@ -61,13 +61,13 @@ public class GameEngine
     public async Task<GameOverResult?> RunAutoAdvance(
         string gameID, CancellationToken ct = default)
     {
+        var game = await _repo.GetGame(gameID, ct)
+            ?? throw new GameRuleException($"game {gameID} not found");
+
         GameOverResult? gameOverResult = null;
 
         await _repo.UpdateGameState(gameID, state =>
         {
-            var game = _repo.GetGame(gameID, ct).GetAwaiter().GetResult()
-                ?? throw new GameRuleException($"game {gameID} not found");
-
             gameOverResult = DrawPhaseProcessor.Process(state, game, _cardCache);
 
             return Task.CompletedTask;
@@ -75,9 +75,6 @@ public class GameEngine
 
         if (gameOverResult is not null)
         {
-            var game = await _repo.GetGame(gameID, ct)
-                ?? throw new GameRuleException($"game {gameID} not found");
-
             var winnerID = gameOverResult.WinnerNum switch
             {
                 0 => "",

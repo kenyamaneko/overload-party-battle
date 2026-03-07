@@ -120,6 +120,7 @@ public static class ActivateEffectProcessor
         };
 
         var result = handler(ctx);
+        support.EffectUsedThisTurn = true;
 
         var playerId = game.GetPlayerID(playerNum);
         var events = new List<GameEvent>(result.Events);
