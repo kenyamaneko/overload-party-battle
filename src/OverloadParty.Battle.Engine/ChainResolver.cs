@@ -1,6 +1,5 @@
 using System.Linq;
 using OverloadParty.Battle.Models;
-using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine;
 
@@ -33,48 +32,6 @@ public static class ChainResolver
 
         entry.ChainLevel = state.ChainStack.Count + 1;
         state.ChainStack.Add(entry);
-    }
-
-    /// <summary>
-    /// Resolve all chain entries in LIFO order (last added = first resolved).
-    /// </summary>
-    public static List<GameEvent> ResolveChain(
-        GameState state, Game game, ICardCache cc, IEffectRegistry effects)
-    {
-        var allEvents = new List<GameEvent>();
-        var stack = state.ChainStack;
-
-        // LIFO: iterate backwards
-        for (int i = stack.Count - 1; i >= 0; i--)
-        {
-            var entry = stack[i];
-            if (entry.Resolved) { continue; }
-
-            var events = ResolveChainEntry(state, game, entry, cc, effects);
-            allEvents.AddRange(events);
-            entry.Resolved = true;
-        }
-
-        // Clear the stack after resolution
-        state.ChainStack.Clear();
-        return allEvents;
-    }
-
-    private static List<GameEvent> ResolveChainEntry(
-        GameState state, Game game, ChainEntry entry, ICardCache cc, IEffectRegistry effects)
-    {
-        var trigger = ChainActionToTrigger(entry.ActionType);
-
-        // Find the source card (resource or support)
-        var playerNum = entry.SourcePlayerID == game.Player1ID ? 1L : 2L;
-        var field = state.GetField(playerNum);
-
-        var handler = effects.Get(0, trigger); // Lookup by source card
-        if (handler is null) { return []; }
-
-        // Build context and execute
-        // TODO: Full implementation when effect system is complete
-        return [];
     }
 
     public static TriggerType ChainActionToTrigger(string actionType) => actionType switch

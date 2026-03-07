@@ -29,49 +29,11 @@ public enum InstanceFamily
     R  // Reliability
 }
 
-public enum Faction
-{
-    SD,
-    Tenki,
-    Sugar,
-    Tuners,
-    Neutral
-}
-
 public enum CardTypeCategory
 {
     Compute,
     Data,
     Support
-}
-
-public enum CardType
-{
-    // Compute types
-    Compute,
-    Container,
-    Orchestrator,
-    Serverless,
-    AiMl,
-
-    // Data types
-    Database,
-    ObjectStorage,
-    CacheDB,
-
-    // Support types
-    Platform,
-    Attachment,
-    Strategy,
-    Reactive,
-    Incident
-}
-
-public enum Restriction
-{
-    Unlimited,
-    Limited,
-    SemiLimited
 }
 
 public enum GameStatus
@@ -121,12 +83,6 @@ public enum EventType
     PhaseEnd,
     TurnEnd,
     GameOver
-}
-
-public enum EffectDuration
-{
-    ThisTurn,
-    UntilNextTurnEnd
 }
 
 public enum TriggerType

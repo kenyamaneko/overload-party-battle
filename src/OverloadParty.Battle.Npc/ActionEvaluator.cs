@@ -15,7 +15,7 @@ public static class ActionEvaluator
     /// </summary>
     public static (int Priority, bool Use, Dictionary<string, object>? ChoiceData) EvaluateCard(
         long cardNo, TriggerType trigger, DecisionContext ctx,
-        EffectRegistry effects, ICardCache cc)
+        IEffectRegistry effects, ICardCache cc)
     {
         var info = effects.GetEffectInfo(cardNo, trigger);
         if (info is null)

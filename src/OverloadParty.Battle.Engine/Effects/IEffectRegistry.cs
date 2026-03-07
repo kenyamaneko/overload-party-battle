@@ -96,4 +96,14 @@ public interface IEffectRegistry
     /// Returns budget requirements for the given effect, or null if none.
     /// </summary>
     BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger);
+
+    /// <summary>
+    /// Returns NPC classification for an effect, or null if no ops are stored.
+    /// </summary>
+    EffectInfo? GetEffectInfo(long cardNo, TriggerType trigger);
+
+    /// <summary>
+    /// Returns branch keys if the effect uses BranchOnChoice, or null otherwise.
+    /// </summary>
+    List<string>? GetChoiceOptions(long cardNo, TriggerType trigger);
 }

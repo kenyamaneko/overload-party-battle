@@ -164,25 +164,4 @@ public static class EnumExtensions
         _ => throw new ArgumentException($"Unknown card type: {cardType}")
     };
 
-    // ─── Faction ────────────────────────────────────────────
-
-    public static Faction ParseFaction(string s) => s switch
-    {
-        "SD" => Faction.SD,
-        "Tenki" => Faction.Tenki,
-        "Sugar" => Faction.Sugar,
-        "Tuners" => Faction.Tuners,
-        "Neutral" or "" => Faction.Neutral,
-        _ => throw new ArgumentException($"Unknown faction: {s}")
-    };
-
-    public static string ToWireString(this Faction faction) => faction switch
-    {
-        Faction.SD => "SD",
-        Faction.Tenki => "Tenki",
-        Faction.Sugar => "Sugar",
-        Faction.Tuners => "Tuners",
-        Faction.Neutral => "Neutral",
-        _ => throw new ArgumentOutOfRangeException(nameof(faction))
-    };
 }

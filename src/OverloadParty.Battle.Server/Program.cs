@@ -84,9 +84,9 @@ builder.Services.AddSingleton<GameService>(sp =>
     // Set default NPC AI
     var cc = sp.GetRequiredService<ICardCache>();
     var engine = sp.GetRequiredService<GameEngine>();
-    if (engine.EffectRegistry is EffectRegistry reg)
+    if (engine.EffectRegistry is not null)
     {
-        svc.SetNpcAI(new StandardAi(cc, reg));
+        svc.SetNpcAI(new StandardAi(cc, engine.EffectRegistry));
     }
 
     return svc;

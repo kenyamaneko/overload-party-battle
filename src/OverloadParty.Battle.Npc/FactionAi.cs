@@ -14,7 +14,7 @@ public class FactionAi : StandardAi
     private readonly string _faction;
     private readonly string _instanceFamily;
 
-    private FactionAi(string faction, string instanceFamily, ICardCache cc, EffectRegistry reg)
+    private FactionAi(string faction, string instanceFamily, ICardCache cc, IEffectRegistry reg)
         : base(cc, reg)
     {
         _faction = faction;
@@ -27,14 +27,14 @@ public class FactionAi : StandardAi
 
     // ─── Factory methods ────────────────────────────────────────
 
-    public static FactionAi Create(string faction, ICardCache cc, EffectRegistry reg)
+    public static FactionAi Create(string faction, ICardCache cc, IEffectRegistry reg)
     {
         var familyParam = NpcParams.FactionParamsTable.GetValueOrDefault(faction);
         var family = familyParam?.InstanceFamily ?? "M";
         return new FactionAi(faction, family, cc, reg);
     }
 
-    public static INpcStrategy GetFactionAi(string faction, ICardCache cc, EffectRegistry reg)
+    public static INpcStrategy GetFactionAi(string faction, ICardCache cc, IEffectRegistry reg)
     {
         return faction switch
         {

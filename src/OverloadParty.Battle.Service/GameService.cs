@@ -98,11 +98,9 @@ public class GameService
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
         // Create faction-specific AI for this game
-        INpcStrategy? factionAI = null;
-        if (_engine.EffectRegistry is EffectRegistry reg)
-        {
-            factionAI = FactionAi.GetFactionAi(npcFaction, _cardCache, reg);
-        }
+        INpcStrategy? factionAI = _engine.EffectRegistry is not null
+            ? FactionAi.GetFactionAi(npcFaction, _cardCache, _engine.EffectRegistry)
+            : null;
 
         var gameID = await _engine.CreateNewGame(
             playerID, NpcConstants.PlayerId, deck1, deck2, firstPlayer, ct);
