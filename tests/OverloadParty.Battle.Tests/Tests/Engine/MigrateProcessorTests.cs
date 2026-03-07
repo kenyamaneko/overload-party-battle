@@ -41,74 +41,52 @@ public class MigrateProcessorTests
         target.MigratingOnTurn.Should().Be(3);
     }
 
-    // ─── 2. Source face-down → throws ───────────────────────
+    // ─── 2-3. Face-down source or target → throws ───────────
 
-    [Fact]
-    public void Process_SourceFaceDown_Throws()
+    [Theory]
+    [InlineData(false, true)]   // source face-down
+    [InlineData(true,  false)]  // target face-down
+    public void Process_FaceDown_Throws(bool sourceFaceUp, bool targetFaceUp)
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: false, deployLeft: 1);
-        var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: true);
+        var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: sourceFaceUp, deployLeft: sourceFaceUp ? 0 : 1);
+        var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: targetFaceUp, deployLeft: targetFaceUp ? 0 : 1);
         state.Player1Field.Backend[0] = source;
         state.Player1Field.Backend[1] = target;
 
-        var act = () => MigrateProcessor.Process(
-            state, _game, 1, MakeReq("be_1", "be_2"), _cc);
+        var act = () => MigrateProcessor.Process(state, _game, 1, MakeReq("be_1", "be_2"), _cc);
 
         act.Should().Throw<GameRuleException>().WithMessage("*face-up*");
     }
 
-    // ─── 3. Target face-down → throws ───────────────────────
+    // ─── 4-7. Invalid migration state → throws ──────────────
+    //
+    //  source.MigrationTarget != null → source is already migrating (outbound)
+    //  source.MigratingFrom   != null → source is already a destination (inbound)
+    //  target.MigratingFrom   != null → target is already a destination (inbound)
+    //  target.MigrationTarget != null → target is already migrating (outbound)
 
-    [Fact]
-    public void Process_TargetFaceDown_Throws()
+    [Theory]
+    [InlineData("src_target", null,        null,       null,       "*already migrating*")]
+    [InlineData(null,         "src_from",  null,       null,       "*migration destination*")]
+    [InlineData(null,         null,        "tgt_from", null,       "*migration destination*")]
+    [InlineData(null,         null,        null,       "tgt_target","*already migrating*")]
+    public void Process_InvalidMigrationState_Throws(
+        string? srcTarget, string? srcFrom, string? tgtFrom, string? tgtTarget, string msgPattern)
     {
         var state = TestFactory.MakeGameState(turn: 3);
         var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: true);
-        var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: false, deployLeft: 1);
-        state.Player1Field.Backend[0] = source;
-        state.Player1Field.Backend[1] = target;
-
-        var act = () => MigrateProcessor.Process(
-            state, _game, 1, MakeReq("be_1", "be_2"), _cc);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*face-up*");
-    }
-
-    // ─── 4. Source already migrating → throws ───────────────
-
-    [Fact]
-    public void Process_SourceAlreadyMigrating_Throws()
-    {
-        var state = TestFactory.MakeGameState(turn: 3);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: true);
-        source.MigrationTarget = "some_other";
+        source.MigrationTarget = srcTarget;
+        source.MigratingFrom   = srcFrom;
         var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: true);
+        target.MigratingFrom   = tgtFrom;
+        target.MigrationTarget = tgtTarget;
         state.Player1Field.Backend[0] = source;
         state.Player1Field.Backend[1] = target;
 
-        var act = () => MigrateProcessor.Process(
-            state, _game, 1, MakeReq("be_1", "be_2"), _cc);
+        var act = () => MigrateProcessor.Process(state, _game, 1, MakeReq("be_1", "be_2"), _cc);
 
-        act.Should().Throw<GameRuleException>().WithMessage("*already migrating*");
-    }
-
-    // ─── 5. Target already a destination → throws ───────────
-
-    [Fact]
-    public void Process_TargetAlreadyDestination_Throws()
-    {
-        var state = TestFactory.MakeGameState(turn: 3);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: true);
-        var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: true);
-        target.MigratingFrom = "some_other";
-        state.Player1Field.Backend[0] = source;
-        state.Player1Field.Backend[1] = target;
-
-        var act = () => MigrateProcessor.Process(
-            state, _game, 1, MakeReq("be_1", "be_2"), _cc);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*already a migration destination*");
+        act.Should().Throw<GameRuleException>().WithMessage(msgPattern);
     }
 
     // ─── 6. Target deploy turns < source → throws ───────────

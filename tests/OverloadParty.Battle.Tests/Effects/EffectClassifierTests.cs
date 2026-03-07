@@ -129,91 +129,35 @@ public class EffectClassifierTests
         info.HasCategory(EffectCategory.Heal).Should().BeTrue();
     }
 
-    // ─── Card Movement ────────────────────────────────────────
+    // ─── Card Movement / Field Ops / Reactive Control ─────────
 
-    [Fact]
-    public void Classify_DrawCards()
+    [Theory]
+    [InlineData("draw",          EffectCategory.Draw)]
+    [InlineData("search",        EffectCategory.Search)]
+    [InlineData("deployhand",    EffectCategory.DeployFree)]
+    [InlineData("deployrepo",    EffectCategory.DeployFree)]
+    [InlineData("trashtohand",   EffectCategory.RecoverCard)]
+    [InlineData("reveal",        EffectCategory.RevealReactive)]
+    [InlineData("destroyplat",   EffectCategory.DestroyPlatform)]
+    [InlineData("cancel",        EffectCategory.CancelAction)]
+    [InlineData("survive",       EffectCategory.Survive)]
+    public void Classify_SingleOp_HasExpectedCategory(string opKey, EffectCategory expected)
     {
-        var ops = new IEffectOp[] { new DrawCardsOp(2) };
-        var info = EffectClassifier.ClassifyOps(ops);
+        IEffectOp op = opKey switch
+        {
+            "draw"        => new DrawCardsOp(1),
+            "search"      => new SearchRepoOp(),
+            "deployhand"  => new DeployFromHandOp(),
+            "deployrepo"  => new DeployFromRepoOp(),
+            "trashtohand" => new TrashToHandOp(),
+            "reveal"      => new RevealReactiveOp(),
+            "destroyplat" => new DestroyPlatformOp(),
+            "cancel"      => SetCancelActionOp.Instance,
+            _             => new SurviveDestructionOp(1),
+        };
+        var info = EffectClassifier.ClassifyOps([op]);
 
-        info.HasCategory(EffectCategory.Draw).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Classify_SearchRepo()
-    {
-        var ops = new IEffectOp[] { new SearchRepoOp() };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.Search).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Classify_DeployFromHand()
-    {
-        var ops = new IEffectOp[] { new DeployFromHandOp() };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.DeployFree).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Classify_DeployFromRepo()
-    {
-        var ops = new IEffectOp[] { new DeployFromRepoOp() };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.DeployFree).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Classify_TrashToHand()
-    {
-        var ops = new IEffectOp[] { new TrashToHandOp() };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.RecoverCard).Should().BeTrue();
-    }
-
-    // ─── Field Ops ────────────────────────────────────────────
-
-    [Fact]
-    public void Classify_RevealReactive()
-    {
-        var ops = new IEffectOp[] { new RevealReactiveOp() };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.RevealReactive).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Classify_DestroyPlatform()
-    {
-        var ops = new IEffectOp[] { new DestroyPlatformOp() };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.DestroyPlatform).Should().BeTrue();
-    }
-
-    // ─── Reactive Control ─────────────────────────────────────
-
-    [Fact]
-    public void Classify_CancelAction()
-    {
-        var ops = new IEffectOp[] { SetCancelActionOp.Instance };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.CancelAction).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Classify_SurviveDestruction()
-    {
-        var ops = new IEffectOp[] { new SurviveDestructionOp(1) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.Survive).Should().BeTrue();
+        info.HasCategory(expected).Should().BeTrue();
     }
 
     // ─── Conditions ───────────────────────────────────────────

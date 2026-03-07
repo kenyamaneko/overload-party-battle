@@ -111,26 +111,7 @@ public class AttackProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*compute*");
     }
 
-    // ─── 5. Attacker face-down → throws ────────────────────
-
-    [Fact]
-    public void Process_AttackerFaceDown_Throws()
-    {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
-
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: false, deployLeft: 1);
-        state.Player1Field.Frontend[0] = attacker;
-
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
-        state.Player2Field.Frontend[0] = defender;
-
-        var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*face-up*");
-    }
-
-    // ─── 6. Attacker already attacked → throws ─────────────
+    // ─── 5. Attacker already attacked → throws ─────────────
 
     [Fact]
     public void Process_AttackerAlreadyAttacked_Throws()
@@ -150,17 +131,45 @@ public class AttackProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*already attacked*");
     }
 
-    // ─── 7. Defender face-down → throws ────────────────────
+    // ─── 6. Attacker has CannotOperate effect → throws ─────
 
     [Fact]
-    public void Process_DefenderFaceDown_Throws()
+    public void Process_AttackerCannotOperate_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
         var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        attacker.TemporaryEffects.Add(new TemporaryEffect
+        {
+            EffectType = EffectTypes.CannotOperate,
+            Value = 1,
+            Duration = "this_turn",
+            SourceID = "test",
+        });
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: false, deployLeft: 1);
+        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        state.Player2Field.Frontend[0] = defender;
+
+        var act = () => AttackProcessor.Process(
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+
+        act.Should().Throw<GameRuleException>().WithMessage("*cannot operate*");
+    }
+
+    // ─── 7-8. Attacker or defender face-down → throws ──────
+
+    [Theory]
+    [InlineData(false, true)]   // attacker face-down
+    [InlineData(true,  false)]  // defender face-down
+    public void Process_FaceDown_Throws(bool atkFaceUp, bool defFaceUp)
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+
+        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: atkFaceUp, deployLeft: atkFaceUp ? 0 : 1);
+        state.Player1Field.Frontend[0] = attacker;
+
+        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: defFaceUp, deployLeft: defFaceUp ? 0 : 1);
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(

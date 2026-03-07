@@ -20,35 +20,21 @@ public class ScaleUpProcessorTests
     private static ScaleUpRequest MakeReq(string instanceId, string targetRank, string? family = null) =>
         new() { InstanceID = instanceId, TargetRank = targetRank, InstanceFamily = family };
 
-    // ─── 1. Small → Medium changes rank ──────────────────────
+    // ─── 1-2. Rank change (Small→Medium, Medium→Large) ───────
 
-    [Fact]
-    public void Process_SmallToMedium_ChangesRank()
+    [Theory]
+    [InlineData(Rank.Small,  null,              "medium", "M", Rank.Medium)]
+    [InlineData(Rank.Medium, InstanceFamily.M,  "large",  "M", Rank.Large)]
+    public void Process_ChangesRank(Rank initialRank, InstanceFamily? initFamily, string reqRank, string reqFamily, Rank expectedRank)
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Small, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: initialRank, family: initFamily, faceUp: true);
         resource.DeployedOnTurn = 1;
         state.Player1Field.Frontend[0] = resource;
 
-        ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
+        ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", reqRank, reqFamily), _cc);
 
-        resource.Rank.Should().Be(Rank.Medium);
-        resource.InstanceFamily.Should().Be(InstanceFamily.M);
-    }
-
-    // ─── 2. Medium → Large changes rank ──────────────────────
-
-    [Fact]
-    public void Process_MediumToLarge_ChangesRank()
-    {
-        var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Medium, family: InstanceFamily.M, faceUp: true);
-        resource.DeployedOnTurn = 1;
-        state.Player1Field.Frontend[0] = resource;
-
-        ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", "large", "M"), _cc);
-
-        resource.Rank.Should().Be(Rank.Large);
+        resource.Rank.Should().Be(expectedRank);
     }
 
     // ─── 3. Not resizable → throws ──────────────────────────
