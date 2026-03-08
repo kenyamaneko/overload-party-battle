@@ -24,6 +24,8 @@
     <ProjectReference Include="..\..\src\OverloadParty.Battle.Models\OverloadParty.Battle.Models.csproj" />
     <ProjectReference Include="..\..\src\OverloadParty.Battle.Engine\OverloadParty.Battle.Engine.csproj" />
     <ProjectReference Include="..\..\src\OverloadParty.Battle.Npc\OverloadParty.Battle.Npc.csproj" />
+    <ProjectReference Include="..\..\src\OverloadParty.Battle.Data\OverloadParty.Battle.Data.csproj" />
+    <ProjectReference Include="..\..\src\OverloadParty.Battle.Service\OverloadParty.Battle.Service.csproj" />
   </ItemGroup>
 
 </Project>

@@ -92,6 +92,11 @@ builder.Services.AddSingleton<GameService>(sp =>
     return svc;
 });
 
+builder.Services.AddSingleton<GameLogService>(sp =>
+    new GameLogService(
+        sp.GetRequiredService<IGameRepository>(),
+        sp.GetRequiredService<ICardCache>()));
+
 var app = builder.Build();
 
 // ─── Load card cache ────────────────────────────────────────
@@ -246,6 +251,37 @@ api.MapGet("/games/{gameId}/controls/{playerId}", async (GameService gameSvc, st
     catch (GameRuleException ex)
     {
         return Results.BadRequest(new { error = ex.Message });
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Unexpected error");
+        return Results.StatusCode(500);
+    }
+});
+
+// Game Log (Replay)
+api.MapGet("/games/{gameId}/log", async (GameLogService logSvc, string gameId) =>
+{
+    try
+    {
+        var log = await logSvc.GetGameLog(gameId);
+        if (log is null) return Results.NotFound(new { error = "game not found" });
+        return Results.Bytes(logSvc.SerializeToJson(log), "application/json");
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Unexpected error");
+        return Results.StatusCode(500);
+    }
+});
+
+api.MapGet("/games/{gameId}/log/text", async (GameLogService logSvc, string gameId) =>
+{
+    try
+    {
+        var text = await logSvc.GetGameLogText(gameId);
+        if (text is null) return Results.NotFound(new { error = "game not found" });
+        return Results.Text(text, "text/plain");
     }
     catch (Exception ex)
     {
