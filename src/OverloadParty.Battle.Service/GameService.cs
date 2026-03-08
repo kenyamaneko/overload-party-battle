@@ -24,7 +24,6 @@ public class GameService
 {
     private readonly GameEngine _engine;
     private readonly IGameRepository _gameRepo;
-    private readonly IDeckRepository _deckRepo;
     private readonly ICardCache _cardCache;
     private readonly ILogger<GameService> _logger;
 
@@ -36,13 +35,11 @@ public class GameService
     public GameService(
         GameEngine engine,
         IGameRepository gameRepo,
-        IDeckRepository deckRepo,
         ICardCache cardCache,
         ILogger<GameService> logger)
     {
         _engine = engine;
         _gameRepo = gameRepo;
-        _deckRepo = deckRepo;
         _cardCache = cardCache;
         _logger = logger;
     }
@@ -57,13 +54,13 @@ public class GameService
     /// <summary>
     /// Creates a new PvP game from matchmaking parameters (called by Gateway).
     /// </summary>
-    public async Task<Game> CreateGameFromMatch(string player1ID, long player1Deck, string player2ID, long player2Deck, CancellationToken ct = default)
+    public async Task<Game> CreateGameFromMatch(
+        string player1ID, long player1Deck, List<DeckSnapshotCard> player1Cards,
+        string player2ID, long player2Deck, List<DeckSnapshotCard> player2Cards,
+        CancellationToken ct = default)
     {
-        var deck1Cards = await _deckRepo.GetDeckCardNos(player1ID, player1Deck, ct);
-        var deck2Cards = await _deckRepo.GetDeckCardNos(player2ID, player2Deck, ct);
-
-        var deck1 = new DeckSnapshot { DeckID = player1Deck.ToString(), Cards = deck1Cards };
-        var deck2 = new DeckSnapshot { DeckID = player2Deck.ToString(), Cards = deck2Cards };
+        var deck1 = new DeckSnapshot { DeckID = player1Deck.ToString(), Cards = player1Cards };
+        var deck2 = new DeckSnapshot { DeckID = player2Deck.ToString(), Cards = player2Cards };
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
@@ -81,9 +78,9 @@ public class GameService
     /// Creates a new NPC game with fully initialized state.
     /// </summary>
     public async Task<Game> StartNPCBattle(
-        string playerID, long deckID, string npcFaction, CancellationToken ct = default)
+        string playerID, long deckID, List<DeckSnapshotCard> playerCards, string npcFaction,
+        CancellationToken ct = default)
     {
-        var playerCards = await _deckRepo.GetDeckCardNos(playerID, deckID, ct);
         if (!playerCards.Any())
         {
             throw new InvalidOperationException("deck is empty");

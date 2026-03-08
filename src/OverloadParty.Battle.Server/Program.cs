@@ -24,10 +24,8 @@ if (isLocalDev)
 {
     // In-memory mock repositories
     var mockGameRepo = new MockGameRepository();
-    var mockDeckRepo = new MockDeckRepository();
 
     builder.Services.AddSingleton<IGameRepository>(mockGameRepo);
-    builder.Services.AddSingleton<IDeckRepository>(mockDeckRepo);
     // ICardRepository registered after CardCache is built (below)
 }
 else
@@ -39,7 +37,6 @@ else
     var dataSource = NpgsqlDataSource.Create(connStr);
     builder.Services.AddSingleton(dataSource);
     builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
-    builder.Services.AddSingleton<IDeckRepository>(sp => new PgDeckRepository(sp.GetRequiredService<NpgsqlDataSource>()));
     builder.Services.AddSingleton<ICardRepository>(sp => new PgCardRepository(sp.GetRequiredService<NpgsqlDataSource>()));
 }
 
@@ -77,7 +74,6 @@ builder.Services.AddSingleton<GameService>(sp =>
     var svc = new GameService(
         sp.GetRequiredService<GameEngine>(),
         sp.GetRequiredService<IGameRepository>(),
-        sp.GetRequiredService<IDeckRepository>(),
         sp.GetRequiredService<ICardCache>(),
         sp.GetRequiredService<ILogger<GameService>>());
 
@@ -160,7 +156,8 @@ api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
 {
     try
     {
-        var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, req.NpcFaction);
+        var cards = req.Cards.Select(c => new DeckSnapshotCard { CardNo = c.CardNo, ArtNo = c.ArtNo }).ToList();
+        var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, cards, req.NpcFaction);
         return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
     }
     catch (GameRuleException ex)
@@ -179,7 +176,9 @@ api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
 {
     try
     {
-        var game = await gameSvc.CreateGameFromMatch(req.Player1ID, req.Player1DeckID, req.Player2ID, req.Player2DeckID);
+        var p1Cards = req.Player1Cards.Select(c => new DeckSnapshotCard { CardNo = c.CardNo, ArtNo = c.ArtNo }).ToList();
+        var p2Cards = req.Player2Cards.Select(c => new DeckSnapshotCard { CardNo = c.CardNo, ArtNo = c.ArtNo }).ToList();
+        var game = await gameSvc.CreateGameFromMatch(req.Player1ID, req.Player1DeckID, p1Cards, req.Player2ID, req.Player2DeckID, p2Cards);
         return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
     }
     catch (GameRuleException ex)
@@ -305,8 +304,9 @@ app.Logger.LogInformation("Battle server starting on port {Port} (mode={Mode})",
 
 app.Run();
 
-public record NpcBattleRequest(string PlayerID, long DeckID, string NpcFaction);
-public record PvpBattleRequest(string Player1ID, long Player1DeckID, string Player2ID, long Player2DeckID);
+public record DeckCard(long CardNo, long ArtNo);
+public record NpcBattleRequest(string PlayerID, long DeckID, List<DeckCard> Cards, string NpcFaction);
+public record PvpBattleRequest(string Player1ID, long Player1DeckID, List<DeckCard> Player1Cards, string Player2ID, long Player2DeckID, List<DeckCard> Player2Cards);
 public record GameActionRequest(string PlayerID, string ActionType, JsonElement Data);
 
 public static class ActionDataDeserializer
