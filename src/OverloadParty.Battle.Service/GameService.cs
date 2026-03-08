@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 
@@ -319,8 +321,9 @@ public class GameService
                 try
                 {
                     var actionType = EnumExtensions.ParseActionType(action.ActionType);
+                    var actionData = DeserializeNpcActionData(actionType, action.Data);
                     var result = await _engine.ProcessAction(
-                        gameID, NpcConstants.PlayerId, actionType, action.Data, ct);
+                        gameID, NpcConstants.PlayerId, actionType, actionData, ct);
 
                     if (result.GameOver is not null)
                     {
@@ -336,5 +339,30 @@ public class GameService
         }
 
         _logger.LogWarning("NPC turn exceeded {Max} iterations (game={GameID})", MaxNPCIterations, gameID);
+    }
+
+    private static readonly JsonSerializerOptions NpcJsonOpts = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
+
+    private static object DeserializeNpcActionData(ActionType actionType, Dictionary<string, object> data)
+    {
+        var json = JsonSerializer.SerializeToElement(data, NpcJsonOpts);
+        return actionType switch
+        {
+            ActionType.PlayCard => json.Deserialize<PlayCardRequest>(NpcJsonOpts)!,
+            ActionType.Attack => json.Deserialize<AttackRequest>(NpcJsonOpts)!,
+            ActionType.ScaleUp => json.Deserialize<ScaleUpRequest>(NpcJsonOpts)!,
+            ActionType.Monetize => json.Deserialize<MonetizeRequest>(NpcJsonOpts)!,
+            ActionType.DiscardHand => json.Deserialize<DiscardHandRequest>(NpcJsonOpts)!,
+            ActionType.ActivateEffect => json.Deserialize<ActivateEffectRequest>(NpcJsonOpts)!,
+            ActionType.Migrate => json.Deserialize<MigrateRequest>(NpcJsonOpts)!,
+            ActionType.EndPhase => new object(),
+            ActionType.SetReactive => new object(),
+            ActionType.Forfeit => new object(),
+            _ => throw new ArgumentException($"unknown action type: {actionType}"),
+        };
     }
 }
