@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Engine;
+using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests;
@@ -303,4 +304,25 @@ public static class TestFactory
         }
         return new DeckSnapshot { DeckID = "deck-1", Cards = cards };
     }
+}
+
+/// <summary>
+/// Simple in-memory IEffectRegistry for tests.
+/// </summary>
+public class TestEffectRegistry : IEffectRegistry
+{
+    private readonly Dictionary<(long, TriggerType), EffectHandler> _handlers = new();
+
+    public void Register(long cardNo, TriggerType trigger, EffectHandler handler)
+        => _handlers[(cardNo, trigger)] = handler;
+
+    public EffectHandler? Get(long cardNo, TriggerType trigger)
+        => _handlers.GetValueOrDefault((cardNo, trigger));
+
+    public bool Has(long cardNo, TriggerType trigger)
+        => _handlers.ContainsKey((cardNo, trigger));
+
+    public BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger) => null;
+    public EffectInfo? GetEffectInfo(long cardNo, TriggerType trigger) => null;
+    public List<string>? GetChoiceOptions(long cardNo, TriggerType trigger) => null;
 }

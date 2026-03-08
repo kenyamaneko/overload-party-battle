@@ -11,6 +11,7 @@
 bin/
 obj/
 .coverage/
+TestResults/
 
 # Claude
 .claude/

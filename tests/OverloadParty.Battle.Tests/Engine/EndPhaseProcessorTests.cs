@@ -113,7 +113,7 @@ public class EndPhaseProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
         // Add 7 cards to hand (limit is 6)
-        for (int i = 0; i < 7; i++)
+        foreach (var i in Enumerable.Range(0, 7))
         {
             state.Player1Hand.Add(new HandCard
             {
@@ -137,7 +137,7 @@ public class EndPhaseProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
         AddRepoCards(state, 2);
         // 6 cards = at limit, no discard needed
-        for (int i = 0; i < 6; i++)
+        foreach (var i in Enumerable.Range(0, 6))
         {
             state.Player1Hand.Add(new HandCard
             {
@@ -151,6 +151,256 @@ public class EndPhaseProcessorTests
         result.NeedsDiscard.Should().BeFalse();
         // Turn switches normally
         state.ActivePlayer.Should().Be(2);
+    }
+
+    // ─── Maintenance cost collection ─────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_CollectsMaintenanceCost()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+        AddRepoCards(state, 2);
+
+        // Place a face-up compute resource (MC=150 at small rank)
+        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "res_1", faceUp: true);
+        state.Player1Field.Frontend[0] = resource;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        // Budget should be reduced by maintenance cost (150)
+        state.Player1Budget.Should().Be(5000 - 150);
+    }
+
+    [Fact]
+    public void Process_EndPhase_MigratingResource_NoMaintenanceCost()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+        AddRepoCards(state, 2);
+
+        // Place a migrating resource (should not incur MC)
+        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "res_1", faceUp: true);
+        resource.MigratingFrom = "old_res";
+        state.Player1Field.Frontend[0] = resource;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        // Budget should not be reduced (migrating resources skip MC)
+        state.Player1Budget.Should().Be(5000);
+    }
+
+    // ─── Elastic maintenance cost ─────────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_ElasticResource_CostPerRequest()
+    {
+        _cc.Add(TestFactory.ElasticContainerCard(cardNo: 10));
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+        AddRepoCards(state, 2);
+
+        // Elastic container: base TP=500, free_tier=500, cost_per_request=10
+        // MC = max(0, 500 - 500) * 10 / 100 = 0
+        var resource = TestFactory.MakeResource(
+            cardId: 10, instanceId: "res_1", faceUp: true,
+            maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200);
+        state.Player1Field.Frontend[0] = resource;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        // With no elastic bonus beyond base, MC should be 0
+        state.Player1Budget.Should().Be(5000);
+    }
+
+    [Fact]
+    public void Process_EndPhase_ElasticResource_WithBonus_CostsMore()
+    {
+        _cc.Add(TestFactory.ElasticContainerCard(cardNo: 10));
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+        AddRepoCards(state, 2);
+
+        // Elastic container with elastic bonus pushing stat above free tier
+        // baseStat = 500, rank small = x1, elasticBonus = 300
+        // scaledStat = 500 * 1 + 300 = 800
+        // MC = max(0, 800 - 500) * 10 / 100 = 300 * 10 / 100 = 30
+        var resource = TestFactory.MakeResource(
+            cardId: 10, instanceId: "res_1", faceUp: true,
+            maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200, elasticBonus: 300);
+        state.Player1Field.Frontend[0] = resource;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        state.Player1Budget.Should().Be(5000 - 30);
+    }
+
+    // ─── Insight generation ─────────────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_GeneratesInsightFromBackendData()
+    {
+        _cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+
+        // Place a face-up data resource in backend
+        var resource = TestFactory.MakeResource(
+            cardId: 100, instanceId: "db_1", faceUp: true,
+            maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
+        state.Player1Field.Backend[0] = resource;
+
+        long insightBefore = state.Player1InsightPool;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        state.Player1InsightPool.Should().Be(insightBefore + 400);
+    }
+
+    [Fact]
+    public void Process_EndPhase_FaceDownBackendData_NoInsight()
+    {
+        _cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+
+        // Place a face-down data resource in backend
+        var resource = TestFactory.MakeResource(
+            cardId: 100, instanceId: "db_1", faceUp: false, deployLeft: 1,
+            maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
+        state.Player1Field.Backend[0] = resource;
+
+        long insightBefore = state.Player1InsightPool;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        state.Player1InsightPool.Should().Be(insightBefore);
+    }
+
+    [Fact]
+    public void Process_EndPhase_ElasticDataResource_GainsElasticIncrement()
+    {
+        _cc.Add(TestFactory.DataCard(
+            cardNo: 102, yield: 300, elastic: true, elasticIncrement: 50, freeTier: 300));
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+
+        var resource = TestFactory.MakeResource(
+            cardId: 102, instanceId: "db_1", faceUp: true,
+            maxAV: 800, currentAV: 800, maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
+        state.Player1Field.Backend[0] = resource;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        resource.ElasticBonus.Should().Be(50);
+    }
+
+    // ─── Temporary effects expired ──────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_ExpiresThisTurnTemporaryEffects()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+
+        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "res_1", faceUp: true);
+        resource.TemporaryEffects.Add(new TemporaryEffect
+        {
+            EffectType = EffectTypes.BuffTP, Value = 200, Duration = "this_turn", SourceID = "test"
+        });
+        state.Player1Field.Frontend[0] = resource;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        resource.TemporaryEffects.Should().BeEmpty();
+    }
+
+    // ─── Per-turn flags reset ───────────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_ResetsPerTurnFlags()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+
+        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "res_1", faceUp: true);
+        resource.HasAttacked = true;
+        resource.EffectUsedThisTurn = true;
+        resource.ScaleChangedThisTurn = true;
+        resource.MonetizedAmount = 100;
+        state.Player1Field.Frontend[0] = resource;
+
+        state.SetIncidentPlayedThisTurn(1, true);
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        resource.HasAttacked.Should().BeFalse();
+        resource.EffectUsedThisTurn.Should().BeFalse();
+        resource.ScaleChangedThisTurn.Should().BeFalse();
+        resource.MonetizedAmount.Should().Be(0);
+        state.GetIncidentPlayedThisTurn(1).Should().BeFalse();
+    }
+
+    // ─── Support flags reset ────────────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_ResetsSupportEffectUsedFlag()
+    {
+        _cc.Add(TestFactory.PlatformCard(cardNo: 200));
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+
+        state.Player1Field.Support[0] = new SupportInstance
+        {
+            InstanceID = "sup_1", CardID = 200, FaceUp = true, EffectUsedThisTurn = true
+        };
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        state.Player1Field.Support[0]!.EffectUsedThisTurn.Should().BeFalse();
+    }
+
+    // ─── Launch failure ─────────────────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_LaunchFailure_GameOver()
+    {
+        // Turn 5 → personalTurn = (5+1)/2 = 3, which >= LaunchFailureTurn=3
+        var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle, activePlayer: 1);
+        // Player has never deployed (HasHadActiveResource = false)
+        state.SetHasHadActiveResource(1, false);
+
+        var result = EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        result.GameOver.Should().NotBeNull();
+        result.GameOver!.WinnerNum.Should().Be(2);
+    }
+
+    // ─── TurnEnd event emitted ──────────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_EmitsTurnEndEvent()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+
+        var result = EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        result.Events.Should().Contain(e => e.EventType == WireActionTypes.TurnEnd);
+    }
+
+    // ─── Repository empty → game over ───────────────────────
+
+    [Fact]
+    public void Process_EndPhase_EmptyRepository_GameOver()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        state.SetHasHadActiveResource(1, true);
+        // Do NOT add repo cards for player 2 (next draw will fail)
+        // But make sure player 1's end-phase logic works
+        // After turn switch, player 2 (active) has empty repo
+
+        var result = EndPhaseProcessor.Process(state, _game, 1, _cc);
+
+        // Player 2 can't draw → game over, player 1 wins
+        result.GameOver.Should().NotBeNull();
+        result.GameOver!.WinnerNum.Should().Be(1);
     }
 
     // ─── helpers ─────────────────────────────────────────────

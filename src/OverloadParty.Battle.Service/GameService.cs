@@ -331,9 +331,16 @@ public class GameService
                         return;
                     }
                 }
+                catch (GameRuleException ex)
+                {
+                    // NPC chose an invalid action — expected, log and skip
+                    _logger.LogWarning(ex, "NPC action rejected (game={GameID}, action={Action})", gameID, action.ActionType);
+                }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "NPC action failed (game={GameID}, action={Action})", gameID, action.ActionType);
+                    // Deserialization or infrastructure failure — this is a bug, stop the turn
+                    _logger.LogError(ex, "NPC action failed unexpectedly (game={GameID}, action={Action})", gameID, action.ActionType);
+                    break;
                 }
             }
         }

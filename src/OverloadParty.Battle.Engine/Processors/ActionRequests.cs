@@ -2,6 +2,7 @@ namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
 /// Request to play a card from hand onto the field.
+/// Accepts both flat (Zone/Index) and nested (Position: {zone, index}) formats.
 /// </summary>
 public class PlayCardRequest
 {
@@ -14,11 +15,37 @@ public class PlayCardRequest
     /// <summary>The slot index within the target zone.</summary>
     public int Index { get; set; }
 
+    /// <summary>
+    /// Nested position format sent by the client and NPC AI.
+    /// When set, populates Zone and Index from the nested object.
+    /// </summary>
+    public PlayCardPosition? Position
+    {
+        get => null;
+        set
+        {
+            if (value is not null)
+            {
+                Zone = value.Zone;
+                Index = value.Index;
+            }
+        }
+    }
+
     /// <summary>The instance ID of the target resource, required for attachment cards.</summary>
     public string? TargetInstanceID { get; set; }
 
     /// <summary>Optional choice data for cards with deploy effects that require player input.</summary>
     public Dictionary<string, object>? ChoiceData { get; set; }
+}
+
+/// <summary>
+/// Nested position object used in play_card requests from client and NPC AI.
+/// </summary>
+public class PlayCardPosition
+{
+    public string Zone { get; set; } = "";
+    public int Index { get; set; }
 }
 
 /// <summary>
@@ -40,6 +67,18 @@ public class ScaleUpRequest
 {
     /// <summary>The instance ID of the resource to scale.</summary>
     public string InstanceID { get; set; } = "";
+
+    /// <summary>
+    /// Alias for InstanceID sent by the client and NPC AI as "componentInstanceId".
+    /// </summary>
+    public string? ComponentInstanceID
+    {
+        get => null;
+        set
+        {
+            if (value is not null) InstanceID = value;
+        }
+    }
 
     /// <summary>The target rank to scale to (e.g., small, medium, large).</summary>
     public string TargetRank { get; set; } = "";
@@ -64,6 +103,18 @@ public class MonetizeDistribution
 {
     /// <summary>The instance ID of the backend compute resource.</summary>
     public string InstanceID { get; set; } = "";
+
+    /// <summary>
+    /// Alias for InstanceID sent by the client and NPC AI as "componentInstanceId".
+    /// </summary>
+    public string? ComponentInstanceID
+    {
+        get => null;
+        set
+        {
+            if (value is not null) InstanceID = value;
+        }
+    }
 
     /// <summary>The amount of insight to distribute from this resource.</summary>
     public long Amount { get; set; }
