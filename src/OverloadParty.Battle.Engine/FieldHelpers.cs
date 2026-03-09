@@ -68,27 +68,39 @@ public static class FieldHelpers
     }
 
     /// <summary>
-    /// Enumerate all face-up resources on the field (frontend + backend).
+    /// フィールド上の表向きリソースをすべて返す (frontend + backend)。
     /// </summary>
-    public static IEnumerable<ResourceInstance> AllFaceUpResources(Field field)
+    /// <remarks>
+    /// 呼び出し元でフィールド状態が変更される可能性があるため、
+    /// 遅延実行せず即時評価して結果を確定させる。
+    /// </remarks>
+    public static List<ResourceInstance> AllFaceUpResources(Field field)
     {
-        return field.Frontend.Concat(field.Backend).Where(r => r.FaceUp);
+        return field.Frontend.Concat(field.Backend).Where(r => r.FaceUp).ToList();
     }
 
     /// <summary>
-    /// Enumerate all resources on the field (including face-down).
+    /// フィールド上の全リソースを返す (face-down 含む)。
     /// </summary>
-    public static IEnumerable<ResourceInstance> AllResources(Field field)
+    /// <remarks>
+    /// 呼び出し元でフィールド状態が変更される可能性があるため、
+    /// 遅延実行せず即時評価して結果を確定させる。
+    /// </remarks>
+    public static List<ResourceInstance> AllResources(Field field)
     {
-        return field.Frontend.Concat(field.Backend);
+        return field.Frontend.Concat(field.Backend).ToList();
     }
 
     /// <summary>
-    /// Enumerate all support instances.
+    /// サポートインスタンスをすべて返す。
     /// </summary>
-    public static IEnumerable<SupportInstance> AllSupports(Field field)
+    /// <remarks>
+    /// 呼び出し元でフィールド状態が変更される可能性があるため、
+    /// 遅延実行せず即時評価して結果を確定させる。
+    /// </remarks>
+    public static List<SupportInstance> AllSupports(Field field)
     {
-        return field.Support;
+        return field.Support.ToList();
     }
 
     /// <summary>
