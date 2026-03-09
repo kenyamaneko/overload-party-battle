@@ -59,10 +59,27 @@ Engine / Effects / NPC は NuGet パッケージに依存せず、`System.*` の
 |---|---|
 | `make build` | ソリューションビルド |
 | `make run` | ローカル開発サーバー起動 |
-| `make test` | テスト実行 |
+| `make test` | ユニットテスト実行（DB 不要） |
+| `make test-integration` | DB 統合テスト込みで実行（コンテナ自動起動） |
 | `make test-coverage` | カバレッジ付きテスト |
 | `make generate` | common リポからカード定義を生成 |
 | `make clean` | ビルド成果物削除 |
+
+## 統合テスト
+
+`PgGameRepository` / `PgCardRepository` の DB 統合テストは、共通リポジトリの PostgreSQL テストコンテナを使用します。
+
+```bash
+# 自動（コンテナ起動→テスト→停止）
+make test-integration
+
+# 手動
+docker compose -f ../overload-party-common/db/docker-compose.test.yml up -d
+TEST_DB_URL="Host=localhost;Port=5433;Database=testdb;Username=testuser;Password=testpass" make test
+docker compose -f ../overload-party-common/db/docker-compose.test.yml down
+```
+
+`TEST_DB_URL` が未設定の場合、DB テストは自動スキップされます。CI では `make test` のみで既存のユニットテストだけ実行されます。
 
 ## ローカル開発モード
 

@@ -1,4 +1,4 @@
-.PHONY: build run test test-coverage clean restore help
+.PHONY: build run test test-integration test-coverage clean restore help
 
 # ─── Config ──────────────────────────────────────────────
 SLN     := OverloadParty.Battle.slnx
@@ -24,8 +24,16 @@ run:  ## Run local dev server (port 9002, in-memory mock repos)
 		dotnet run --project $(SERVER)
 
 # ─── Test ────────────────────────────────────────────────
-test:  ## Run all tests
+TEST_DB_URL ?= Host=localhost;Port=5433;Database=testdb;Username=testuser;Password=testpass
+COMPOSE_TEST := $(COMMON_DIR)/db/docker-compose.test.yml
+
+test:  ## Run all tests (unit only, DB tests skipped)
 	dotnet test $(TESTS)
+
+test-integration:  ## Run tests including DB integration (starts container automatically)
+	docker compose -f $(COMPOSE_TEST) up -d --wait
+	TEST_DB_URL="$(TEST_DB_URL)" dotnet test $(TESTS) || (docker compose -f $(COMPOSE_TEST) down; exit 1)
+	docker compose -f $(COMPOSE_TEST) down
 
 test-coverage:  ## Run tests with code coverage report
 	dotnet test $(TESTS) --collect:"XPlat Code Coverage" --results-directory .coverage

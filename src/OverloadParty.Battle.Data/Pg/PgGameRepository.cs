@@ -26,12 +26,12 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", conn, tx))
         {
             cmd.Parameters.AddWithValue(game.GameID);
-            cmd.Parameters.AddWithValue(game.Player1ID);
-            cmd.Parameters.AddWithValue(game.Player2ID);
+            cmd.Parameters.Add(UuidParam(game.Player1ID));
+            cmd.Parameters.Add(UuidParam(game.Player2ID));
             cmd.Parameters.Add(JsonbParam(game.Player1DeckSnapshot));
             cmd.Parameters.Add(JsonbParam(game.Player2DeckSnapshot));
             cmd.Parameters.AddWithValue(game.Status.ToWireString());
-            cmd.Parameters.AddWithValue((object?)game.WinnerID ?? DBNull.Value);
+            cmd.Parameters.Add(NullableUuidParam(game.WinnerID));
             cmd.Parameters.AddWithValue(game.CreatedAt);
             cmd.Parameters.AddWithValue(game.UpdatedAt);
             cmd.Parameters.AddWithValue((object?)game.FinishedAt ?? DBNull.Value);
@@ -126,7 +126,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(evt.GameID);
         cmd.Parameters.AddWithValue(evt.SequenceNumber);
         cmd.Parameters.AddWithValue(evt.EventType);
-        cmd.Parameters.AddWithValue((object?)evt.PlayerID ?? DBNull.Value);
+        cmd.Parameters.Add(NullableUuidParam(evt.PlayerID));
         cmd.Parameters.Add(JsonbParam(evt.EventData));
         cmd.Parameters.AddWithValue(evt.CreatedAt);
         await cmd.ExecuteNonQueryAsync(ct);
@@ -140,7 +140,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             UPDATE games SET status = $1, winner_id = $2, finished_at = $3, updated_at = $4
             WHERE game_id = $5", conn);
         cmd.Parameters.AddWithValue(GameStatus.Finished.ToWireString());
-        cmd.Parameters.AddWithValue(winnerID);
+        cmd.Parameters.Add(UuidParam(winnerID));
         cmd.Parameters.AddWithValue(now);
         cmd.Parameters.AddWithValue(now);
         cmd.Parameters.AddWithValue(gameID);
@@ -186,7 +186,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 GameID = reader.GetString(0),
                 SequenceNumber = reader.GetInt64(1),
                 EventType = reader.GetString(2),
-                PlayerID = reader.IsDBNull(3) ? null : reader.GetString(3),
+                PlayerID = reader.IsDBNull(3) ? null : reader.GetGuid(3).ToString(),
                 EventData = reader.IsDBNull(4)
                     ? null
                     : JsonSerializer.Deserialize<Dictionary<string, object>>(reader.GetString(4), DbJsonOptions.Default),
@@ -214,8 +214,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return new Game
         {
             GameID = r.GetString(0),
-            Player1ID = r.GetString(1),
-            Player2ID = r.GetString(2),
+            Player1ID = r.GetGuid(1).ToString(),
+            Player2ID = r.GetGuid(2).ToString(),
             Player1DeckSnapshot = r.IsDBNull(3)
                 ? null
                 : JsonSerializer.Deserialize<DeckSnapshot>(r.GetString(3), DbJsonOptions.Default),
@@ -223,7 +223,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 ? null
                 : JsonSerializer.Deserialize<DeckSnapshot>(r.GetString(4), DbJsonOptions.Default),
             Status = EnumExtensions.ParseGameStatus(r.GetString(5)),
-            WinnerID = r.IsDBNull(6) ? null : r.GetString(6),
+            WinnerID = r.IsDBNull(6) ? null : r.GetGuid(6).ToString(),
             CreatedAt = r.GetDateTime(7),
             UpdatedAt = r.GetDateTime(8),
             FinishedAt = r.IsDBNull(9) ? null : r.GetDateTime(9),
@@ -312,5 +312,19 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     {
         var json = value is null ? (object)DBNull.Value : JsonSerializer.Serialize(value, DbJsonOptions.Default);
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };
+    }
+
+    private static NpgsqlParameter UuidParam(string value)
+    {
+        return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Uuid, Value = Guid.Parse(value) };
+    }
+
+    private static NpgsqlParameter NullableUuidParam(string? value)
+    {
+        return new NpgsqlParameter
+        {
+            NpgsqlDbType = NpgsqlDbType.Uuid,
+            Value = value is null ? DBNull.Value : Guid.Parse(value),
+        };
     }
 }
