@@ -155,10 +155,10 @@ public static class ActionEvaluator
     {
         return conditions.All(cond => cond.Type switch
         {
-            "min_budget" => ctx.Budget >= cond.Value,
-            "max_budget" => ctx.Budget <= cond.Value,
-            "faction_count" => CountFactionOnField(ctx.Field, cond.Faction!, cc) >= cond.Value,
-            "opponent_backend" => HasFaceUpBackend(ctx.OppField),
+            ConditionTypes.MinBudget => ctx.Budget >= cond.Value,
+            ConditionTypes.MaxBudget => ctx.Budget <= cond.Value,
+            ConditionTypes.FactionCount => CountFactionOnField(ctx.Field, cond.Faction!, cc) >= cond.Value,
+            ConditionTypes.OpponentBackend => HasFaceUpBackend(ctx.OppField),
             _ => true,
         });
     }

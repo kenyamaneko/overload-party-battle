@@ -41,7 +41,7 @@ public static class TargetSelector
 
     public static int CountAllResources(Field field)
     {
-        return FieldHelpers.AllFaceUpResources(field).Count();
+        return FieldHelpers.AllFaceUpResources(field).Count;
     }
 
     public static int CountResourcesInZone(Field field, string? zone)

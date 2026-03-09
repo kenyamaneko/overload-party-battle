@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Engine.Effects.Ops;
+using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Effects;
 
@@ -201,16 +202,16 @@ public static class EffectClassifier
 
             // Conditions
             case RequireBudgetOp rb:
-                info.Conditions.Add(new EffectCondition { Type = "min_budget", Value = rb.Min });
+                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.MinBudget, Value = rb.Min });
                 break;
             case RequireMaxBudgetOp rmb:
-                info.Conditions.Add(new EffectCondition { Type = "max_budget", Value = rmb.Max });
+                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.MaxBudget, Value = rmb.Max });
                 break;
             case RequireFactionCountOp rfc:
-                info.Conditions.Add(new EffectCondition { Type = "faction_count", Value = rfc.Min, Faction = rfc.Faction });
+                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.FactionCount, Value = rfc.Min, Faction = rfc.Faction });
                 break;
             case RequireOpponentBackendOp:
-                info.Conditions.Add(new EffectCondition { Type = "opponent_backend" });
+                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.OpponentBackend });
                 break;
 
             // Branching

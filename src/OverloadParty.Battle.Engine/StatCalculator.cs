@@ -26,6 +26,8 @@ public static class StatCalculator
     /// </summary>
     public static long CalculateEffectiveTP(ResourceInstance instance, Field field, ICardCache cc)
     {
+        if (FieldHelpers.HasTemporaryEffect(instance, EffectTypes.TPSuppressed)) { return 0; }
+
         var card = cc.MustGet(instance.CardID);
         if (!card.IsComputeType || card.ComputeStats is null) { return 0; }
 

@@ -530,11 +530,10 @@ public static class EffectInit
             throw new GameRuleException("Target must be opponent's frontend");
         }
 
-        long debuffValue = target.CurrentTP is { } tp ? tp + 10000 : 10000;
         target.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = EffectTypes.DebuffTP,
-            Value = debuffValue,
+            EffectType = EffectTypes.TPSuppressed,
+            Value = 1,
             Duration = "until_next_turn_end",
             SourceID = "config_error",
         });

@@ -20,4 +20,17 @@ public static class EffectTypes
 
     // ─── 状態異常 ───────────────────────────────────────────
     public const string CannotOperate = "cannot_operate";
+    public const string TPSuppressed = "tp_suppressed";
+}
+
+/// <summary>
+/// NPC エフェクト評価で使う条件タイプの文字列定数。
+/// EffectClassifier で条件を生成し、ActionEvaluator で判定する。
+/// </summary>
+public static class ConditionTypes
+{
+    public const string MinBudget = "min_budget";
+    public const string MaxBudget = "max_budget";
+    public const string FactionCount = "faction_count";
+    public const string OpponentBackend = "opponent_backend";
 }
