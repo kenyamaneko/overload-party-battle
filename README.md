@@ -81,6 +81,13 @@ docker compose -f ../overload-party-common/db/docker-compose.test.yml down
 
 `TEST_DB_URL` が未設定の場合、DB テストは自動スキップされます。CI では `make test` のみで既存のユニットテストだけ実行されます。
 
+## Roadmap
+
+- [ ] ターンタイマー
+- [ ] セキュリティ監査
+- [ ] ロードテスト
+- [ ] 本番リリース
+
 ## ローカル開発モード
 
 `make run` で起動するローカルモードでは:
