@@ -15,6 +15,7 @@ public class ClientGameState
     public string CurrentPhase { get; init; } = "";
     public long ActivePlayer { get; init; }
     public bool IsMyTurn { get; init; }
+    public DateTime TurnStartedAt { get; init; }
     public required PlayerView MyView { get; init; }
     public required OpponentView OppView { get; init; }
 }
@@ -130,6 +131,7 @@ public static class GameStateView
             CurrentPhase = state.CurrentPhase.ToWireString(),
             ActivePlayer = state.ActivePlayer,
             IsMyTurn = state.ActivePlayer == playerNum,
+            TurnStartedAt = state.TurnStartedAt,
             MyView = myView,
             OppView = oppView,
         };

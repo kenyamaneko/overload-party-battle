@@ -128,6 +128,17 @@ public class GameEngine
                 throw new GameRuleException("not your turn");
             }
 
+            // Deduct elapsed time from active player's TimeBank
+            DeductElapsedTime(state);
+
+            // Check timeout before processing the action
+            var timeoutResult = WinConditionChecker.CheckTimeout(state);
+            if (timeoutResult is not null)
+            {
+                actionResult = new ActionResult { GameOver = timeoutResult };
+                return Task.CompletedTask;
+            }
+
             // Validate action allowed in current phase
             if (!TurnManager.IsActionAllowedInPhase(state.CurrentPhase, actionType))
             {
@@ -177,6 +188,22 @@ public class GameEngine
         }
 
         return actionResult;
+    }
+
+    /// <summary>
+    /// Deducts elapsed time since TurnStartedAt from the active player's TimeBank
+    /// and resets TurnStartedAt to now.
+    /// </summary>
+    internal static void DeductElapsedTime(GameState state)
+    {
+        var now = DateTime.UtcNow;
+        var elapsed = (long)(now - state.TurnStartedAt).TotalSeconds;
+        if (elapsed > 0)
+        {
+            var remaining = state.GetTimeBank(state.ActivePlayer) - elapsed;
+            state.SetTimeBank(state.ActivePlayer, remaining);
+        }
+        state.TurnStartedAt = now;
     }
 
     private static string ResolveWinnerID(Game game, long winnerNum) => winnerNum switch

@@ -61,6 +61,7 @@ public class GameState
     // Shared state
     public List<ChainEntry> ChainStack { get; set; } = [];
     public long? CurrentActionTimer { get; set; }
+    public DateTime TurnStartedAt { get; set; }
     public long NextInstanceSeq { get; set; }
     public DateTime UpdatedAt { get; set; }
 

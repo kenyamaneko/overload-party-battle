@@ -45,6 +45,7 @@ public static class GameInitializer
             Player2Budget = GameConstants.InitialBudget,
             Player2InsightPool = GameConstants.InitialInsightPool,
             Player2TimeBank = GameConstants.InitialTimeBank,
+            TurnStartedAt = DateTime.UtcNow,
             NextInstanceSeq = 1,
             UpdatedAt = DateTime.UtcNow,
         };

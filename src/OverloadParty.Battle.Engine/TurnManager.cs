@@ -51,5 +51,6 @@ public static class TurnManager
         state.ActivePlayer = state.OpponentOf(state.ActivePlayer);
         state.CurrentTurn++;
         state.CurrentPhase = Phase.Draw;
+        state.TurnStartedAt = DateTime.UtcNow;
     }
 }

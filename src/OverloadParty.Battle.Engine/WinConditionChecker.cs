@@ -57,6 +57,23 @@ public static class WinConditionChecker
     }
 
     /// <summary>
+    /// Checks only the timeout condition (TimeBank &lt;= 0).
+    /// Used by GameEngine before processing an action to detect mid-turn timeout.
+    /// </summary>
+    public static GameOverResult? CheckTimeout(GameState state)
+    {
+        if (state.Player1TimeBank <= 0)
+        {
+            return new GameOverResult(2, WinReason.Timeout.ToWireString());
+        }
+        if (state.Player2TimeBank <= 0)
+        {
+            return new GameOverResult(1, WinReason.Timeout.ToWireString());
+        }
+        return null;
+    }
+
+    /// <summary>
     /// Check if a player has lost due to system down (no active resources).
     /// Only triggers if the player has previously deployed a resource.
     /// </summary>
