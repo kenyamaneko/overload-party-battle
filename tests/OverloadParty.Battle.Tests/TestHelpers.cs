@@ -43,7 +43,7 @@ public static class TestFactory
         long elasticIncrement = 0,
         long freeTier = 0,
         long costPerRequest = 0,
-        string faction = "SD",
+        string faction = "SHE",
         string name = "TestCompute")
     {
         return new CardDefinition
@@ -84,7 +84,7 @@ public static class TestFactory
         long elasticIncrement = 0,
         long freeTier = 0,
         long costPerRequest = 0,
-        string faction = "SD",
+        string faction = "SHE",
         string name = "TestDB")
     {
         return new CardDefinition

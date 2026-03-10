@@ -188,13 +188,13 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_RequireFactionCount_AddsCondition()
     {
-        var ops = new IEffectOp[] { new RequireFactionCountOp("SD", 3) };
+        var ops = new IEffectOp[] { new RequireFactionCountOp("SHE", 3) };
         var info = EffectClassifier.ClassifyOps(ops);
 
         info.Conditions.Should().ContainSingle();
         info.Conditions[0].Type.Should().Be("faction_count");
         info.Conditions[0].Value.Should().Be(3);
-        info.Conditions[0].Faction.Should().Be("SD");
+        info.Conditions[0].Faction.Should().Be("SHE");
     }
 
     // ─── Branching ────────────────────────────────────────────

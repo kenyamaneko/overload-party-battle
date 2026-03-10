@@ -15,7 +15,7 @@ public static partial class GameConstants
     public const int SlotsPerZone = 3;
 
     // Factions
-    public const string FactionSD = "SD";
+    public const string FactionSHE = "SHE";
     public const string FactionTenki = "Tenki";
     public const string FactionSugar = "Sugar";
     public const string FactionTuners = "Tuners";

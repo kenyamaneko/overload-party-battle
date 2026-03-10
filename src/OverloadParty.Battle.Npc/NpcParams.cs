@@ -11,7 +11,7 @@ public static class NpcParams
 {
     public static readonly Dictionary<string, FactionParams> FactionParamsTable = new()
     {
-        [GameConstants.FactionSD] = new FactionParams { InstanceFamily = "M" },
+        [GameConstants.FactionSHE] = new FactionParams { InstanceFamily = "M" },
         [GameConstants.FactionTenki] = new FactionParams { InstanceFamily = "R" },
         [GameConstants.FactionSugar] = new FactionParams { InstanceFamily = "C" },
         [GameConstants.FactionTuners] = new FactionParams { InstanceFamily = "M" },

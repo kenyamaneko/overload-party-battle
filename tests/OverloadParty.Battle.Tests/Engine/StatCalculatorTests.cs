@@ -915,13 +915,13 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PlatformWithFactionFilter_Matches()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, faction: "SD"));
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, faction: "SHE"));
         cc.Add(TestFactory.PlatformCard(cardNo: 200, platformEffects:
         [
             new PlatformEffect
             {
                 Type = PlatformEffectTypes.TPBonus,
-                Params = new PlatformEffectConfig { Bonus = 150, TargetFaction = "SD" }
+                Params = new PlatformEffectConfig { Bonus = 150, TargetFaction = "SHE" }
             }
         ]));
 
@@ -941,7 +941,7 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PlatformWithFactionFilter_NoMatch()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, faction: "SD"));
+        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, faction: "SHE"));
         cc.Add(TestFactory.PlatformCard(cardNo: 200, platformEffects:
         [
             new PlatformEffect

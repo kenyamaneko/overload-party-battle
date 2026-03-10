@@ -38,7 +38,7 @@ public class FactionAi : StandardAi
     {
         return faction switch
         {
-            GameConstants.FactionSD or
+            GameConstants.FactionSHE or
             GameConstants.FactionTenki or
             GameConstants.FactionSugar or
             GameConstants.FactionTuners => Create(faction, cc, reg),

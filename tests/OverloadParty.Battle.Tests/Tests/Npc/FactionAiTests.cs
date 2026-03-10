@@ -13,7 +13,7 @@ public class FactionAiTests
 
     public FactionAiTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, mc: 150, faction: "SD"));
+        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, mc: 150, faction: "SHE"));
         _cc.Add(TestFactory.DataCard(cardNo: 100, cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
         // Tenki-specific cards
         _cc.Add(TestFactory.DataCard(cardNo: 27, cardType: CardTypes.Database, yield: 300, av: 600, mc: 80,
@@ -33,7 +33,7 @@ public class FactionAiTests
     // ─── Factory / GetFactionAi ─────────────────────────────────
 
     [Theory]
-    [InlineData("SD")]
+    [InlineData("SHE")]
     [InlineData("Tenki")]
     [InlineData("Sugar")]
     [InlineData("Tuners")]
@@ -54,7 +54,7 @@ public class FactionAiTests
     }
 
     [Theory]
-    [InlineData("SD", "M")]
+    [InlineData("SHE", "M")]
     [InlineData("Tenki", "R")]
     [InlineData("Sugar", "C")]
     [InlineData("Tuners", "M")]
@@ -89,7 +89,7 @@ public class FactionAiTests
     [Fact]
     public void DecideMainPhaseActions_AlwaysEndsWithEndPhase()
     {
-        var ai = FactionAi.Create("SD", _cc, _effects);
+        var ai = FactionAi.Create("SHE", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
 
         var actions = ai.DecideMainPhaseActions(state, _game, 2, []);
@@ -177,7 +177,7 @@ public class FactionAiTests
     [Fact]
     public void DecideMainPhaseActions_NonTenki_UsesStandardDeployOrder()
     {
-        var ai = FactionAi.Create("SD", _cc, _effects);
+        var ai = FactionAi.Create("SHE", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
 
         state.Player2Hand.Add(new HandCard { InstanceID = "h_data", CardID = 100 });
@@ -242,7 +242,7 @@ public class FactionAiTests
     [Fact]
     public void DecideMainPhaseActions_Monetize_IncludesDistributionsKey()
     {
-        var ai = FactionAi.Create("SD", _cc, _effects);
+        var ai = FactionAi.Create("SHE", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
         state.Player2InsightPool = 300;
 

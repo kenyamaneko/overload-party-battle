@@ -17,10 +17,10 @@ public static class NpcDecks
     private static DeckSnapshotCard[] C(params long[] cardNos)
         => cardNos.Select(n => new DeckSnapshotCard { CardNo = n }).ToArray();
 
-    public static readonly NpcDeckDefinition SDDeck = new()
+    public static readonly NpcDeckDefinition SHEDeck = new()
     {
-        Name = "SD Standard",
-        Faction = GameConstants.FactionSD,
+        Name = "SHE Standard",
+        Faction = GameConstants.FactionSHE,
         Cards = C(
             1, 1, 1, 3, 6, 6, 7, 7, 7, 8,
             8, 8, 9, 9, 13, 13, 15, 17, 20, 20,
@@ -69,7 +69,7 @@ public static class NpcDecks
 
     public static readonly Dictionary<string, NpcDeckDefinition> Decks = new()
     {
-        [GameConstants.FactionSD] = SDDeck,
+        [GameConstants.FactionSHE] = SHEDeck,
         [GameConstants.FactionTenki] = TenkiDeck,
         [GameConstants.FactionSugar] = SugarDeck,
         [GameConstants.FactionTuners] = TunersDeck,

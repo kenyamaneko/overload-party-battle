@@ -495,7 +495,7 @@ public class ActionEvaluatorTests
         var ctx = MakeCtx(field: field);
         var conditions = new List<EffectCondition>
         {
-            new() { Type = "faction_count", Value = 2, Faction = "SD" },
+            new() { Type = "faction_count", Value = 2, Faction = "SHE" },
         };
 
         ActionEvaluator.CheckConditions(conditions, ctx, _cc).Should().BeTrue();
@@ -509,7 +509,7 @@ public class ActionEvaluatorTests
         var ctx = MakeCtx(field: field);
         var conditions = new List<EffectCondition>
         {
-            new() { Type = "faction_count", Value = 3, Faction = "SD" },
+            new() { Type = "faction_count", Value = 3, Faction = "SHE" },
         };
 
         ActionEvaluator.CheckConditions(conditions, ctx, _cc).Should().BeFalse();

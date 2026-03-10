@@ -15,7 +15,7 @@ public static class EffectInit
     /// <param name="registry">The registry to populate.</param>
     public static void RegisterAllEffects(EffectRegistry registry)
     {
-        RegisterSD(registry);
+        RegisterSHE(registry);
         RegisterTenki(registry);
         RegisterSugar(registry);
         RegisterTuners(registry);
@@ -25,11 +25,11 @@ public static class EffectInit
     }
 
     // ========================
-    // SD (Smile Delivery)
+    // SHE (Smile Horizon Express)
     // ========================
-    private static void RegisterSD(EffectRegistry r)
+    private static void RegisterSHE(EffectRegistry r)
     {
-        // #7 SD RDB - アデリース: Reserved Instance (optional deploy cost -200)
+        // #7 SHE RDB - アデリース: Reserved Instance (optional deploy cost -200)
         r.RegisterComposed(7, TriggerType.Deploy,
             new BranchOnChoiceOp(new Dictionary<string, List<IEffectOp>>
             {
@@ -41,21 +41,21 @@ public static class EffectInit
             })
         );
 
-        // #9 SD Storage - えすす: Versioning (return destroyed SD backend to hand)
+        // #9 SHE Storage - えすす: Versioning (return destroyed SHE backend to hand)
         r.RegisterComposed(9, TriggerType.OnDestroy,
-            new GuardFactionOp(GameConstants.FactionSD),
+            new GuardFactionOp(GameConstants.FactionSHE),
             new AddToHandOp(TargetCardIDAmount.Instance),
             SetCancelActionOp.Instance
         );
 
-        // #10 SD DB - ダイナ: On-Demand (pay 400, double Yield this turn)
+        // #10 SHE DB - ダイナ: On-Demand (pay 400, double Yield this turn)
         r.RegisterComposed(10, TriggerType.Activate,
             new RequireBudgetOp(400),
             new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)),
             new ApplyBuffOp(SourceSelector.Instance, EffectTypes.BuffYield, SourceYieldAmount.Instance, "this_turn", "on_demand")
         );
 
-        // #11 SD Cache - メリー: Cache Engine choice on deploy
+        // #11 SHE Cache - メリー: Cache Engine choice on deploy
         r.RegisterComposed(11, TriggerType.Deploy,
             new BranchOnChoiceOp(new Dictionary<string, List<IEffectOp>>
             {
@@ -64,46 +64,46 @@ public static class EffectInit
             })
         );
 
-        // #14 SD Guard: Reveal 1 opponent reactive
+        // #14 SHE Guard: Reveal 1 opponent reactive
         r.RegisterComposed(14, TriggerType.Activate, new RevealReactiveOp());
 
-        // #15 SD Firewall: Block DDoS / Data Breach
+        // #15 SHE Firewall: Block DDoS / Data Breach
         r.RegisterComposed(15, TriggerType.Reactive, SetCancelActionOp.Instance);
 
-        // #18 SD Keys: Block Data Breach (attachment)
+        // #18 SHE Keys: Block Data Breach (attachment)
         r.RegisterComposed(18, TriggerType.Reactive, SetCancelActionOp.Instance);
 
-        // #19 SD Formation: Search SD Component
-        r.RegisterComposed(19, TriggerType.Activate, new SearchRepoOp { Faction = GameConstants.FactionSD });
+        // #19 SHE Formation: Search SHE Component
+        r.RegisterComposed(19, TriggerType.Activate, new SearchRepoOp { Faction = GameConstants.FactionSHE });
 
-        // #20 SD Marketplace: Budget +600 if 3+ SD on field
+        // #20 SHE Marketplace: Budget +600 if 3+ SHE on field
         r.RegisterComposed(20, TriggerType.Activate,
-            new RequireFactionCountOp(GameConstants.FactionSD, 3),
+            new RequireFactionCountOp(GameConstants.FactionSHE, 3),
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(600))
         );
 
-        // #21 SD Cost Explorer: All Deploy Cost -200 this turn
+        // #21 SHE Cost Explorer: All Deploy Cost -200 this turn
         r.RegisterComposed(21, TriggerType.Activate,
             new ApplyBuffOp(new AllOwnSelector(), "deploy_discount", new StaticAmount(200), "this_turn", "cost_explorer")
         );
 
-        // #22 Smile Recovery: AV +500 when SD resource ≤ 400 AV
+        // #22 Smile Recovery: AV +500 when SHE resource ≤ 400 AV
         r.RegisterComposed(22, TriggerType.Reactive,
-            new GuardFactionOp(GameConstants.FactionSD),
+            new GuardFactionOp(GameConstants.FactionSHE),
             new GuardTargetAVOp(400),
             new HealDamageOp(TargetSelector.Instance, new StaticAmount(500)),
             SetCancelActionOp.Instance
         );
 
-        // #118 SD Ecosystem: SD frontend TP +200 this turn
+        // #118 SHE Ecosystem: SHE frontend TP +200 this turn
         r.RegisterComposed(118, TriggerType.Activate,
-            new RequireFactionCountOp(GameConstants.FactionSD, 3),
+            new RequireFactionCountOp(GameConstants.FactionSHE, 3),
             new ApplyBuffOp(
-                new AllOwnSelector { Zone = GameConstants.ZoneFrontend, Faction = GameConstants.FactionSD },
-                EffectTypes.BuffTP, new StaticAmount(200), "this_turn", "sd_ecosystem")
+                new AllOwnSelector { Zone = GameConstants.ZoneFrontend, Faction = GameConstants.FactionSHE },
+                EffectTypes.BuffTP, new StaticAmount(200), "this_turn", "she_ecosystem")
         );
 
-        // #121 SD Smile Delivery: Deploy from hand at cost 0
+        // #121 SHE Smile Horizon Express: Deploy from hand at cost 0
         r.RegisterComposed(121, TriggerType.Activate, new DeployFromHandOp());
     }
 

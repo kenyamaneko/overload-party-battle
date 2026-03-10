@@ -50,12 +50,12 @@ public class PgCardRepositoryTests
         string? EffectText, string Restriction, bool IsActive);
 
     private static CardSeed ComputeSeed(long cardNo, string name = "TestVM", bool active = true) => new(
-        cardNo, name, "VM", "SD", "Compute", true, false,
+        cardNo, name, "VM", "SHE", "Compute", true, false,
         JsonSerializer.Serialize(new { throughput = 600, availability = 1400, maintenance_cost = 150, sla_penalty = 400 }),
         null, "unlimited", active);
 
     private static CardSeed DataSeed(long cardNo, string name = "TestDB", bool active = true) => new(
-        cardNo, name, "DB", "SD", "Database", false, false,
+        cardNo, name, "DB", "SHE", "Database", false, false,
         JsonSerializer.Serialize(new { yield = 400, availability = 800, maintenance_cost = 100, sla_penalty = 300 }),
         null, "unlimited", active);
 

@@ -24,7 +24,7 @@ public class EffectInitTests
             "EffectInit registers handlers for 50+ card/trigger combinations");
     }
 
-    // ─── SD faction ────────────────────────────────────────────
+    // ─── SHE faction ────────────────────────────────────────────
 
     [Theory]
     [InlineData(7, TriggerType.Deploy)]
@@ -40,7 +40,7 @@ public class EffectInitTests
     [InlineData(22, TriggerType.Reactive)]
     [InlineData(118, TriggerType.Activate)]
     [InlineData(121, TriggerType.Activate)]
-    public void SD_Cards_AreRegistered(long cardNo, TriggerType trigger)
+    public void SHE_Cards_AreRegistered(long cardNo, TriggerType trigger)
     {
         _registry.Has(cardNo, trigger).Should().BeTrue(
             $"card #{cardNo} should have a {trigger} handler");

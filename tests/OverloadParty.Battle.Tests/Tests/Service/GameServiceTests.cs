@@ -76,7 +76,7 @@ public class GameServiceTests
     public async Task StartNPCBattle_CreatesGame_WithNpcPlayer()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.StartNPCBattle("player1", 1, cards, GameConstants.FactionSD);
+        var game = await _svc.StartNPCBattle("player1", 1, cards, GameConstants.FactionSHE);
 
         game.Should().NotBeNull();
         game.Player1ID.Should().Be("player1");
@@ -87,7 +87,7 @@ public class GameServiceTests
     [Fact]
     public async Task StartNPCBattle_EmptyDeck_Throws()
     {
-        var act = () => _svc.StartNPCBattle("player1", 1, [], GameConstants.FactionSD);
+        var act = () => _svc.StartNPCBattle("player1", 1, [], GameConstants.FactionSHE);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*empty*");
