@@ -48,14 +48,14 @@ public static class EffectInit
             SetCancelActionOp.Instance
         );
 
-        // #10 SHE DB - ダイナ: On-Demand (pay 400, double Yield this turn)
+        // #10 SHE DB - ダイノ: On-Demand (pay 400, double Yield this turn)
         r.RegisterComposed(10, TriggerType.Activate,
             new RequireBudgetOp(400),
             new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)),
             new ApplyBuffOp(SourceSelector.Instance, EffectTypes.BuffYield, SourceYieldAmount.Instance, "this_turn", "on_demand")
         );
 
-        // #11 SHE Cache - メリー: Cache Engine choice on deploy
+        // #11 SHE Cache - メリーモ: Cache Engine choice on deploy
         r.RegisterComposed(11, TriggerType.Deploy,
             new BranchOnChoiceOp(new Dictionary<string, List<IEffectOp>>
             {

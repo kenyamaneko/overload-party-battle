@@ -398,8 +398,8 @@ public class StandardAi : INpcStrategy
     protected static string DeployChoiceFor(long cardNo) => cardNo switch
     {
         7 => "use",       // SD RDB - アデリース: 予約契約 — "use" saves budget long-term
-        11 => "redis",    // SD Cache - メリー: Memcached (instant) vs Redis (permanent Yield)
-        125 => "redis",   // Sugar Lab Cache - メレンゲもりもりストア
+        11 => "redis",    // SHE Cache - メリーモ: Memcached (instant) vs Redis (permanent Yield)
+        125 => "redis",   // Sugar Lab Cache - メレンゲの森
         _ => "",
     };
 }
