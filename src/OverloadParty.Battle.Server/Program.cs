@@ -99,12 +99,9 @@ var app = builder.Build();
 
 if (isLocalDev)
 {
-    // Load cards from JSON file (path set via CARDS_JSON_PATH env var)
-    var cardsPath = Environment.GetEnvironmentVariable("CARDS_JSON_PATH")
-        ?? throw new InvalidOperationException("CARDS_JSON_PATH environment variable is not set");
-
-    var jsonStr = await File.ReadAllTextAsync(cardsPath);
-    var cards = JsonSerializer.Deserialize<List<CardDefinition>>(jsonStr, new JsonSerializerOptions
+    // Load cards from embedded JSON in the OverloadParty.Generated package
+    using var stream = EmbeddedCards.GetCardsJsonStream();
+    var cards = JsonSerializer.Deserialize<List<CardDefinition>>(stream, new JsonSerializerOptions
     {
         PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
         PropertyNameCaseInsensitive = true,
@@ -113,7 +110,7 @@ if (isLocalDev)
     {
         cardCache.LoadFromList(cards);
     }
-    app.Logger.LogInformation("Loaded {Count} cards from {Path}", cardCache.Count, cardsPath);
+    app.Logger.LogInformation("Loaded {Count} cards from embedded package", cardCache.Count);
 }
 else
 {

@@ -404,7 +404,16 @@ public static class EffectInit
                 "ransomware", new StaticAmount(1), "until_next_turn_end", "ransomware")
         );
 
-        // #112 Compliance Audit: not yet implemented (requires target selection by card type category)
+        // #112 Compliance Audit: Budget -400 to opponent; if opponent has no ISMS(#96) or SOC2(#97) platform, additional -400
+        r.RegisterComposed(112, TriggerType.Activate,
+            new RequireBudgetOp(200),
+            new LoseBudgetOp(PlayerRef.Self, new StaticAmount(200)),
+            new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(400)),
+            new IfConditionOp(
+                octx => !HasCompliancePlatform(octx.OpponentField, octx.CardCache),
+                [new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(400))]
+            )
+        );
 
         // #113 レートリミット: cannot_operate on high-TP Compute/AI_ML
         r.RegisterComposed(113, TriggerType.OnEnemyDeploy,
@@ -679,5 +688,16 @@ public static class EffectInit
     private static int CountDeployedThisTurn(Field field, long currentTurn)
     {
         return FieldHelpers.AllResources(field).Count(r => r.DeployedOnTurn == currentTurn);
+    }
+
+    /// <summary>
+    /// Returns true if the field contains an active (face-up, fully deployed) ISMS (#96) or SOC2 (#97) platform.
+    /// </summary>
+    private static bool HasCompliancePlatform(Field field, ICardCache _)
+    {
+        return field.Support.Any(s =>
+            s.FaceUp
+            && s.DeployingTurnsLeft <= 0
+            && (s.CardID == 96 || s.CardID == 97));
     }
 }

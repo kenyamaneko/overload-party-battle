@@ -20,7 +20,6 @@ build:  ## Build the solution
 # ─── Run ─────────────────────────────────────────────────
 run:  ## Run local dev server (port 9002, in-memory mock repos)
 	ASPNETCORE_ENVIRONMENT=Development BATTLE_MODE=local \
-	CARDS_JSON_PATH=$(CURDIR)/data/cards_gen.json \
 		dotnet run --project $(SERVER)
 
 # ─── Test ────────────────────────────────────────────────

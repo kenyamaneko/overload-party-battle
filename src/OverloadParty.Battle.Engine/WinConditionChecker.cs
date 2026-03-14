@@ -33,7 +33,7 @@ public static class WinConditionChecker
             return new GameOverResult(1, WinReason.SystemDown.ToWireString());
         }
 
-        if (state.CurrentTurn >= GameConstants.MaxTurns)
+        if (state.CurrentTurn >= BattleConstants.MaxTurns)
         {
             long winnerNum = state.Player1Budget > state.Player2Budget ? 1
                 : state.Player2Budget > state.Player1Budget ? 2
@@ -93,7 +93,7 @@ public static class WinConditionChecker
     public static bool CheckLaunchFailure(GameState state, long playerNum)
     {
         long personalTurn = (state.CurrentTurn + 1) / 2;
-        if (personalTurn < GameConstants.LaunchFailureTurn)
+        if (personalTurn < BattleConstants.LaunchFailureTurn)
         {
             return false;
         }

@@ -32,13 +32,13 @@ public static class StatCalculator
         if (!card.IsComputeType || card.ComputeStats is null) { return 0; }
 
         long baseTP = card.ComputeStats.Throughput;
-        long rankMult = GameConstants.RankMultiplier(instance.Rank);
+        long rankMult = BattleConstants.RankMultiplier(instance.Rank);
 
         // Instance family multiplier
         double tpMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {
-            var (tp, _) = GameConstants.FamilyMultiplier(family);
+            var (tp, _) = BattleConstants.FamilyMultiplier(family);
             tpMult = tp;
         }
 
@@ -51,9 +51,9 @@ public static class StatCalculator
             elasticBonus = EffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
         }
 
-        long platformBonus = CalculatePlatformBonus(instance, field, GameConstants.StatTP, cc);
+        long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatTP, cc);
         long passiveBonus = CalculatePassiveTPBonus(instance, field, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, GameConstants.StatTP, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, BattleConstants.StatTP, cc);
 
         long tempBonus = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.BuffTP).Sum(e => e.Value);
@@ -73,13 +73,13 @@ public static class StatCalculator
         if (!card.IsDataType || card.DataStats is null) { return 0; }
 
         long baseYield = card.DataStats.Yield;
-        long rankMult = GameConstants.RankMultiplier(instance.Rank);
+        long rankMult = BattleConstants.RankMultiplier(instance.Rank);
 
         // Instance family multiplier (uses AV multiplier for yield)
         double yieldMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {
-            var (_, av) = GameConstants.FamilyMultiplier(family);
+            var (_, av) = BattleConstants.FamilyMultiplier(family);
             yieldMult = av;
         }
 
@@ -91,9 +91,9 @@ public static class StatCalculator
             elasticBonus = EffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
         }
 
-        long platformBonus = CalculatePlatformBonus(instance, field, GameConstants.StatYield, cc);
+        long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatYield, cc);
         long passiveBonus = CalculatePassiveYieldBonus(instance, field, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, GameConstants.StatYield, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, BattleConstants.StatYield, cc);
 
         long tempBonus = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.BuffYield).Sum(e => e.Value);
@@ -111,12 +111,12 @@ public static class StatCalculator
     {
         var card = cc.MustGet(instance.CardID);
         long baseAV = card.BaseAvailability;
-        long rankMult = GameConstants.RankMultiplier(instance.Rank);
+        long rankMult = BattleConstants.RankMultiplier(instance.Rank);
 
         double avMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {
-            var (_, av) = GameConstants.FamilyMultiplier(family);
+            var (_, av) = BattleConstants.FamilyMultiplier(family);
             avMult = av;
         }
 
@@ -130,12 +130,12 @@ public static class StatCalculator
     {
         if (card.ComputeStats is null) { return 0; }
         long baseTP = card.ComputeStats.Throughput;
-        long rankMult = GameConstants.RankMultiplier(resource.Rank);
+        long rankMult = BattleConstants.RankMultiplier(resource.Rank);
 
         double tpMult = 1.0;
         if (resource.InstanceFamily is { } family)
         {
-            var (tp, _) = GameConstants.FamilyMultiplier(family);
+            var (tp, _) = BattleConstants.FamilyMultiplier(family);
             tpMult = tp;
         }
 
@@ -149,12 +149,12 @@ public static class StatCalculator
     {
         if (card.DataStats is null) { return 0; }
         long baseYield = card.DataStats.Yield;
-        long rankMult = GameConstants.RankMultiplier(resource.Rank);
+        long rankMult = BattleConstants.RankMultiplier(resource.Rank);
 
         double yieldMult = 1.0;
         if (resource.InstanceFamily is { } family)
         {
-            var (_, av) = GameConstants.FamilyMultiplier(family);
+            var (_, av) = BattleConstants.FamilyMultiplier(family);
             yieldMult = av;
         }
 
@@ -181,28 +181,28 @@ public static class StatCalculator
     static long CalculatePassiveTPBonus(ResourceInstance instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
-        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, GameConstants.StatTP));
+        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, BattleConstants.StatTP));
     }
 
     static long CalculatePassiveYieldBonus(ResourceInstance instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
-        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, GameConstants.StatYield));
+        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, BattleConstants.StatYield));
     }
 
     private static long ApplyPassiveEffect(PassiveEffect pe, ResourceInstance instance, Field field, ICardCache cc, string statType)
     {
         return pe.Type switch
         {
-            PassiveEffectTypes.TPPerBackendDB when statType == GameConstants.StatTP
+            PassiveEffectTypes.TPPerBackendDB when statType == BattleConstants.StatTP
                 => CalculateTPPerBackendDB(instance, field, pe.Params, cc),
-            PassiveEffectTypes.TPPerBackendData when statType == GameConstants.StatTP
+            PassiveEffectTypes.TPPerBackendData when statType == BattleConstants.StatTP
                 => CalculateTPPerBackendData(instance, field, pe.Params, cc),
-            PassiveEffectTypes.TPIfCardTypeOnField when statType == GameConstants.StatTP
+            PassiveEffectTypes.TPIfCardTypeOnField when statType == BattleConstants.StatTP
                 => CalculateTPIfCardTypeOnField(field, pe.Params, cc),
-            PassiveEffectTypes.YieldPerOtherDB when statType == GameConstants.StatYield
+            PassiveEffectTypes.YieldPerOtherDB when statType == BattleConstants.StatYield
                 => CalculateYieldPerOtherDB(instance, field, pe.Params, cc),
-            PassiveEffectTypes.YieldIfCardOnField when statType == GameConstants.StatYield
+            PassiveEffectTypes.YieldIfCardOnField when statType == BattleConstants.StatYield
                 => CalculateYieldIfCardOnField(field, pe.Params, cc),
             _ => 0
         };
@@ -310,9 +310,9 @@ public static class StatCalculator
     {
         string expectedStatType = pe.Type switch
         {
-            PlatformEffectTypes.TPBonus => GameConstants.StatTP,
-            PlatformEffectTypes.YieldBonus => GameConstants.StatYield,
-            PlatformEffectTypes.AVBonus => GameConstants.StatAV,
+            PlatformEffectTypes.TPBonus => BattleConstants.StatTP,
+            PlatformEffectTypes.YieldBonus => BattleConstants.StatYield,
+            PlatformEffectTypes.AVBonus => BattleConstants.StatAV,
             _ => ""
         };
         if (expectedStatType != statType) { return 0; }

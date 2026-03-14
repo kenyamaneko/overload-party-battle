@@ -1,7 +1,8 @@
 namespace OverloadParty.Battle.Models;
 
-// Generated constants are in GameConstants_gen.cs
-public static partial class GameConstants
+// Battle-specific constants not in shared constants.json.
+// Generated constants (InitialBudget, Factions, Zones, etc.) are in OverloadParty.Generated.GameConstants.
+public static class BattleConstants
 {
     // Game limits (not in shared constants.json)
     public const int MaxTurns = 30;

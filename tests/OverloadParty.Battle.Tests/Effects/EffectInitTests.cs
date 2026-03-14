@@ -138,6 +138,7 @@ public class EffectInitTests
     [InlineData(109, TriggerType.Activate)]
     [InlineData(110, TriggerType.Activate)]
     [InlineData(111, TriggerType.Activate)]
+    [InlineData(112, TriggerType.Activate)]
     [InlineData(113, TriggerType.OnEnemyDeploy)]
     [InlineData(135, TriggerType.OnEnemyDeploy)]
     public void Incident_Cards_AreRegistered(long cardNo, TriggerType trigger)

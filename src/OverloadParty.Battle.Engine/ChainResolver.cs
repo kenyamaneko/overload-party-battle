@@ -13,9 +13,9 @@ public static class ChainResolver
     /// </summary>
     public static void PushToChain(GameState state, ChainEntry entry)
     {
-        if (state.ChainStack.Count >= GameConstants.MaxChainLevel)
+        if (state.ChainStack.Count >= BattleConstants.MaxChainLevel)
         {
-            throw new GameRuleException($"chain stack full (max {GameConstants.MaxChainLevel})");
+            throw new GameRuleException($"chain stack full (max {BattleConstants.MaxChainLevel})");
         }
 
         // Reactive cannot chain on top of unresolved reactive
@@ -47,7 +47,7 @@ public static class ChainResolver
     public static bool CanChainReactive(GameState state)
     {
         if (!state.ChainStack.Any()) { return false; }
-        if (state.ChainStack.Count >= GameConstants.MaxChainLevel) { return false; }
+        if (state.ChainStack.Count >= BattleConstants.MaxChainLevel) { return false; }
 
         // Last entry must not be reactive
         var last = state.ChainStack.Last();
