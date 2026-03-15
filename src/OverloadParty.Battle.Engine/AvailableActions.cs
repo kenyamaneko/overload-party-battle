@@ -263,7 +263,6 @@ public static class AvailableActions
         }
     }
 
-    private static readonly Rank[] AllRanks = [Rank.Small, Rank.Medium, Rank.Large];
     private static readonly InstanceFamily[] AllFamilies = [InstanceFamily.M, InstanceFamily.C, InstanceFamily.R];
 
     private static IEnumerable<AvailableAction> EnumerateScaleUpActions(GameState state, Field field, ICardCache cc)
@@ -273,42 +272,28 @@ public static class AvailableActions
             var card = cc.Get(resource.CardID);
             if (card is null || !card.Resizable) { continue; }
 
-            // Cannot change type on deploy turn or if already changed this turn
+            // Cannot scale up on deploy turn or if already changed this turn
             if (resource.DeployedOnTurn == state.CurrentTurn
                 || resource.ScaleChangedThisTurn) { continue; }
 
-            foreach (var rank in AllRanks)
+            // Already at max rank or rank not set
+            if (resource.Rank is not { } currentRank || currentRank == Rank.Large) { continue; }
+
+            // Target rank is one step up: small→medium, medium→large
+            var targetRank = currentRank + 1;
+
+            // Medium/Large require instance family selection
+            foreach (var family in AllFamilies)
             {
-                if (rank == Rank.Small)
-                {
-                    // Small has no family; skip if already Small with no family
-                    if (resource.Rank == Rank.Small
-                        && resource.InstanceFamily is null) { continue; }
+                if (resource.Rank == Rank.Medium && resource.InstanceFamily == family) { continue; }
 
-                    yield return new AvailableAction
-                    {
-                        Type = WireActionTypes.ScaleUp,
-                        SourceInstanceID = resource.InstanceID,
-                        TargetRank = rank.ToWireString(),
-                    };
-                }
-                else
+                yield return new AvailableAction
                 {
-                    // Medium/Large: one action per family
-                    foreach (var family in AllFamilies)
-                    {
-                        if (resource.Rank == rank
-                            && resource.InstanceFamily == family) { continue;  }
-
-                        yield return new AvailableAction
-                        {
-                            Type = WireActionTypes.ScaleUp,
-                            SourceInstanceID = resource.InstanceID,
-                            TargetRank = rank.ToWireString(),
-                            InstanceFamily = family.ToWireString(),
-                        };
-                    }
-                }
+                    Type = WireActionTypes.ScaleUp,
+                    SourceInstanceID = resource.InstanceID,
+                    TargetRank = targetRank.ToWireString(),
+                    InstanceFamily = family.ToWireString(),
+                };
             }
         }
     }

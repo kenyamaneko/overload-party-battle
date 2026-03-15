@@ -44,20 +44,21 @@ public static class ScaleUpProcessor
         }
 
         var targetRank = EnumExtensions.ParseRank(req.TargetRank);
+
+        // Scale up only: target rank must be higher than current rank
+        if (resource.Rank is null || targetRank <= resource.Rank)
+        {
+            throw new GameRuleException("can only scale up to a higher rank");
+        }
+
         var targetFamily = req.InstanceFamily is not null
             ? EnumExtensions.ParseInstanceFamily(req.InstanceFamily)
             : resource.InstanceFamily;
 
         // Must have a family for Medium/Large
-        if (targetRank != Rank.Small && targetFamily is null)
+        if (targetFamily is null)
         {
             throw new GameRuleException("instance family required for medium or large rank");
-        }
-
-        // Validate that something actually changes
-        if (resource.Rank == targetRank && resource.InstanceFamily == targetFamily)
-        {
-            throw new GameRuleException("no change in instance type");
         }
 
         // Apply changes

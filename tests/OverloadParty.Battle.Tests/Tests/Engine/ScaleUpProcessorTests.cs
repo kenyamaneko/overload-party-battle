@@ -103,10 +103,10 @@ public class ScaleUpProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*family required*");
     }
 
-    // ─── 7. No change → throws ──────────────────────────────
+    // ─── 7. Same or lower rank → throws ──────────────────────────────
 
     [Fact]
-    public void Process_NoChange_Throws()
+    public void Process_SameRank_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 3);
         var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Medium, family: InstanceFamily.M, faceUp: true);
@@ -116,7 +116,7 @@ public class ScaleUpProcessorTests
         var act = () => ScaleUpProcessor.Process(
             state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
 
-        act.Should().Throw<GameRuleException>().WithMessage("*no change*");
+        act.Should().Throw<GameRuleException>().WithMessage("*scale up*higher rank*");
     }
 
     // ─── 8. Generates scale-up event ────────────────────────

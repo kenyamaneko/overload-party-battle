@@ -423,12 +423,11 @@ public class AvailableActionsTests
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
         var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
-        // Medium×3 families + Large×3 families = 6 options
-        scaleActions.Should().HaveCount(6);
+        // Small can only scale up to Medium×3 families = 3 options
+        scaleActions.Should().HaveCount(3);
         scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "M");
         scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "C");
         scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "R");
-        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
     }
 
     [Fact]
@@ -446,15 +445,14 @@ public class AvailableActionsTests
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
         var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
-        // Small(1) + Medium×2 other families + Large×3 families = 6 options
-        scaleActions.Should().HaveCount(6);
-        scaleActions.Should().Contain(a => a.TargetRank == "small");
-        scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "C");
-        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
+        // Medium(M) can only scale up to Large×3 families, minus current family = 2 options
+        scaleActions.Should().HaveCount(2);
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "C");
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "R");
     }
 
     [Fact]
-    public void ScaleUp_ResizableLargeCanScaleDown()
+    public void ScaleUp_ResizableLargeHasNoOptions()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardNo: 1, resizable: true));
@@ -468,11 +466,8 @@ public class AvailableActionsTests
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
         var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
-        // Small(1) + Medium×3 families + Large×2 other families = 6 options
-        scaleActions.Should().HaveCount(6);
-        scaleActions.Should().Contain(a => a.TargetRank == "small");
-        scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "M");
-        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "C");
+        // Large is max rank — no scale up options
+        scaleActions.Should().BeEmpty();
     }
 
     [Fact]
