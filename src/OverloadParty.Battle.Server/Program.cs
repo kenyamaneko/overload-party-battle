@@ -234,6 +234,36 @@ api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId
     }
 });
 
+// Advance NPC Turn
+// Called by the gateway after game_enter to run the NPC's first turn
+// so that action events can be delivered via WebSocket.
+api.MapPost("/games/{gameId}/advance-npc", async (GameService gameSvc, string gameId, NpcAdvanceRequest req) =>
+{
+    try
+    {
+        var result = await gameSvc.AdvanceNpcTurn(gameId, req.PlayerID);
+        return Results.Ok(new
+        {
+            game_over = result.GameOver is not null,
+            winner_num = result.GameOver?.WinnerNum ?? 0,
+            win_reason = result.GameOver?.Reason,
+            events = result.Events.Select(e => new
+            {
+                sequence = e.Event.SequenceNumber,
+                event_type = e.Event.EventType,
+                player_id = e.Event.PlayerID,
+                event_data = e.Event.EventData,
+                state = e.State,
+            }),
+        });
+    }
+    catch (Exception ex)
+    {
+        app.Logger.LogError(ex, "Unexpected error");
+        return Results.StatusCode(500);
+    }
+});
+
 // Game State Retrieval
 api.MapGet("/games/{gameId}/state/{playerId}", async (GameService gameSvc, string gameId, string playerId) =>
 {
@@ -324,6 +354,7 @@ public record DeckCard(long CardNo, long ArtNo);
 public record NpcBattleRequest(string PlayerID, long DeckID, List<DeckCard> Cards, string NpcFaction);
 public record PvpBattleRequest(string Player1ID, long Player1DeckID, List<DeckCard> Player1Cards, string Player2ID, long Player2DeckID, List<DeckCard> Player2Cards);
 public record GameActionRequest(string PlayerID, string ActionType, JsonElement Data);
+public record NpcAdvanceRequest(string PlayerID);
 
 public static class ActionDataDeserializer
 {

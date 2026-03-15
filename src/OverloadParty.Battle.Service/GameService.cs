@@ -206,16 +206,43 @@ public class GameService
         return AvailableActions.ComputeTurnControls(state, hand);
     }
 
+    /// <summary>
+    /// Runs the NPC turn if the active player is an NPC.
+    /// Called by the gateway after the human player enters the game,
+    /// so that NPC action events can be delivered via WebSocket.
+    /// </summary>
+    public async Task<GameActionResult> AdvanceNpcTurn(
+        string gameID, string playerID, CancellationToken ct = default)
+    {
+        var npcEvents = await RunNPCTurnIfNeeded(gameID, playerID, ct);
+        if (npcEvents.Count == 0)
+        {
+            return new GameActionResult();
+        }
+
+        var clientState = await GetStateForPlayer(gameID, playerID, ct);
+
+        var game = await _gameRepo.GetGame(gameID, ct);
+        GameOverResult? over = game is { Status: GameStatus.Finished }
+            ? new GameOverResult(
+                game.WinnerID == game.Player1ID ? 1
+              : game.WinnerID == game.Player2ID ? 2
+              : 0, "")
+            : null;
+
+        return new GameActionResult
+        {
+            GameOver = over,
+            State = clientState,
+            Events = npcEvents,
+        };
+    }
+
     // ─── Private helpers ────────────────────────────────────────
 
     private async Task PostCreateAdvance(Game game, CancellationToken ct)
     {
-        var result = await _engine.RunAutoAdvance(game.GameID, ct);
-
-        if (result is null)
-        {
-            _ = await RunNPCTurnIfNeeded(game.GameID, null, ct);
-        }
+        await _engine.RunAutoAdvance(game.GameID, ct);
     }
 
     private async Task<ClientGameState?> GetStateForPlayer(

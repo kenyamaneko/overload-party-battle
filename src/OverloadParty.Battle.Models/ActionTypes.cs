@@ -24,4 +24,5 @@ public static class WireActionTypes
     public const string PhaseChange = "phase_change";
     public const string PhaseEnd = "phase_end";
     public const string TurnEnd = "turn_end";
+    public const string TurnStart = "turn_start";
 }

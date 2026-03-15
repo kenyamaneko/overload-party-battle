@@ -79,6 +79,7 @@ public static class EndPhaseProcessor
         var gameOverResult = DrawPhaseProcessor.Process(state, game, cc);
 
         events.Add(MakeTurnEndEvent(game.GameID, playerId, state));
+        events.Add(MakeTurnStartEvent(game.GameID, state));
 
         if (gameOverResult is not null)
         {
@@ -193,6 +194,21 @@ public static class EndPhaseProcessor
                 NextTurn = state.CurrentTurn,
                 ActivePlayer = state.ActivePlayer,
                 CurrentPhase = state.CurrentPhase.ToWireString(),
+            }.ToDictionary(),
+        };
+    }
+
+    internal static GameEvent MakeTurnStartEvent(string gameID, GameState state)
+    {
+        return new GameEvent
+        {
+            GameID = gameID,
+            EventType = WireActionTypes.TurnStart,
+            PlayerID = "",
+            EventData = new TurnStartEventData
+            {
+                Turn = state.CurrentTurn,
+                ActivePlayer = state.ActivePlayer,
             }.ToDictionary(),
         };
     }
