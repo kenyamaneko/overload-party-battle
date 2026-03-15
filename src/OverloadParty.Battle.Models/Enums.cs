@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace OverloadParty.Battle.Models;
 
 public enum Phase
@@ -15,18 +17,20 @@ public enum Zone
     Support
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<Rank>))]
 public enum Rank
 {
-    Small,
-    Medium,
-    Large
+    [JsonPropertyName("small")] Small,
+    [JsonPropertyName("medium")] Medium,
+    [JsonPropertyName("large")] Large
 }
 
+[JsonConverter(typeof(JsonStringEnumConverter<InstanceFamily>))]
 public enum InstanceFamily
 {
-    M, // Balanced
-    C, // Compute-optimized
-    R  // Reliability
+    [JsonPropertyName("M")] M, // Balanced
+    [JsonPropertyName("C")] C, // Compute-optimized
+    [JsonPropertyName("R")] R  // Reliability
 }
 
 public enum CardTypeCategory
