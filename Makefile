@@ -1,4 +1,4 @@
-.PHONY: build run test test-integration test-coverage clean restore help
+.PHONY: build run test test-integration test-coverage clean restore update-common help
 
 # ─── Config ──────────────────────────────────────────────
 SLN     := OverloadParty.Battle.slnx
@@ -43,6 +43,15 @@ generate:  ## Generate cards.json / constants from common repo
 		--gateway-dir $(GATEWAY_DIR) \
 		--battle-dir $(CURDIR) \
 		--client-dir $(CLIENT_DIR)
+
+# ─── Dependencies ───────────────────────────────────────
+GENERATED_PKG := OverloadParty.Generated
+
+update-common:  ## Update OverloadParty.Generated to the latest version
+	dotnet nuget locals http-cache --clear
+	@rm -rf $(HOME)/.nuget/packages/$(shell echo $(GENERATED_PKG) | tr A-Z a-z)
+	dotnet restore $(SLN)
+	@echo "Updated to:" && dotnet list $(SERVER) package --include-prerelease | grep $(GENERATED_PKG)
 
 # ─── Misc ────────────────────────────────────────────────
 clean:  ## Remove build artifacts
