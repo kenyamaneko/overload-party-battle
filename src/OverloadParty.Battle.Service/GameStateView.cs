@@ -29,22 +29,12 @@ public class PlayerView
     public long Budget { get; init; }
     public long InsightPool { get; init; }
     public long TimeBank { get; init; }
-    public required PlayerField Field { get; init; }
+    public required Field Field { get; init; }
     public required List<HandCard> Hand { get; init; }
     public int RepoCount { get; init; }
     public int TrashCount { get; init; }
     public required List<HandCard> Trash { get; init; }
     public List<AvailableAction>? AvailableActions { get; set; }
-}
-
-/// <summary>
-/// Player's own field as plain arrays (avoids Zone&lt;T&gt; serialization issues).
-/// </summary>
-public class PlayerField
-{
-    public ResourceInstance?[] Frontend { get; init; } = new ResourceInstance?[GameConstants.SlotsPerZone];
-    public ResourceInstance?[] Backend { get; init; } = new ResourceInstance?[GameConstants.SlotsPerZone];
-    public SupportInstance?[] Support { get; init; } = new SupportInstance?[GameConstants.SlotsPerZone];
 }
 
 /// <summary>
@@ -108,12 +98,7 @@ public static class GameStateView
             Budget = budget,
             InsightPool = insightPool,
             TimeBank = state.GetTimeBank(playerNum),
-            Field = new PlayerField
-            {
-                Frontend = myField.Frontend.ToArray(),
-                Backend = myField.Backend.ToArray(),
-                Support = myField.Support.ToArray(),
-            },
+            Field = myField,
             Hand = myHand,
             RepoCount = myRepo.Count,
             TrashCount = myTrash.Count,

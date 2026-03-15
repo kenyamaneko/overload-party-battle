@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Npgsql;
 using OverloadParty.Battle.Data;
+using OverloadParty.Battle.Data.Json;
 using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Data.Pg;
 using OverloadParty.Battle.Engine;
@@ -25,6 +26,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 {
     options.SerializerOptions.Converters.Add(
         new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower));
+    options.SerializerOptions.Converters.Add(new ZoneJsonConverterFactory());
 });
 
 // ─── Data layer ─────────────────────────────────────────────
