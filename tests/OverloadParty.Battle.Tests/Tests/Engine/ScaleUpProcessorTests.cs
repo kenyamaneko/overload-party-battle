@@ -133,7 +133,7 @@ public class ScaleUpProcessorTests
             state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
 
         var evt = result.Events.First(e => e.EventType == WireActionTypes.ScaleUp);
-        evt.EventData["instanceId"].Should().Be("inst_1");
-        evt.EventData["targetRank"].Should().Be("medium");
+        evt.EventData!["instanceId"].Should().Be("inst_1");
+        evt.EventData!["targetRank"].Should().Be("medium");
     }
 }

@@ -122,9 +122,9 @@ public class MigrateProcessorTests
             state, _game, 1, MakeReq("be_1", "be_2"), _cc);
 
         var evt = result.Events.First(e => e.EventType == WireActionTypes.Migrate);
-        evt.EventData["sourceInstanceId"].Should().Be("be_1");
-        evt.EventData["targetInstanceId"].Should().Be("be_2");
-        evt.EventData["sourceCardId"].Should().Be(1L);
-        evt.EventData["targetCardId"].Should().Be(2L);
+        evt.EventData!["sourceInstanceId"].Should().Be("be_1");
+        evt.EventData!["targetInstanceId"].Should().Be("be_2");
+        evt.EventData!["sourceCardId"].Should().Be(1L);
+        evt.EventData!["targetCardId"].Should().Be(2L);
     }
 }

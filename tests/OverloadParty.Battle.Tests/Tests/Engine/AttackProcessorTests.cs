@@ -267,10 +267,10 @@ public class AttackProcessorTests
             state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
 
         var attackEvent = result.Events.First(e => e.EventType == WireActionTypes.Attack);
-        attackEvent.EventData["attackerId"].Should().Be("atk_1");
-        attackEvent.EventData["targetId"].Should().Be("def_1");
-        attackEvent.EventData["damage"].Should().Be(600L);
-        attackEvent.EventData["destroyed"].Should().Be(false);
+        attackEvent.EventData!["attackerId"].Should().Be("atk_1");
+        attackEvent.EventData!["targetId"].Should().Be("def_1");
+        attackEvent.EventData!["damage"].Should().Be(600L);
+        attackEvent.EventData!["destroyed"].Should().Be(false);
     }
 
     // ─── 12. Attacker not found on field → throws ────────────
@@ -392,8 +392,8 @@ public class AttackProcessorTests
         attacker.HasAttacked.Should().BeTrue();
         // Attack event should show cancelled=true
         var attackEvent = result.Events.First(e => e.EventType == WireActionTypes.Attack);
-        attackEvent.EventData["cancelled"].Should().Be(true);
-        attackEvent.EventData["damage"].Should().Be(0L);
+        attackEvent.EventData!["cancelled"].Should().Be(true);
+        attackEvent.EventData!["damage"].Should().Be(0L);
         // Reactive support should be flipped face-up
         state.Player2Field.Support[0]!.FaceUp.Should().BeTrue();
     }
@@ -510,7 +510,7 @@ public class AttackProcessorTests
             state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
 
         var attackEvent = result.Events.First(e => e.EventType == WireActionTypes.Attack);
-        attackEvent.EventData["slaPenalty"].Should().Be(0L);
+        attackEvent.EventData!["slaPenalty"].Should().Be(0L);
     }
 
     // ─── 21. Reactive with no effects registry → no cancel ───

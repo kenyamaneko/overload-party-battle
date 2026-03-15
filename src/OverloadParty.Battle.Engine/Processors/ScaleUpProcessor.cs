@@ -31,13 +31,11 @@ public static class ScaleUpProcessor
             throw new GameRuleException("card is not resizable");
         }
 
-        // Cannot change type on the deploy turn
         if (resource.DeployedOnTurn == state.CurrentTurn)
         {
             throw new GameRuleException("cannot change instance type on deploy turn");
         }
 
-        // 1 type change per resource per turn
         if (resource.ScaleChangedThisTurn)
         {
             throw new GameRuleException("instance type already changed this turn");
@@ -45,7 +43,6 @@ public static class ScaleUpProcessor
 
         var targetRank = EnumExtensions.ParseRank(req.TargetRank);
 
-        // Scale up only: target rank must be higher than current rank
         if (resource.Rank is null || targetRank <= resource.Rank)
         {
             throw new GameRuleException("can only scale up to a higher rank");
@@ -55,13 +52,10 @@ public static class ScaleUpProcessor
             ? EnumExtensions.ParseInstanceFamily(req.InstanceFamily)
             : resource.InstanceFamily;
 
-        // Must have a family for Medium/Large
         if (targetFamily is null)
         {
             throw new GameRuleException("instance family required for medium or large rank");
         }
-
-        // Apply changes
         resource.InstanceFamily = targetFamily;
         resource.ScaleChangedThisTurn = true;
 

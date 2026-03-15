@@ -272,17 +272,13 @@ public static class AvailableActions
             var card = cc.Get(resource.CardID);
             if (card is null || !card.Resizable) { continue; }
 
-            // Cannot scale up on deploy turn or if already changed this turn
             if (resource.DeployedOnTurn == state.CurrentTurn
                 || resource.ScaleChangedThisTurn) { continue; }
 
-            // Already at max rank or rank not set
             if (resource.Rank is not { } currentRank || currentRank == Rank.Large) { continue; }
 
-            // Target rank is one step up: small→medium, medium→large
             var targetRank = currentRank + 1;
 
-            // Medium/Large require instance family selection
             foreach (var family in AllFamilies)
             {
                 if (resource.Rank == Rank.Medium && resource.InstanceFamily == family) { continue; }

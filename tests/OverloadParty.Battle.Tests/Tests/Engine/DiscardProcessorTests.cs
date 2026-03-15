@@ -55,7 +55,7 @@ public class DiscardProcessorTests
         // (Note: SwitchActivePlayer + DrawPhaseProcessor runs after, so hand count may change for P2)
         // We verify the discard event was emitted with correct count
         var discardEvent = result.Events.First(e => e.EventType == WireActionTypes.DiscardHand);
-        discardEvent.EventData["discardedCount"].Should().Be(2L);
+        discardEvent.EventData!["discardedCount"].Should().Be(2L);
     }
 
     // ─── 2. No discard needed → throws ──────────────────────
