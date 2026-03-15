@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Npgsql;
 using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Data.Mock;
@@ -17,6 +18,14 @@ var isLocalDev = builder.Environment.IsDevelopment()
     || Environment.GetEnvironmentVariable("BATTLE_MODE") == "local";
 
 builder.Services.AddLogging();
+
+// Serialize enums as camelCase strings (e.g. Rank.Small → "small") so that
+// downstream consumers (Gateway, client) receive strings instead of numeric values.
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    options.SerializerOptions.Converters.Add(
+        new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower));
+});
 
 // ─── Data layer ─────────────────────────────────────────────
 
@@ -202,6 +211,14 @@ api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId
             game_over = result.GameOver is not null,
             winner_num = result.GameOver?.WinnerNum ?? 0,
             win_reason = result.GameOver?.Reason,
+            events = result.Events.Select(e => new
+            {
+                sequence = e.Event.SequenceNumber,
+                event_type = e.Event.EventType,
+                player_id = e.Event.PlayerID,
+                event_data = e.Event.EventData,
+                state = e.State,
+            }),
         });
     }
     catch (GameRuleException ex)
