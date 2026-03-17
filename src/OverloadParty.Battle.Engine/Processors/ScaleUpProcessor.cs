@@ -56,6 +56,11 @@ public static class ScaleUpProcessor
         {
             throw new GameRuleException("instance family required for medium or large rank");
         }
+
+        if (resource.Rank == Rank.Medium && targetFamily != resource.InstanceFamily)
+        {
+            throw new GameRuleException("cannot change instance family when scaling up from medium");
+        }
         resource.InstanceFamily = targetFamily;
         resource.ScaleChangedThisTurn = true;
 

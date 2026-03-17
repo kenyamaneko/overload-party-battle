@@ -208,20 +208,7 @@ api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId
         var actionType = EnumExtensions.ParseActionType(req.ActionType);
         var actionData = ActionDataDeserializer.Deserialize(actionType, req.Data);
         var result = await gameSvc.ProcessAction(gameId, req.PlayerID, actionType, actionData);
-        return Results.Ok(new
-        {
-            game_over = result.GameOver is not null,
-            winner_num = result.GameOver?.WinnerNum ?? 0,
-            win_reason = result.GameOver?.Reason,
-            events = result.Events.Select(e => new
-            {
-                sequence = e.Event.SequenceNumber,
-                event_type = e.Event.EventType,
-                player_id = e.Event.PlayerID,
-                event_data = e.Event.EventData,
-                state = e.State,
-            }),
-        });
+        return Results.Ok(ProjectActionResult(result));
     }
     catch (GameRuleException ex)
     {
@@ -242,20 +229,7 @@ api.MapPost("/games/{gameId}/advance-npc", async (GameService gameSvc, string ga
     try
     {
         var result = await gameSvc.AdvanceNpcTurn(gameId, req.PlayerID);
-        return Results.Ok(new
-        {
-            game_over = result.GameOver is not null,
-            winner_num = result.GameOver?.WinnerNum ?? 0,
-            win_reason = result.GameOver?.Reason,
-            events = result.Events.Select(e => new
-            {
-                sequence = e.Event.SequenceNumber,
-                event_type = e.Event.EventType,
-                player_id = e.Event.PlayerID,
-                event_data = e.Event.EventData,
-                state = e.State,
-            }),
-        });
+        return Results.Ok(ProjectActionResult(result));
     }
     catch (Exception ex)
     {
@@ -349,6 +323,21 @@ app.Logger.LogInformation("Battle server starting on port {Port} (mode={Mode})",
     port, isLocalDev ? "local" : "production");
 
 app.Run();
+
+static object ProjectActionResult(GameActionResult result) => new
+{
+    game_over = result.GameOver is not null,
+    winner_num = result.GameOver?.WinnerNum ?? 0,
+    win_reason = result.GameOver?.Reason,
+    events = result.Events.Select(e => new
+    {
+        sequence = e.Event.SequenceNumber,
+        event_type = e.Event.EventType,
+        player_id = e.Event.PlayerID,
+        event_data = e.Event.EventData,
+        state = e.State,
+    }),
+};
 
 public record DeckCard(long CardNo, long ArtNo);
 public record NpcBattleRequest(string PlayerID, long DeckID, List<DeckCard> Cards, string NpcFaction);

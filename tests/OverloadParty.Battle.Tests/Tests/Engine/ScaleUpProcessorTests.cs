@@ -23,8 +23,8 @@ public class ScaleUpProcessorTests
     // ─── 1-2. Rank change (Small→Medium, Medium→Large) ───────
 
     [Theory]
-    [InlineData(Rank.Small,  null,              "medium", "M", Rank.Medium)]
-    [InlineData(Rank.Medium, InstanceFamily.M,  "large",  "M", Rank.Large)]
+    [InlineData(Rank.Small, null, "medium", "M", Rank.Medium)]
+    [InlineData(Rank.Medium, InstanceFamily.M, "large", "M", Rank.Large)]
     public void Process_ChangesRank(Rank initialRank, InstanceFamily? initFamily, string reqRank, string reqFamily, Rank expectedRank)
     {
         var state = TestFactory.MakeGameState(turn: 3);
@@ -103,7 +103,23 @@ public class ScaleUpProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*family required*");
     }
 
-    // ─── 7. Same or lower rank → throws ──────────────────────────────
+    // ─── 7. Medium→Large with different family → throws ─────────────
+
+    [Fact]
+    public void Process_MediumToDifferentFamily_Throws()
+    {
+        var state = TestFactory.MakeGameState(turn: 3);
+        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Medium, family: InstanceFamily.M, faceUp: true);
+        resource.DeployedOnTurn = 1;
+        state.Player1Field.Frontend[0] = resource;
+
+        var act = () => ScaleUpProcessor.Process(
+            state, _game, 1, MakeReq("inst_1", "large", "C"), _cc);
+
+        act.Should().Throw<GameRuleException>().WithMessage("*cannot change instance family*");
+    }
+
+    // ─── 8. Same or lower rank → throws ──────────────────────────────
 
     [Fact]
     public void Process_SameRank_Throws()

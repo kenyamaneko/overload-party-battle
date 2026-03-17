@@ -445,10 +445,9 @@ public class AvailableActionsTests
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
         var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
-        // Medium(M) can only scale up to Large×3 families, minus current family = 2 options
-        scaleActions.Should().HaveCount(2);
-        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "C");
-        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "R");
+        // Medium(M) can only scale up to Large with same family = 1 option
+        scaleActions.Should().HaveCount(1);
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
     }
 
     [Fact]

@@ -281,7 +281,7 @@ public static class AvailableActions
 
             foreach (var family in AllFamilies)
             {
-                if (resource.Rank == Rank.Medium && resource.InstanceFamily == family) { continue; }
+                if (resource.Rank == Rank.Medium && resource.InstanceFamily != family) { continue; }
 
                 yield return new AvailableAction
                 {

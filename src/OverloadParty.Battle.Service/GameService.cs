@@ -155,11 +155,11 @@ public class GameService
             };
         }
 
-        var npcEvents = await RunNPCTurnIfNeeded(gameID, playerID, ct);
+        var (npcEvents, npcGameOver) = await RunNPCTurnIfNeeded(gameID, playerID, ct);
         allEvents.AddRange(npcEvents);
 
         var clientState = await GetStateForPlayer(gameID, playerID, ct);
-        return new GameActionResult { State = clientState, Events = allEvents };
+        return new GameActionResult { GameOver = npcGameOver, State = clientState, Events = allEvents };
     }
 
     // ─── State queries ──────────────────────────────────────────
@@ -214,7 +214,7 @@ public class GameService
     public async Task<GameActionResult> AdvanceNpcTurn(
         string gameID, string playerID, CancellationToken ct = default)
     {
-        var npcEvents = await RunNPCTurnIfNeeded(gameID, playerID, ct);
+        var (npcEvents, npcGameOver) = await RunNPCTurnIfNeeded(gameID, playerID, ct);
         if (npcEvents.Count == 0)
         {
             return new GameActionResult();
@@ -222,17 +222,9 @@ public class GameService
 
         var clientState = await GetStateForPlayer(gameID, playerID, ct);
 
-        var game = await _gameRepo.GetGame(gameID, ct);
-        GameOverResult? over = game is { Status: GameStatus.Finished }
-            ? new GameOverResult(
-                game.WinnerID == game.Player1ID ? 1
-              : game.WinnerID == game.Player2ID ? 2
-              : 0, "")
-            : null;
-
         return new GameActionResult
         {
-            GameOver = over,
+            GameOver = npcGameOver,
             State = clientState,
             Events = npcEvents,
         };
@@ -277,7 +269,7 @@ public class GameService
         return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
     }
 
-    private async Task<List<ActionEventWithState>> RunNPCTurnIfNeeded(
+    private async Task<(List<ActionEventWithState> Events, GameOverResult? GameOver)> RunNPCTurnIfNeeded(
         string gameID, string? stateForPlayerID, CancellationToken ct)
     {
         var npcEvents = new List<ActionEventWithState>();
@@ -287,7 +279,7 @@ public class GameService
         }
         if (npcAI is null)
         {
-            return npcEvents;
+            return (npcEvents, null);
         }
 
         for (int i = 0; i < MaxNPCIterations; i++)
@@ -295,13 +287,13 @@ public class GameService
             var game = await _gameRepo.GetGame(gameID, ct);
             if (game is null || game.Status == GameStatus.Finished)
             {
-                return npcEvents;
+                return (npcEvents, null);
             }
 
             var state = await _gameRepo.GetGameState(gameID, ct);
             if (state is null)
             {
-                return npcEvents;
+                return (npcEvents, null);
             }
 
             // Determine NPC player number
@@ -316,12 +308,12 @@ public class GameService
             }
             else
             {
-                return npcEvents; // No NPC in this game
+                return (npcEvents, null); // No NPC in this game
             }
 
             if (state.ActivePlayer != npcPlayerNum)
             {
-                return npcEvents;
+                return (npcEvents, null);
             }
 
             // Compute available actions
@@ -349,7 +341,7 @@ public class GameService
                     if (!ids.Any())
                     {
                         _logger.LogWarning("NPC in end phase but no discard needed (game={GameID})", gameID);
-                        return npcEvents;
+                        return (npcEvents, null);
                     }
                     actions =
                     [
@@ -361,7 +353,7 @@ public class GameService
                     ];
                     break;
                 default:
-                    return npcEvents;
+                    return (npcEvents, null);
             }
 
             foreach (var action in actions)
@@ -373,7 +365,8 @@ public class GameService
                     var result = await _engine.ProcessAction(
                         gameID, NpcConstants.PlayerId, actionType, actionData, ct);
 
-                    // Snapshot the requesting player's state after each NPC action
+                    // 1つのアクションから複数イベントが生成される場合、全イベントにアクション完了後の
+                    // 同一スナップショットを付与する（中間状態は取得しない）
                     ClientGameState? snapshot = null;
                     if (stateForPlayerID is not null)
                     {
@@ -388,7 +381,7 @@ public class GameService
                     if (result.GameOver is not null)
                     {
                         _npcStrategies.TryRemove(gameID, out _);
-                        return npcEvents;
+                        return (npcEvents, result.GameOver);
                     }
                 }
                 catch (GameRuleException ex)
@@ -406,7 +399,7 @@ public class GameService
         }
 
         _logger.LogWarning("NPC turn exceeded {Max} iterations (game={GameID})", MaxNPCIterations, gameID);
-        return npcEvents;
+        return (npcEvents, null);
     }
 
     private static readonly JsonSerializerOptions NpcJsonOpts = new()
