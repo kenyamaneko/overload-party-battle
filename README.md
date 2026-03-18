@@ -62,7 +62,6 @@ Engine / Effects / NPC は NuGet パッケージに依存せず、`System.*` の
 | `make test` | ユニットテスト実行（DB 不要） |
 | `make test-integration` | DB 統合テスト込みで実行（コンテナ自動起動） |
 | `make test-coverage` | カバレッジ付きテスト |
-| `make generate` | common リポからカード定義を生成 |
 | `make clean` | ビルド成果物削除 |
 
 ## 統合テスト

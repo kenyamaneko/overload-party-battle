@@ -7,8 +7,6 @@ TESTS   := tests/OverloadParty.Battle.Tests
 
 # ─── Common Repo ─────────────────────────────────────────
 COMMON_DIR  ?= $(CURDIR)/../overload-party-common
-CLIENT_DIR  ?= $(CURDIR)/../overload-party-client
-GATEWAY_DIR ?= $(CURDIR)/../overload-party-gateway
 
 # ─── Build ───────────────────────────────────────────────
 restore:  ## Restore NuGet packages
@@ -36,13 +34,6 @@ test-integration:  ## Run tests including DB integration (starts container autom
 
 test-coverage:  ## Run tests with code coverage report
 	dotnet test $(TESTS) --collect:"XPlat Code Coverage" --results-directory .coverage
-
-# ─── Code Generation ────────────────────────────────────
-generate:  ## Generate cards.json / constants from common repo
-	python3 $(COMMON_DIR)/scripts/generate_from_yaml.py \
-		--gateway-dir $(GATEWAY_DIR) \
-		--battle-dir $(CURDIR) \
-		--client-dir $(CLIENT_DIR)
 
 # ─── Dependencies ───────────────────────────────────────
 GENERATED_PKG := OverloadParty.Generated
