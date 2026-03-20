@@ -188,11 +188,7 @@ public static class AttackProcessor
 
         // リアクティブは1つだけ発動する（セットが最も早いもの）
         var reactive = FieldHelpers.AllSupports(defenderField)
-            .Where(s =>
-            {
-                var card = cc.Get(s.CardID);
-                return card is not null && effects.Has(card.CardNo, TriggerType.Reactive);
-            })
+            .Where(s => effects.Has(cc.MustGet(s.CardID).CardNo, TriggerType.Reactive))
             .MinBy(s => s.DeployOrder);
 
         if (reactive is null) { return (false, allEvents); }

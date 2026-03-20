@@ -326,8 +326,8 @@ public class FieldHelpersTests
     public void Field_HasThreeSlotsPerZone()
     {
         var field = TestFactory.MakeField();
-        field.Frontend.Length.Should().Be(3);
-        field.Backend.Length.Should().Be(3);
-        field.Support.Length.Should().Be(3);
+        field.Frontend.Capacity.Should().Be(3);
+        field.Backend.Capacity.Should().Be(3);
+        field.Support.Capacity.Should().Be(3);
     }
 }

@@ -89,6 +89,8 @@ builder.Services.AddSingleton<GameService>(sp =>
         sp.GetRequiredService<ILogger<GameService>>());
 
     // Set default NPC AI
+    // EffectRegistry は起動時に必ずセットされるため null にはならない。
+    // null ガードは GameEngine が nullable で公開しているための防御コード。
     var cc = sp.GetRequiredService<ICardCache>();
     var engine = sp.GetRequiredService<GameEngine>();
     if (engine.EffectRegistry is not null)

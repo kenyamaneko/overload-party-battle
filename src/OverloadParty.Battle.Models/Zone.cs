@@ -13,9 +13,6 @@ public class Zone<T> : IEnumerable<T> where T : class
 
     public int Capacity { get; }
 
-    /// <summary>Array-compat alias for Capacity.</summary>
-    public int Length => Capacity;
-
     public Zone(int capacity = GameConstants.SlotsPerZone)
     {
         Capacity = capacity;

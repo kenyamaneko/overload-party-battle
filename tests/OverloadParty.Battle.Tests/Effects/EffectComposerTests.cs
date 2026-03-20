@@ -86,6 +86,21 @@ public class EffectComposerTests
     }
 
     [Fact]
+    public void Compose_LoseBudget_AllowsNegative()
+    {
+        var state = TestFactory.MakeGameState(p1Budget: 5000, p2Budget: 300);
+        var ops = new IEffectOp[]
+        {
+            new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(800)),
+        };
+
+        var handler = EffectComposer.Compose(ops);
+        handler(MakeContext(state));
+
+        state.Player2Budget.Should().Be(-500);
+    }
+
+    [Fact]
     public void Compose_FromList_AlsoWorks()
     {
         var state = TestFactory.MakeGameState(p1Budget: 5000);

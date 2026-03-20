@@ -398,7 +398,7 @@ public class GameService
             }
         }
 
-        _logger.LogWarning("NPC turn exceeded {Max} iterations (game={GameID})", MaxNPCIterations, gameID);
+        _logger.LogError("NPC turn exceeded {Max} iterations (game={GameID})", MaxNPCIterations, gameID);
         return (npcEvents, null);
     }
 
