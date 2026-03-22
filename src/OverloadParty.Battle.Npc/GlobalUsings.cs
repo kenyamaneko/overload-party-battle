@@ -1,1 +1,1 @@
-global using OverloadParty.Generated;
+global using OverloadParty.GameData;

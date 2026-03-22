@@ -112,7 +112,7 @@ var app = builder.Build();
 
 if (isLocalDev)
 {
-    // Load cards from embedded JSON in the OverloadParty.Generated package
+    // Load cards from embedded JSON in the OverloadParty.GameData package
     using var stream = EmbeddedCards.GetCardsJsonStream();
     var cards = JsonSerializer.Deserialize<List<CardDefinition>>(stream, new JsonSerializerOptions
     {
