@@ -13,20 +13,20 @@ public class FactionAiTests
 
     public FactionAiTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, mc: 150, faction: "SHE"));
-        _cc.Add(TestFactory.DataCard(cardNo: 100, cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, mc: 150, faction: "SHE"));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
         // Tenki-specific cards
-        _cc.Add(TestFactory.DataCard(cardNo: 27, cardType: CardTypes.Database, yield: 300, av: 600, mc: 80,
+        _cc.Add(TestFactory.DataCard(cardId: "TK-0005", cardType: CardTypes.Database, yield: 300, av: 600, mc: 80,
             faction: "Tenki", name: "Opener"));
-        _cc.Add(TestFactory.DataCard(cardNo: 29, cardType: CardTypes.Database, yield: 200, av: 500, mc: 60,
+        _cc.Add(TestFactory.DataCard(cardId: "TK-0007", cardType: CardTypes.Database, yield: 200, av: 500, mc: 60,
             faction: "Tenki", name: "TenkiDB29"));
-        _cc.Add(TestFactory.DataCard(cardNo: 30, cardType: CardTypes.Database, yield: 250, av: 550, mc: 70,
+        _cc.Add(TestFactory.DataCard(cardId: "TK-0008", cardType: CardTypes.Database, yield: 250, av: 550, mc: 70,
             faction: "Tenki", name: "TenkiDB30"));
-        _cc.Add(TestFactory.DataCard(cardNo: 31, cardType: CardTypes.Database, yield: 200, av: 500, mc: 60,
+        _cc.Add(TestFactory.DataCard(cardId: "TK-0009", cardType: CardTypes.Database, yield: 200, av: 500, mc: 60,
             faction: "Tenki", name: "TenkiDB31"));
-        _cc.Add(TestFactory.DataCard(cardNo: 32, cardType: CardTypes.Database, yield: 350, av: 700, mc: 90,
+        _cc.Add(TestFactory.DataCard(cardId: "TK-0010", cardType: CardTypes.Database, yield: 350, av: 700, mc: 90,
             faction: "Tenki", name: "Cosmo"));
-        _cc.Add(TestFactory.DataCard(cardNo: 33, cardType: CardTypes.Database, yield: 200, av: 500, mc: 60,
+        _cc.Add(TestFactory.DataCard(cardId: "TK-0011", cardType: CardTypes.Database, yield: 200, av: 500, mc: 60,
             faction: "Tenki", name: "TenkiDB33"));
     }
 
@@ -103,8 +103,8 @@ public class FactionAiTests
     {
         var ai = FactionAi.Create("Tenki", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_27", CardID = 27 });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_32", CardID = 32 });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_27", CardID = "TK-0005" });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_32", CardID = "TK-0010" });
 
         var available = new List<AvailableAction>
         {
@@ -112,14 +112,14 @@ public class FactionAiTests
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_27",
-                CardID = 27,
+                CardID = "TK-0005",
                 ValidZones = ["backend_0"],
             },
             new()
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_32",
-                CardID = 32,
+                CardID = "TK-0010",
                 ValidZones = ["backend_1"],
             },
         };
@@ -142,10 +142,10 @@ public class FactionAiTests
 
         // Card 32 already on field
         state.Player2Field.Backend[0] = TestFactory.MakeResource(
-            cardId: 32, instanceId: "field_32", maxAV: 700, currentYield: 350, maxYield: 350, currentTP: null);
+            cardId: "TK-0010", instanceId: "field_32", maxAV: 700, currentYield: 350, maxYield: 350, currentTP: null);
 
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_27", CardID = 27 });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_29", CardID = 29 });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_27", CardID = "TK-0005" });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_29", CardID = "TK-0007" });
 
         var available = new List<AvailableAction>
         {
@@ -153,14 +153,14 @@ public class FactionAiTests
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_27",
-                CardID = 27,
+                CardID = "TK-0005",
                 ValidZones = ["backend_1"],
             },
             new()
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_29",
-                CardID = 29,
+                CardID = "TK-0007",
                 ValidZones = ["backend_2"],
             },
         };
@@ -180,8 +180,8 @@ public class FactionAiTests
         var ai = FactionAi.Create("SHE", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
 
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_data", CardID = 100 });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_compute", CardID = 1 });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_data", CardID = "NT-0009" });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_compute", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {
@@ -189,14 +189,14 @@ public class FactionAiTests
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_data",
-                CardID = 100,
+                CardID = "NT-0009",
                 ValidZones = ["backend_0"],
             },
             new()
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_compute",
-                CardID = 1,
+                CardID = "SH-0001",
                 ValidZones = ["frontend_0"],
             },
         };
@@ -218,7 +218,7 @@ public class FactionAiTests
     {
         var ai = FactionAi.Create("Tenki", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_32", CardID = 32 });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_32", CardID = "TK-0010" });
 
         var available = new List<AvailableAction>
         {
@@ -226,7 +226,7 @@ public class FactionAiTests
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_32",
-                CardID = 32,
+                CardID = "TK-0010",
                 ValidZones = ["backend_0"],
             },
         };
@@ -278,12 +278,12 @@ public class FactionAiTests
 
         // Two Tenki DB cards already on field
         state.Player2Field.Backend[0] = TestFactory.MakeResource(
-            cardId: 29, instanceId: "field_29", maxAV: 500, currentYield: 200, maxYield: 200, currentTP: null);
+            cardId: "TK-0007", instanceId: "field_29", maxAV: 500, currentYield: 200, maxYield: 200, currentTP: null);
         state.Player2Field.Backend[1] = TestFactory.MakeResource(
-            cardId: 31, instanceId: "field_31", maxAV: 500, currentYield: 200, maxYield: 200, currentTP: null);
+            cardId: "TK-0009", instanceId: "field_31", maxAV: 500, currentYield: 200, maxYield: 200, currentTP: null);
 
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_30", CardID = 30 });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_1", CardID = 1 });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_30", CardID = "TK-0008" });
+        state.Player2Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {
@@ -291,14 +291,14 @@ public class FactionAiTests
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_30",
-                CardID = 30,
+                CardID = "TK-0008",
                 ValidZones = ["backend_2"],
             },
             new()
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h_1",
-                CardID = 1,
+                CardID = "SH-0001",
                 ValidZones = ["frontend_0"],
             },
         };
@@ -316,10 +316,10 @@ public class FactionAiTests
 
     private class NullEffectRegistry : IEffectRegistry
     {
-        public EffectHandler? Get(long cardNo, TriggerType trigger) => null;
-        public bool Has(long cardNo, TriggerType trigger) => false;
-        public BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger) => null;
-        public EffectInfo? GetEffectInfo(long cardNo, TriggerType trigger) => null;
-        public List<string>? GetChoiceOptions(long cardNo, TriggerType trigger) => null;
+        public EffectHandler? Get(string cardId, TriggerType trigger) => null;
+        public bool Has(string cardId, TriggerType trigger) => false;
+        public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger) => null;
+        public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
+        public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
     }
 }

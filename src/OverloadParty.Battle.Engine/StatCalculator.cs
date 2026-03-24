@@ -219,7 +219,7 @@ public static class StatCalculator
             if (resCard is null) { continue; }
             if (resCard.CardType is not (CardTypes.Database or CardTypes.CacheDB)) { continue; }
 
-            count += cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo) ? 2 : 1;
+            count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
         }
         return cfg.BonusPerCard * count;
     }
@@ -234,7 +234,7 @@ public static class StatCalculator
             var resCard = cc.Get(res.CardID);
             if (resCard is null || !resCard.IsDataType) { continue; }
 
-            count += cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo) ? 2 : 1;
+            count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
         }
         return cfg.BonusPerCard * count;
     }
@@ -272,18 +272,19 @@ public static class StatCalculator
             if (resCard is null) { continue; }
             if (resCard.CardType is not (CardTypes.Database or CardTypes.CacheDB)) { continue; }
 
-            count += cfg.MultiModelCards is { } mm && mm.Contains(resCard.CardNo) ? 2 : 1;
+            count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
         }
         return cfg.BonusPerCard * count;
     }
 
     private static long CalculateYieldIfCardOnField(Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
-        if (!(cfg.SpecificCardNos?.Count > 0)) { return 0; }
+        if (!(cfg.SpecificCardIDs?.Count > 0)) { return 0; }
 
         foreach (var res in FieldHelpers.AllFaceUpResources(field))
         {
-            if (cfg.SpecificCardNos.Contains(res.CardID)) { return cfg.FlatBonus; }
+            var resCard = cc.Get(res.CardID);
+            if (resCard is not null && cfg.SpecificCardIDs.Contains(resCard.CardId)) { return cfg.FlatBonus; }
         }
         return 0;
     }

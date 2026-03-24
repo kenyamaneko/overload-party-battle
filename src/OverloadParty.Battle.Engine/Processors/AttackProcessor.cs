@@ -67,9 +67,9 @@ public static class AttackProcessor
         attacker.HasAttacked = true;
 
         // Fire OnAttack trigger
-        if (effects?.Has(attackerCard.CardNo, TriggerType.OnAttack) == true)
+        if (effects?.Has(attackerCard.CardId, TriggerType.OnAttack) == true)
         {
-            var handler = effects.Get(attackerCard.CardNo, TriggerType.OnAttack)!;
+            var handler = effects.Get(attackerCard.CardId, TriggerType.OnAttack)!;
             var ctx = new EffectContext
             {
                 State = state,
@@ -188,13 +188,12 @@ public static class AttackProcessor
 
         // リアクティブは1つだけ発動する（セットが最も早いもの）
         var reactive = FieldHelpers.AllSupports(defenderField)
-            .Where(s => effects.Has(cc.MustGet(s.CardID).CardNo, TriggerType.Reactive))
+            .Where(s => effects.Has(s.CardID, TriggerType.Reactive))
             .MinBy(s => s.DeployOrder);
 
         if (reactive is null) { return (false, allEvents); }
 
-        var supCard = cc.MustGet(reactive.CardID);
-        var handler = effects.Get(supCard.CardNo, TriggerType.Reactive)!;
+        var handler = effects.Get(reactive.CardID, TriggerType.Reactive)!;
         var ctx = new EffectContext
         {
             State = state,
@@ -224,31 +223,29 @@ public static class AttackProcessor
 
         var allEvents = new List<GameEvent>();
 
-        var triggers = new List<(ResourceInstance Resource, long CardNo, long DeployOrder)>();
+        var triggers = new List<(ResourceInstance Resource, string CardId, long DeployOrder)>();
 
-        var destroyedCard = cc.MustGet(destroyed.CardID);
-        if (effects.Has(destroyedCard.CardNo, TriggerType.OnDestroy))
+        if (effects.Has(destroyed.CardID, TriggerType.OnDestroy))
         {
-            triggers.Add((destroyed, destroyedCard.CardNo, destroyed.DeployOrder));
+            triggers.Add((destroyed, destroyed.CardID, destroyed.DeployOrder));
         }
 
         // Allied resources (excluding the destroyed one)
         foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
         {
             if (res.InstanceID == destroyed.InstanceID) { continue; }
-            var resCard = cc.MustGet(res.CardID);
-            if (effects.Has(resCard.CardNo, TriggerType.OnDestroy))
+            if (effects.Has(res.CardID, TriggerType.OnDestroy))
             {
-                triggers.Add((res, resCard.CardNo, res.DeployOrder));
+                triggers.Add((res, res.CardID, res.DeployOrder));
             }
         }
 
         // Sort by deploy order (earliest first)
         triggers.Sort((a, b) => a.DeployOrder.CompareTo(b.DeployOrder));
 
-        foreach (var (resource, cardNo, _) in triggers)
+        foreach (var (resource, cardId, _) in triggers)
         {
-            var handler = effects.Get(cardNo, TriggerType.OnDestroy);
+            var handler = effects.Get(cardId, TriggerType.OnDestroy);
             if (handler is null) { continue; }
 
             var ctx = new EffectContext

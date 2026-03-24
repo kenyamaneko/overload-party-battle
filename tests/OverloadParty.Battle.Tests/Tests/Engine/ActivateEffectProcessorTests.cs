@@ -12,8 +12,8 @@ public class ActivateEffectProcessorTests
 
     public ActivateEffectProcessorTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
-        _cc.Add(TestFactory.PlatformCard(cardNo: 200));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
+        _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
     }
 
     // ─── Resource effect ────────────────────────────────────────
@@ -23,14 +23,14 @@ public class ActivateEffectProcessorTests
     {
         bool handlerCalled = false;
         var reg = new EffectRegistry();
-        reg.Register(1, TriggerType.Activate, ctx =>
+        reg.Register("SH-0001", TriggerType.Activate, ctx =>
         {
             handlerCalled = true;
             return new EffectResult();
         });
 
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "r_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1", faceUp: true);
         state.Player1Field.Frontend[0] = resource;
 
         var req = new ActivateEffectRequest { InstanceID = "r_1" };
@@ -44,10 +44,10 @@ public class ActivateEffectProcessorTests
     public void Process_ResourceEffect_GeneratesActivateEvent()
     {
         var reg = new EffectRegistry();
-        reg.Register(1, TriggerType.Activate, _ => new EffectResult());
+        reg.Register("SH-0001", TriggerType.Activate, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "r_1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
 
         var req = new ActivateEffectRequest { InstanceID = "r_1" };
         var result = ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
@@ -61,7 +61,7 @@ public class ActivateEffectProcessorTests
         var reg = new EffectRegistry(); // nothing registered
 
         var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "r_1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
 
         var req = new ActivateEffectRequest { InstanceID = "r_1" };
         var act = () => ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
@@ -73,10 +73,10 @@ public class ActivateEffectProcessorTests
     public void Process_EffectAlreadyUsedThisTurn_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register(1, TriggerType.Activate, _ => new EffectResult());
+        reg.Register("SH-0001", TriggerType.Activate, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "r_1");
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
         resource.EffectUsedThisTurn = true;
         state.Player1Field.Frontend[0] = resource;
 
@@ -90,10 +90,10 @@ public class ActivateEffectProcessorTests
     public void Process_CannotOperateEffect_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register(1, TriggerType.Activate, _ => new EffectResult());
+        reg.Register("SH-0001", TriggerType.Activate, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "r_1");
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
         resource.TemporaryEffects.Add(new TemporaryEffect
         {
             EffectType = EffectTypes.CannotOperate,
@@ -113,7 +113,7 @@ public class ActivateEffectProcessorTests
     public void Process_ResourceNotFound_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register(1, TriggerType.Activate, _ => new EffectResult());
+        reg.Register("SH-0001", TriggerType.Activate, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
         // Nothing on the field
@@ -128,7 +128,7 @@ public class ActivateEffectProcessorTests
     public void Process_NullEffectRegistry_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "r_1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
 
         var req = new ActivateEffectRequest { InstanceID = "r_1" };
         var act = () => ActivateEffectProcessor.Process(state, _game, 1, req, _cc, effects: null);
@@ -143,15 +143,15 @@ public class ActivateEffectProcessorTests
     {
         ResourceInstance? capturedTarget = null;
         var reg = new EffectRegistry();
-        reg.Register(1, TriggerType.Activate, ctx =>
+        reg.Register("SH-0001", TriggerType.Activate, ctx =>
         {
             capturedTarget = ctx.Target;
             return new EffectResult();
         });
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "r_1");
-        var target = TestFactory.MakeResource(cardId: 1, instanceId: "r_2");
+        var source = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
+        var target = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_2");
         state.Player1Field.Frontend[0] = source;
         state.Player1Field.Frontend[1] = target;
 
@@ -167,15 +167,15 @@ public class ActivateEffectProcessorTests
     {
         ResourceInstance? capturedTarget = null;
         var reg = new EffectRegistry();
-        reg.Register(1, TriggerType.Activate, ctx =>
+        reg.Register("SH-0001", TriggerType.Activate, ctx =>
         {
             capturedTarget = ctx.Target;
             return new EffectResult();
         });
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "r_1");
-        var oppTarget = TestFactory.MakeResource(cardId: 1, instanceId: "opp_r");
+        var source = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
+        var oppTarget = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "opp_r");
         state.Player1Field.Frontend[0] = source;
         state.Player2Field.Frontend[0] = oppTarget;
 
@@ -192,7 +192,7 @@ public class ActivateEffectProcessorTests
     {
         bool handlerCalled = false;
         var reg = new EffectRegistry();
-        reg.Register(200, TriggerType.Activate, ctx =>
+        reg.Register("TEST-0200", TriggerType.Activate, ctx =>
         {
             handlerCalled = true;
             return new EffectResult();
@@ -202,7 +202,7 @@ public class ActivateEffectProcessorTests
         var support = new SupportInstance
         {
             InstanceID = "sup_1",
-            CardID = 200,
+            CardID = "TEST-0200",
             FaceUp = true,
         };
         state.Player1Field.Support[0] = support;
@@ -223,7 +223,7 @@ public class ActivateEffectProcessorTests
         state.Player1Field.Support[0] = new SupportInstance
         {
             InstanceID = "sup_1",
-            CardID = 200,
+            CardID = "TEST-0200",
             FaceUp = true,
         };
 
@@ -237,13 +237,13 @@ public class ActivateEffectProcessorTests
     public void Process_SupportEffect_GeneratesActivateEvent()
     {
         var reg = new EffectRegistry();
-        reg.Register(200, TriggerType.Activate, _ => new EffectResult());
+        reg.Register("TEST-0200", TriggerType.Activate, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
         state.Player1Field.Support[0] = new SupportInstance
         {
             InstanceID = "sup_1",
-            CardID = 200,
+            CardID = "TEST-0200",
             FaceUp = true,
         };
 

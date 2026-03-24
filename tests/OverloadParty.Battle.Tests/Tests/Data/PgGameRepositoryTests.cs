@@ -29,12 +29,12 @@ public class PgGameRepositoryTests
             Player1DeckSnapshot = new DeckSnapshot
             {
                 DeckID = "deck-1",
-                Cards = [new DeckSnapshotCard { CardNo = 1 }, new DeckSnapshotCard { CardNo = 2 }],
+                Cards = [new DeckSnapshotCard { CardId = "SH-0001" }, new DeckSnapshotCard { CardId = "TEST-0002" }],
             },
             Player2DeckSnapshot = new DeckSnapshot
             {
                 DeckID = "deck-2",
-                Cards = [new DeckSnapshotCard { CardNo = 3 }],
+                Cards = [new DeckSnapshotCard { CardId = "SH-0002" }],
             },
             Status = GameStatus.Playing,
             CreatedAt = now,
@@ -51,7 +51,7 @@ public class PgGameRepositoryTests
             Player1Budget = 5000,
             Player1InsightPool = 0,
             Player1Field = new Field(),
-            Player1Hand = [new HandCard { InstanceID = "h1", CardID = 1 }],
+            Player1Hand = [new HandCard { InstanceID = "h1", CardID = "SH-0001" }],
             Player1Repository = [],
             Player1Trash = [],
             Player1TimeBank = 480,
@@ -124,7 +124,7 @@ public class PgGameRepositoryTests
         got.Player1Budget.Should().Be(5000);
         got.Player2Budget.Should().Be(5000);
         got.Player1Hand.Should().HaveCount(1);
-        got.Player1Hand[0].CardID.Should().Be(1);
+        got.Player1Hand[0].CardID.Should().Be("SH-0001");
         got.Player1TimeBank.Should().Be(480);
         got.NextInstanceSeq.Should().Be(1);
     }
@@ -289,7 +289,7 @@ public class PgGameRepositoryTests
         state.Player1Field.Frontend[0] = new ResourceInstance
         {
             InstanceID = "inst_0",
-            CardID = 1,
+            CardID = "SH-0001",
             Rank = Rank.Small,
             FaceUp = true,
             MaxAV = 1400,
@@ -300,7 +300,7 @@ public class PgGameRepositoryTests
         state.Player2Field.Backend[0] = new ResourceInstance
         {
             InstanceID = "inst_1",
-            CardID = 100,
+            CardID = "NT-0009",
             FaceUp = false,
             DeployingTurnsLeft = 1,
             MaxAV = 800,

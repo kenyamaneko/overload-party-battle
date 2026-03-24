@@ -109,7 +109,7 @@ public class StandardAi : INpcStrategy
             }
 
             var (pri, use, choice) = ActionEvaluator.EvaluateCard(
-                card.CardNo, TriggerType.Activate, ctx, Effects, CardCache);
+                card.CardId, TriggerType.Activate, ctx, Effects, CardCache);
             if (!use)
             {
                 continue;
@@ -192,7 +192,7 @@ public class StandardAi : INpcStrategy
             };
             if (c.Action.ChoiceOptions?.Count > 0)
             {
-                var choice = DeployChoiceFor(c.Card.CardNo);
+                var choice = DeployChoiceFor(c.Card.CardId);
                 if (choice == "")
                 {
                     choice = c.Action.ChoiceOptions.First();
@@ -213,17 +213,17 @@ public class StandardAi : INpcStrategy
     {
         var activateActions = ActionFilter.FilterByType(available, WireActionTypes.ActivateEffect);
 
-        var candidates = new List<(AvailableAction Action, long CardNo, int Priority, Dictionary<string, object>? Choice)>();
+        var candidates = new List<(AvailableAction Action, string CardId, int Priority, Dictionary<string, object>? Choice)>();
         foreach (var a in activateActions)
         {
-            var cardNo = ActionFilter.ResolveCardNoForInstance(a.SourceInstanceID!, ctx.Field);
-            if (cardNo == 0)
+            var cardId = ActionFilter.ResolveCardIdForInstance(a.SourceInstanceID!, ctx.Field);
+            if (cardId == "")
             {
                 continue;
             }
 
             var (pri, use, choice) = ActionEvaluator.EvaluateCard(
-                cardNo, TriggerType.Activate, ctx, Effects, CardCache);
+                cardId, TriggerType.Activate, ctx, Effects, CardCache);
             if (!use)
             {
                 continue;
@@ -237,7 +237,7 @@ public class StandardAi : INpcStrategy
                 {
                     continue;
                 }
-                var target = SelectTargetFromValid(cardNo, a.ValidTargets, ctx);
+                var target = SelectTargetFromValid(cardId, a.ValidTargets, ctx);
                 if (target is null)
                 {
                     continue;
@@ -245,7 +245,7 @@ public class StandardAi : INpcStrategy
                 choice = new Dictionary<string, object> { ["instanceId"] = target };
             }
 
-            candidates.Add((a, cardNo, pri, choice));
+            candidates.Add((a, cardId, pri, choice));
         }
         candidates.Sort((a, b) => b.Priority.CompareTo(a.Priority));
 
@@ -266,7 +266,7 @@ public class StandardAi : INpcStrategy
         return actions;
     }
 
-    private string? SelectTargetFromValid(long cardNo, List<string> validTargets, DecisionContext ctx)
+    private string? SelectTargetFromValid(string cardId, List<string> validTargets, DecisionContext ctx)
     {
         if (!validTargets.Any())
         {
@@ -276,7 +276,7 @@ public class StandardAi : INpcStrategy
         var validSet = new HashSet<string>(validTargets);
 
         // Try using heuristic-based target selection
-        var info = Effects.GetEffectInfo(cardNo, TriggerType.Activate);
+        var info = Effects.GetEffectInfo(cardId, TriggerType.Activate);
         if (info is not null)
         {
             var target = ActionEvaluator.SelectTarget(info, ctx, CardCache);
@@ -395,11 +395,11 @@ public class StandardAi : INpcStrategy
     protected static NpcAction MakeEndPhaseAction() =>
         new() { ActionType = WireActionTypes.EndPhase, Data = new Dictionary<string, object>() };
 
-    protected static string DeployChoiceFor(long cardNo) => cardNo switch
+    protected static string DeployChoiceFor(string cardId) => cardId switch
     {
-        7 => "use",       // SHE RDB - アデリース: 予約契約 — "use" saves budget long-term
-        11 => "redis",    // SHE Cache - メリーモ: Memcached (instant) vs Redis (permanent Yield)
-        125 => "redis",   // Sugar Lab Cache - メレンゲスト
+        "SH-0006" => "use",       // SHE RDB - アデリース: 予約契約 — "use" saves budget long-term
+        "SH-0010" => "redis",    // SHE Cache - メリーモ: Memcached (instant) vs Redis (permanent Yield)
+        "SL-0012" => "redis",   // Sugar Lab Cache - メレンゲスト
         _ => "",
     };
 }

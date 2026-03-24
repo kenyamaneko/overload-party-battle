@@ -13,15 +13,15 @@ public class AttackProcessorTests
     public AttackProcessorTests()
     {
         // Compute card: TP=600, AV=1400, slaPenalty=400
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, slaPenalty: 400));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, slaPenalty: 400));
         // High-TP attacker: TP=1500
-        _cc.Add(TestFactory.ComputeCard(cardNo: 2, tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
         // ObjectStorage card (data type, cannot attack)
-        _cc.Add(TestFactory.DataCard(cardNo: 101, cardType: CardTypes.ObjectStorage, name: "TestObjStorage"));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0010", cardType: CardTypes.ObjectStorage, name: "TestObjStorage"));
         // Elastic compute card
-        _cc.Add(TestFactory.ElasticContainerCard(cardNo: 10));
+        _cc.Add(TestFactory.ElasticContainerCard(cardId: "SH-0009"));
         // Platform card for reactive test
-        _cc.Add(TestFactory.PlatformCard(cardNo: 200, name: "ReactivePlatform"));
+        _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", name: "ReactivePlatform"));
     }
 
     private static AttackRequest MakeReq(string attackerId, string targetId) =>
@@ -34,10 +34,10 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var result = AttackProcessor.Process(
@@ -54,10 +54,10 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 2, instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+        var attacker = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         long budgetBefore = state.Player2Budget;
@@ -83,10 +83,10 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Backend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
@@ -102,10 +102,10 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 101, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "NT-0010", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
@@ -121,11 +121,11 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         attacker.HasAttacked = true;
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
@@ -141,7 +141,7 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         attacker.TemporaryEffects.Add(new TemporaryEffect
         {
             EffectType = EffectTypes.CannotOperate,
@@ -151,7 +151,7 @@ public class AttackProcessorTests
         });
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
@@ -169,10 +169,10 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: atkFaceUp, deployLeft: atkFaceUp ? 0 : 1);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: atkFaceUp, deployLeft: atkFaceUp ? 0 : 1);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: defFaceUp, deployLeft: defFaceUp ? 0 : 1);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: defFaceUp, deployLeft: defFaceUp ? 0 : 1);
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
@@ -188,14 +188,14 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
         // P2 has both frontend and backend resources
-        var frontRes = TestFactory.MakeResource(cardId: 1, instanceId: "front_1", faceUp: true);
+        var frontRes = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "front_1", faceUp: true);
         state.Player2Field.Frontend[0] = frontRes;
 
-        var backRes = TestFactory.MakeResource(cardId: 1, instanceId: "back_1", faceUp: true);
+        var backRes = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "back_1", faceUp: true);
         state.Player2Field.Backend[0] = backRes;
 
         var act = () => AttackProcessor.Process(
@@ -211,11 +211,11 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
         // P2 has only backend, no frontend
-        var backRes = TestFactory.MakeResource(cardId: 1, instanceId: "back_1", faceUp: true);
+        var backRes = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "back_1", faceUp: true);
         state.Player2Field.Backend[0] = backRes;
 
         var result = AttackProcessor.Process(
@@ -233,12 +233,12 @@ public class AttackProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
         // Weak attacker so defender survives
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
         // Elastic container as defender (AV=1200, will survive 600 damage)
         var defender = TestFactory.MakeResource(
-            cardId: 10, instanceId: "def_1", faceUp: true,
+            cardId: "SH-0009", instanceId: "def_1", faceUp: true,
             maxAV: 1200, currentAV: 1200, maxTP: 500, currentTP: 500);
         state.Player2Field.Frontend[0] = defender;
 
@@ -257,10 +257,10 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var result = AttackProcessor.Process(
@@ -280,7 +280,7 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
@@ -296,7 +296,7 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
         var act = () => AttackProcessor.Process(
@@ -313,11 +313,11 @@ public class AttackProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
         // Weak attacker so defender survives
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
         // Non-elastic defender (AV=1400, survives 600 damage)
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         AttackProcessor.Process(
@@ -333,15 +333,15 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var effects = new TestEffectRegistry();
         bool handlerCalled = false;
-        effects.Register(1, TriggerType.OnAttack, ctx =>
+        effects.Register("SH-0001", TriggerType.OnAttack, ctx =>
         {
             handlerCalled = true;
             return new EffectResult
@@ -364,20 +364,20 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         // Opponent has a support with reactive trigger
         state.Player2Field.Support[0] = new SupportInstance
         {
-            InstanceID = "sup_1", CardID = 200, FaceUp = false, DeployOrder = 1
+            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = false, DeployOrder = 1
         };
 
         var effects = new TestEffectRegistry();
-        effects.Register(200, TriggerType.Reactive, ctx => new EffectResult
+        effects.Register("TEST-0200", TriggerType.Reactive, ctx => new EffectResult
         {
             CancelAction = true,
             Events = [new GameEvent { EventType = "reactive_fired", GameID = ctx.Game.GameID }]
@@ -405,15 +405,15 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 2, instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+        var attacker = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var effects = new TestEffectRegistry();
         bool destroyHandlerCalled = false;
-        effects.Register(1, TriggerType.OnDestroy, ctx =>
+        effects.Register("SH-0001", TriggerType.OnDestroy, ctx =>
         {
             destroyHandlerCalled = true;
             return new EffectResult
@@ -435,25 +435,25 @@ public class AttackProcessorTests
     public void Process_AlliedOnDestroy_FiresForOtherResources()
     {
         // Card 3 = an allied resource with OnDestroy
-        _cc.Add(TestFactory.ComputeCard(cardNo: 3, tp: 400, av: 1000, name: "AllyCompute"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0002", tp: 400, av: 1000, name: "AllyCompute"));
 
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 2, instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+        var attacker = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
         state.Player1Field.Frontend[0] = attacker;
 
         // Defender will be destroyed
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         // Allied resource on opponent's field
-        var ally = TestFactory.MakeResource(cardId: 3, instanceId: "ally_1", faceUp: true, maxAV: 1000, currentAV: 1000, maxTP: 400, currentTP: 400);
+        var ally = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "ally_1", faceUp: true, maxAV: 1000, currentAV: 1000, maxTP: 400, currentTP: 400);
         ally.DeployOrder = 1;
         state.Player2Field.Frontend[1] = ally;
 
         var effects = new TestEffectRegistry();
         bool alliedHandlerCalled = false;
-        effects.Register(3, TriggerType.OnDestroy, ctx =>
+        effects.Register("SH-0002", TriggerType.OnDestroy, ctx =>
         {
             alliedHandlerCalled = true;
             return new EffectResult
@@ -477,12 +477,12 @@ public class AttackProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
         // Strong attacker that will destroy the elastic defender
-        var attacker = TestFactory.MakeResource(cardId: 2, instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+        var attacker = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
         state.Player1Field.Frontend[0] = attacker;
 
         // Elastic container with AV=1200, will be destroyed by 1500 damage
         var defender = TestFactory.MakeResource(
-            cardId: 10, instanceId: "def_1", faceUp: true,
+            cardId: "SH-0009", instanceId: "def_1", faceUp: true,
             maxAV: 1200, currentAV: 1200, maxTP: 500, currentTP: 500);
         state.Player2Field.Frontend[0] = defender;
 
@@ -500,10 +500,10 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         var result = AttackProcessor.Process(
@@ -520,16 +520,16 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         // Opponent has support but effects are null
         state.Player2Field.Support[0] = new SupportInstance
         {
-            InstanceID = "sup_1", CardID = 200, FaceUp = false, DeployOrder = 1
+            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = false, DeployOrder = 1
         };
 
         var result = AttackProcessor.Process(
@@ -546,10 +546,10 @@ public class AttackProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, activePlayer: 2);
 
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_2", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_2", faceUp: true);
         state.Player2Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player1Field.Frontend[0] = defender;
 
         var result = AttackProcessor.Process(

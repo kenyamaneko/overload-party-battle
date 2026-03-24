@@ -15,8 +15,8 @@ public class AvailableAction
     /// <summary>The instance ID of the hand card to play (play_card only).</summary>
     public string? HandInstanceID { get; set; }
 
-    /// <summary>The card definition number.</summary>
-    public long CardID { get; set; }
+    /// <summary>The card definition ID.</summary>
+    public string CardID { get; set; } = "";
 
     /// <summary>Valid zone+slot combinations for placement (e.g. "frontend_0").</summary>
     public List<string>? ValidZones { get; set; }
@@ -178,7 +178,7 @@ public static class AvailableActions
         // Strategy/Incident は即時発動 — budget 条件を満たさなければ除外
         if (FieldHelpers.IsImmediateType(card.CardType) && effects is not null)
         {
-            var budgetReq = effects.GetBudgetRequirement(card.CardNo, TriggerType.Activate);
+            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
             if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { return null; }
         }
 
@@ -335,17 +335,17 @@ public static class AvailableActions
 
             var card = cc.Get(resource.CardID);
             if (card is null) { continue; }
-            if (!effects.Has(card.CardNo, TriggerType.Activate)) { continue; }
+            if (!effects.Has(card.CardId, TriggerType.Activate)) { continue; }
 
             // budget 条件を満たさなければ除外
-            var budgetReq = effects.GetBudgetRequirement(card.CardNo, TriggerType.Activate);
+            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
             if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
 
             yield return new AvailableAction
             {
                 Type = WireActionTypes.ActivateEffect,
                 SourceInstanceID = resource.InstanceID,
-                CardID = card.CardNo,
+                CardID = card.CardId,
             };
         }
 
@@ -357,17 +357,17 @@ public static class AvailableActions
 
             var card = cc.Get(support.CardID);
             if (card is null) { continue; }
-            if (!effects.Has(card.CardNo, TriggerType.Activate)) { continue; }
+            if (!effects.Has(card.CardId, TriggerType.Activate)) { continue; }
 
             // budget 条件を満たさなければ除外
-            var budgetReq = effects.GetBudgetRequirement(card.CardNo, TriggerType.Activate);
+            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
             if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
 
             yield return new AvailableAction
             {
                 Type = WireActionTypes.ActivateEffect,
                 SourceInstanceID = support.InstanceID,
-                CardID = card.CardNo,
+                CardID = card.CardId,
             };
         }
     }

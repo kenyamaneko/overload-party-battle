@@ -29,8 +29,8 @@ public static class EffectInit
     // ========================
     private static void RegisterSHE(EffectRegistry r)
     {
-        // #7 SHE RDB - アデリース: Reserved Instance (optional deploy cost -200)
-        r.RegisterComposed(7, TriggerType.Deploy,
+        // SH-0006 SHE RDB - アデリース: Reserved Instance (optional deploy cost -200)
+        r.RegisterComposed("SH-0006", TriggerType.Deploy,
             new BranchOnChoiceOp(new Dictionary<string, List<IEffectOp>>
             {
                 ["use"] = [
@@ -41,22 +41,22 @@ public static class EffectInit
             })
         );
 
-        // #9 SHE Storage - えすす: Versioning (return destroyed SHE backend to hand)
-        r.RegisterComposed(9, TriggerType.OnDestroy,
+        // SH-0008 SHE Storage - えすす: Versioning (return destroyed SHE backend to hand)
+        r.RegisterComposed("SH-0008", TriggerType.OnDestroy,
             new GuardFactionOp(GameConstants.FactionSHE),
-            new AddToHandOp(TargetCardIDAmount.Instance),
+            AddToHandOp.Instance,
             SetCancelActionOp.Instance
         );
 
-        // #10 SHE DB - ダイノ: On-Demand (pay 400, double Yield this turn)
-        r.RegisterComposed(10, TriggerType.Activate,
+        // SH-0009 SHE DB - ダイノ: On-Demand (pay 400, double Yield this turn)
+        r.RegisterComposed("SH-0009", TriggerType.Activate,
             new RequireBudgetOp(400),
             new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)),
             new ApplyBuffOp(SourceSelector.Instance, EffectTypes.BuffYield, SourceYieldAmount.Instance, "this_turn", "on_demand")
         );
 
-        // #11 SHE Cache - メリーモ: Cache Engine choice on deploy
-        r.RegisterComposed(11, TriggerType.Deploy,
+        // SH-0010 SHE Cache - メリーモ: Cache Engine choice on deploy
+        r.RegisterComposed("SH-0010", TriggerType.Deploy,
             new BranchOnChoiceOp(new Dictionary<string, List<IEffectOp>>
             {
                 ["memcached"] = [new GainBudgetOp(PlayerRef.Self, new StaticAmount(400))],
@@ -64,47 +64,47 @@ public static class EffectInit
             })
         );
 
-        // #14 SHE Guard: Reveal 1 opponent reactive
-        r.RegisterComposed(14, TriggerType.Activate, new RevealReactiveOp());
+        // SH-0013 SHE Guard: Reveal 1 opponent reactive
+        r.RegisterComposed("SH-0013", TriggerType.Activate, new RevealReactiveOp());
 
-        // #15 SHE Firewall: Block DDoS / Data Breach
-        r.RegisterComposed(15, TriggerType.Reactive, SetCancelActionOp.Instance);
+        // SH-0014 SHE Firewall: Block DDoS / Data Breach
+        r.RegisterComposed("SH-0014", TriggerType.Reactive, SetCancelActionOp.Instance);
 
-        // #18 SHE Keys: Block Data Breach (attachment)
-        r.RegisterComposed(18, TriggerType.Reactive, SetCancelActionOp.Instance);
+        // SH-0017 SHE Keys: Block Data Breach (attachment)
+        r.RegisterComposed("SH-0017", TriggerType.Reactive, SetCancelActionOp.Instance);
 
-        // #19 SHE Formation: Search SHE Component
-        r.RegisterComposed(19, TriggerType.Activate, new SearchRepoOp { Faction = GameConstants.FactionSHE });
+        // SH-0018 SHE Formation: Search SHE Component
+        r.RegisterComposed("SH-0018", TriggerType.Activate, new SearchRepoOp { Faction = GameConstants.FactionSHE });
 
-        // #20 SHE Marketplace: Budget +600 if 3+ SHE on field
-        r.RegisterComposed(20, TriggerType.Activate,
+        // SH-0019 SHE Marketplace: Budget +600 if 3+ SHE on field
+        r.RegisterComposed("SH-0019", TriggerType.Activate,
             new RequireFactionCountOp(GameConstants.FactionSHE, 3),
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(600))
         );
 
-        // #21 SHE Cost Explorer: All Deploy Cost -200 this turn
-        r.RegisterComposed(21, TriggerType.Activate,
+        // SH-0020 SHE Cost Explorer: All Deploy Cost -200 this turn
+        r.RegisterComposed("SH-0020", TriggerType.Activate,
             new ApplyBuffOp(new AllOwnSelector(), "deploy_discount", new StaticAmount(200), "this_turn", "cost_explorer")
         );
 
-        // #22 Smile Recovery: AV +500 when SHE resource ≤ 400 AV
-        r.RegisterComposed(22, TriggerType.Reactive,
+        // SH-0021 Smile Recovery: AV +500 when SHE resource ≤ 400 AV
+        r.RegisterComposed("SH-0021", TriggerType.Reactive,
             new GuardFactionOp(GameConstants.FactionSHE),
             new GuardTargetAVOp(400),
             new HealDamageOp(TargetSelector.Instance, new StaticAmount(500)),
             SetCancelActionOp.Instance
         );
 
-        // #118 SHE Ecosystem: SHE frontend TP +200 this turn
-        r.RegisterComposed(118, TriggerType.Activate,
+        // SH-0022 SHE Ecosystem: SHE frontend TP +200 this turn
+        r.RegisterComposed("SH-0022", TriggerType.Activate,
             new RequireFactionCountOp(GameConstants.FactionSHE, 3),
             new ApplyBuffOp(
                 new AllOwnSelector { Zone = GameConstants.ZoneFrontend, Faction = GameConstants.FactionSHE },
                 EffectTypes.BuffTP, new StaticAmount(200), "this_turn", "she_ecosystem")
         );
 
-        // #121 SHE Smile Horizon Express: Deploy from hand at cost 0
-        r.RegisterComposed(121, TriggerType.Activate, new DeployFromHandOp());
+        // SH-0023 SHE Smile Horizon Express: Deploy from hand at cost 0
+        r.RegisterComposed("SH-0023", TriggerType.Activate, new DeployFromHandOp());
     }
 
     // ========================
@@ -112,71 +112,71 @@ public static class EffectInit
     // ========================
     private static void RegisterTenki(EffectRegistry r)
     {
-        // #30 Tenki DB - ハヤテ: Failover Group (Yield +400 when ally Tenki DB destroyed)
-        r.RegisterComposed(30, TriggerType.OnDestroy,
+        // TK-0008 Tenki DB - ハヤテ: Failover Group (Yield +400 when ally Tenki DB destroyed)
+        r.RegisterComposed("TK-0008", TriggerType.OnDestroy,
             new GuardFactionOp(GameConstants.FactionTenki, "data"),
             GuardNotSelfOp.Instance,
             new ApplyBuffOp(SourceSelector.Instance, EffectTypes.BuffYield, new StaticAmount(400), "until_next_own_turn_end", "failover_group")
         );
 
-        // #32 Tenki DB - 百花の天穹<コスモ>: deploy another from repo
-        r.RegisterComposed(32, TriggerType.Deploy,
-            new DeployFromRepoOp { Filter = EffectHelpers.CardNoFilter(32) }
+        // TK-0010 Tenki DB - 百花の天穹<コスモ>: deploy another from repo
+        r.RegisterComposed("TK-0010", TriggerType.Deploy,
+            new DeployFromRepoOp { Filter = EffectHelpers.CardIdFilter("TK-0010") }
         );
 
-        // #36 Tenki Sentinel: Reveal reactive + Incident damage -300
-        r.RegisterComposed(36, TriggerType.Activate,
+        // TK-0025 Tenki Sentinel: Reveal reactive + Incident damage -300
+        r.RegisterComposed("TK-0025", TriggerType.Activate,
             new RevealReactiveOp(),
             new ApplyBuffOp(new AllOwnSelector(), "incident_reduction", new StaticAmount(300), "this_turn", "sentinel")
         );
 
-        // #37 Tenki Protection: Block DDoS / Data Breach
-        r.RegisterComposed(37, TriggerType.Reactive, SetCancelActionOp.Instance);
+        // TK-0014 Tenki Protection: Block DDoS / Data Breach
+        r.RegisterComposed("TK-0014", TriggerType.Reactive, SetCancelActionOp.Instance);
 
-        // #38 Tenki Backup: Revival on destroy
-        r.RegisterComposed(38, TriggerType.OnDestroy,
+        // TK-0015 Tenki Backup: Revival on destroy
+        r.RegisterComposed("TK-0015", TriggerType.OnDestroy,
             new ApplyBuffOp(TargetSelector.Instance, "pending_revival", HalfMaxAVAmount.Instance, "next_turn", "tenki_backup")
         );
 
-        // #40 Tenki Key Vault: Block Data Breach
-        r.RegisterComposed(40, TriggerType.Reactive, SetCancelActionOp.Instance);
+        // TK-0017 Tenki Key Vault: Block Data Breach
+        r.RegisterComposed("TK-0017", TriggerType.Reactive, SetCancelActionOp.Instance);
 
-        // #41 Tenki Site Recovery: Deploy copy from repo on destroy
-        r.RegisterComposed(41, TriggerType.OnDestroy, new DeployFromRepoSameCardOp(200));
+        // TK-0018 Tenki Site Recovery: Deploy copy from repo on destroy
+        r.RegisterComposed("TK-0018", TriggerType.OnDestroy, new DeployFromRepoSameCardOp(200));
 
-        // #42 Tenki Template: Search Tenki Component
-        r.RegisterComposed(42, TriggerType.Activate, new SearchRepoOp { Faction = GameConstants.FactionTenki });
+        // TK-0020 Tenki Template: Search Tenki Component
+        r.RegisterComposed("TK-0020", TriggerType.Activate, new SearchRepoOp { Faction = GameConstants.FactionTenki });
 
-        // #43 Tenki Migration: Return Component from trash to hand
-        r.RegisterComposed(43, TriggerType.Activate, new TrashToHandOp());
+        // TK-0021 Tenki Migration: Return Component from trash to hand
+        r.RegisterComposed("TK-0021", TriggerType.Activate, new TrashToHandOp());
 
-        // #44 Tenki Policy: Block opponent Incidents this turn
-        r.RegisterComposed(44, TriggerType.Activate,
+        // TK-0022 Tenki Policy: Block opponent Incidents this turn
+        r.RegisterComposed("TK-0022", TriggerType.Activate,
             new ApplyBuffOp(
                 new AllOpponentSelector { Zone = GameConstants.ZoneFrontend },
                 "incident_block", new StaticAmount(1), "this_turn", "tenki_policy")
         );
 
-        // #45 Tenki Defender: Nullify Incident
-        r.RegisterComposed(45, TriggerType.Reactive, SetCancelActionOp.Instance);
+        // TK-0023 Tenki Defender: Nullify Incident
+        r.RegisterComposed("TK-0023", TriggerType.Reactive, SetCancelActionOp.Instance);
 
-        // #46 Tenki Traffic: Deploy Tenki Compute from hand when frontend destroyed
-        r.RegisterComposed(46, TriggerType.Reactive,
+        // TK-0024 Tenki Traffic: Deploy Tenki Compute from hand when frontend destroyed
+        r.RegisterComposed("TK-0024", TriggerType.Reactive,
             new DeployFromHandOp
             {
                 Filter = EffectHelpers.FactionAndTypeFilter(GameConstants.FactionTenki, ct => ct is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl),
             }
         );
 
-        // #122 Windy 障害: Tenki frontends cannot attack this turn
-        r.RegisterComposed(122, TriggerType.Reactive,
+        // NT-0027 Windy 障害: Tenki frontends cannot attack this turn
+        r.RegisterComposed("NT-0027", TriggerType.Reactive,
             new ApplyBuffOp(
                 new AllOwnSelector { Zone = GameConstants.ZoneFrontend, Faction = GameConstants.FactionTenki },
                 "cannot_attack", new StaticAmount(1), "this_turn", "madonosoft_failer")
         );
 
-        // #123 Windy Update: Deal 400 damage to all Tenki cards
-        r.RegisterComposed(123, TriggerType.Reactive,
+        // NT-0028 Windy Update: Deal 400 damage to all Tenki cards
+        r.RegisterComposed("NT-0028", TriggerType.Reactive,
             new DealDamageOp(new AllOwnSelector { Faction = GameConstants.FactionTenki }, new StaticAmount(400)),
             new DestroyCheckOp(PlayerRef.Self)
         );
@@ -187,30 +187,30 @@ public static class EffectInit
     // ========================
     private static void RegisterSugar(EffectRegistry r)
     {
-        // #50 Sugar Orchestrator: Autopilot (auto scale to medium on deploy)
-        r.RegisterComposed(50, TriggerType.Deploy, new ScaleToRankOp("medium"));
+        // SL-0004 Sugar Orchestrator: Autopilot (auto scale to medium on deploy)
+        r.RegisterComposed("SL-0004", TriggerType.Deploy, new ScaleToRankOp("medium"));
 
-        // #51 Sugar AI - バター X: Training Pipeline (absorb 400 insight on attack)
-        r.RegisterComposed(51, TriggerType.OnAttack, new AbsorbInsightOp(new StaticAmount(400)));
+        // SL-0006 Sugar AI - バター X: Training Pipeline (absorb 400 insight on attack)
+        r.RegisterComposed("SL-0006", TriggerType.OnAttack, new AbsorbInsightOp(new StaticAmount(400)));
 
-        // #52 Sugar AI - Dr. テンソルベ: absorb 600 insight on attack + cascade failure on destroy
-        r.RegisterComposed(52, TriggerType.OnAttack, new AbsorbInsightOp(new StaticAmount(600)));
-        r.RegisterComposed(52, TriggerType.OnDestroy,
+        // SL-0007 Sugar AI - Dr. テンソルベ: absorb 600 insight on attack + cascade failure on destroy
+        r.RegisterComposed("SL-0007", TriggerType.OnAttack, new AbsorbInsightOp(new StaticAmount(600)));
+        r.RegisterComposed("SL-0007", TriggerType.OnDestroy,
             new DealDamageOp(new AllOwnSelector { Zone = GameConstants.ZoneBackend }, new StaticAmount(400)),
             new DestroyCheckOp(PlayerRef.Self)
         );
 
-        // #57 Sugar DB - ファイアトーストア: Realtime Sync (+200 insight on Sugar deploy)
-        r.RegisterComposed(57, TriggerType.Deploy, new GainInsightOp(new StaticAmount(200)));
+        // SL-0010 Sugar DB - ファイアトーストア: Realtime Sync (+200 insight on Sugar deploy)
+        r.RegisterComposed("SL-0010", TriggerType.Deploy, new GainInsightOp(new StaticAmount(200)));
 
-        // #58 Sugar Datawarehouse: Streaming Insert (+200 insight on Sugar frontend attack)
-        r.RegisterComposed(58, TriggerType.OnAttack, new GainInsightOp(new StaticAmount(200)));
+        // SL-0011 Sugar Datawarehouse: Streaming Insert (+200 insight on Sugar frontend attack)
+        r.RegisterComposed("SL-0011", TriggerType.OnAttack, new GainInsightOp(new StaticAmount(200)));
 
-        // #61 Sugar ビッグ・アイスクエリム Analytics: Absorb 300 insight per Yield phase
-        r.RegisterComposed(61, TriggerType.Passive, new AbsorbInsightOp(new StaticAmount(300)));
+        // SL-0016 Sugar ビッグ・アイスクエリム Analytics: Absorb 300 insight per Yield phase
+        r.RegisterComposed("SL-0016", TriggerType.Passive, new AbsorbInsightOp(new StaticAmount(300)));
 
-        // #63 Sugar ぱくぱくサブレ: Message Fanout (chain attack bonus 200 damage)
-        r.RegisterComposed(63, TriggerType.OnAttack,
+        // SL-0018 Sugar ぱくぱくサブレ: Message Fanout (chain attack bonus 200 damage)
+        r.RegisterComposed("SL-0018", TriggerType.OnAttack,
             new CustomFnTaggedOp(PubSubChainDamage)
             {
                 Categories = [EffectCategory.SingleDamage],
@@ -218,11 +218,11 @@ public static class EffectInit
             }
         );
 
-        // #65 Sugar Deployment: Search Sugar Component
-        r.RegisterComposed(65, TriggerType.Activate, new SearchRepoOp { Faction = GameConstants.FactionSugar });
+        // SL-0021 Sugar Deployment: Search Sugar Component
+        r.RegisterComposed("SL-0021", TriggerType.Activate, new SearchRepoOp { Faction = GameConstants.FactionSugar });
 
-        // #66 Sugar バター X Batch: Double 1 frontend Compute's TP this turn
-        r.RegisterComposed(66, TriggerType.Activate,
+        // SL-0022 Sugar バター X Batch: Double 1 frontend Compute's TP this turn
+        r.RegisterComposed("SL-0022", TriggerType.Activate,
             new CustomFnTaggedOp(VeloceBatchBuff)
             {
                 Categories = [EffectCategory.Buff],
@@ -231,19 +231,19 @@ public static class EffectInit
             }
         );
 
-        // #67 Sugar Knowledge: Absorb insight with backend bonus
-        r.RegisterComposed(67, TriggerType.Activate,
+        // SL-0023 Sugar Knowledge: Absorb insight with backend bonus
+        r.RegisterComposed("SL-0023", TriggerType.Activate,
             new AbsorbInsightOp(new BackendScaledAmount(400, 200, 600))
         );
 
-        // #68 Sugar Error Budget: Survive destruction with AV 200
-        r.RegisterComposed(68, TriggerType.Reactive,
+        // SL-0024 Sugar Error Budget: Survive destruction with AV 200
+        r.RegisterComposed("SL-0024", TriggerType.Reactive,
             new GuardFactionOp(GameConstants.FactionSugar),
             new SurviveDestructionOp(200)
         );
 
-        // #125 Sugar Cache: Cache Engine choice
-        r.RegisterComposed(125, TriggerType.Deploy,
+        // SL-0012 Sugar Cache: Cache Engine choice
+        r.RegisterComposed("SL-0012", TriggerType.Deploy,
             new BranchOnChoiceOp(new Dictionary<string, List<IEffectOp>>
             {
                 ["memcached"] = [new GainBudgetOp(PlayerRef.Self, new StaticAmount(400))],
@@ -257,13 +257,13 @@ public static class EffectInit
     // ========================
     private static void RegisterTuners(EffectRegistry r)
     {
-        // #72 Tuners Bare Metal: Self-damage on attack
-        r.RegisterComposed(72, TriggerType.OnAttack,
+        // TN-0002 Tuners Bare Metal: Self-damage on attack
+        r.RegisterComposed("TN-0002", TriggerType.OnAttack,
             new DealDamageOp(SourceSelector.Instance, new StaticAmount(300))
         );
 
-        // #83 Tuners Guard: Reveal reactive + conditional Incident reduction
-        r.RegisterComposed(83, TriggerType.Activate,
+        // TN-0012 Tuners Guard: Reveal reactive + conditional Incident reduction
+        r.RegisterComposed("TN-0012", TriggerType.Activate,
             new RevealReactiveOp(),
             new IfConditionOp(
                 octx =>
@@ -275,11 +275,11 @@ public static class EffectInit
             )
         );
 
-        // #84 Tuners WAF: Block DDoS / Data Breach
-        r.RegisterComposed(84, TriggerType.Reactive, SetCancelActionOp.Instance);
+        // TN-0013 Tuners WAF: Block DDoS / Data Breach
+        r.RegisterComposed("TN-0013", TriggerType.Reactive, SetCancelActionOp.Instance);
 
-        // #85 Tuners ノーツガード: Deploy Tuners DB from repo on destroy
-        r.RegisterComposed(85, TriggerType.OnDestroy,
+        // TN-0014 Tuners ノーツガード: Deploy Tuners DB from repo on destroy
+        r.RegisterComposed("TN-0014", TriggerType.OnDestroy,
             new DeployFromRepoOp
             {
                 Filter = EffectHelpers.FactionAndTypeFilter(GameConstants.FactionTuners, EffectHelpers.IsDBType),
@@ -287,8 +287,8 @@ public static class EffectInit
             }
         );
 
-        // #89 Tuners License: Full AV restore on Tuners DB
-        r.RegisterComposed(89, TriggerType.Activate,
+        // TN-0017 Tuners License: Full AV restore on Tuners DB
+        r.RegisterComposed("TN-0017", TriggerType.Activate,
             new FullHealOp(
                 new ByChoiceSelector
                 {
@@ -299,8 +299,8 @@ public static class EffectInit
                 })
         );
 
-        // #90 Tuners Failback: Deploy Tuners DB from hand when Tuners DB destroyed
-        r.RegisterComposed(90, TriggerType.Reactive,
+        // TN-0018 Tuners Failback: Deploy Tuners DB from hand when Tuners DB destroyed
+        r.RegisterComposed("TN-0018", TriggerType.Reactive,
             new DeployFromHandOp
             {
                 Filter = EffectHelpers.FactionAndTypeFilter(GameConstants.FactionTuners, EffectHelpers.IsDBType),
@@ -313,30 +313,30 @@ public static class EffectInit
     // ========================
     private static void RegisterNeutral(EffectRegistry r)
     {
-        // #98 Cloud Engineer: Draw 1
-        r.RegisterComposed(98, TriggerType.Activate, new DrawCardsOp(1));
+        // NT-0007 Cloud Engineer: Draw 1
+        r.RegisterComposed("NT-0007", TriggerType.Activate, new DrawCardsOp(1));
 
-        // #99 Cloud Architect: Draw 2
-        r.RegisterComposed(99, TriggerType.Activate, new DrawCardsOp(2));
+        // NT-0008 Cloud Architect: Draw 2
+        r.RegisterComposed("NT-0008", TriggerType.Activate, new DrawCardsOp(2));
 
-        // #100 寺リフォーム: Search any Component
-        r.RegisterComposed(100, TriggerType.Activate, new SearchRepoOp());
+        // NT-0009 寺リフォーム: Search any Component
+        r.RegisterComposed("NT-0009", TriggerType.Activate, new SearchRepoOp());
 
-        // #101 プロジェクトマネージャー: Budget +400
-        r.RegisterComposed(101, TriggerType.Activate,
+        // NT-0010 プロジェクトマネージャー: Budget +400
+        r.RegisterComposed("NT-0010", TriggerType.Activate,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(400))
         );
 
-        // #102 クラウドファンディング: Budget +1000
-        r.RegisterComposed(102, TriggerType.Activate,
+        // NT-0011 クラウドファンディング: Budget +1000
+        r.RegisterComposed("NT-0011", TriggerType.Activate,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000))
         );
 
-        // #103 Open Source Migration: Destroy opponent Platform
-        r.RegisterComposed(103, TriggerType.Activate, new DestroyPlatformOp());
+        // NT-0012 Open Source Migration: Destroy opponent Platform
+        r.RegisterComposed("NT-0012", TriggerType.Activate, new DestroyPlatformOp());
 
-        // #120 Venture Capital: Budget +900 if ≤ 1000
-        r.RegisterComposed(120, TriggerType.Activate,
+        // NT-0026 Venture Capital: Budget +900 if ≤ 1000
+        r.RegisterComposed("NT-0026", TriggerType.Activate,
             new RequireMaxBudgetOp(1000),
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(900))
         );
@@ -347,24 +347,24 @@ public static class EffectInit
     // ========================
     private static void RegisterIncidents(EffectRegistry r)
     {
-        // #104 DDoS Attack: 500 damage to 1 frontend
-        r.RegisterComposed(104, TriggerType.Activate,
+        // NT-0013 DDoS Attack: 500 damage to 1 frontend
+        r.RegisterComposed("NT-0013", TriggerType.Activate,
             new IncidentDamageOp(
                 new ByChoiceSelector { Zone = GameConstants.ZoneFrontend, Owner = "opponent" },
                 new StaticAmount(500)),
             new DestroyCheckOp(PlayerRef.Opponent)
         );
 
-        // #105 Data Breach: 600 damage to 1 backend, Budget -300
-        r.RegisterComposed(105, TriggerType.Activate,
+        // NT-0014 Data Breach: 600 damage to 1 backend, Budget -300
+        r.RegisterComposed("NT-0014", TriggerType.Activate,
             new IncidentDamageOp(
                 new ByChoiceSelector { Zone = GameConstants.ZoneBackend, Owner = "opponent" },
                 new StaticAmount(600), new StaticAmount(300)),
             new DestroyCheckOp(PlayerRef.Opponent)
         );
 
-        // #106 Config Error: TP → 0 until next turn end
-        r.RegisterComposed(106, TriggerType.Activate,
+        // NT-0015 Config Error: TP → 0 until next turn end
+        r.RegisterComposed("NT-0015", TriggerType.Activate,
             new CustomFnTaggedOp(ConfigErrorDebuff)
             {
                 Categories = [EffectCategory.Debuff],
@@ -373,23 +373,23 @@ public static class EffectInit
             }
         );
 
-        // #107 Data Scraping: Absorb 600 insight (fails if no backend)
-        r.RegisterComposed(107, TriggerType.Activate,
+        // NT-0016 Data Scraping: Absorb 600 insight (fails if no backend)
+        r.RegisterComposed("NT-0016", TriggerType.Activate,
             RequireOpponentBackendOp.Instance,
             new AbsorbInsightOp(new StaticAmount(600))
         );
 
-        // #108 Crawler Bot: Absorb 300 insight
-        r.RegisterComposed(108, TriggerType.Activate, new AbsorbInsightOp(new StaticAmount(300)));
+        // NT-0017 Crawler Bot: Absorb 300 insight
+        r.RegisterComposed("NT-0017", TriggerType.Activate, new AbsorbInsightOp(new StaticAmount(300)));
 
-        // #109 Region Outage: 500 damage to all resources
-        r.RegisterComposed(109, TriggerType.Activate,
+        // NT-0018 Region Outage: 500 damage to all resources
+        r.RegisterComposed("NT-0018", TriggerType.Activate,
             new IncidentDamageOp(new AllOpponentSelector(), new StaticAmount(500)),
             new DestroyCheckOp(PlayerRef.Opponent)
         );
 
-        // #110 Crypto Mining: 400 damage to 1 frontend, self Budget +500
-        r.RegisterComposed(110, TriggerType.Activate,
+        // NT-0019 Crypto Mining: 400 damage to 1 frontend, self Budget +500
+        r.RegisterComposed("NT-0019", TriggerType.Activate,
             new IncidentDamageOp(
                 new ByChoiceSelector { Zone = GameConstants.ZoneFrontend, Owner = "opponent" },
                 new StaticAmount(400)),
@@ -397,15 +397,15 @@ public static class EffectInit
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(500))
         );
 
-        // #111 Ransomware: Disable 1 Component until next turn end
-        r.RegisterComposed(111, TriggerType.Activate,
+        // NT-0020 Ransomware: Disable 1 Component until next turn end
+        r.RegisterComposed("NT-0020", TriggerType.Activate,
             new ApplyBuffOp(
                 new ByChoiceSelector { Owner = "opponent" },
                 "ransomware", new StaticAmount(1), "until_next_turn_end", "ransomware")
         );
 
-        // #112 Compliance Audit: Budget -400 to opponent; if opponent has no ISMS(#96) or SOC2(#97) platform, additional -400
-        r.RegisterComposed(112, TriggerType.Activate,
+        // NT-0021 Compliance Audit: Budget -400 to opponent; if opponent has no ISMS(NT-0005) or SOC2(NT-0006) platform, additional -400
+        r.RegisterComposed("NT-0021", TriggerType.Activate,
             new RequireBudgetOp(200),
             new LoseBudgetOp(PlayerRef.Self, new StaticAmount(200)),
             new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(400)),
@@ -415,8 +415,8 @@ public static class EffectInit
             )
         );
 
-        // #113 レートリミット: cannot_operate on high-TP Compute/AI_ML
-        r.RegisterComposed(113, TriggerType.OnEnemyDeploy,
+        // NT-0022 レートリミット: cannot_operate on high-TP Compute/AI_ML
+        r.RegisterComposed("NT-0022", TriggerType.OnEnemyDeploy,
             new CustomFnTaggedOp(RateLimiterFire)
             {
                 Categories = [EffectCategory.Debuff],
@@ -424,8 +424,8 @@ public static class EffectInit
             }
         );
 
-        // #135 スロットリング: destroy opponent's 3rd resource deployed in a turn
-        r.RegisterComposed(135, TriggerType.OnEnemyDeploy,
+        // NT-0034 スロットリング: destroy opponent's 3rd resource deployed in a turn
+        r.RegisterComposed("NT-0034", TriggerType.OnEnemyDeploy,
             new CustomFnTaggedOp(ThrottlingFire)
             {
                 Categories = [EffectCategory.CancelAction],
@@ -439,16 +439,16 @@ public static class EffectInit
     // ========================
     private static void RegisterReactives(EffectRegistry r)
     {
-        // #115 フェイルオーバー: Deploy same type from hand when frontend destroyed
-        r.RegisterComposed(115, TriggerType.Reactive,
+        // NT-0023 フェイルオーバー: Deploy same type from hand when frontend destroyed
+        r.RegisterComposed("NT-0023", TriggerType.Reactive,
             new CustomFnTaggedOp(FailoverDeploy)
             {
                 Categories = [EffectCategory.DeployFree],
             }
         );
 
-        // #117 Chaos Engineering: Redirect attack to opponent's frontend
-        r.RegisterComposed(117, TriggerType.Reactive,
+        // NT-0024 Chaos Engineering: Redirect attack to opponent's frontend
+        r.RegisterComposed("NT-0024", TriggerType.Reactive,
             new CustomFnTaggedOp(ChaosRedirect)
             {
                 Categories = [EffectCategory.CancelAction],
@@ -558,30 +558,15 @@ public static class EffectInit
             throw new GameRuleException("No target");
         }
 
-        long? choiceCardNo = null;
-        if (octx.ChoiceData?.TryGetValue("cardNo", out var val) == true)
-        {
-            if (val is long l)
-            {
-                choiceCardNo = l;
-            }
-            else if (val is int i)
-            {
-                choiceCardNo = i;
-            }
-            else if (long.TryParse(val?.ToString(), out var parsed))
-            {
-                choiceCardNo = parsed;
-            }
-        }
+        string? choiceCardId = octx.ChoiceData?.GetValueOrDefault("cardId")?.ToString();
 
-        if (choiceCardNo is null)
+        if (choiceCardId is null)
         {
             throw new GameRuleException("No card chosen");
         }
 
         var targetCard = octx.CardCache.Get(octx.Target.CardID);
-        var choiceCard = octx.CardCache.Get(choiceCardNo.Value);
+        var choiceCard = octx.CardCache.Get(choiceCardId);
         if (targetCard is null || choiceCard is null)
         {
             throw new GameRuleException("Card not found");
@@ -592,7 +577,7 @@ public static class EffectInit
         }
 
         var field = octx.GetField(octx.PlayerNum);
-        ResourceHelpers.DeployFromHand(octx.State, octx.PlayerNum, field, choiceCardNo.Value, octx.CardCache);
+        ResourceHelpers.DeployFromHand(octx.State, octx.PlayerNum, field, choiceCardId, octx.CardCache);
     }
 
     /// <summary>
@@ -691,13 +676,13 @@ public static class EffectInit
     }
 
     /// <summary>
-    /// Returns true if the field contains an active (face-up, fully deployed) ISMS (#96) or SOC2 (#97) platform.
+    /// Returns true if the field contains an active (face-up, fully deployed) ISMS (NT-0005) or SOC2 (NT-0006) platform.
     /// </summary>
     private static bool HasCompliancePlatform(Field field, ICardCache _)
     {
         return field.Support.Any(s =>
             s.FaceUp
             && s.DeployingTurnsLeft <= 0
-            && (s.CardID == 96 || s.CardID == 97));
+            && (s.CardID == "NT-0005" || s.CardID == "NT-0006"));
     }
 }

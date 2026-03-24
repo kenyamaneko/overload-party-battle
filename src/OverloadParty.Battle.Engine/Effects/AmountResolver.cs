@@ -92,17 +92,6 @@ public class HalfMaxAVAmount : IAmountResolver
     }
 }
 
-/// <summary>
-/// Target's card ID as the amount.
-/// </summary>
-public class TargetCardIDAmount : IAmountResolver
-{
-    /// <summary>Shared singleton instance.</summary>
-    public static readonly TargetCardIDAmount Instance = new();
-
-    /// <inheritdoc />
-    public long Resolve(OpContext ctx) => ctx.Target?.CardID ?? 0;
-}
 
 /// <summary>
 /// SLA penalty from target's card definition.

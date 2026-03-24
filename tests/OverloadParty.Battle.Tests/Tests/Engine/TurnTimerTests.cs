@@ -122,8 +122,8 @@ public class TurnTimerTests
     public void CreateNewGame_SetsTurnStartedAt()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1));
-        var deck = TestFactory.MakeDeck(1);
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
+        var deck = TestFactory.MakeDeck("SH-0001");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
@@ -138,10 +138,10 @@ public class TurnTimerTests
     public async Task ProcessAction_TimeBankExpired_ReturnsTimeout()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
         var repo = new MockGameRepository();
         var engine = new GameEngine(repo, cc);
-        var deck = TestFactory.MakeDeck(1);
+        var deck = TestFactory.MakeDeck("SH-0001");
 
         var gameID = await engine.CreateNewGame("p1", "p2", deck, deck, 1);
         await engine.RunAutoAdvance(gameID);
@@ -174,10 +174,10 @@ public class TurnTimerTests
     public async Task ProcessAction_SufficientTimeBank_Succeeds()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
         var repo = new MockGameRepository();
         var engine = new GameEngine(repo, cc);
-        var deck = TestFactory.MakeDeck(1);
+        var deck = TestFactory.MakeDeck("SH-0001");
 
         var gameID = await engine.CreateNewGame("p1", "p2", deck, deck, 1);
         await engine.RunAutoAdvance(gameID);

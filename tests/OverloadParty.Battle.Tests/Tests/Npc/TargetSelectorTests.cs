@@ -10,9 +10,9 @@ public class TargetSelectorTests
 
     public TargetSelectorTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, mc: 150));
-        _cc.Add(TestFactory.DataCard(cardNo: 100, cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
-        _cc.Add(TestFactory.PlatformCard(cardNo: 200, name: "TestPlatform"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, mc: 150));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
+        _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", name: "TestPlatform"));
     }
 
     // ─── WeakestInZone ──────────────────────────────────────────
@@ -82,8 +82,8 @@ public class TargetSelectorTests
     public void StrongestInZone_ReturnsResourceWithHighestValue()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "low_tp", currentTP: 300);
-        field.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "high_tp", currentTP: 900);
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "low_tp", currentTP: 300);
+        field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "high_tp", currentTP: 900);
 
         var result = TargetSelector.StrongestInZone(field, GameConstants.ZoneFrontend, _cc);
 
@@ -95,9 +95,9 @@ public class TargetSelectorTests
     {
         var field = TestFactory.MakeField();
         field.Backend[0] = TestFactory.MakeResource(
-            cardId: 100, instanceId: "data_res", currentTP: null, currentYield: 500, maxYield: 500);
+            cardId: "NT-0009", instanceId: "data_res", currentTP: null, currentYield: 500, maxYield: 500);
         field.Backend[1] = TestFactory.MakeResource(
-            cardId: 1, instanceId: "compute_res", currentTP: 200, currentYield: null);
+            cardId: "SH-0001", instanceId: "compute_res", currentTP: 200, currentYield: null);
 
         var result = TargetSelector.StrongestInZone(field, GameConstants.ZoneBackend, _cc);
 
@@ -262,7 +262,7 @@ public class TargetSelectorTests
     public void HasPlatform_WithPlatformCard_ReturnsTrue()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "plat1", CardID = 200, FaceUp = true };
+        field.Support[0] = new SupportInstance { InstanceID = "plat1", CardID = "TEST-0200", FaceUp = true };
 
         TargetSelector.HasPlatform(field, _cc).Should().BeTrue();
     }
@@ -271,7 +271,7 @@ public class TargetSelectorTests
     public void HasPlatform_NoPlatform_ReturnsFalse()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup1", CardID = 999, FaceUp = true };
+        field.Support[0] = new SupportInstance { InstanceID = "sup1", CardID = "TEST-0999", FaceUp = true };
 
         TargetSelector.HasPlatform(field, _cc).Should().BeFalse();
     }
@@ -282,7 +282,7 @@ public class TargetSelectorTests
     public void FirstPlatformId_ReturnsPlatformInstanceID()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "plat_1", CardID = 200, FaceUp = true };
+        field.Support[0] = new SupportInstance { InstanceID = "plat_1", CardID = "TEST-0200", FaceUp = true };
 
         var result = TargetSelector.FirstPlatformId(field, _cc);
 
@@ -302,7 +302,7 @@ public class TargetSelectorTests
     [Fact]
     public void ResourceValue_CurrentTP_ReturnsTP()
     {
-        var res = TestFactory.MakeResource(cardId: 1, currentTP: 700);
+        var res = TestFactory.MakeResource(cardId: "SH-0001", currentTP: 700);
 
         var value = TargetSelector.ResourceValue(res, _cc);
 
@@ -312,7 +312,7 @@ public class TargetSelectorTests
     [Fact]
     public void ResourceValue_CurrentYield_ReturnsYield()
     {
-        var res = TestFactory.MakeResource(cardId: 100, currentTP: null, currentYield: 500, maxYield: 500);
+        var res = TestFactory.MakeResource(cardId: "NT-0009", currentTP: null, currentYield: 500, maxYield: 500);
 
         var value = TargetSelector.ResourceValue(res, _cc);
 
@@ -322,7 +322,7 @@ public class TargetSelectorTests
     [Fact]
     public void ResourceValue_NoCurrentStats_FallsBackToCardDefinition()
     {
-        var res = TestFactory.MakeResource(cardId: 1, currentTP: null, currentYield: null);
+        var res = TestFactory.MakeResource(cardId: "SH-0001", currentTP: null, currentYield: null);
 
         var value = TargetSelector.ResourceValue(res, _cc);
 
@@ -333,7 +333,7 @@ public class TargetSelectorTests
     [Fact]
     public void ResourceValue_UnknownCard_ReturnsZero()
     {
-        var res = TestFactory.MakeResource(cardId: 999, currentTP: null, currentYield: null);
+        var res = TestFactory.MakeResource(cardId: "TEST-0999", currentTP: null, currentYield: null);
 
         var value = TargetSelector.ResourceValue(res, _cc);
 

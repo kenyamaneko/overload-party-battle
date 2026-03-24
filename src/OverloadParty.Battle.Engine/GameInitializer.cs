@@ -77,7 +77,7 @@ public static class GameInitializer
             hand.Add(new HandCard
             {
                 InstanceID = state.NextInstanceID(),
-                CardID = shuffled[i].CardNo,
+                CardID = shuffled[i].CardId,
                 ArtNo = shuffled[i].ArtNo,
             });
         }
@@ -89,7 +89,7 @@ public static class GameInitializer
             repo.Add(new HandCard
             {
                 InstanceID = state.NextInstanceID(),
-                CardID = shuffled[i].CardNo,
+                CardID = shuffled[i].CardId,
                 ArtNo = shuffled[i].ArtNo,
             });
         }

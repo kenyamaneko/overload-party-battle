@@ -12,9 +12,9 @@ public class ActionEvaluatorTests
 
     public ActionEvaluatorTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, mc: 150));
-        _cc.Add(TestFactory.DataCard(cardNo: 100, cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
-        _cc.Add(TestFactory.PlatformCard(cardNo: 200, name: "TestPlatform"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, mc: 150));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
+        _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", name: "TestPlatform"));
     }
 
     private DecisionContext MakeCtx(
@@ -38,7 +38,7 @@ public class ActionEvaluatorTests
         var ctx = MakeCtx();
 
         var (priority, use, choice) = ActionEvaluator.EvaluateCard(
-            999, TriggerType.Activate, ctx, _effects, _cc);
+            "TEST-0999", TriggerType.Activate, ctx, _effects, _cc);
 
         use.Should().BeFalse();
         priority.Should().Be(0);
@@ -49,7 +49,7 @@ public class ActionEvaluatorTests
     public void EvaluateCard_WithBudgetGainEffect_LowBudget_ReturnsHighPriority()
     {
         var reg = new StubEffectRegistry();
-        reg.SetEffectInfo(10, TriggerType.Activate, new EffectInfo
+        reg.SetEffectInfo("SH-0009", TriggerType.Activate, new EffectInfo
         {
             TargetType = EffectTargetType.None,
         }.WithCategory(EffectCategory.BudgetGain));
@@ -57,7 +57,7 @@ public class ActionEvaluatorTests
         var ctx = MakeCtx(budget: 500); // below LowBudgetThreshold
 
         var (priority, use, _) = ActionEvaluator.EvaluateCard(
-            10, TriggerType.Activate, ctx, reg, _cc);
+            "SH-0009", TriggerType.Activate, ctx, reg, _cc);
 
         use.Should().BeTrue();
         priority.Should().Be(NpcParams.PriBudgetGainHigh);
@@ -67,7 +67,7 @@ public class ActionEvaluatorTests
     public void EvaluateCard_WithBudgetGainEffect_HighBudget_ReturnsLowPriority()
     {
         var reg = new StubEffectRegistry();
-        reg.SetEffectInfo(10, TriggerType.Activate, new EffectInfo
+        reg.SetEffectInfo("SH-0009", TriggerType.Activate, new EffectInfo
         {
             TargetType = EffectTargetType.None,
         }.WithCategory(EffectCategory.BudgetGain));
@@ -75,7 +75,7 @@ public class ActionEvaluatorTests
         var ctx = MakeCtx(budget: 5000); // above LowBudgetThreshold
 
         var (priority, use, _) = ActionEvaluator.EvaluateCard(
-            10, TriggerType.Activate, ctx, reg, _cc);
+            "SH-0009", TriggerType.Activate, ctx, reg, _cc);
 
         use.Should().BeTrue();
         priority.Should().Be(NpcParams.PriBudgetGainLow);
@@ -93,12 +93,12 @@ public class ActionEvaluatorTests
             TargetType = EffectTargetType.Choice,
             TargetZone = GameConstants.ZoneFrontend,
         }.WithCategory(EffectCategory.SingleDamage);
-        reg.SetEffectInfo(10, TriggerType.Activate, info);
+        reg.SetEffectInfo("SH-0009", TriggerType.Activate, info);
 
         var ctx = MakeCtx(oppField: oppField);
 
         var (_, use, choice) = ActionEvaluator.EvaluateCard(
-            10, TriggerType.Activate, ctx, reg, _cc);
+            "SH-0009", TriggerType.Activate, ctx, reg, _cc);
 
         use.Should().BeTrue();
         choice.Should().NotBeNull();
@@ -114,12 +114,12 @@ public class ActionEvaluatorTests
             TargetType = EffectTargetType.Choice,
             TargetZone = GameConstants.ZoneFrontend,
         }.WithCategory(EffectCategory.SingleDamage);
-        reg.SetEffectInfo(10, TriggerType.Activate, info);
+        reg.SetEffectInfo("SH-0009", TriggerType.Activate, info);
 
         var ctx = MakeCtx(); // empty opponent field
 
         var (_, use, _) = ActionEvaluator.EvaluateCard(
-            10, TriggerType.Activate, ctx, reg, _cc);
+            "SH-0009", TriggerType.Activate, ctx, reg, _cc);
 
         use.Should().BeFalse();
     }
@@ -133,12 +133,12 @@ public class ActionEvaluatorTests
             TargetType = EffectTargetType.None,
         }.WithCategory(EffectCategory.BudgetGain);
         info.Conditions.Add(new EffectCondition { Type = "min_budget", Value = 3000 });
-        reg.SetEffectInfo(10, TriggerType.Activate, info);
+        reg.SetEffectInfo("SH-0009", TriggerType.Activate, info);
 
         var ctx = MakeCtx(budget: 1000); // below min_budget condition
 
         var (_, use, _) = ActionEvaluator.EvaluateCard(
-            10, TriggerType.Activate, ctx, reg, _cc);
+            "SH-0009", TriggerType.Activate, ctx, reg, _cc);
 
         use.Should().BeFalse();
     }
@@ -229,7 +229,7 @@ public class ActionEvaluatorTests
         int handSize, bool expectedUse, string expectedPriLabel)
     {
         var hand = Enumerable.Range(0, handSize)
-            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = 1 })
+            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
             .ToList();
         var ctx = MakeCtx(hand: hand);
         var info = new EffectInfo();
@@ -254,7 +254,7 @@ public class ActionEvaluatorTests
         int handSize, bool expectedUse, string expectedPriLabel)
     {
         var hand = Enumerable.Range(0, handSize)
-            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = 1 })
+            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
             .ToList();
         var ctx = MakeCtx(hand: hand);
         var info = new EffectInfo();
@@ -423,7 +423,7 @@ public class ActionEvaluatorTests
     public void EvaluateCategory_DestroyPlatform_WithPlatform_Usable()
     {
         var oppField = TestFactory.MakeField();
-        oppField.Support[0] = new SupportInstance { InstanceID = "plat1", CardID = 200, FaceUp = true };
+        oppField.Support[0] = new SupportInstance { InstanceID = "plat1", CardID = "TEST-0200", FaceUp = true };
         var ctx = MakeCtx(oppField: oppField);
         var info = new EffectInfo();
 
@@ -490,8 +490,8 @@ public class ActionEvaluatorTests
     public void CheckConditions_FactionCount_Met_ReturnsTrue()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "r1");
-        field.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "r2");
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
+        field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r2");
         var ctx = MakeCtx(field: field);
         var conditions = new List<EffectCondition>
         {
@@ -505,7 +505,7 @@ public class ActionEvaluatorTests
     public void CheckConditions_FactionCount_NotMet_ReturnsFalse()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "r1");
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
         var ctx = MakeCtx(field: field);
         var conditions = new List<EffectCondition>
         {
@@ -590,8 +590,8 @@ public class ActionEvaluatorTests
     public void SelectTarget_Debuff_ReturnsStrongestOpponent()
     {
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "low_tp", currentTP: 300);
-        oppField.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "high_tp", currentTP: 900);
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "low_tp", currentTP: 300);
+        oppField.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "high_tp", currentTP: 900);
 
         var info = new EffectInfo
         {
@@ -623,8 +623,8 @@ public class ActionEvaluatorTests
     public void SelectTarget_Buff_ReturnsStrongestOwn()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "low_val", currentTP: 200);
-        field.Frontend[1] = TestFactory.MakeResource(cardId: 1, instanceId: "high_val", currentTP: 800);
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "low_val", currentTP: 200);
+        field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "high_val", currentTP: 800);
 
         var info = new EffectInfo
         {
@@ -641,7 +641,7 @@ public class ActionEvaluatorTests
     public void SelectTarget_DestroyPlatform_ReturnsFirstPlatform()
     {
         var oppField = TestFactory.MakeField();
-        oppField.Support[0] = new SupportInstance { InstanceID = "plat_1", CardID = 200, FaceUp = true };
+        oppField.Support[0] = new SupportInstance { InstanceID = "plat_1", CardID = "TEST-0200", FaceUp = true };
 
         var info = new EffectInfo().WithCategory(EffectCategory.DestroyPlatform);
         var ctx = MakeCtx(oppField: oppField);
@@ -674,28 +674,28 @@ public class ActionEvaluatorTests
 
     private class NullEffectRegistry : IEffectRegistry
     {
-        public EffectHandler? Get(long cardNo, TriggerType trigger) => null;
-        public bool Has(long cardNo, TriggerType trigger) => false;
-        public BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger) => null;
-        public EffectInfo? GetEffectInfo(long cardNo, TriggerType trigger) => null;
-        public List<string>? GetChoiceOptions(long cardNo, TriggerType trigger) => null;
+        public EffectHandler? Get(string cardId, TriggerType trigger) => null;
+        public bool Has(string cardId, TriggerType trigger) => false;
+        public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger) => null;
+        public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
+        public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
     }
 
     private class StubEffectRegistry : IEffectRegistry
     {
-        private readonly Dictionary<(long, TriggerType), EffectInfo> _infos = new();
+        private readonly Dictionary<(string, TriggerType), EffectInfo> _infos = new();
 
-        public void SetEffectInfo(long cardNo, TriggerType trigger, EffectInfo info)
+        public void SetEffectInfo(string cardId, TriggerType trigger, EffectInfo info)
         {
-            _infos[(cardNo, trigger)] = info;
+            _infos[(cardId, trigger)] = info;
         }
 
-        public EffectHandler? Get(long cardNo, TriggerType trigger) => null;
-        public bool Has(long cardNo, TriggerType trigger) => _infos.ContainsKey((cardNo, trigger));
-        public BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger) => null;
-        public EffectInfo? GetEffectInfo(long cardNo, TriggerType trigger) =>
-            _infos.GetValueOrDefault((cardNo, trigger));
-        public List<string>? GetChoiceOptions(long cardNo, TriggerType trigger) => null;
+        public EffectHandler? Get(string cardId, TriggerType trigger) => null;
+        public bool Has(string cardId, TriggerType trigger) => _infos.ContainsKey((cardId, trigger));
+        public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger) => null;
+        public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) =>
+            _infos.GetValueOrDefault((cardId, trigger));
+        public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
     }
 }
 

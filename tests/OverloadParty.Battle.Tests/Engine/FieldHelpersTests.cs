@@ -71,7 +71,7 @@ public class FieldHelpersTests
     public void FindSupportByID_Found()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = 200 };
+        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = "TEST-0200" };
 
         var result = FieldHelpers.FindSupportByID(field, "sup_1");
         result.Should().NotBeNull();
@@ -314,9 +314,9 @@ public class FieldHelpersTests
     {
         var state = TestFactory.MakeGameState();
 
-        CardMoveHelpers.AddToTrash(state, 1, 42, "inst_42");
+        CardMoveHelpers.AddToTrash(state, 1, "TK-0020", "inst_42");
         state.Player1Trash.Should().ContainSingle()
-            .Which.CardID.Should().Be(42);
+            .Which.CardID.Should().Be("TK-0020");
         state.Player2Trash.Should().BeEmpty();
     }
 

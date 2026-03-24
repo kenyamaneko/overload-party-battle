@@ -38,14 +38,17 @@ public class SearchRepoOp : IEffectOp
 }
 
 /// <summary>
-/// Adds a card (by resolved card number) to the player's hand.
+/// Adds the target resource's card to the player's hand.
 /// </summary>
-public class AddToHandOp(IAmountResolver cardNo) : IEffectOp
+public class AddToHandOp : IEffectOp
 {
+    /// <summary>Shared singleton instance.</summary>
+    public static readonly AddToHandOp Instance = new();
+
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        CardMoveHelpers.AddToHand(ctx.State, ctx.PlayerNum, cardNo.Resolve(ctx));
+        CardMoveHelpers.AddToHand(ctx.State, ctx.PlayerNum, ctx.Target!.CardID);
     }
 }
 
@@ -110,39 +113,24 @@ public class DeployFromHandOp : IEffectOp
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        long? choiceCardNo = null;
-        if (ctx.ChoiceData?.TryGetValue("cardNo", out var val) == true)
-        {
-            if (val is long l)
-            {
-                choiceCardNo = l;
-            }
-            else if (val is int i)
-            {
-                choiceCardNo = i;
-            }
-            else if (long.TryParse(val?.ToString(), out var parsed))
-            {
-                choiceCardNo = parsed;
-            }
-        }
+        string? choiceCardId = ctx.ChoiceData?.GetValueOrDefault("cardId")?.ToString();
 
-        if (choiceCardNo is null)
+        if (choiceCardId is null)
         {
             throw new GameRuleException("No card chosen for deploy from hand");
         }
 
         if (Filter is not null)
         {
-            var card = ctx.CardCache.Get(choiceCardNo.Value);
+            var card = ctx.CardCache.Get(choiceCardId);
             if (card is null || !Filter(card))
             {
-                throw new GameRuleException($"Card {choiceCardNo} does not match filter");
+                throw new GameRuleException($"Card {choiceCardId} does not match filter");
             }
         }
 
         var field = ctx.GetField(ctx.PlayerNum);
-        ResourceHelpers.DeployFromHand(ctx.State, ctx.PlayerNum, field, choiceCardNo.Value, ctx.CardCache);
+        ResourceHelpers.DeployFromHand(ctx.State, ctx.PlayerNum, field, choiceCardId, ctx.CardCache);
     }
 }
 
@@ -161,7 +149,7 @@ public class DeployFromRepoSameCardOp(long overrideAV = 0) : IEffectOp
 
         var inner = new DeployFromRepoOp
         {
-            Filter = card => card.CardNo == ctx.Target.CardID,
+            Filter = card => card.CardId == ctx.Target.CardID,
             OverrideAV = overrideAV,
         };
         inner.Execute(ctx);

@@ -225,30 +225,30 @@ public class ActionFilterTests
         ActionFilter.FindBestTargetFromValid(validTargets, field).Should().Be("r1");
     }
 
-    // ─── ResolveCardNoForInstance ─────────────────────────────
+    // ─── ResolveCardIdForInstance ─────────────────────────────
 
     [Fact]
-    public void ResolveCardNoForInstance_FindsResourceInFrontend()
+    public void ResolveCardIdForInstance_FindsResourceInFrontend()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: 42, instanceId: "inst_42");
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "TK-0020", instanceId: "inst_42");
 
-        ActionFilter.ResolveCardNoForInstance("inst_42", field).Should().Be(42);
+        ActionFilter.ResolveCardIdForInstance("inst_42", field).Should().Be("TK-0020");
     }
 
     [Fact]
-    public void ResolveCardNoForInstance_FindsSupportInstance()
+    public void ResolveCardIdForInstance_FindsSupportInstance()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = 99 };
+        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = "NT-0008" };
 
-        ActionFilter.ResolveCardNoForInstance("sup_1", field).Should().Be(99);
+        ActionFilter.ResolveCardIdForInstance("sup_1", field).Should().Be("NT-0008");
     }
 
     [Fact]
-    public void ResolveCardNoForInstance_NotFound_ReturnsZero()
+    public void ResolveCardIdForInstance_NotFound_ReturnsZero()
     {
         var field = TestFactory.MakeField();
-        ActionFilter.ResolveCardNoForInstance("missing", field).Should().Be(0);
+        ActionFilter.ResolveCardIdForInstance("missing", field).Should().Be("");
     }
 }

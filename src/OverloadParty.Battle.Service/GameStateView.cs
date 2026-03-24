@@ -69,7 +69,7 @@ public class OpponentField
 public class HiddenSupportInstance
 {
     public string InstanceID { get; init; } = "";
-    public long? CardID { get; init; } // null if face-down
+    public string? CardID { get; init; } // null if face-down
     public bool FaceUp { get; init; }
 }
 

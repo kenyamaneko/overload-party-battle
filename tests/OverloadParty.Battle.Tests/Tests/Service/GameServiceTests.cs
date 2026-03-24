@@ -17,17 +17,17 @@ public class GameServiceTests
 
     public GameServiceTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
-        _cc.Add(TestFactory.ComputeCard(cardNo: 2, tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
-        _cc.Add(TestFactory.DataCard(cardNo: 100));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
         _engine = new GameEngine(_repo, _cc);
         _svc = new GameService(_engine, _repo, _cc, NullLogger.Instance);
     }
 
-    private List<DeckSnapshotCard> MakePlayerCards(long cardNo = 1)
+    private List<DeckSnapshotCard> MakePlayerCards(string cardId = "SH-0001")
     {
         return Enumerable.Range(0, GameConstants.DeckSize)
-            .Select(_ => new DeckSnapshotCard { CardNo = cardNo })
+            .Select(_ => new DeckSnapshotCard { CardId = cardId })
             .ToList();
     }
 

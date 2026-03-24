@@ -48,8 +48,8 @@ public class PassiveEffectConfig
     public List<string>? CardTypes { get; set; }
     public long BonusPerCard { get; set; }
     public long FlatBonus { get; set; }
-    public List<long>? MultiModelCards { get; set; }
-    public List<long>? SpecificCardNos { get; set; }
+    public List<string>? MultiModelCardIDs { get; set; }
+    public List<string>? SpecificCardIDs { get; set; }
     public string? Zone { get; set; }
     public bool ExcludeSelf { get; set; }
 }

@@ -76,10 +76,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_BasicCompute_SmallRank()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, maxTP: 600, currentTP: 600);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", maxTP: 600, currentTP: 600);
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(600);
     }
@@ -91,10 +91,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_MediumRank_DoublesBase()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 700, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 700, av: 1400));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Medium);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Medium);
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1400);
     }
@@ -106,10 +106,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_LargeRank_TriplesBase()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 700));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 700));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Large);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Large);
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(2100);
     }
@@ -122,10 +122,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_FamilyC_MultipliesTP()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", family: InstanceFamily.C);
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(780);
     }
@@ -138,10 +138,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_FamilyR_ReducesTP()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.R);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", family: InstanceFamily.R);
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(420);
     }
@@ -153,10 +153,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_FamilyC_MediumRank()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Medium, family: InstanceFamily.C);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Medium, family: InstanceFamily.C);
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1560);
     }
@@ -169,10 +169,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_ElasticContainer_WithBonus()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ElasticContainerCard(cardNo: 2));
+        cc.Add(TestFactory.ElasticContainerCard(cardId: "TEST-0002"));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 2, elasticBonus: 100, maxTP: 500, currentTP: 500);
+        var resource = TestFactory.MakeResource(cardId: "TEST-0002", elasticBonus: 100, maxTP: 500, currentTP: 500);
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(591); // 500 + 91
     }
@@ -184,10 +184,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_ElasticContainer_5Triggers()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ElasticContainerCard(cardNo: 2));
+        cc.Add(TestFactory.ElasticContainerCard(cardId: "TEST-0002"));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 2, elasticBonus: 500, maxTP: 500, currentTP: 500);
+        var resource = TestFactory.MakeResource(cardId: "TEST-0002", elasticBonus: 500, maxTP: 500, currentTP: 500);
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(846);
     }
@@ -199,10 +199,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_DataCard_ReturnsZero()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardNo: 100));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 100);
+        var resource = TestFactory.MakeResource(cardId: "NT-0009");
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(0);
     }
@@ -214,10 +214,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_WithTempBuff()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = "buff_tp", Value = 200 });
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(800);
@@ -230,10 +230,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_WithTempDebuff_FlooredAtZero()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = "debuff_tp", Value = 700 });
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(0);
@@ -245,10 +245,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_BasicDB()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 100, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
+        var resource = TestFactory.MakeResource(cardId: "NT-0009", maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
 
         StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(400);
     }
@@ -257,10 +257,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_ComputeCard_ReturnsZero()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
 
         StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(0);
     }
@@ -278,9 +278,9 @@ public class StatCalculatorTests
     public void CalculateMaxAV_RankMultiplier(Rank rank, InstanceFamily? family, long expected)
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", av: 1400));
 
-        var resource = TestFactory.MakeResource(cardId: 1, rank: rank, family: family);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: rank, family: family);
 
         StatCalculator.CalculateMaxAV(resource, cc).Should().Be(expected);
     }
@@ -292,9 +292,9 @@ public class StatCalculatorTests
     public void CalculateMaxAV_FamilyR_IncreasesAV()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", av: 1400));
 
-        var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.R);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", family: InstanceFamily.R);
 
         StatCalculator.CalculateMaxAV(resource, cc).Should().Be(1820);
     }
@@ -306,9 +306,9 @@ public class StatCalculatorTests
     public void CalculateMaxAV_FamilyC_DecreasesAV()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", av: 1400));
 
-        var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", family: InstanceFamily.C);
 
         StatCalculator.CalculateMaxAV(resource, cc).Should().Be(979);
     }
@@ -320,9 +320,9 @@ public class StatCalculatorTests
     public void CalculateMaxAV_Truncation()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, av: 1350));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", av: 1350));
 
-        var resource = TestFactory.MakeResource(cardId: 1, family: InstanceFamily.C);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", family: InstanceFamily.C);
 
         StatCalculator.CalculateMaxAV(resource, cc).Should().Be(944);
     }
@@ -333,10 +333,10 @@ public class StatCalculatorTests
     public void ApplyElasticBonus_IncrementsRawBonus()
     {
         var cc = new TestCardCache();
-        var card = TestFactory.ElasticContainerCard(cardNo: 2);
+        var card = TestFactory.ElasticContainerCard(cardId: "TEST-0002");
         cc.Add(card);
 
-        var resource = TestFactory.MakeResource(cardId: 2, elasticBonus: 0);
+        var resource = TestFactory.MakeResource(cardId: "SH-0002", elasticBonus: 0);
         StatCalculator.ApplyElasticBonus(resource, card);
 
         resource.ElasticBonus.Should().Be(100);
@@ -345,8 +345,8 @@ public class StatCalculatorTests
     [Fact]
     public void ApplyElasticBonus_NonElastic_NoChange()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, elastic: false);
-        var resource = TestFactory.MakeResource(cardId: 1, elasticBonus: 0);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", elastic: false);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", elasticBonus: 0);
         StatCalculator.ApplyElasticBonus(resource, card);
 
         resource.ElasticBonus.Should().Be(0);
@@ -370,8 +370,8 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_WithPlatformBonus()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
-        cc.Add(TestFactory.PlatformCard(cardNo: 200, platformEffects:
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
+        cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", platformEffects:
         [
             new PlatformEffect
             {
@@ -381,9 +381,9 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = 200, FaceUp = true, DeployingTurnsLeft = 0 };
+        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0 };
 
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
         field.Frontend[0] = resource;
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(750); // 600 + 150
@@ -395,8 +395,8 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_WithAttachmentBonus()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
-        cc.Add(TestFactory.AttachmentCard(cardNo: 300, attachmentEffects:
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
+        cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300", attachmentEffects:
         [
             new AttachmentEffect
             {
@@ -406,8 +406,8 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1);
-        resource.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = 300 });
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
+        resource.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = "TEST-0300" });
         field.Frontend[0] = resource;
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(800); // 600 + 200
@@ -418,8 +418,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxTP_SmallRank_ReturnsBase()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, tp: 600);
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Small);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Small);
 
         StatCalculator.RecalculateMaxTP(resource, card).Should().Be(600);
     }
@@ -427,8 +427,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxTP_MediumRank_DoublesBase()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, tp: 600);
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Medium);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Medium);
 
         StatCalculator.RecalculateMaxTP(resource, card).Should().Be(1200);
     }
@@ -436,8 +436,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxTP_LargeRank_TriplesBase()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, tp: 600);
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Large);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Large);
 
         StatCalculator.RecalculateMaxTP(resource, card).Should().Be(1800);
     }
@@ -445,8 +445,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxTP_WithFamilyC_AppliesMultiplier()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, tp: 600);
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Small, family: InstanceFamily.C);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Small, family: InstanceFamily.C);
 
         // 600 * 1 * 1.3 = 780
         StatCalculator.RecalculateMaxTP(resource, card).Should().Be(780);
@@ -455,8 +455,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxTP_WithFamilyR_AppliesMultiplier()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, tp: 600);
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Small, family: InstanceFamily.R);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Small, family: InstanceFamily.R);
 
         // 600 * 1 * 0.7 = 420
         StatCalculator.RecalculateMaxTP(resource, card).Should().Be(420);
@@ -465,8 +465,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxTP_DataCard_ReturnsZero()
     {
-        var card = TestFactory.DataCard(cardNo: 100, yield: 400);
-        var resource = TestFactory.MakeResource(cardId: 100);
+        var card = TestFactory.DataCard(cardId: "NT-0009", yield: 400);
+        var resource = TestFactory.MakeResource(cardId: "NT-0009");
 
         StatCalculator.RecalculateMaxTP(resource, card).Should().Be(0);
     }
@@ -474,8 +474,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxTP_MediumRank_FamilyC()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, tp: 600);
-        var resource = TestFactory.MakeResource(cardId: 1, rank: Rank.Medium, family: InstanceFamily.C);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Medium, family: InstanceFamily.C);
 
         // 600 * 2 * 1.3 = 1560
         StatCalculator.RecalculateMaxTP(resource, card).Should().Be(1560);
@@ -486,8 +486,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxYield_SmallRank_ReturnsBase()
     {
-        var card = TestFactory.DataCard(cardNo: 100, yield: 400);
-        var resource = TestFactory.MakeResource(cardId: 100, rank: Rank.Small);
+        var card = TestFactory.DataCard(cardId: "NT-0009", yield: 400);
+        var resource = TestFactory.MakeResource(cardId: "NT-0009", rank: Rank.Small);
 
         StatCalculator.RecalculateMaxYield(resource, card).Should().Be(400);
     }
@@ -495,8 +495,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxYield_MediumRank_DoublesBase()
     {
-        var card = TestFactory.DataCard(cardNo: 100, yield: 400);
-        var resource = TestFactory.MakeResource(cardId: 100, rank: Rank.Medium);
+        var card = TestFactory.DataCard(cardId: "NT-0009", yield: 400);
+        var resource = TestFactory.MakeResource(cardId: "NT-0009", rank: Rank.Medium);
 
         StatCalculator.RecalculateMaxYield(resource, card).Should().Be(800);
     }
@@ -504,8 +504,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxYield_LargeRank_TriplesBase()
     {
-        var card = TestFactory.DataCard(cardNo: 100, yield: 400);
-        var resource = TestFactory.MakeResource(cardId: 100, rank: Rank.Large);
+        var card = TestFactory.DataCard(cardId: "NT-0009", yield: 400);
+        var resource = TestFactory.MakeResource(cardId: "NT-0009", rank: Rank.Large);
 
         StatCalculator.RecalculateMaxYield(resource, card).Should().Be(1200);
     }
@@ -513,8 +513,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxYield_WithFamilyR_AppliesAVMultiplier()
     {
-        var card = TestFactory.DataCard(cardNo: 100, yield: 400);
-        var resource = TestFactory.MakeResource(cardId: 100, rank: Rank.Small, family: InstanceFamily.R);
+        var card = TestFactory.DataCard(cardId: "NT-0009", yield: 400);
+        var resource = TestFactory.MakeResource(cardId: "NT-0009", rank: Rank.Small, family: InstanceFamily.R);
 
         // 400 * 1 * 1.3 = 520
         StatCalculator.RecalculateMaxYield(resource, card).Should().Be(520);
@@ -523,8 +523,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxYield_WithFamilyC_AppliesAVMultiplier()
     {
-        var card = TestFactory.DataCard(cardNo: 100, yield: 400);
-        var resource = TestFactory.MakeResource(cardId: 100, rank: Rank.Small, family: InstanceFamily.C);
+        var card = TestFactory.DataCard(cardId: "NT-0009", yield: 400);
+        var resource = TestFactory.MakeResource(cardId: "NT-0009", rank: Rank.Small, family: InstanceFamily.C);
 
         // 400 * 1 * 0.7 = 280
         StatCalculator.RecalculateMaxYield(resource, card).Should().Be(280);
@@ -533,8 +533,8 @@ public class StatCalculatorTests
     [Fact]
     public void RecalculateMaxYield_ComputeCard_ReturnsZero()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, tp: 600);
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
 
         StatCalculator.RecalculateMaxYield(resource, card).Should().Be(0);
     }
@@ -545,21 +545,21 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PassiveTPPerBackendDB()
     {
         var cc = new TestCardCache();
-        var computeCard = TestFactory.ComputeCard(cardNo: 1, tp: 600);
+        var computeCard = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
         computeCard.PassiveEffects.Add(new PassiveEffect
         {
             Type = PassiveEffectTypes.TPPerBackendDB,
             Params = new PassiveEffectConfig { BonusPerCard = 100 }
         });
         cc.Add(computeCard);
-        cc.Add(TestFactory.DataCard(cardNo: 100, cardType: CardTypes.Database));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "compute_1");
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "compute_1");
         field.Frontend[0] = resource;
 
         // One DB in backend
-        var db = TestFactory.MakeResource(cardId: 100, instanceId: "db_1", faceUp: true,
+        var db = TestFactory.MakeResource(cardId: "NT-0009", instanceId: "db_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxTP: null, currentTP: null);
         field.Backend[0] = db;
 
@@ -573,20 +573,20 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PassiveTPPerBackendData()
     {
         var cc = new TestCardCache();
-        var computeCard = TestFactory.ComputeCard(cardNo: 1, tp: 600);
+        var computeCard = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
         computeCard.PassiveEffects.Add(new PassiveEffect
         {
             Type = PassiveEffectTypes.TPPerBackendData,
             Params = new PassiveEffectConfig { BonusPerCard = 80 }
         });
         cc.Add(computeCard);
-        cc.Add(TestFactory.DataCard(cardNo: 100));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "compute_1");
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "compute_1");
         field.Frontend[0] = resource;
 
-        var data1 = TestFactory.MakeResource(cardId: 100, instanceId: "data_1", faceUp: true,
+        var data1 = TestFactory.MakeResource(cardId: "NT-0009", instanceId: "data_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxTP: null, currentTP: null);
         field.Backend[0] = data1;
 
@@ -600,7 +600,7 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PassiveTPIfCardTypeOnField()
     {
         var cc = new TestCardCache();
-        var computeCard = TestFactory.ComputeCard(cardNo: 1, tp: 600);
+        var computeCard = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
         computeCard.PassiveEffects.Add(new PassiveEffect
         {
             Type = PassiveEffectTypes.TPIfCardTypeOnField,
@@ -611,13 +611,13 @@ public class StatCalculatorTests
             }
         });
         cc.Add(computeCard);
-        cc.Add(TestFactory.DataCard(cardNo: 100, cardType: CardTypes.Database));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "compute_1");
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "compute_1");
         field.Frontend[0] = resource;
 
-        var db = TestFactory.MakeResource(cardId: 100, instanceId: "db_1", faceUp: true,
+        var db = TestFactory.MakeResource(cardId: "NT-0009", instanceId: "db_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxTP: null, currentTP: null);
         field.Backend[0] = db;
 
@@ -629,7 +629,7 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PassiveTPIfCardTypeOnField_NoMatch_NoBonus()
     {
         var cc = new TestCardCache();
-        var computeCard = TestFactory.ComputeCard(cardNo: 1, tp: 600);
+        var computeCard = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600);
         computeCard.PassiveEffects.Add(new PassiveEffect
         {
             Type = PassiveEffectTypes.TPIfCardTypeOnField,
@@ -642,7 +642,7 @@ public class StatCalculatorTests
         cc.Add(computeCard);
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "compute_1");
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "compute_1");
         field.Frontend[0] = resource;
         // No DB on field
 
@@ -655,23 +655,23 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_PassiveYieldPerOtherDB()
     {
         var cc = new TestCardCache();
-        var dataCard = TestFactory.DataCard(cardNo: 100, yield: 400, cardType: CardTypes.Database);
+        var dataCard = TestFactory.DataCard(cardId: "NT-0009", yield: 400, cardType: CardTypes.Database);
         dataCard.PassiveEffects.Add(new PassiveEffect
         {
             Type = PassiveEffectTypes.YieldPerOtherDB,
             Params = new PassiveEffectConfig { BonusPerCard = 50 }
         });
         cc.Add(dataCard);
-        cc.Add(TestFactory.DataCard(cardNo: 101, yield: 300, cardType: CardTypes.Database));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0010", yield: 300, cardType: CardTypes.Database));
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1", faceUp: true,
+            cardId: "NT-0009", instanceId: "db_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         field.Backend[0] = resource;
 
         var otherDB = TestFactory.MakeResource(
-            cardId: 101, instanceId: "db_2", faceUp: true,
+            cardId: "NT-0010", instanceId: "db_2", faceUp: true,
             maxAV: 800, currentAV: 800, maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
         field.Backend[1] = otherDB;
 
@@ -685,26 +685,26 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_PassiveYieldIfCardOnField()
     {
         var cc = new TestCardCache();
-        var dataCard = TestFactory.DataCard(cardNo: 100, yield: 400);
+        var dataCard = TestFactory.DataCard(cardId: "NT-0009", yield: 400);
         dataCard.PassiveEffects.Add(new PassiveEffect
         {
             Type = PassiveEffectTypes.YieldIfCardOnField,
             Params = new PassiveEffectConfig
             {
-                SpecificCardNos = [1],
+                SpecificCardIDs = ["SH-0001"],
                 FlatBonus = 150
             }
         });
         cc.Add(dataCard);
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1", faceUp: true,
+            cardId: "NT-0009", instanceId: "db_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         field.Backend[0] = resource;
 
-        var compute = TestFactory.MakeResource(cardId: 1, instanceId: "comp_1", faceUp: true);
+        var compute = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "comp_1", faceUp: true);
         field.Frontend[0] = compute;
 
         // 400 + 150 = 550
@@ -715,13 +715,13 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_PassiveYieldIfCardOnField_NoMatch()
     {
         var cc = new TestCardCache();
-        var dataCard = TestFactory.DataCard(cardNo: 100, yield: 400);
+        var dataCard = TestFactory.DataCard(cardId: "NT-0009", yield: 400);
         dataCard.PassiveEffects.Add(new PassiveEffect
         {
             Type = PassiveEffectTypes.YieldIfCardOnField,
             Params = new PassiveEffectConfig
             {
-                SpecificCardNos = [999],
+                SpecificCardIDs = ["TEST-0999"],
                 FlatBonus = 150
             }
         });
@@ -729,7 +729,7 @@ public class StatCalculatorTests
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1", faceUp: true,
+            cardId: "NT-0009", instanceId: "db_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         field.Backend[0] = resource;
 
@@ -742,8 +742,8 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_WithPlatformYieldBonus()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
-        cc.Add(TestFactory.PlatformCard(cardNo: 200, platformEffects:
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
+        cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", platformEffects:
         [
             new PlatformEffect
             {
@@ -755,11 +755,11 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         field.Support[0] = new SupportInstance
         {
-            InstanceID = "sup_1", CardID = 200, FaceUp = true, DeployingTurnsLeft = 0
+            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0
         };
 
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1", faceUp: true,
+            cardId: "NT-0009", instanceId: "db_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         field.Backend[0] = resource;
 
@@ -773,8 +773,8 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PlatformStillDeploying_NoBonus()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
-        cc.Add(TestFactory.PlatformCard(cardNo: 200, platformEffects:
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
+        cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", platformEffects:
         [
             new PlatformEffect
             {
@@ -786,10 +786,10 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         field.Support[0] = new SupportInstance
         {
-            InstanceID = "sup_1", CardID = 200, FaceUp = true, DeployingTurnsLeft = 1
+            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 1
         };
 
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
         field.Frontend[0] = resource;
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(600);
@@ -802,11 +802,11 @@ public class StatCalculatorTests
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.DataCard(
-            cardNo: 102, yield: 300, elastic: true, elasticIncrement: 50, freeTier: 300));
+            cardId: "NT-0011", yield: 300, elastic: true, elasticIncrement: 50, freeTier: 300));
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 102, instanceId: "db_1", faceUp: true, elasticBonus: 100,
+            cardId: "NT-0011", instanceId: "db_1", faceUp: true, elasticBonus: 100,
             maxAV: 800, currentAV: 800, maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
         field.Backend[0] = resource;
 
@@ -821,11 +821,11 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_FamilyR_IncreasesYield()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1", family: InstanceFamily.R,
+            cardId: "NT-0009", instanceId: "db_1", family: InstanceFamily.R,
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         field.Backend[0] = resource;
 
@@ -837,11 +837,11 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_FamilyC_DecreasesYield()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1", family: InstanceFamily.C,
+            cardId: "NT-0009", instanceId: "db_1", family: InstanceFamily.C,
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         field.Backend[0] = resource;
 
@@ -855,11 +855,11 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_WithTempBuff()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1",
+            cardId: "NT-0009", instanceId: "db_1",
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.BuffYield, Value = 100 });
         field.Backend[0] = resource;
@@ -871,11 +871,11 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_WithTempDebuff_FlooredAtZero()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1",
+            cardId: "NT-0009", instanceId: "db_1",
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.DebuffYield, Value = 500 });
         field.Backend[0] = resource;
@@ -889,8 +889,8 @@ public class StatCalculatorTests
     public void CalculateEffectiveInsight_WithAttachmentYieldBonus()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardNo: 100, yield: 400));
-        cc.Add(TestFactory.AttachmentCard(cardNo: 300, attachmentEffects:
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
+        cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300", attachmentEffects:
         [
             new AttachmentEffect
             {
@@ -901,9 +901,9 @@ public class StatCalculatorTests
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(
-            cardId: 100, instanceId: "db_1",
+            cardId: "NT-0009", instanceId: "db_1",
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
-        resource.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = 300 });
+        resource.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = "TEST-0300" });
         field.Backend[0] = resource;
 
         StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(500);
@@ -915,8 +915,8 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PlatformWithFactionFilter_Matches()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, faction: "SHE"));
-        cc.Add(TestFactory.PlatformCard(cardNo: 200, platformEffects:
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, faction: "SHE"));
+        cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", platformEffects:
         [
             new PlatformEffect
             {
@@ -928,10 +928,10 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         field.Support[0] = new SupportInstance
         {
-            InstanceID = "sup_1", CardID = 200, FaceUp = true, DeployingTurnsLeft = 0
+            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0
         };
 
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
         field.Frontend[0] = resource;
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(750);
@@ -941,8 +941,8 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PlatformWithFactionFilter_NoMatch()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, faction: "SHE"));
-        cc.Add(TestFactory.PlatformCard(cardNo: 200, platformEffects:
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, faction: "SHE"));
+        cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", platformEffects:
         [
             new PlatformEffect
             {
@@ -954,10 +954,10 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         field.Support[0] = new SupportInstance
         {
-            InstanceID = "sup_1", CardID = 200, FaceUp = true, DeployingTurnsLeft = 0
+            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0
         };
 
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
         field.Frontend[0] = resource;
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(600);
@@ -969,8 +969,8 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_PlatformWithCardTypeFilter_NoMatch()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
-        cc.Add(TestFactory.PlatformCard(cardNo: 200, platformEffects:
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
+        cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", platformEffects:
         [
             new PlatformEffect
             {
@@ -986,10 +986,10 @@ public class StatCalculatorTests
         var field = TestFactory.MakeField();
         field.Support[0] = new SupportInstance
         {
-            InstanceID = "sup_1", CardID = 200, FaceUp = true, DeployingTurnsLeft = 0
+            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0
         };
 
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
         field.Frontend[0] = resource;
 
         // Compute card does not match Database target type
@@ -1002,10 +1002,10 @@ public class StatCalculatorTests
     public void CalculateEffectiveTP_MultipleTempEffects_Stack()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
 
         var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(cardId: 1);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001");
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.BuffTP, Value = 100 });
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.BuffTP, Value = 50 });
         resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.DebuffTP, Value = 30 });
@@ -1019,8 +1019,8 @@ public class StatCalculatorTests
     [Fact]
     public void ApplyElasticBonus_ZeroIncrement_NoChange()
     {
-        var card = TestFactory.ComputeCard(cardNo: 1, elastic: true, elasticIncrement: 0);
-        var resource = TestFactory.MakeResource(cardId: 1, elasticBonus: 50);
+        var card = TestFactory.ComputeCard(cardId: "SH-0001", elastic: true, elasticIncrement: 0);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", elasticBonus: 50);
         StatCalculator.ApplyElasticBonus(resource, card);
 
         resource.ElasticBonus.Should().Be(50);

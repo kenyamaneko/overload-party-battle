@@ -13,10 +13,10 @@ public class StandardAiTests
 
     public StandardAiTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, mc: 150));
-        _cc.Add(TestFactory.DataCard(cardNo: 100, cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
-        _cc.Add(TestFactory.ComputeCard(cardNo: 2, tp: 300, av: 600, mc: 50, name: "CheapCompute"));
-        _cc.Add(TestFactory.DataCard(cardNo: 101, cardType: CardTypes.ObjectStorage, yield: 200, av: 500, mc: 30, name: "CheapStorage"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, mc: 150));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 300, av: 600, mc: 50, name: "CheapCompute"));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0010", cardType: CardTypes.ObjectStorage, yield: 200, av: 500, mc: 30, name: "CheapStorage"));
     }
 
     private StandardAi CreateAi() => new(_cc, _effects);
@@ -27,7 +27,7 @@ public class StandardAiTests
     public void DecideMainPhaseActions_WithPlayCardActions_ReturnsNpcActionsWithCorrectKeys()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Hand.Add(new HandCard { InstanceID = "hand_1", CardID = 1 });
+        state.Player2Hand.Add(new HandCard { InstanceID = "hand_1", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {
@@ -35,7 +35,7 @@ public class StandardAiTests
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "hand_1",
-                CardID = 1,
+                CardID = "SH-0001",
                 ValidZones = ["frontend_0", "backend_1"],
             },
         };
@@ -60,7 +60,7 @@ public class StandardAiTests
     public void DecideMainPhaseActions_ComputeCard_PrefersFrontendZone()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Hand.Add(new HandCard { InstanceID = "hand_1", CardID = 1 });
+        state.Player2Hand.Add(new HandCard { InstanceID = "hand_1", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {
@@ -68,7 +68,7 @@ public class StandardAiTests
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "hand_1",
-                CardID = 1,
+                CardID = "SH-0001",
                 ValidZones = ["backend_0", "frontend_1"],
             },
         };
@@ -98,7 +98,7 @@ public class StandardAiTests
     public void DecideMainPhaseActions_ScaleUpActions_ContainCorrectPayloadKeys()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: 1, instanceId: "res_1");
+        state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1");
 
         var available = new List<AvailableAction>
         {
@@ -160,7 +160,7 @@ public class StandardAiTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 2);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: 1, instanceId: "target_1", maxAV: 1400);
+            cardId: "SH-0001", instanceId: "target_1", maxAV: 1400);
 
         var available = new List<AvailableAction>
         {
@@ -188,9 +188,9 @@ public class StandardAiTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 2);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: 1, instanceId: "t_strong", maxAV: 2000, damage: 0);
+            cardId: "SH-0001", instanceId: "t_strong", maxAV: 2000, damage: 0);
         state.Player1Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: 1, instanceId: "t_weak", maxAV: 600, damage: 0);
+            cardId: "SH-0001", instanceId: "t_weak", maxAV: 600, damage: 0);
 
         var available = new List<AvailableAction>
         {
@@ -226,7 +226,7 @@ public class StandardAiTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 2);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: 1, instanceId: "target_1");
+            cardId: "SH-0001", instanceId: "target_1");
 
         var available = new List<AvailableAction>
         {
@@ -253,7 +253,7 @@ public class StandardAiTests
         // HandLimit is 6, add fewer cards
         foreach (var i in Enumerable.Range(0, GameConstants.HandLimit))
         {
-            state.Player1Hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = 1 });
+            state.Player1Hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
         }
 
         var ai = CreateAi();
@@ -269,7 +269,7 @@ public class StandardAiTests
         var excess = 2;
         foreach (var i in Enumerable.Range(0, GameConstants.HandLimit + excess))
         {
-            state.Player1Hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = 1 });
+            state.Player1Hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
         }
 
         var ai = CreateAi();
@@ -282,16 +282,16 @@ public class StandardAiTests
     public void DecideDiscard_DiscardsCheapestCardsFirst()
     {
         var state = TestFactory.MakeGameState();
-        // CardNo 1 has MC=150, CardNo 2 has MC=50, CardNo 100 has MC=100
+        // CardId 1 has MC=150, CardId 2 has MC=50, CardId 100 has MC=100
         // Add 8 cards (HandLimit=6, so discard 2)
-        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_1", CardID = 1 });    // MC=150
-        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_1", CardID = 2 });        // MC=50
-        state.Player1Hand.Add(new HandCard { InstanceID = "medium_1", CardID = 100 });     // MC=100
-        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_2", CardID = 1 });    // MC=150
-        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_2", CardID = 2 });        // MC=50
-        state.Player1Hand.Add(new HandCard { InstanceID = "medium_2", CardID = 100 });     // MC=100
-        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_3", CardID = 101 });      // MC=30
-        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_3", CardID = 1 });    // MC=150
+        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_1", CardID = "SH-0001" });    // MC=150
+        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_1", CardID = "TEST-0002" });        // MC=50
+        state.Player1Hand.Add(new HandCard { InstanceID = "medium_1", CardID = "NT-0009" });     // MC=100
+        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_2", CardID = "SH-0001" });    // MC=150
+        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_2", CardID = "TEST-0002" });        // MC=50
+        state.Player1Hand.Add(new HandCard { InstanceID = "medium_2", CardID = "NT-0009" });     // MC=100
+        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_3", CardID = "NT-0010" });      // MC=30
+        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_3", CardID = "SH-0001" });    // MC=150
 
         var ai = CreateAi();
         var result = ai.DecideDiscard(state, 1);
@@ -319,7 +319,7 @@ public class StandardAiTests
     public void PlayCardPayload_UsesCamelCaseKeys()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h1", CardID = 1 });
+        state.Player1Hand.Add(new HandCard { InstanceID = "h1", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {
@@ -327,7 +327,7 @@ public class StandardAiTests
             {
                 Type = WireActionTypes.PlayCard,
                 HandInstanceID = "h1",
-                CardID = 1,
+                CardID = "SH-0001",
                 ValidZones = ["frontend_0"],
             },
         };
@@ -422,10 +422,10 @@ public class StandardAiTests
     /// </summary>
     private class NullEffectRegistry : IEffectRegistry
     {
-        public EffectHandler? Get(long cardNo, TriggerType trigger) => null;
-        public bool Has(long cardNo, TriggerType trigger) => false;
-        public BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger) => null;
-        public EffectInfo? GetEffectInfo(long cardNo, TriggerType trigger) => null;
-        public List<string>? GetChoiceOptions(long cardNo, TriggerType trigger) => null;
+        public EffectHandler? Get(string cardId, TriggerType trigger) => null;
+        public bool Has(string cardId, TriggerType trigger) => false;
+        public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger) => null;
+        public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
+        public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
     }
 }

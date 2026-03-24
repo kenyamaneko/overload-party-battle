@@ -63,7 +63,7 @@ public static class ActivateEffectProcessor
                   ?? FieldHelpers.FindResourceByID(state.GetField(state.OpponentOf(playerNum)), targetId);
         }
 
-        var handler = effects.Get(card.CardNo, TriggerType.Activate)!;
+        var handler = effects.Get(card.CardId, TriggerType.Activate)!;
         var ctx = new EffectContext
         {
             State = state,
@@ -87,7 +87,7 @@ public static class ActivateEffectProcessor
             PlayerID = playerId,
             EventData = new ActivateEffectEventData
             {
-                CardNo = card.CardNo,
+                CardId = card.CardId,
                 SourceId = req.InstanceID,
                 TargetId = req.TargetInstanceID,
             }.ToDictionary(),
@@ -103,12 +103,12 @@ public static class ActivateEffectProcessor
     {
         var card = cc.MustGet(support.CardID);
 
-        if (!effects.Has(card.CardNo, TriggerType.Activate))
+        if (!effects.Has(card.CardId, TriggerType.Activate))
         {
-            throw new GameRuleException($"support card {card.CardNo} has no activate effect");
+            throw new GameRuleException($"support card {card.CardId} has no activate effect");
         }
 
-        var handler = effects.Get(card.CardNo, TriggerType.Activate)!;
+        var handler = effects.Get(card.CardId, TriggerType.Activate)!;
         var ctx = new EffectContext
         {
             State = state,
@@ -131,7 +131,7 @@ public static class ActivateEffectProcessor
             PlayerID = playerId,
             EventData = new ActivateEffectEventData
             {
-                CardNo = card.CardNo,
+                CardId = card.CardId,
                 SourceId = req.InstanceID,
             }.ToDictionary(),
         });
@@ -144,9 +144,9 @@ public static class ActivateEffectProcessor
     {
         var card = cc.MustGet(source.CardID);
 
-        if (!effects.Has(card.CardNo, TriggerType.Activate))
+        if (!effects.Has(card.CardId, TriggerType.Activate))
         {
-            throw new GameRuleException($"card {card.CardNo} has no activate effect");
+            throw new GameRuleException($"card {card.CardId} has no activate effect");
         }
         if (source.EffectUsedThisTurn)
         {

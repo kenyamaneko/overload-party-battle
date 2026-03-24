@@ -168,7 +168,7 @@ public class GameLogService
     {
         if (data is null) return $"{player} played a card";
 
-        var cardId = GetLong(data, "cardId");
+        var cardId = GetString(data, "cardId");
         var zone = GetString(data, "zone");
         var cancelled = GetBool(data, "cancelled");
         var cardName = ResolveCardName(cardId);
@@ -176,7 +176,7 @@ public class GameLogService
         if (cancelled)
             return $"{player} deploy of \"{cardName}\" was cancelled";
 
-        var card = cardId.HasValue ? _cardCache.Get(cardId.Value) : null;
+        var card = cardId is not null ? _cardCache.Get(cardId) : null;
         var cost = card?.MaintenanceCost ?? 0;
         var costStr = cost > 0 ? $" [-{cost} Budget]" : "";
         return $"{player} deployed \"{cardName}\" to {CapitalizeFirst(zone)}{costStr}";
@@ -186,7 +186,7 @@ public class GameLogService
     {
         if (data is null) return $"{player} attached a card";
 
-        var cardId = GetLong(data, "cardId");
+        var cardId = GetString(data, "cardId");
         var cardName = ResolveCardName(cardId);
         return $"{player} attached \"{cardName}\"";
     }
@@ -235,8 +235,8 @@ public class GameLogService
     {
         if (data is null) return $"{player} activated an effect";
 
-        var cardNo = GetLong(data, "cardNo");
-        var cardName = ResolveCardName(cardNo);
+        var cardId = GetString(data, "cardId");
+        var cardName = ResolveCardName(cardId);
         return $"{player} activated effect: {cardName}";
     }
 
@@ -244,8 +244,8 @@ public class GameLogService
     {
         if (data is null) return $"{player} migrated";
 
-        var srcCardId = GetLong(data, "sourceCardId");
-        var tgtCardId = GetLong(data, "targetCardId");
+        var srcCardId = GetString(data, "sourceCardId");
+        var tgtCardId = GetString(data, "targetCardId");
         var srcName = ResolveCardName(srcCardId);
         var tgtName = ResolveCardName(tgtCardId);
         return $"{player} migrated \"{srcName}\" → \"{tgtName}\"";
@@ -300,11 +300,11 @@ public class GameLogService
         return "??";
     }
 
-    private string ResolveCardName(long? cardNo)
+    private string ResolveCardName(string? cardId)
     {
-        if (cardNo is null) return "???";
-        var card = _cardCache.Get(cardNo.Value);
-        return card?.CardName ?? $"Card#{cardNo}";
+        if (cardId is null) return "???";
+        var card = _cardCache.Get(cardId);
+        return card?.CardName ?? $"Card#{cardId}";
     }
 
     private static string? FindWinReason(List<GameEvent> events)

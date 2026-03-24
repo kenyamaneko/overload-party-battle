@@ -81,10 +81,10 @@ public static class EffectHelpers
     /// <summary>
     /// Creates a filter predicate matching a specific card number.
     /// </summary>
-    /// <param name="cardNo">Card number to match.</param>
+    /// <param name="cardId">Card ID to match.</param>
     /// <returns>A predicate for card definition filtering.</returns>
-    public static Func<CardDefinition, bool> CardNoFilter(long cardNo)
-        => card => card.CardNo == cardNo;
+    public static Func<CardDefinition, bool> CardIdFilter(string cardId)
+        => card => card.CardId == cardId;
 
     /// <summary>
     /// Returns whether the card type is a database type (Database or CacheDB).

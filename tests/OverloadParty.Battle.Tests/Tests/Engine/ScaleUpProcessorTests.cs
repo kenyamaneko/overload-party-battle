@@ -12,9 +12,9 @@ public class ScaleUpProcessorTests
     public ScaleUpProcessorTests()
     {
         // Resizable compute card
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, resizable: true, deployTurns: 1));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, resizable: true, deployTurns: 1));
         // Non-resizable compute card
-        _cc.Add(TestFactory.ComputeCard(cardNo: 2, tp: 600, resizable: false, name: "FixedCompute"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 600, resizable: false, name: "FixedCompute"));
     }
 
     private static ScaleUpRequest MakeReq(string instanceId, string targetRank, string? family = null) =>
@@ -28,7 +28,7 @@ public class ScaleUpProcessorTests
     public void Process_ChangesRank(Rank initialRank, InstanceFamily? initFamily, string reqRank, string reqFamily, Rank expectedRank)
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: initialRank, family: initFamily, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: initialRank, family: initFamily, faceUp: true);
         resource.DeployedOnTurn = 1;
         state.Player1Field.Frontend[0] = resource;
 
@@ -43,7 +43,7 @@ public class ScaleUpProcessorTests
     public void Process_NotResizable_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 2, instanceId: "inst_1", rank: Rank.Small, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
         resource.DeployedOnTurn = 1;
         state.Player1Field.Frontend[0] = resource;
 
@@ -59,7 +59,7 @@ public class ScaleUpProcessorTests
     public void Process_DeployTurn_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Small, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
         resource.DeployedOnTurn = 3; // same as current turn
         state.Player1Field.Frontend[0] = resource;
 
@@ -75,7 +75,7 @@ public class ScaleUpProcessorTests
     public void Process_AlreadyScaledThisTurn_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Small, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
         resource.DeployedOnTurn = 1;
         resource.ScaleChangedThisTurn = true;
         state.Player1Field.Frontend[0] = resource;
@@ -93,7 +93,7 @@ public class ScaleUpProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 3);
         // Resource has no existing family, and no family provided in request
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Small, family: null, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: Rank.Small, family: null, faceUp: true);
         resource.DeployedOnTurn = 1;
         state.Player1Field.Frontend[0] = resource;
 
@@ -109,7 +109,7 @@ public class ScaleUpProcessorTests
     public void Process_MediumToDifferentFamily_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Medium, family: InstanceFamily.M, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: Rank.Medium, family: InstanceFamily.M, faceUp: true);
         resource.DeployedOnTurn = 1;
         state.Player1Field.Frontend[0] = resource;
 
@@ -125,7 +125,7 @@ public class ScaleUpProcessorTests
     public void Process_SameRank_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Medium, family: InstanceFamily.M, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: Rank.Medium, family: InstanceFamily.M, faceUp: true);
         resource.DeployedOnTurn = 1;
         state.Player1Field.Frontend[0] = resource;
 
@@ -141,7 +141,7 @@ public class ScaleUpProcessorTests
     public void Process_GeneratesScaleUpEvent()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var resource = TestFactory.MakeResource(cardId: 1, instanceId: "inst_1", rank: Rank.Small, faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
         resource.DeployedOnTurn = 1;
         state.Player1Field.Frontend[0] = resource;
 

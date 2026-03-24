@@ -17,25 +17,25 @@ public class CardMoveHelpersTests
         var state = TestFactory.MakeGameState();
         state.Player1Repository.AddRange(new[]
         {
-            new HandCard { InstanceID = "r_1", CardID = 10 },
-            new HandCard { InstanceID = "r_2", CardID = 20 },
-            new HandCard { InstanceID = "r_3", CardID = 30 },
+            new HandCard { InstanceID = "r_1", CardID = "SH-0009" },
+            new HandCard { InstanceID = "r_2", CardID = "SH-0019" },
+            new HandCard { InstanceID = "r_3", CardID = "TK-0008" },
         });
 
         int drawn = CardMoveHelpers.DrawCards(state, 1, 2);
 
         drawn.Should().Be(2);
         state.Player1Hand.Should().HaveCount(2);
-        state.Player1Hand.Select(h => h.CardID).Should().ContainInOrder(10, 20);
+        state.Player1Hand.Select(h => h.CardID).Should().ContainInOrder("SH-0009", "SH-0019");
         state.Player1Repository.Should().HaveCount(1);
-        state.Player1Repository[0].CardID.Should().Be(30);
+        state.Player1Repository[0].CardID.Should().Be("TK-0008");
     }
 
     [Fact]
     public void DrawCards_RepoSmallerThanCount_DrawsAll()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = 10 });
+        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0009" });
 
         int drawn = CardMoveHelpers.DrawCards(state, 1, 5);
 
@@ -59,8 +59,8 @@ public class CardMoveHelpersTests
     public void DrawCards_AssignsNewInstanceIDs()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = 10 });
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_2", CardID = 20 });
+        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0009" });
+        state.Player1Repository.Add(new HandCard { InstanceID = "r_2", CardID = "SH-0019" });
 
         CardMoveHelpers.DrawCards(state, 1, 2);
 
@@ -75,7 +75,7 @@ public class CardMoveHelpersTests
     public void DrawCards_Player2_UsesPlayer2State()
     {
         var state = TestFactory.MakeGameState();
-        state.Player2Repository.Add(new HandCard { InstanceID = "r_1", CardID = 10 });
+        state.Player2Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0009" });
 
         int drawn = CardMoveHelpers.DrawCards(state, 2, 1);
 
@@ -93,26 +93,26 @@ public class CardMoveHelpersTests
         var state = TestFactory.MakeGameState();
         state.Player1Repository.AddRange(new[]
         {
-            new HandCard { InstanceID = "r_1", CardID = 10 },
-            new HandCard { InstanceID = "r_2", CardID = 20 },
-            new HandCard { InstanceID = "r_3", CardID = 30 },
+            new HandCard { InstanceID = "r_1", CardID = "SH-0009" },
+            new HandCard { InstanceID = "r_2", CardID = "SH-0019" },
+            new HandCard { InstanceID = "r_3", CardID = "TK-0008" },
         });
 
-        bool found = CardMoveHelpers.SearchRepo(state, 1, c => c.CardID == 20);
+        bool found = CardMoveHelpers.SearchRepo(state, 1, c => c.CardID == "SH-0019");
 
         found.Should().BeTrue();
         state.Player1Hand.Should().HaveCount(1);
-        state.Player1Hand[0].CardID.Should().Be(20);
-        state.Player1Repository.Select(c => c.CardID).Should().NotContain(20);
+        state.Player1Hand[0].CardID.Should().Be("SH-0019");
+        state.Player1Repository.Select(c => c.CardID).Should().NotContain("SH-0019");
     }
 
     [Fact]
     public void SearchRepo_NoMatch_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = 10 });
+        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0009" });
 
-        bool found = CardMoveHelpers.SearchRepo(state, 1, c => c.CardID == 999);
+        bool found = CardMoveHelpers.SearchRepo(state, 1, c => c.CardID == "TEST-0999");
 
         found.Should().BeFalse();
         state.Player1Hand.Should().BeEmpty();
@@ -126,10 +126,10 @@ public class CardMoveHelpersTests
     {
         var state = TestFactory.MakeGameState();
 
-        CardMoveHelpers.AddToHand(state, 1, cardID: 42);
+        CardMoveHelpers.AddToHand(state, 1, "TK-0020");
 
         state.Player1Hand.Should().HaveCount(1);
-        state.Player1Hand[0].CardID.Should().Be(42);
+        state.Player1Hand[0].CardID.Should().Be("TK-0020");
         state.Player1Hand[0].InstanceID.Should().NotBeEmpty();
     }
 
@@ -138,11 +138,11 @@ public class CardMoveHelpersTests
     {
         var state = TestFactory.MakeGameState();
 
-        CardMoveHelpers.AddToHand(state, 1, cardID: 10);
-        CardMoveHelpers.AddToHand(state, 1, cardID: 20);
+        CardMoveHelpers.AddToHand(state, 1, "SH-0009");
+        CardMoveHelpers.AddToHand(state, 1, "SH-0019");
 
         state.Player1Hand.Should().HaveCount(2);
-        state.Player1Hand.Select(h => h.CardID).Should().Contain(new[] { 10L, 20L });
+        state.Player1Hand.Select(h => h.CardID).Should().Contain(new[] { "SH-0009", "SH-0019" });
     }
 
     // ─── AddToTrash ───────────────────────────────────────────
@@ -152,10 +152,10 @@ public class CardMoveHelpersTests
     {
         var state = TestFactory.MakeGameState();
 
-        CardMoveHelpers.AddToTrash(state, 1, cardID: 50, instanceID: "inst_50", artNo: 7);
+        CardMoveHelpers.AddToTrash(state, 1, cardID: "SL-0004", instanceID: "inst_50", artNo: 7);
 
         state.Player1Trash.Should().HaveCount(1);
-        state.Player1Trash[0].CardID.Should().Be(50);
+        state.Player1Trash[0].CardID.Should().Be("SL-0004");
         state.Player1Trash[0].InstanceID.Should().Be("inst_50");
         state.Player1Trash[0].ArtNo.Should().Be(7);
     }
@@ -166,14 +166,14 @@ public class CardMoveHelpersTests
     public void TrashToHand_MovesCardFromTrashToHand()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = 60, ArtNo = 3 });
+        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = "SL-0015", ArtNo = 3 });
 
         bool result = CardMoveHelpers.TrashToHand(state, 1, "t_1");
 
         result.Should().BeTrue();
         state.Player1Trash.Should().BeEmpty();
         state.Player1Hand.Should().HaveCount(1);
-        state.Player1Hand[0].CardID.Should().Be(60);
+        state.Player1Hand[0].CardID.Should().Be("SL-0015");
         state.Player1Hand[0].ArtNo.Should().Be(3);
     }
 
@@ -181,7 +181,7 @@ public class CardMoveHelpersTests
     public void TrashToHand_NotFound_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = 60 });
+        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = "SL-0015" });
 
         bool result = CardMoveHelpers.TrashToHand(state, 1, "nonexistent");
 
@@ -194,7 +194,7 @@ public class CardMoveHelpersTests
     public void TrashToHand_AssignsNewInstanceID()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = 60 });
+        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = "SL-0015" });
 
         CardMoveHelpers.TrashToHand(state, 1, "t_1");
 
@@ -209,9 +209,9 @@ public class CardMoveHelpersTests
         var state = TestFactory.MakeGameState();
         state.Player1Hand.AddRange(new[]
         {
-            new HandCard { InstanceID = "h_1", CardID = 10 },
-            new HandCard { InstanceID = "h_2", CardID = 20 },
-            new HandCard { InstanceID = "h_3", CardID = 30 },
+            new HandCard { InstanceID = "h_1", CardID = "SH-0009" },
+            new HandCard { InstanceID = "h_2", CardID = "SH-0019" },
+            new HandCard { InstanceID = "h_3", CardID = "TK-0008" },
         });
 
         int discarded = CardMoveHelpers.DiscardCards(state, 1, ["h_1", "h_3"]);
@@ -219,14 +219,14 @@ public class CardMoveHelpersTests
         discarded.Should().Be(2);
         state.Player1Hand.Should().HaveCount(1);
         state.Player1Hand[0].InstanceID.Should().Be("h_2");
-        state.Player1Trash.Select(c => c.CardID).Should().Contain(new[] { 10L, 30L });
+        state.Player1Trash.Select(c => c.CardID).Should().Contain(new[] { "SH-0009", "TK-0008" });
     }
 
     [Fact]
     public void DiscardCards_CardNotInHand_Throws()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = 10 });
+        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0009" });
 
         var act = () => CardMoveHelpers.DiscardCards(state, 1, ["h_1", "h_missing"]);
 
@@ -237,7 +237,7 @@ public class CardMoveHelpersTests
     public void DiscardCards_EmptyList_DiscardsNothing()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = 10 });
+        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0009" });
 
         int discarded = CardMoveHelpers.DiscardCards(state, 1, []);
 
@@ -252,8 +252,8 @@ public class CardMoveHelpersTests
         var state = TestFactory.MakeGameState();
         state.Player1Hand.AddRange(new[]
         {
-            new HandCard { InstanceID = "h_1", CardID = 10 },
-            new HandCard { InstanceID = "h_2", CardID = 20 },
+            new HandCard { InstanceID = "h_1", CardID = "SH-0009" },
+            new HandCard { InstanceID = "h_2", CardID = "SH-0019" },
         });
 
         int discarded = CardMoveHelpers.DiscardCards(state, 1, ["h_1", "h_2"]);

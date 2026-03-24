@@ -10,14 +10,14 @@ namespace OverloadParty.Battle.Data;
 public class CardCache : ICardCache
 {
     private readonly ReaderWriterLockSlim _lock = new();
-    private Dictionary<long, CardDefinition> _cards = new();
+    private Dictionary<string, CardDefinition> _cards = new();
 
-    public CardDefinition? Get(long cardNo)
+    public CardDefinition? Get(string cardId)
     {
         _lock.EnterReadLock();
         try
         {
-            return _cards.GetValueOrDefault(cardNo);
+            return _cards.GetValueOrDefault(cardId);
         }
         finally
         {
@@ -25,17 +25,17 @@ public class CardCache : ICardCache
         }
     }
 
-    public CardDefinition MustGet(long cardNo)
+    public CardDefinition MustGet(string cardId)
     {
-        return Get(cardNo) ?? throw new InvalidOperationException($"card_no {cardNo} not found in cache");
+        return Get(cardId) ?? throw new InvalidOperationException($"card_id {cardId} not found in cache");
     }
 
-    public IReadOnlyDictionary<long, CardDefinition> All()
+    public IReadOnlyDictionary<string, CardDefinition> All()
     {
         _lock.EnterReadLock();
         try
         {
-            return new Dictionary<long, CardDefinition>(_cards);
+            return new Dictionary<string, CardDefinition>(_cards);
         }
         finally
         {
@@ -73,16 +73,16 @@ public class CardCache : ICardCache
     /// <summary>
     /// Inject a single card for unit testing.
     /// </summary>
-    public void InjectForTest(long cardNo, CardDefinition card)
+    public void InjectForTest(string cardId, CardDefinition card)
     {
         _lock.EnterWriteLock();
-        try { _cards[cardNo] = card; }
+        try { _cards[cardId] = card; }
         finally { _lock.ExitWriteLock(); }
     }
 
     private void ReplaceCards(List<CardDefinition> cards)
     {
-        var dict = cards.ToDictionary(c => c.CardNo);
+        var dict = cards.ToDictionary(c => c.CardId);
 
         _lock.EnterWriteLock();
         try { _cards = dict; }

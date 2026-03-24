@@ -12,7 +12,7 @@ public class DiscardProcessorTests
     public DiscardProcessorTests()
     {
         // Compute card for hand/repo cards
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, deployTurns: 1));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 1));
     }
 
     private static DiscardHandRequest MakeReq(params string[] ids) =>
@@ -23,7 +23,7 @@ public class DiscardProcessorTests
         var hand = new List<HandCard>();
         for (int i = 0; i < count; i++)
         {
-            hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = 1 });
+            hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
         }
         return hand;
     }
@@ -33,7 +33,7 @@ public class DiscardProcessorTests
         var repo = new List<HandCard>();
         for (int i = 0; i < count; i++)
         {
-            repo.Add(new HandCard { InstanceID = $"r_{i}", CardID = 1 });
+            repo.Add(new HandCard { InstanceID = $"r_{i}", CardID = "SH-0001" });
         }
         return repo;
     }
@@ -64,7 +64,7 @@ public class DiscardProcessorTests
     public void Process_NoDiscardNeeded_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
-        state.Player1Hand = MakeHand(5); // under limit
+        state.Player1Hand = MakeHand(4); // under limit
 
         var act = () => DiscardProcessor.Process(
             state, _game, 1, MakeReq("h_0"), _cc);

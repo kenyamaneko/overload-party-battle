@@ -13,8 +13,8 @@ public class GameLogServiceTests
 
     public GameLogServiceTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, name: "えくぼ", mc: 300));
-        _cc.Add(TestFactory.DataCard(cardNo: 100, name: "TestDB"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", name: "えくぼ", mc: 300));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", name: "TestDB"));
         _svc = new GameLogService(_repo, _cc);
     }
 
@@ -33,7 +33,7 @@ public class GameLogServiceTests
             SequenceNumber = 1,
             EventType = WireActionTypes.PlayCard,
             PlayerID = "player-abc",
-            EventData = new PlayCardEventData { CardId = 1, Zone = "frontend", Index = 0 }.ToDictionary(),
+            EventData = new PlayCardEventData { CardId = "SH-0001", Zone = "frontend", Index = 0 }.ToDictionary(),
         });
         await _repo.AppendEvent(new GameEvent
         {
@@ -219,7 +219,7 @@ public class GameLogServiceTests
             EventData = new MigrateEventData
             {
                 SourceInstanceId = "inst_new", TargetInstanceId = "inst_old",
-                SourceCardId = 1, TargetCardId = 100,
+                SourceCardId = "SH-0001", TargetCardId = "NT-0009",
             }.ToDictionary(),
         });
 

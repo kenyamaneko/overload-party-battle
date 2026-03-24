@@ -13,15 +13,15 @@ public class GameEngineTests
 
     public GameEngineTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
-        _cc.Add(TestFactory.ComputeCard(cardNo: 2, tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
-        _cc.Add(TestFactory.DataCard(cardNo: 100));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
         _engine = new GameEngine(_repo, _cc);
     }
 
-    private DeckSnapshot MakeSingleCardDeck(long cardNo)
+    private DeckSnapshot MakeSingleCardDeck(string cardId)
     {
-        return TestFactory.MakeDeck(cardNo);
+        return TestFactory.MakeDeck(cardId);
     }
 
     // ─── CreateNewGame ───────────────────────────────────────
@@ -29,7 +29,7 @@ public class GameEngineTests
     [Fact]
     public async Task CreateNewGame_ReturnsGameID_And_InitializesState()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
 
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
@@ -57,13 +57,13 @@ public class GameEngineTests
         state.Player1Repository.Should().HaveCount(GameConstants.DeckSize - GameConstants.InitialHandSize);
 
         // All hand cards should reference the correct card
-        state.Player1Hand.Should().AllSatisfy(h => h.CardID.Should().Be(1));
+        state.Player1Hand.Should().AllSatisfy(h => h.CardID.Should().Be("SH-0001"));
     }
 
     [Fact]
     public async Task CreateNewGame_FirstPlayer2_SetsActivePlayer2()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
 
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 2);
 
@@ -76,7 +76,7 @@ public class GameEngineTests
     [Fact]
     public async Task RunAutoAdvance_DrawPhase_DrawsCardAndAdvancesToMain()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
         var state = await _repo.GetGameState(gameID);
@@ -106,7 +106,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_PlayCard_PlaysCardAndReturnsEvents()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
         // Advance past draw phase
@@ -142,17 +142,17 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_Attack_DealsDamageAndReturnsEvents()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
         // Set up the game state directly for attack testing
         var state = await _repo.GetGameState(gameID);
 
         // Place resources manually
-        var attacker = TestFactory.MakeResource(cardId: 1, instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state!.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: 1, instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         // Set to battle phase, turn 2+
@@ -185,7 +185,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_WrongPlayer_Throws()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
         await _engine.RunAutoAdvance(gameID);
 
@@ -208,7 +208,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_InvalidPlayer_Throws()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
         await _engine.RunAutoAdvance(gameID);
 
@@ -228,7 +228,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_Forfeit_EndsGameImmediately()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
         var result = await _engine.ProcessAction(
@@ -245,7 +245,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_FinishedGame_Throws()
     {
-        var deck = MakeSingleCardDeck(1);
+        var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
         // Forfeit to finish the game

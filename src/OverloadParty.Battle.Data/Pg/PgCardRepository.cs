@@ -17,7 +17,7 @@ public class PgCardRepository(NpgsqlDataSource ds) : ICardRepository
     public async Task<List<CardDefinition>> FindAll(CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand(SelectCardSql + " WHERE is_active = true ORDER BY card_no", conn);
+        await using var cmd = new NpgsqlCommand(SelectCardSql + " WHERE is_active = true ORDER BY card_id", conn);
 
         var cards = new List<CardDefinition>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -28,11 +28,11 @@ public class PgCardRepository(NpgsqlDataSource ds) : ICardRepository
         return cards;
     }
 
-    public async Task<CardDefinition?> FindByCardNo(long cardNo, CancellationToken ct = default)
+    public async Task<CardDefinition?> FindByCardId(string cardId, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand(SelectCardSql + " WHERE card_no = $1", conn);
-        cmd.Parameters.AddWithValue(cardNo);
+        await using var cmd = new NpgsqlCommand(SelectCardSql + " WHERE card_id = $1", conn);
+        cmd.Parameters.AddWithValue(cardId);
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct))
@@ -45,7 +45,7 @@ public class PgCardRepository(NpgsqlDataSource ds) : ICardRepository
     // ─── Helpers ─────────────────────────────────────────────────
 
     private const string SelectCardSql = @"
-        SELECT card_no, card_name, resource_label, faction, card_type,
+        SELECT card_id, card_name, resource_label, faction, card_type,
                resizable, elastic, stats, effect_text, effects,
                restriction, is_active, created_at, updated_at
         FROM card_definitions";
@@ -59,7 +59,7 @@ public class PgCardRepository(NpgsqlDataSource ds) : ICardRepository
 
         var card = new CardDefinition
         {
-            CardNo = r.GetInt64(0),
+            CardId = r.GetString(0),
             CardName = r.GetString(1),
             ResourceLabel = r.GetString(2),
             Faction = r.GetString(3),

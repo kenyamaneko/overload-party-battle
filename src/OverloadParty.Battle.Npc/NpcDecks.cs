@@ -12,19 +12,19 @@ public class NpcDeckDefinition
 public static class NpcDecks
 {
     /// <summary>
-    /// Shorthand: create DeckSnapshotCard array from card numbers (ArtNo = 0).
+    /// Shorthand: create DeckSnapshotCard array from card IDs (ArtNo = 0).
     /// </summary>
-    private static DeckSnapshotCard[] C(params long[] cardNos)
-        => cardNos.Select(n => new DeckSnapshotCard { CardNo = n }).ToArray();
+    private static DeckSnapshotCard[] C(params string[] cardIds)
+        => cardIds.Select(n => new DeckSnapshotCard { CardId = n }).ToArray();
 
     public static readonly NpcDeckDefinition SHEDeck = new()
     {
         Name = "SHE Standard",
         Faction = GameConstants.FactionSHE,
         Cards = C(
-            1, 1, 1, 3, 6, 6, 7, 7, 7, 8,
-            8, 8, 9, 9, 13, 13, 15, 17, 20, 20,
-            20, 98, 99, 100, 101, 101, 115, 118, 119, 121),
+            "SH-0001", "SH-0001", "SH-0001", "SH-0002", "SH-0005", "SH-0005", "SH-0006", "SH-0006", "SH-0006", "SH-0007",
+            "SH-0007", "SH-0007", "SH-0008", "SH-0008", "SH-0012", "SH-0012", "SH-0014", "SH-0016", "SH-0019", "SH-0019",
+            "SH-0019", "NT-0007", "NT-0008", "NT-0009", "NT-0010", "NT-0010", "NT-0023", "SH-0022", "NT-0025", "SH-0023"),
     };
 
     public static readonly NpcDeckDefinition TenkiDeck = new()
@@ -32,9 +32,9 @@ public static class NpcDecks
         Name = "Tenki Standard",
         Faction = GameConstants.FactionTenki,
         Cards = C(
-            23, 23, 26, 26, 26, 27, 27, 29, 29, 29,
-            31, 32, 32, 32, 35, 35, 37, 38, 38, 38,
-            41, 46, 46, 94, 98, 99, 100, 101, 101, 117),
+            "TK-0001", "TK-0001", "TK-0004", "TK-0004", "TK-0004", "TK-0005", "TK-0005", "TK-0007", "TK-0007", "TK-0007",
+            "TK-0009", "TK-0010", "TK-0010", "TK-0010", "TK-0013", "TK-0013", "TK-0014", "TK-0015", "TK-0015", "TK-0015",
+            "TK-0018", "TK-0024", "TK-0024", "NT-0004", "NT-0007", "NT-0008", "NT-0009", "NT-0010", "NT-0010", "NT-0024"),
     };
 
     public static readonly NpcDeckDefinition SugarDeck = new()
@@ -42,9 +42,9 @@ public static class NpcDecks
         Name = "Sugar Standard",
         Faction = GameConstants.FactionSugar,
         Cards = C(
-            47, 47, 47, 48, 48, 48, 49, 49, 50, 50,
-            51, 51, 52, 55, 56, 58, 58, 60, 60, 61,
-            62, 62, 66, 98, 99, 100, 104, 104, 104, 106),
+            "SL-0001", "SL-0001", "SL-0001", "SL-0002", "SL-0002", "SL-0002", "SL-0003", "SL-0003", "SL-0004", "SL-0004",
+            "SL-0006", "SL-0006", "SL-0007", "SL-0009", "SL-0013", "SL-0011", "SL-0011", "SL-0015", "SL-0015", "SL-0016",
+            "SL-0017", "SL-0017", "SL-0022", "NT-0007", "NT-0008", "NT-0009", "NT-0013", "NT-0013", "NT-0013", "NT-0015"),
     };
 
     public static readonly NpcDeckDefinition TunersDeck = new()
@@ -52,9 +52,9 @@ public static class NpcDecks
         Name = "Tuners Standard",
         Faction = GameConstants.FactionTuners,
         Cards = C(
-            70, 70, 70, 72, 74, 74, 74, 76, 76, 77,
-            77, 77, 78, 79, 79, 81, 82, 84, 85, 86,
-            86, 86, 89, 89, 90, 90, 100, 101, 101, 101),
+            "TN-0001", "TN-0001", "TN-0001", "TN-0002", "TN-0004", "TN-0004", "TN-0004", "TN-0006", "TN-0006", "TN-0007",
+            "TN-0007", "TN-0007", "TN-0008", "TN-0009", "TN-0009", "TN-0010", "TN-0011", "TN-0013", "TN-0014", "TN-0015",
+            "TN-0015", "TN-0015", "TN-0017", "TN-0017", "TN-0018", "TN-0018", "NT-0009", "NT-0010", "NT-0010", "NT-0010"),
     };
 
     public static readonly NpcDeckDefinition DevDeck = new()
@@ -62,9 +62,9 @@ public static class NpcDecks
         Name = "Dev Test Deck",
         Faction = "Mixed",
         Cards = C(
-            1, 1, 1, 2, 2, 2, 3, 3, 3, 4, 4, 5,
-            6, 6, 6, 7, 7, 8, 8, 8, 1, 1, 1, 2,
-            2, 2, 3, 3, 3, 3),
+            "SH-0001", "SH-0001", "SH-0001", "SH-0002", "SH-0002", "SH-0002", "SH-0003", "SH-0003", "SH-0003", "SH-0004", "SH-0004", "SH-0005",
+            "SH-0005", "SH-0005", "SH-0005", "SH-0006", "SH-0006", "SH-0007", "SH-0007", "SH-0007", "SH-0001", "SH-0001", "SH-0001", "SH-0002",
+            "SH-0002", "SH-0002", "SH-0003", "SH-0003", "SH-0003", "SH-0003"),
     };
 
     public static readonly Dictionary<string, NpcDeckDefinition> Decks = new()

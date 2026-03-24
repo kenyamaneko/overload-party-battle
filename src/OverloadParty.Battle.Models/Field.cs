@@ -16,7 +16,7 @@ public class Field
 public class ResourceInstance
 {
     public string InstanceID { get; set; } = "";
-    public long CardID { get; set; }
+    public string CardID { get; set; } = "";
     public long ArtNo { get; set; }
     public Rank? Rank { get; set; }
     public InstanceFamily? InstanceFamily { get; set; }
@@ -54,7 +54,7 @@ public class ResourceInstance
 public class AttachmentRef
 {
     public string InstanceID { get; set; } = "";
-    public long CardID { get; set; }
+    public string CardID { get; set; } = "";
     public long ArtNo { get; set; }
 }
 
@@ -75,7 +75,7 @@ public class TemporaryEffect
 public class SupportInstance
 {
     public string InstanceID { get; set; } = "";
-    public long CardID { get; set; }
+    public string CardID { get; set; } = "";
     public long ArtNo { get; set; }
     public bool FaceUp { get; set; }
     public long DeployingTurnsLeft { get; set; }
@@ -89,7 +89,7 @@ public class SupportInstance
 public class HandCard
 {
     public string InstanceID { get; set; } = "";
-    public long CardID { get; set; }
+    public string CardID { get; set; } = "";
     public long ArtNo { get; set; }
 }
 

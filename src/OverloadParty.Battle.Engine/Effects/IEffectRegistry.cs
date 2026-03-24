@@ -71,7 +71,7 @@ public class BudgetRequirement
 }
 
 /// <summary>
-/// Registry for looking up effect handlers by card number and trigger type.
+/// Registry for looking up effect handlers by card ID and trigger type.
 /// Engine depends only on this interface; implementation is in Effects/.
 /// </summary>
 public interface IEffectRegistry
@@ -79,31 +79,31 @@ public interface IEffectRegistry
     /// <summary>
     /// Retrieves the effect handler for the given card and trigger, or null if none registered.
     /// </summary>
-    /// <param name="cardNo">Card number to look up.</param>
+    /// <param name="cardId">Card ID to look up.</param>
     /// <param name="trigger">Trigger type to look up.</param>
     /// <returns>The handler, or null if not found.</returns>
-    EffectHandler? Get(long cardNo, TriggerType trigger);
+    EffectHandler? Get(string cardId, TriggerType trigger);
 
     /// <summary>
     /// Returns whether a handler is registered for the given card and trigger.
     /// </summary>
-    /// <param name="cardNo">Card number to check.</param>
+    /// <param name="cardId">Card ID to check.</param>
     /// <param name="trigger">Trigger type to check.</param>
     /// <returns>True if a handler exists.</returns>
-    bool Has(long cardNo, TriggerType trigger);
+    bool Has(string cardId, TriggerType trigger);
 
     /// <summary>
     /// Returns budget requirements for the given effect, or null if none.
     /// </summary>
-    BudgetRequirement? GetBudgetRequirement(long cardNo, TriggerType trigger);
+    BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger);
 
     /// <summary>
     /// Returns NPC classification for an effect, or null if no ops are stored.
     /// </summary>
-    EffectInfo? GetEffectInfo(long cardNo, TriggerType trigger);
+    EffectInfo? GetEffectInfo(string cardId, TriggerType trigger);
 
     /// <summary>
     /// Returns branch keys if the effect uses BranchOnChoice, or null otherwise.
     /// </summary>
-    List<string>? GetChoiceOptions(long cardNo, TriggerType trigger);
+    List<string>? GetChoiceOptions(string cardId, TriggerType trigger);
 }

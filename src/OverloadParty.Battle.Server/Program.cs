@@ -166,7 +166,7 @@ api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
 {
     try
     {
-        var cards = req.Cards.Select(c => new DeckSnapshotCard { CardNo = c.CardNo, ArtNo = c.ArtNo }).ToList();
+        var cards = req.Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
         var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, cards, req.NpcFaction);
         return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
     }
@@ -186,8 +186,8 @@ api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
 {
     try
     {
-        var p1Cards = req.Player1Cards.Select(c => new DeckSnapshotCard { CardNo = c.CardNo, ArtNo = c.ArtNo }).ToList();
-        var p2Cards = req.Player2Cards.Select(c => new DeckSnapshotCard { CardNo = c.CardNo, ArtNo = c.ArtNo }).ToList();
+        var p1Cards = req.Player1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
+        var p2Cards = req.Player2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
         var game = await gameSvc.CreateGameFromMatch(req.Player1ID, req.Player1DeckID, p1Cards, req.Player2ID, req.Player2DeckID, p2Cards);
         return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
     }
@@ -315,7 +315,7 @@ api.MapGet("/games/{gameId}/log/text", async (GameLogService logSvc, string game
 if (isLocalDev)
 {
     app.MapGet("/api/dev/cards", (ICardCache cc) =>
-        Results.Ok(cc.All().Values.Select(c => new { c.CardNo, c.CardName, c.Faction, c.CardType })));
+        Results.Ok(cc.All().Values.Select(c => new { c.CardId, c.CardName, c.Faction, c.CardType })));
 }
 
 var port = Environment.GetEnvironmentVariable("PORT") ?? "9002";
@@ -341,7 +341,7 @@ static object ProjectActionResult(GameActionResult result) => new
     }),
 };
 
-public record DeckCard(long CardNo, long ArtNo);
+public record DeckCard(string CardId, long ArtNo);
 public record NpcBattleRequest(string PlayerID, long DeckID, List<DeckCard> Cards, string NpcFaction);
 public record PvpBattleRequest(string Player1ID, long Player1DeckID, List<DeckCard> Player1Cards, string Player2ID, long Player2DeckID, List<DeckCard> Player2Cards);
 public record GameActionRequest(string PlayerID, string ActionType, JsonElement Data);

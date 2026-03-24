@@ -121,10 +121,10 @@ public class FactionAi : StandardAi
             // Tenki-specific priority
             int aozoraPri = a.CardID switch
             {
-                32 => 100, // 百花の天穹<コスモ> - HIGHEST (enables #27 combo)
-                27 => HasCardOnField(ctx.Field, 32) ? 90 : 70, // 智の解放者<オープナー>
-                30 => CountTenkiDBOnField(ctx.Field) >= 2 ? 85 : 60, // 天気使い DB - ハヤテ
-                29 or 31 or 33 => 65, // Other Tenki data cards
+                "TK-0010" => 100, // 百花の天穹<コスモ> - HIGHEST (enables TK-0005 combo)
+                "TK-0005" => HasCardOnField(ctx.Field, "TK-0010") ? 90 : 70, // 智の解放者<オープナー>
+                "TK-0008" => CountTenkiDBOnField(ctx.Field) >= 2 ? 85 : 60, // 天気使い DB - ハヤテ
+                "TK-0007" or "TK-0009" or "TK-0011" => 65, // Other Tenki data cards
                 _ => 50,
             };
 
@@ -163,7 +163,7 @@ public class FactionAi : StandardAi
             };
             if (c.Action.ChoiceOptions?.Count > 0)
             {
-                var choice = DeployChoiceFor(c.Card.CardNo);
+                var choice = DeployChoiceFor(c.Card.CardId);
                 if (choice == "")
                 {
                     choice = c.Action.ChoiceOptions.First();
@@ -181,15 +181,15 @@ public class FactionAi : StandardAi
 
     // ─── Tenki helpers ──────────────────────────────────────────
 
-    private static bool HasCardOnField(Field field, long cardNo)
+    private static bool HasCardOnField(Field field, string cardId)
     {
-        return FieldHelpers.AllResources(field).Any(r => r.CardID == cardNo);
+        return FieldHelpers.AllResources(field).Any(r => r.CardID == cardId);
     }
 
-    private static readonly HashSet<long> TenkiDBCardNos = [29, 30, 31, 32, 33];
+    private static readonly HashSet<string> TenkiDBCardIds = ["TK-0007", "TK-0008", "TK-0009", "TK-0010", "TK-0011"];
 
     private static int CountTenkiDBOnField(Field field)
     {
-        return field.Backend.Count(res => TenkiDBCardNos.Contains(res.CardID));
+        return field.Backend.Count(res => TenkiDBCardIds.Contains(res.CardID));
     }
 }

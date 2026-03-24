@@ -56,7 +56,7 @@ public static class CardMoveHelpers
     /// <summary>
     /// 指定カードIDで新しいカードを手札に加える。
     /// </summary>
-    public static void AddToHand(GameState state, long playerNum, long cardID)
+    public static void AddToHand(GameState state, long playerNum, string cardID)
     {
         var hand = state.GetHand(playerNum);
         hand.Add(new HandCard
@@ -94,7 +94,7 @@ public static class CardMoveHelpers
     /// <summary>
     /// カードをトラッシュに加える。
     /// </summary>
-    public static void AddToTrash(GameState state, long playerNum, long cardID, string instanceID, long artNo = 0)
+    public static void AddToTrash(GameState state, long playerNum, string cardID, string instanceID, long artNo = 0)
     {
         var trash = state.GetTrash(playerNum);
         trash.Add(new HandCard { InstanceID = instanceID, CardID = cardID, ArtNo = artNo });

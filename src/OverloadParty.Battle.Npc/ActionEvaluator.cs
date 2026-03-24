@@ -14,10 +14,10 @@ public static class ActionEvaluator
     /// Checks if a card's effect should be used and returns (priority, shouldUse, choiceData).
     /// </summary>
     public static (int Priority, bool Use, Dictionary<string, object>? ChoiceData) EvaluateCard(
-        long cardNo, TriggerType trigger, DecisionContext ctx,
+        string cardId, TriggerType trigger, DecisionContext ctx,
         IEffectRegistry effects, ICardCache cc)
     {
-        var info = effects.GetEffectInfo(cardNo, trigger);
+        var info = effects.GetEffectInfo(cardId, trigger);
         if (info is null)
         {
             return (0, false, null);

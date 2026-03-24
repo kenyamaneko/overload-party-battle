@@ -8,17 +8,17 @@ namespace OverloadParty.Battle.Engine;
 /// </summary>
 public interface ICardCache
 {
-    /// <summary>Returns the card definition for <paramref name="cardNo"/>, or <c>null</c> if not found.</summary>
-    /// <param name="cardNo">The card number to look up.</param>
-    CardDefinition? Get(long cardNo);
+    /// <summary>Returns the card definition for <paramref name="cardId"/>, or <c>null</c> if not found.</summary>
+    /// <param name="cardId">The card ID to look up.</param>
+    CardDefinition? Get(string cardId);
 
-    /// <summary>Returns the card definition for <paramref name="cardNo"/>. Throws if not found.</summary>
-    /// <param name="cardNo">The card number to look up.</param>
+    /// <summary>Returns the card definition for <paramref name="cardId"/>. Throws if not found.</summary>
+    /// <param name="cardId">The card ID to look up.</param>
     /// <returns>The matching <see cref="CardDefinition"/>.</returns>
-    CardDefinition MustGet(long cardNo);
+    CardDefinition MustGet(string cardId);
 
-    /// <summary>Returns all loaded card definitions keyed by card number.</summary>
-    IReadOnlyDictionary<long, CardDefinition> All();
+    /// <summary>Returns all loaded card definitions keyed by card ID.</summary>
+    IReadOnlyDictionary<string, CardDefinition> All();
 
     /// <summary>Gets the total number of loaded card definitions.</summary>
     int Count { get; }

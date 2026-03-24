@@ -27,137 +27,137 @@ public class EffectInitTests
     // ─── SHE faction ────────────────────────────────────────────
 
     [Theory]
-    [InlineData(7, TriggerType.Deploy)]
-    [InlineData(9, TriggerType.OnDestroy)]
-    [InlineData(10, TriggerType.Activate)]
-    [InlineData(11, TriggerType.Deploy)]
-    [InlineData(14, TriggerType.Activate)]
-    [InlineData(15, TriggerType.Reactive)]
-    [InlineData(18, TriggerType.Reactive)]
-    [InlineData(19, TriggerType.Activate)]
-    [InlineData(20, TriggerType.Activate)]
-    [InlineData(21, TriggerType.Activate)]
-    [InlineData(22, TriggerType.Reactive)]
-    [InlineData(118, TriggerType.Activate)]
-    [InlineData(121, TriggerType.Activate)]
-    public void SHE_Cards_AreRegistered(long cardNo, TriggerType trigger)
+    [InlineData("SH-0006", TriggerType.Deploy)]
+    [InlineData("SH-0008", TriggerType.OnDestroy)]
+    [InlineData("SH-0009", TriggerType.Activate)]
+    [InlineData("SH-0010", TriggerType.Deploy)]
+    [InlineData("SH-0013", TriggerType.Activate)]
+    [InlineData("SH-0014", TriggerType.Reactive)]
+    [InlineData("SH-0017", TriggerType.Reactive)]
+    [InlineData("SH-0018", TriggerType.Activate)]
+    [InlineData("SH-0019", TriggerType.Activate)]
+    [InlineData("SH-0020", TriggerType.Activate)]
+    [InlineData("SH-0021", TriggerType.Reactive)]
+    [InlineData("SH-0022", TriggerType.Activate)]
+    [InlineData("SH-0023", TriggerType.Activate)]
+    public void SHE_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
-        _registry.Has(cardNo, trigger).Should().BeTrue(
-            $"card #{cardNo} should have a {trigger} handler");
-        _registry.Get(cardNo, trigger).Should().NotBeNull();
+        _registry.Has(cardId, trigger).Should().BeTrue(
+            $"card #{cardId} should have a {trigger} handler");
+        _registry.Get(cardId, trigger).Should().NotBeNull();
     }
 
     // ─── Tenki faction ─────────────────────────────────────────
 
     [Theory]
-    [InlineData(30, TriggerType.OnDestroy)]
-    [InlineData(32, TriggerType.Deploy)]
-    [InlineData(36, TriggerType.Activate)]
-    [InlineData(37, TriggerType.Reactive)]
-    [InlineData(38, TriggerType.OnDestroy)]
-    [InlineData(40, TriggerType.Reactive)]
-    [InlineData(41, TriggerType.OnDestroy)]
-    [InlineData(42, TriggerType.Activate)]
-    [InlineData(43, TriggerType.Activate)]
-    [InlineData(44, TriggerType.Activate)]
-    [InlineData(45, TriggerType.Reactive)]
-    [InlineData(46, TriggerType.Reactive)]
-    [InlineData(122, TriggerType.Reactive)]
-    [InlineData(123, TriggerType.Reactive)]
-    public void Tenki_Cards_AreRegistered(long cardNo, TriggerType trigger)
+    [InlineData("TK-0008", TriggerType.OnDestroy)]
+    [InlineData("TK-0010", TriggerType.Deploy)]
+    [InlineData("TK-0025", TriggerType.Activate)]
+    [InlineData("TK-0014", TriggerType.Reactive)]
+    [InlineData("TK-0015", TriggerType.OnDestroy)]
+    [InlineData("TK-0017", TriggerType.Reactive)]
+    [InlineData("TK-0018", TriggerType.OnDestroy)]
+    [InlineData("TK-0020", TriggerType.Activate)]
+    [InlineData("TK-0021", TriggerType.Activate)]
+    [InlineData("TK-0022", TriggerType.Activate)]
+    [InlineData("TK-0023", TriggerType.Reactive)]
+    [InlineData("TK-0024", TriggerType.Reactive)]
+    [InlineData("NT-0027", TriggerType.Reactive)]
+    [InlineData("NT-0028", TriggerType.Reactive)]
+    public void Tenki_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
-        _registry.Has(cardNo, trigger).Should().BeTrue(
-            $"card #{cardNo} should have a {trigger} handler");
-        _registry.Get(cardNo, trigger).Should().NotBeNull();
+        _registry.Has(cardId, trigger).Should().BeTrue(
+            $"card #{cardId} should have a {trigger} handler");
+        _registry.Get(cardId, trigger).Should().NotBeNull();
     }
 
     // ─── Sugar faction ─────────────────────────────────────────
 
     [Theory]
-    [InlineData(50, TriggerType.Deploy)]
-    [InlineData(51, TriggerType.OnAttack)]
-    [InlineData(52, TriggerType.OnAttack)]
-    [InlineData(52, TriggerType.OnDestroy)]
-    [InlineData(57, TriggerType.Deploy)]
-    [InlineData(58, TriggerType.OnAttack)]
-    [InlineData(61, TriggerType.Passive)]
-    [InlineData(63, TriggerType.OnAttack)]
-    [InlineData(65, TriggerType.Activate)]
-    [InlineData(66, TriggerType.Activate)]
-    [InlineData(67, TriggerType.Activate)]
-    [InlineData(68, TriggerType.Reactive)]
-    [InlineData(125, TriggerType.Deploy)]
-    public void Sugar_Cards_AreRegistered(long cardNo, TriggerType trigger)
+    [InlineData("SL-0004", TriggerType.Deploy)]
+    [InlineData("SL-0006", TriggerType.OnAttack)]
+    [InlineData("SL-0007", TriggerType.OnAttack)]
+    [InlineData("SL-0007", TriggerType.OnDestroy)]
+    [InlineData("SL-0010", TriggerType.Deploy)]
+    [InlineData("SL-0011", TriggerType.OnAttack)]
+    [InlineData("SL-0016", TriggerType.Passive)]
+    [InlineData("SL-0018", TriggerType.OnAttack)]
+    [InlineData("SL-0021", TriggerType.Activate)]
+    [InlineData("SL-0022", TriggerType.Activate)]
+    [InlineData("SL-0023", TriggerType.Activate)]
+    [InlineData("SL-0024", TriggerType.Reactive)]
+    [InlineData("SL-0012", TriggerType.Deploy)]
+    public void Sugar_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
-        _registry.Has(cardNo, trigger).Should().BeTrue(
-            $"card #{cardNo} should have a {trigger} handler");
-        _registry.Get(cardNo, trigger).Should().NotBeNull();
+        _registry.Has(cardId, trigger).Should().BeTrue(
+            $"card #{cardId} should have a {trigger} handler");
+        _registry.Get(cardId, trigger).Should().NotBeNull();
     }
 
     // ─── Tuners faction ────────────────────────────────────────
 
     [Theory]
-    [InlineData(72, TriggerType.OnAttack)]
-    [InlineData(83, TriggerType.Activate)]
-    [InlineData(84, TriggerType.Reactive)]
-    [InlineData(85, TriggerType.OnDestroy)]
-    [InlineData(89, TriggerType.Activate)]
-    [InlineData(90, TriggerType.Reactive)]
-    public void Tuners_Cards_AreRegistered(long cardNo, TriggerType trigger)
+    [InlineData("TN-0002", TriggerType.OnAttack)]
+    [InlineData("TN-0012", TriggerType.Activate)]
+    [InlineData("TN-0013", TriggerType.Reactive)]
+    [InlineData("TN-0014", TriggerType.OnDestroy)]
+    [InlineData("TN-0017", TriggerType.Activate)]
+    [InlineData("TN-0018", TriggerType.Reactive)]
+    public void Tuners_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
-        _registry.Has(cardNo, trigger).Should().BeTrue(
-            $"card #{cardNo} should have a {trigger} handler");
-        _registry.Get(cardNo, trigger).Should().NotBeNull();
+        _registry.Has(cardId, trigger).Should().BeTrue(
+            $"card #{cardId} should have a {trigger} handler");
+        _registry.Get(cardId, trigger).Should().NotBeNull();
     }
 
     // ─── Neutral cards ─────────────────────────────────────────
 
     [Theory]
-    [InlineData(98, TriggerType.Activate)]
-    [InlineData(99, TriggerType.Activate)]
-    [InlineData(100, TriggerType.Activate)]
-    [InlineData(101, TriggerType.Activate)]
-    [InlineData(102, TriggerType.Activate)]
-    [InlineData(103, TriggerType.Activate)]
-    [InlineData(120, TriggerType.Activate)]
-    public void Neutral_Cards_AreRegistered(long cardNo, TriggerType trigger)
+    [InlineData("NT-0007", TriggerType.Activate)]
+    [InlineData("NT-0008", TriggerType.Activate)]
+    [InlineData("NT-0009", TriggerType.Activate)]
+    [InlineData("NT-0010", TriggerType.Activate)]
+    [InlineData("NT-0011", TriggerType.Activate)]
+    [InlineData("NT-0012", TriggerType.Activate)]
+    [InlineData("NT-0026", TriggerType.Activate)]
+    public void Neutral_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
-        _registry.Has(cardNo, trigger).Should().BeTrue(
-            $"card #{cardNo} should have a {trigger} handler");
-        _registry.Get(cardNo, trigger).Should().NotBeNull();
+        _registry.Has(cardId, trigger).Should().BeTrue(
+            $"card #{cardId} should have a {trigger} handler");
+        _registry.Get(cardId, trigger).Should().NotBeNull();
     }
 
     // ─── Incidents ─────────────────────────────────────────────
 
     [Theory]
-    [InlineData(104, TriggerType.Activate)]
-    [InlineData(105, TriggerType.Activate)]
-    [InlineData(106, TriggerType.Activate)]
-    [InlineData(107, TriggerType.Activate)]
-    [InlineData(108, TriggerType.Activate)]
-    [InlineData(109, TriggerType.Activate)]
-    [InlineData(110, TriggerType.Activate)]
-    [InlineData(111, TriggerType.Activate)]
-    [InlineData(112, TriggerType.Activate)]
-    [InlineData(113, TriggerType.OnEnemyDeploy)]
-    [InlineData(135, TriggerType.OnEnemyDeploy)]
-    public void Incident_Cards_AreRegistered(long cardNo, TriggerType trigger)
+    [InlineData("NT-0013", TriggerType.Activate)]
+    [InlineData("NT-0014", TriggerType.Activate)]
+    [InlineData("NT-0015", TriggerType.Activate)]
+    [InlineData("NT-0016", TriggerType.Activate)]
+    [InlineData("NT-0017", TriggerType.Activate)]
+    [InlineData("NT-0018", TriggerType.Activate)]
+    [InlineData("NT-0019", TriggerType.Activate)]
+    [InlineData("NT-0020", TriggerType.Activate)]
+    [InlineData("NT-0021", TriggerType.Activate)]
+    [InlineData("NT-0022", TriggerType.OnEnemyDeploy)]
+    [InlineData("NT-0034", TriggerType.OnEnemyDeploy)]
+    public void Incident_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
-        _registry.Has(cardNo, trigger).Should().BeTrue(
-            $"card #{cardNo} should have a {trigger} handler");
-        _registry.Get(cardNo, trigger).Should().NotBeNull();
+        _registry.Has(cardId, trigger).Should().BeTrue(
+            $"card #{cardId} should have a {trigger} handler");
+        _registry.Get(cardId, trigger).Should().NotBeNull();
     }
 
     // ─── Reactives ─────────────────────────────────────────────
 
     [Theory]
-    [InlineData(115, TriggerType.Reactive)]
-    [InlineData(117, TriggerType.Reactive)]
-    public void Reactive_Cards_AreRegistered(long cardNo, TriggerType trigger)
+    [InlineData("NT-0023", TriggerType.Reactive)]
+    [InlineData("NT-0024", TriggerType.Reactive)]
+    public void Reactive_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
-        _registry.Has(cardNo, trigger).Should().BeTrue(
-            $"card #{cardNo} should have a {trigger} handler");
-        _registry.Get(cardNo, trigger).Should().NotBeNull();
+        _registry.Has(cardId, trigger).Should().BeTrue(
+            $"card #{cardId} should have a {trigger} handler");
+        _registry.Get(cardId, trigger).Should().NotBeNull();
     }
 
     // ─── Unregistered cards return null ────────────────────────
@@ -165,19 +165,19 @@ public class EffectInitTests
     [Fact]
     public void UnregisteredCard_ReturnsNull()
     {
-        _registry.Get(9999, TriggerType.Activate).Should().BeNull();
-        _registry.Has(9999, TriggerType.Activate).Should().BeFalse();
+        _registry.Get("TEST-9999", TriggerType.Activate).Should().BeNull();
+        _registry.Has("TEST-9999", TriggerType.Activate).Should().BeFalse();
     }
 
     // ─── Choice-based cards have branch options ────────────────
 
     [Theory]
-    [InlineData(7, TriggerType.Deploy, new[] { "use", "skip" })]
-    [InlineData(11, TriggerType.Deploy, new[] { "memcached", "redis" })]
-    [InlineData(125, TriggerType.Deploy, new[] { "memcached", "redis" })]
-    public void ChoiceBased_Cards_HaveExpectedBranches(long cardNo, TriggerType trigger, string[] expectedKeys)
+    [InlineData("SH-0006", TriggerType.Deploy, new[] { "use", "skip" })]
+    [InlineData("SH-0010", TriggerType.Deploy, new[] { "memcached", "redis" })]
+    [InlineData("SL-0012", TriggerType.Deploy, new[] { "memcached", "redis" })]
+    public void ChoiceBased_Cards_HaveExpectedBranches(string cardId, TriggerType trigger, string[] expectedKeys)
     {
-        var options = _registry.GetChoiceOptions(cardNo, trigger);
+        var options = _registry.GetChoiceOptions(cardId, trigger);
         options.Should().NotBeNull();
         options.Should().BeEquivalentTo(expectedKeys);
     }
@@ -187,7 +187,7 @@ public class EffectInitTests
     [Fact]
     public void Card10_RequiresBudget400()
     {
-        var req = _registry.GetBudgetRequirement(10, TriggerType.Activate);
+        var req = _registry.GetBudgetRequirement("SH-0009", TriggerType.Activate);
         req.Should().NotBeNull();
         req!.MinBudget.Should().Be(400);
     }
@@ -195,7 +195,7 @@ public class EffectInitTests
     [Fact]
     public void Card120_RequiresMaxBudget1000()
     {
-        var req = _registry.GetBudgetRequirement(120, TriggerType.Activate);
+        var req = _registry.GetBudgetRequirement("NT-0026", TriggerType.Activate);
         req.Should().NotBeNull();
         req!.MaxBudget.Should().Be(1000);
     }
@@ -203,7 +203,7 @@ public class EffectInitTests
     [Fact]
     public void Card98_HasNoBudgetRequirement()
     {
-        var req = _registry.GetBudgetRequirement(98, TriggerType.Activate);
+        var req = _registry.GetBudgetRequirement("NT-0007", TriggerType.Activate);
         req.Should().BeNull();
     }
 
@@ -212,37 +212,37 @@ public class EffectInitTests
     [Fact]
     public void Card104_EffectInfo_HasDamageCategory()
     {
-        var info = _registry.GetEffectInfo(104, TriggerType.Activate);
+        var info = _registry.GetEffectInfo("NT-0013", TriggerType.Activate);
         info.Should().NotBeNull();
     }
 
     [Fact]
     public void Card101_EffectInfo_HasBudgetCategory()
     {
-        var info = _registry.GetEffectInfo(101, TriggerType.Activate);
+        var info = _registry.GetEffectInfo("NT-0010", TriggerType.Activate);
         info.Should().NotBeNull();
     }
 
-    // ─── CardNosForTrigger ─────────────────────────────────────
+    // ─── CardIdsForTrigger ─────────────────────────────────────
 
     [Fact]
-    public void CardNosForTrigger_Reactive_ContainsExpectedCards()
+    public void CardIdsForTrigger_Reactive_ContainsExpectedCards()
     {
-        var reactiveCards = _registry.CardNosForTrigger(TriggerType.Reactive);
-        reactiveCards.Should().Contain(new long[] { 15, 22, 37, 40, 45, 46, 68, 84, 90, 115, 117, 122, 123 });
+        var reactiveCards = _registry.CardIdsForTrigger(TriggerType.Reactive);
+        reactiveCards.Should().Contain(new string[] { "SH-0014", "SH-0021", "TK-0014", "TK-0017", "TK-0023", "TK-0024", "SL-0024", "TN-0013", "TN-0018", "NT-0023", "NT-0024", "NT-0027", "NT-0028" });
     }
 
     [Fact]
-    public void CardNosForTrigger_OnAttack_ContainsExpectedCards()
+    public void CardIdsForTrigger_OnAttack_ContainsExpectedCards()
     {
-        var onAttackCards = _registry.CardNosForTrigger(TriggerType.OnAttack);
-        onAttackCards.Should().Contain(new long[] { 51, 52, 58, 63, 72 });
+        var onAttackCards = _registry.CardIdsForTrigger(TriggerType.OnAttack);
+        onAttackCards.Should().Contain(new string[] { "SL-0006", "SL-0007", "SL-0011", "SL-0018", "TN-0002" });
     }
 
     [Fact]
-    public void CardNosForTrigger_Passive_ContainsCard61()
+    public void CardIdsForTrigger_Passive_ContainsCard61()
     {
-        var passiveCards = _registry.CardNosForTrigger(TriggerType.Passive);
-        passiveCards.Should().Contain(61);
+        var passiveCards = _registry.CardIdsForTrigger(TriggerType.Passive);
+        passiveCards.Should().Contain("SL-0016");
     }
 }

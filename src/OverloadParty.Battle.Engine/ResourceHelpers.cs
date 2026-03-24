@@ -15,7 +15,7 @@ public static class ResourceHelpers
         var resource = new ResourceInstance
         {
             InstanceID = instanceID,
-            CardID = card.CardNo,
+            CardID = card.CardId,
             ArtNo = artNo,
             Rank = card.Resizable ? Rank.Small : null,
             FaceUp = card.DeployTurns <= 0,
@@ -72,19 +72,19 @@ public static class ResourceHelpers
     /// <summary>
     /// 手札からカードを配置する。
     /// </summary>
-    public static void DeployFromHand(GameState state, long playerNum, Field field, long cardNo, ICardCache cc)
+    public static void DeployFromHand(GameState state, long playerNum, Field field, string cardId, ICardCache cc)
     {
         var hand = state.GetHand(playerNum);
-        int handIdx = hand.FindIndex(c => c.CardID == cardNo);
+        int handIdx = hand.FindIndex(c => c.CardID == cardId);
         if (handIdx < 0)
         {
-            throw new GameRuleException($"Card {cardNo} not in hand");
+            throw new GameRuleException($"Card {cardId} not in hand");
         }
 
         var handCard = hand[handIdx];
         hand.RemoveAt(handIdx);
 
-        var card = cc.MustGet(cardNo);
+        var card = cc.MustGet(cardId);
         var instance = CreateResourceInstance(card, state.NextInstanceID(), state.CurrentTurn, handCard.ArtNo);
         PlaceResourceOnField(field, instance, card.CardType);
     }

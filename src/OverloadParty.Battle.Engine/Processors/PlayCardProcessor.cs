@@ -93,7 +93,7 @@ public static class PlayCardProcessor
         var support = new SupportInstance
         {
             InstanceID = ctx.State.NextInstanceID(),
-            CardID = cardDef.CardNo,
+            CardID = cardDef.CardId,
             ArtNo = handCard.ArtNo,
             FaceUp = cardDef.CardType != CardTypes.Reactive,
             DeployingTurnsLeft = cardDef.DeployTurns,
@@ -111,9 +111,9 @@ public static class PlayCardProcessor
             }
 
             // Fire activate trigger
-            if (ctx.Effects?.Has(cardDef.CardNo, TriggerType.Activate) == true)
+            if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Activate) == true)
             {
-                var handler = ctx.Effects.Get(cardDef.CardNo, TriggerType.Activate)!;
+                var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Activate)!;
                 var effectCtx = new EffectContext
                 {
                     State = ctx.State,
@@ -131,7 +131,7 @@ public static class PlayCardProcessor
             field.Support[req.Index] = null;
 
             // Move to trash
-            CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardNo, support.InstanceID, support.ArtNo);
+            CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, support.InstanceID, support.ArtNo);
         }
     }
 
@@ -165,14 +165,14 @@ public static class PlayCardProcessor
         {
             // Remove the deployed resource and send to trash
             FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
-            CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardNo, resource.InstanceID, resource.ArtNo);
+            CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, resource.InstanceID, resource.ArtNo);
             return true;
         }
 
         // Fire deploy trigger on the resource itself
-        if (ctx.Effects?.Has(cardDef.CardNo, TriggerType.Deploy) == true)
+        if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
         {
-            var handler = ctx.Effects.Get(cardDef.CardNo, TriggerType.Deploy)!;
+            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;
             var effectCtx = new EffectContext
             {
                 State = ctx.State,
@@ -211,7 +211,7 @@ public static class PlayCardProcessor
         target.Attachments.Add(new AttachmentRef
         {
             InstanceID = attachInstanceID,
-            CardID = cardDef.CardNo,
+            CardID = cardDef.CardId,
             ArtNo = handCard.ArtNo,
         });
 
@@ -220,9 +220,9 @@ public static class PlayCardProcessor
         var events = new List<GameEvent>();
 
         // Fire deploy trigger for attachment
-        if (ctx.Effects?.Has(cardDef.CardNo, TriggerType.Deploy) == true)
+        if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
         {
-            var handler = ctx.Effects.Get(cardDef.CardNo, TriggerType.Deploy)!;
+            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;
             var effectCtx = new EffectContext
             {
                 State = ctx.State,
@@ -311,12 +311,12 @@ public static class PlayCardProcessor
 
         // リアクティブは1つだけ発動する（セットが最も早いもの）
         var reactive = FieldHelpers.AllSupports(oppField)
-            .Where(s => ctx.Effects.Has(ctx.CC.MustGet(s.CardID).CardNo, TriggerType.OnEnemyDeploy))
+            .Where(s => ctx.Effects.Has(s.CardID, TriggerType.OnEnemyDeploy))
             .MinBy(s => s.DeployOrder);
 
         if (reactive is null) { return (false, allEvents); }
 
-        var handler = ctx.Effects.Get(ctx.CC.MustGet(reactive.CardID).CardNo, TriggerType.OnEnemyDeploy)!;
+        var handler = ctx.Effects.Get(reactive.CardID, TriggerType.OnEnemyDeploy)!;
         var effectCtx = new EffectContext
         {
             State = ctx.State,

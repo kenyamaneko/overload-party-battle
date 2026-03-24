@@ -15,8 +15,8 @@ public class MockCardRepository(ICardCache cardCache) : ICardRepository
         return Task.FromResult(all);
     }
 
-    public Task<CardDefinition?> FindByCardNo(long cardNo, CancellationToken ct = default)
+    public Task<CardDefinition?> FindByCardId(string cardId, CancellationToken ct = default)
     {
-        return Task.FromResult(cardCache.Get(cardNo));
+        return Task.FromResult(cardCache.Get(cardId));
     }
 }

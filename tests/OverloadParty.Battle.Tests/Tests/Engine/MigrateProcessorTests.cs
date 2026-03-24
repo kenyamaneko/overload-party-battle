@@ -12,12 +12,12 @@ public class MigrateProcessorTests
     public MigrateProcessorTests()
     {
         // Source card: deployTurns=0
-        _cc.Add(TestFactory.ComputeCard(cardNo: 1, tp: 600, deployTurns: 0, name: "SourceCompute"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, deployTurns: 0, name: "SourceCompute"));
         // Target card: deployTurns=1 (>= source)
-        _cc.Add(TestFactory.ComputeCard(cardNo: 2, tp: 800, deployTurns: 1, name: "TargetCompute"));
-        // Card with fewer deploy turns than source (deployTurns=0, but we'll use cardNo 3 with deployTurns < cardNo 4)
-        _cc.Add(TestFactory.ComputeCard(cardNo: 3, tp: 500, deployTurns: 0, name: "LowDeployCompute"));
-        _cc.Add(TestFactory.ComputeCard(cardNo: 4, tp: 700, deployTurns: 2, name: "HighDeployCompute"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, deployTurns: 1, name: "TargetCompute"));
+        // Card with fewer deploy turns than source (deployTurns=0, but we'll use cardId 3 with deployTurns < cardId 4)
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0002", tp: 500, deployTurns: 0, name: "LowDeployCompute"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0003", tp: 700, deployTurns: 2, name: "HighDeployCompute"));
     }
 
     private static MigrateRequest MakeReq(string sourceId, string targetId) =>
@@ -29,8 +29,8 @@ public class MigrateProcessorTests
     public void Process_InitiatesMigration_SetsMigrationFields()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: true);
-        var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: true);
+        var source = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
+        var target = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "be_2", faceUp: true);
         state.Player1Field.Backend[0] = source;
         state.Player1Field.Backend[1] = target;
 
@@ -49,8 +49,8 @@ public class MigrateProcessorTests
     public void Process_FaceDown_Throws(bool sourceFaceUp, bool targetFaceUp)
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: sourceFaceUp, deployLeft: sourceFaceUp ? 0 : 1);
-        var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: targetFaceUp, deployLeft: targetFaceUp ? 0 : 1);
+        var source = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: sourceFaceUp, deployLeft: sourceFaceUp ? 0 : 1);
+        var target = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "be_2", faceUp: targetFaceUp, deployLeft: targetFaceUp ? 0 : 1);
         state.Player1Field.Backend[0] = source;
         state.Player1Field.Backend[1] = target;
 
@@ -75,10 +75,10 @@ public class MigrateProcessorTests
         string? srcTarget, string? srcFrom, string? tgtFrom, string? tgtTarget, string msgPattern)
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: true);
+        var source = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
         source.MigrationTarget = srcTarget;
         source.MigratingFrom   = srcFrom;
-        var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: true);
+        var target = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "be_2", faceUp: true);
         target.MigratingFrom   = tgtFrom;
         target.MigrationTarget = tgtTarget;
         state.Player1Field.Backend[0] = source;
@@ -95,9 +95,9 @@ public class MigrateProcessorTests
     public void Process_TargetDeployTurnsLessThanSource_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        // Source has deployTurns=2 (cardNo=4), target has deployTurns=0 (cardNo=3)
-        var source = TestFactory.MakeResource(cardId: 4, instanceId: "be_1", faceUp: true);
-        var target = TestFactory.MakeResource(cardId: 3, instanceId: "be_2", faceUp: true);
+        // Source has deployTurns=2 (cardId=4), target has deployTurns=0 (cardId=3)
+        var source = TestFactory.MakeResource(cardId: "SH-0003", instanceId: "be_1", faceUp: true);
+        var target = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "be_2", faceUp: true);
         state.Player1Field.Backend[0] = source;
         state.Player1Field.Backend[1] = target;
 
@@ -113,8 +113,8 @@ public class MigrateProcessorTests
     public void Process_GeneratesMigrateEvent()
     {
         var state = TestFactory.MakeGameState(turn: 3);
-        var source = TestFactory.MakeResource(cardId: 1, instanceId: "be_1", faceUp: true);
-        var target = TestFactory.MakeResource(cardId: 2, instanceId: "be_2", faceUp: true);
+        var source = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
+        var target = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "be_2", faceUp: true);
         state.Player1Field.Backend[0] = source;
         state.Player1Field.Backend[1] = target;
 
@@ -124,7 +124,7 @@ public class MigrateProcessorTests
         var evt = result.Events.First(e => e.EventType == WireActionTypes.Migrate);
         evt.EventData!["sourceInstanceId"].Should().Be("be_1");
         evt.EventData!["targetInstanceId"].Should().Be("be_2");
-        evt.EventData!["sourceCardId"].Should().Be(1L);
-        evt.EventData!["targetCardId"].Should().Be(2L);
+        evt.EventData!["sourceCardId"].Should().Be("SH-0001");
+        evt.EventData!["targetCardId"].Should().Be("SH-0002");
     }
 }

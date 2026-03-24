@@ -90,7 +90,7 @@ public static class ActionFilter
         return new SlotPosition { Zone = zone[..idx], Index = index };
     }
 
-    public static long ResolveCardNoForInstance(string instanceId, Field field)
+    public static string ResolveCardIdForInstance(string instanceId, Field field)
     {
         var resource = FieldHelpers.AllResources(field).FirstOrDefault(r => r.InstanceID == instanceId);
         if (resource is not null)
@@ -104,7 +104,7 @@ public static class ActionFilter
             return support.CardID;
         }
 
-        return 0;
+        return "";
     }
 
     /// <summary>

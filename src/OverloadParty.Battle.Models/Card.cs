@@ -2,7 +2,7 @@ namespace OverloadParty.Battle.Models;
 
 public class CardDefinition
 {
-    public long CardNo { get; set; }
+    public string CardId { get; set; } = "";
     public string CardName { get; set; } = "";
     public string ResourceLabel { get; set; } = "";
     public string Faction { get; set; } = "";

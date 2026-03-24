@@ -12,9 +12,9 @@ namespace OverloadParty.Battle.Tests.Effects;
 /// </summary>
 public class ComplianceAuditEffectTests
 {
-    private const long CardNo = 112;
-    private const long IsmsPlatformNo = 96;
-    private const long Soc2PlatformNo = 97;
+    private const string CardId = "NT-0021";
+    private const string IsmsPlatformNo = "NT-0005";
+    private const string Soc2PlatformNo = "NT-0006";
 
     private readonly TestCardCache _cc;
     private readonly EffectRegistry _registry;
@@ -24,9 +24,9 @@ public class ComplianceAuditEffectTests
     {
         _cc = new TestCardCache();
         // Add card definitions needed for the effect
-        _cc.Add(new CardDefinition { CardNo = CardNo, CardName = "コンプライアンス監査", CardType = "Incident" });
-        _cc.Add(new CardDefinition { CardNo = IsmsPlatformNo, CardName = "ISMS認証", CardType = "Platform" });
-        _cc.Add(new CardDefinition { CardNo = Soc2PlatformNo, CardName = "SOC2認証", CardType = "Platform" });
+        _cc.Add(new CardDefinition { CardId = CardId, CardName = "コンプライアンス監査", CardType = "Incident" });
+        _cc.Add(new CardDefinition { CardId = IsmsPlatformNo, CardName = "ISMS認証", CardType = "Platform" });
+        _cc.Add(new CardDefinition { CardId = Soc2PlatformNo, CardName = "SOC2認証", CardType = "Platform" });
 
         _registry = new EffectRegistry();
         EffectInit.RegisterAllEffects(_registry);
@@ -156,7 +156,7 @@ public class ComplianceAuditEffectTests
 
     private EffectResult ExecuteEffect(GameState state, long playerNum)
     {
-        var handler = _registry.Get(CardNo, TriggerType.Activate)
+        var handler = _registry.Get(CardId, TriggerType.Activate)
             ?? throw new InvalidOperationException("Card #112 handler not registered");
 
         var ctx = new EffectContext
@@ -176,7 +176,7 @@ public class ComplianceAuditEffectTests
         field.Support[0] = new SupportInstance
         {
             InstanceID = "sup_audit",
-            CardID = CardNo,
+            CardID = CardId,
             FaceUp = true,
             DeployingTurnsLeft = 0,
         };
@@ -184,7 +184,7 @@ public class ComplianceAuditEffectTests
 
     private static void AddPlatformToField(
         Field field,
-        long cardId,
+        string cardId,
         int slotIndex = 0,
         bool faceUp = true,
         long deployingTurnsLeft = 0)
