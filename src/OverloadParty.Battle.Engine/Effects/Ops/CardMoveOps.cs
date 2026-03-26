@@ -39,6 +39,7 @@ public class SearchRepoOp : IEffectOp
 
 /// <summary>
 /// Adds the target resource's card to the player's hand.
+/// Requires <see cref="OpContext.Target"/> to be non-null.
 /// </summary>
 public class AddToHandOp : IEffectOp
 {
@@ -48,7 +49,8 @@ public class AddToHandOp : IEffectOp
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        CardMoveHelpers.AddToHand(ctx.State, ctx.PlayerNum, ctx.Target!.CardID);
+        ArgumentNullException.ThrowIfNull(ctx.Target);
+        CardMoveHelpers.AddToHand(ctx.State, ctx.PlayerNum, ctx.Target.CardID);
     }
 }
 
