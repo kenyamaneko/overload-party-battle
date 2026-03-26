@@ -64,12 +64,13 @@ public class OpponentField
 }
 
 /// <summary>
-/// Support instance with face-down card details hidden.
+/// Support instance for opponent view.
+/// CardID is always present; visibility is controlled by FaceUp.
 /// </summary>
 public class HiddenSupportInstance
 {
     public string InstanceID { get; init; } = "";
-    public string? CardID { get; init; } // null if face-down
+    public string CardID { get; init; } = "";
     public bool FaceUp { get; init; }
 }
 
@@ -158,7 +159,7 @@ public static class GameStateView
             {
                 InstanceID = sup.InstanceID,
                 FaceUp = sup.FaceUp,
-                CardID = sup.FaceUp ? sup.CardID : null,
+                CardID = sup.CardID,
             }).ToArray(),
         };
     }

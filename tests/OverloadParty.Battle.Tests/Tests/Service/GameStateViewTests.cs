@@ -105,7 +105,7 @@ public class GameStateViewTests
     }
 
     [Fact]
-    public void Build_OpponentView_HidesFaceDownSupportCardID()
+    public void Build_OpponentView_KeepsCardIDForFaceDownSupport()
     {
         var state = TestFactory.MakeGameState();
         state.Player2Field.Support[0] = new SupportInstance
@@ -121,7 +121,7 @@ public class GameStateViewTests
         oppSup.Should().NotBeNull();
         oppSup!.InstanceID.Should().Be("sup_1");
         oppSup.FaceUp.Should().BeFalse();
-        oppSup.CardID.Should().BeNull("face-down support should hide CardID");
+        oppSup.CardID.Should().Be("TEST-0200", "CardID should always be present regardless of FaceUp");
     }
 
     [Fact]
