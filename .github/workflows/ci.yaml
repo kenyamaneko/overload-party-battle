@@ -59,6 +59,6 @@ jobs:
       - name: Build and push
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}
-          docker build -t ${IMAGE}:${{ github.sha }} -t ${IMAGE}:latest .
+          docker build --build-arg NUGET_TOKEN=${{ secrets.COMMON_PKG_FETCH }} -t ${IMAGE}:${{ github.sha }} -t ${IMAGE}:latest .
           docker push ${IMAGE}:${{ github.sha }}
           docker push ${IMAGE}:latest
