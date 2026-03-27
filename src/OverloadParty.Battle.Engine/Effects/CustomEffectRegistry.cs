@@ -315,11 +315,13 @@ public class CustomEffectRegistry : ICustomEffectRegistry
             return;
         }
 
-        var otherFrontends = octx.MyField.Frontend
-            .Where(r => r.InstanceID != octx.Source.InstanceID && r.FaceUp)
-            .Any();
+        bool hasOtherFrontends = octx.MyField.Frontend
+            .Any(r => r.InstanceID != octx.Source.InstanceID && r.FaceUp);
 
-        if (otherFrontends)
+        bool alreadyShielded = octx.Source.TemporaryEffects
+            .Any(e => e.EffectType == "target_shield");
+
+        if (hasOtherFrontends && !alreadyShielded)
         {
             octx.Source.TemporaryEffects.Add(new TemporaryEffect
             {
@@ -328,6 +330,10 @@ public class CustomEffectRegistry : ICustomEffectRegistry
                 Duration = "permanent",
                 SourceID = "target_shield",
             });
+        }
+        else if (!hasOtherFrontends && alreadyShielded)
+        {
+            octx.Source.TemporaryEffects.RemoveAll(e => e.EffectType == "target_shield");
         }
     }
 
