@@ -39,7 +39,15 @@ public class IncidentDamageOp(ISelector sel, IAmountResolver value, IAmountResol
 
         foreach (var target in targets)
         {
-            target.Damage += damage;
+            if (FieldHelpers.HasTemporaryEffect(target, "incident_immune"))
+            {
+                continue;
+            }
+
+            long reduction = target.TemporaryEffects
+                .Where(e => e.EffectType == "incident_reduction")
+                .Sum(e => e.Value);
+            target.Damage += Math.Max(0, damage - reduction);
         }
 
         if (budgetPenalty is null) { return; }

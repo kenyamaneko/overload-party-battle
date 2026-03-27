@@ -1,3 +1,5 @@
+using System.Text.Json;
+using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
@@ -303,6 +305,59 @@ public static class TestFactory
             idx++;
         }
         return new DeckSnapshot { DeckID = "deck-1", Cards = cards };
+    }
+}
+
+/// <summary>
+/// Builds an EffectRegistry from embedded cards_gen.json via EffectYamlLoader.
+/// </summary>
+public static class TestEffectSetup
+{
+    private static readonly Lazy<(EffectRegistry Registry, CardCache CardCache)> _cached = new(Build);
+
+    /// <summary>
+    /// Returns a shared (EffectRegistry, CardCache) built from embedded card data.
+    /// </summary>
+    public static (EffectRegistry Registry, CardCache CardCache) Get() => _cached.Value;
+
+    private static (EffectRegistry, CardCache) Build()
+    {
+        var cardsPath = Environment.GetEnvironmentVariable("CARDS_JSON_PATH")
+            ?? FindCardsJson()
+            ?? throw new FileNotFoundException(
+                "cards_gen.json not found. Set CARDS_JSON_PATH or run generate_from_yaml.py in the common repo.");
+
+        var cardCache = new CardCache();
+        var cards = JsonSerializer.Deserialize<List<CardDefinition>>(
+            File.ReadAllText(cardsPath), new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+                PropertyNameCaseInsensitive = true,
+            })!;
+        cardCache.LoadFromList(cards);
+
+        var registry = new EffectRegistry();
+        var customEffects = new CustomEffectRegistry();
+        EffectYamlLoader.LoadFromCards(cards, registry, customEffects);
+
+        return (registry, cardCache);
+    }
+
+    private static string? FindCardsJson()
+    {
+        // Walk up from the test binary to find the common repo
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, "overload-party-common",
+                "packages", "dotnet", "cache", "cards_gen.json");
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+            dir = dir.Parent;
+        }
+        return null;
     }
 }
 

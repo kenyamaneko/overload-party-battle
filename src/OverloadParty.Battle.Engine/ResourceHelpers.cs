@@ -116,9 +116,13 @@ public static class ResourceHelpers
     {
         var card = cc.MustGet(resource.CardID);
 
-        // SLAペナルティを所有者のバジェットから差し引く
+        // SLAペナルティを所有者のバジェットから差し引く（sla_penalty_reduction で軽減）
+        long penaltyReduction = resource.TemporaryEffects
+            .Where(e => e.EffectType == "sla_penalty_reduction")
+            .Sum(e => e.Value);
+        long penalty = Math.Max(0, card.SLAPenalty - penaltyReduction);
         long budget = state.GetBudget(ownerNum);
-        state.SetBudget(ownerNum, budget - card.SLAPenalty);
+        state.SetBudget(ownerNum, budget - penalty);
 
         // マイグレーションリンクをクリア
         FieldHelpers.ClearMigrationOnSourceDestroyed(field, resource);

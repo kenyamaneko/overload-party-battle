@@ -22,14 +22,12 @@ public class ComplianceAuditEffectTests
 
     public ComplianceAuditEffectTests()
     {
+        (_registry, _) = TestEffectSetup.Get();
+
         _cc = new TestCardCache();
-        // Add card definitions needed for the effect
         _cc.Add(new CardDefinition { CardId = CardId, CardName = "コンプライアンス監査", CardType = "Incident" });
         _cc.Add(new CardDefinition { CardId = IsmsPlatformNo, CardName = "ISMS認証", CardType = "Platform" });
         _cc.Add(new CardDefinition { CardId = Soc2PlatformNo, CardName = "SOC2認証", CardType = "Platform" });
-
-        _registry = new EffectRegistry();
-        EffectInit.RegisterAllEffects(_registry);
 
         _game = TestFactory.MakeGame();
     }

@@ -5,7 +5,7 @@ namespace OverloadParty.Battle.Engine.Effects.Ops;
 /// <summary>
 /// Identifies which player an operation targets.
 /// </summary>
-public enum PlayerRef { Self, Opponent }
+public enum PlayerRef { Self, Opponent, Both }
 
 /// <summary>
 /// Adds budget to a player.

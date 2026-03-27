@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace OverloadParty.Battle.Models;
 
 public class CardDefinition
@@ -27,6 +29,8 @@ public class CardDefinition
     public List<PassiveEffect> PassiveEffects { get; set; } = [];
     public List<PlatformEffect> PlatformEffects { get; set; } = [];
     public List<AttachmentEffect> AttachmentEffects { get; set; } = [];
+
+    public List<EffectDef>? Effects { get; set; }
 
     /// <summary>
     /// Returns whether this card type falls under the Compute category.

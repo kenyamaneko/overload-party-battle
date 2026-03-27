@@ -130,14 +130,17 @@ public class AllOwnSelector : ISelector
     /// <summary>Faction filter, or null for any faction.</summary>
     public string? Faction { get; init; }
 
+    /// <summary>Card type filter list, or null for any type.</summary>
+    public List<string>? CardTypes { get; init; }
+
     /// <inheritdoc />
     public List<ResourceInstance> Select(OpContext ctx)
     {
         var field = ctx.MyField;
-        return FilterResources(field, Zone, Faction, ctx.CardCache);
+        return FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes);
     }
 
-    internal static List<ResourceInstance> FilterResources(Field field, string? zone, string? faction, ICardCache cc)
+    internal static List<ResourceInstance> FilterResources(Field field, string? zone, string? faction, ICardCache cc, List<string>? cardTypes = null)
     {
         IEnumerable<ResourceInstance> candidates = zone switch
         {
@@ -149,6 +152,12 @@ public class AllOwnSelector : ISelector
         return candidates
             .Where(r => r.FaceUp)
             .Where(r => faction is not { Length: > 0 } || cc.Get(r.CardID)?.Faction == faction)
+            .Where(r =>
+            {
+                if (cardTypes is not { Count: > 0 }) return true;
+                var card = cc.Get(r.CardID);
+                return card is not null && cardTypes.Contains(card.CardType);
+            })
             .ToList();
     }
 }
@@ -164,10 +173,37 @@ public class AllOpponentSelector : ISelector
     /// <summary>Faction filter, or null for any faction.</summary>
     public string? Faction { get; init; }
 
+    /// <summary>Card type filter list, or null for any type.</summary>
+    public List<string>? CardTypes { get; init; }
+
     /// <inheritdoc />
     public List<ResourceInstance> Select(OpContext ctx)
     {
         var field = ctx.OpponentField;
-        return AllOwnSelector.FilterResources(field, Zone, Faction, ctx.CardCache);
+        return AllOwnSelector.FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes);
+    }
+}
+
+/// <summary>
+/// Combines two selectors by concatenating their results.
+/// </summary>
+public class UnionSelector(ISelector a, ISelector b) : ISelector
+{
+    /// <inheritdoc />
+    public List<ResourceInstance> Select(OpContext ctx) =>
+        a.Select(ctx).Concat(b.Select(ctx)).ToList();
+}
+
+/// <summary>
+/// Wraps another selector and excludes the source resource from the results.
+/// </summary>
+public class ExcludeSourceSelector(ISelector inner) : ISelector
+{
+    /// <inheritdoc />
+    public List<ResourceInstance> Select(OpContext ctx)
+    {
+        var results = inner.Select(ctx);
+        if (ctx.Source is null) return results;
+        return results.Where(r => r.InstanceID != ctx.Source.InstanceID).ToList();
     }
 }

@@ -62,8 +62,11 @@ public static class AttackProcessor
             return new ActionResult { Events = events, StateUpdated = true };
         }
 
-        // Apply damage
-        defender.Damage += damage;
+        // Apply damage (reduced by attack_damage_reduction buffs on defender)
+        long damageReduction = defender.TemporaryEffects
+            .Where(e => e.EffectType == "attack_damage_reduction")
+            .Sum(e => e.Value);
+        defender.Damage += Math.Max(0, damage - damageReduction);
         attacker.HasAttacked = true;
 
         // Fire OnAttack trigger

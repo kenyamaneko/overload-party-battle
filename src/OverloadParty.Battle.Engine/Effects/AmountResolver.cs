@@ -128,3 +128,58 @@ public class BackendScaledAmount(long baseVal, long perBackend, long maxBonus) :
         return baseVal + bonus;
     }
 }
+
+/// <summary>
+/// Resolves a stat reference with optional multiplier.
+/// Supports: source.yield, source.tp, target.tp, target.max_av, etc.
+/// </summary>
+public class RefAmount(string who, string stat, double multiply = 1.0) : IAmountResolver
+{
+    /// <inheritdoc />
+    public long Resolve(OpContext ctx)
+    {
+        long raw = (who, stat) switch
+        {
+            ("source", "yield") => ctx.Source is not null
+                ? StatCalculator.CalculateEffectiveInsight(ctx.Source, ctx.MyField, ctx.CardCache) : 0,
+            ("source", "tp") => ctx.Source is not null
+                ? StatCalculator.CalculateEffectiveTP(ctx.Source, ctx.MyField, ctx.CardCache) : 0,
+            ("source", "max_av") => ctx.Source?.MaxAV ?? 0,
+            ("source", "av") => ctx.Source?.EffectiveAV ?? 0,
+            ("target", "tp") => ctx.Target is not null
+                ? StatCalculator.CalculateEffectiveTP(ctx.Target, ctx.OpponentField, ctx.CardCache) : 0,
+            ("target", "max_av") => ctx.Target?.MaxAV ?? 0,
+            ("target", "av") => ctx.Target?.EffectiveAV ?? 0,
+            ("target", "yield") => ctx.Target is not null
+                ? StatCalculator.CalculateEffectiveInsight(ctx.Target, ctx.OpponentField, ctx.CardCache) : 0,
+            ("target", "max_tp") => ctx.Target?.MaxTP ?? 0,
+            ("source", "max_tp") => ctx.Source?.MaxTP ?? 0,
+            _ => throw new InvalidOperationException($"Unknown ref: {who}.{stat}"),
+        };
+
+        if (multiply == 1.0) return raw;
+
+        // Round to nearest 200 for half-value calculations
+        long scaled = (long)(raw * multiply);
+        return ((scaled + 99) / 200) * 200;
+    }
+}
+
+/// <summary>
+/// Resolves: base + min(count * perValue, max).
+/// Count is determined by a selector.
+/// </summary>
+public class PerCountAmount(long baseVal, ISelector countSelector, long perValue, long? max = null) : IAmountResolver
+{
+    /// <inheritdoc />
+    public long Resolve(OpContext ctx)
+    {
+        int count = countSelector.Select(ctx).Count;
+        long bonus = (long)count * perValue;
+        if (max is { } m)
+        {
+            bonus = Math.Min(bonus, m);
+        }
+        return baseVal + bonus;
+    }
+}

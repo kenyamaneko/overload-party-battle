@@ -10,9 +10,20 @@ public class DestroyCheckOp(PlayerRef player) : IEffectOp
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        long playerNum = player == PlayerRef.Self ? ctx.PlayerNum : ctx.OpponentNum;
-        var field = ctx.GetField(playerNum);
+        if (player == PlayerRef.Both)
+        {
+            DestroyZeroed(ctx, ctx.PlayerNum);
+            DestroyZeroed(ctx, ctx.OpponentNum);
+            return;
+        }
 
+        long playerNum = player == PlayerRef.Self ? ctx.PlayerNum : ctx.OpponentNum;
+        DestroyZeroed(ctx, playerNum);
+    }
+
+    private static void DestroyZeroed(OpContext ctx, long playerNum)
+    {
+        var field = ctx.GetField(playerNum);
         var toDestroy = FieldHelpers.AllResources(field)
             .Where(res => res.EffectiveAV <= 0)
             .ToList();
