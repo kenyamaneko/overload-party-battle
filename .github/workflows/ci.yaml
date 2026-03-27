@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: read
+  packages: read
   id-token: write
 
 env:
@@ -22,13 +23,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Fetch cards_gen.json from common repo
+        run: |
+          curl -sSf -H "Authorization: token ${{ secrets.COMMON_CONTENT_FETCH }}" \
+            -H "Accept: application/vnd.github.raw+json" \
+            "https://api.github.com/repos/kenyamaneko/overload-party-common/contents/packages/dotnet/cache/cards_gen.json" \
+            -o cards_gen.json
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
       - name: Authenticate NuGet (GitHub Packages)
-        run: dotnet nuget update source github --username kenyamaneko --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text
+        run: dotnet nuget update source github --username kenyamaneko --password ${{ secrets.COMMON_PKG_FETCH }} --store-password-in-clear-text
       - name: Run tests
         run: dotnet test tests/OverloadParty.Battle.Tests
+        env:
+          CARDS_JSON_PATH: ${{ github.workspace }}/cards_gen.json
 
   build-and-push:
     needs: [test]
