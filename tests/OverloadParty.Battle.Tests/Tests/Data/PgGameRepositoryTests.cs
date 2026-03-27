@@ -194,7 +194,7 @@ public class PgGameRepositoryTests
             SequenceNumber = 1,
             EventType = "play_card",
             PlayerID = game.Player1ID,
-            EventData = new Dictionary<string, object> { ["card_no"] = 1 },
+            EventData = new Dictionary<string, object> { ["cardId"] = "SH-0001" },
             CreatedAt = DateTime.UtcNow,
         };
         var evt2 = new GameEvent

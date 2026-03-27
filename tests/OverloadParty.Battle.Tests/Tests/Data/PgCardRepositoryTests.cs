@@ -23,11 +23,11 @@ public class PgCardRepositoryTests
         {
             await using var cmd = new NpgsqlCommand(@"
                 INSERT INTO card_definitions
-                    (card_no, card_name, resource_label, faction, card_type,
+                    (card_id, card_name, resource_label, faction, card_type,
                      resizable, elastic, stats, effect_text, effects,
                      restriction, is_active, created_at, updated_at)
                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
-                ON CONFLICT (card_no) DO NOTHING", conn);
+                ON CONFLICT (card_id) DO NOTHING", conn);
             cmd.Parameters.AddWithValue(c.CardId);
             cmd.Parameters.AddWithValue(c.CardName);
             cmd.Parameters.AddWithValue(c.ResourceLabel);
@@ -62,7 +62,7 @@ public class PgCardRepositoryTests
     // ─── FindAll ────────────────────────────────────────────
 
     [Fact]
-    public async Task FindAll_returns_only_active_cards_sorted_by_card_no()
+    public async Task FindAll_returns_only_active_cards_sorted_by_card_id()
     {
         var repo = TryCreateRepo();
         if (repo is null) return;
