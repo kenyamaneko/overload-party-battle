@@ -121,7 +121,7 @@ public class GameStateViewTests
         oppSup.Should().NotBeNull();
         oppSup!.InstanceID.Should().Be("sup_1");
         oppSup.FaceUp.Should().BeFalse();
-        oppSup.CardID.Should().Be("TEST-0200", "CardID should always be present regardless of FaceUp");
+        oppSup.CardID.Should().BeNull("face-down support should hide CardID");
     }
 
     [Fact]
