@@ -157,7 +157,7 @@ public class GameEngine
                 ActionType.Monetize => MonetizeProcessor.Process(
                     state, game, playerNum, (MonetizeRequest)actionData, _cardCache),
                 ActionType.EndPhase => EndPhaseProcessor.Process(
-                    state, game, playerNum, _cardCache),
+                    state, game, playerNum, _cardCache, _effects),
                 ActionType.DiscardHand => DiscardProcessor.Process(
                     state, game, playerNum, (DiscardHandRequest)actionData, _cardCache),
                 ActionType.ActivateEffect => ActivateEffectProcessor.Process(

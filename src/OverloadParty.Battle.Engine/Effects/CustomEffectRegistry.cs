@@ -226,18 +226,15 @@ public class CustomEffectRegistry : ICustomEffectRegistry
                 throw new GameRuleException($"Card type {card.CardType} not allowed");
             }
 
-            // Apply deploy discount
             if (discount > 0)
             {
                 long budget = octx.State.GetBudget(octx.PlayerNum);
                 octx.State.SetBudget(octx.PlayerNum, budget + discount);
             }
 
-            // Deploy from hand
             var field = octx.GetField(octx.PlayerNum);
             ResourceHelpers.DeployFromHand(octx.State, octx.PlayerNum, field, choiceCardId, octx.CardCache);
 
-            // Self-destruct the source support card
             if (octx.SupSource is not null)
             {
                 FieldHelpers.DestroySupport(octx.State, octx.PlayerNum, field, octx.SupSource.InstanceID);
@@ -246,25 +243,22 @@ public class CustomEffectRegistry : ICustomEffectRegistry
     }
 
     /// <summary>
-    /// Halve incident damage by applying incident_reduction buff equal to half the incoming damage.
-    /// The reactive fires before the incident resolves, applying a large reduction.
+    /// Halve incident damage by applying an incident_halve buff to all own face-up resources.
+    /// IncidentDamageOp checks for this buff and halves the effective damage.
     /// </summary>
     public static void HalveIncidentDamage(OpContext octx)
     {
-        // Apply a large incident_reduction to all own resources for this turn
-        // This effectively halves incident damage since the reduction is applied during damage calc
         var field = octx.MyField;
         foreach (var r in FieldHelpers.AllFaceUpResources(field))
         {
             r.TemporaryEffects.Add(new TemporaryEffect
             {
-                EffectType = "incident_reduction",
-                Value = 9999,
+                EffectType = "incident_halve",
+                Value = 1,
                 Duration = "this_turn",
                 SourceID = "halve_incident",
             });
         }
-        octx.CancelAction();
     }
 
     /// <summary>
@@ -295,7 +289,6 @@ public class CustomEffectRegistry : ICustomEffectRegistry
 
         return octx =>
         {
-            // Attached to a resource; apply buff to the host when attacked
             if (octx.Target is null)
             {
                 return;
@@ -317,13 +310,11 @@ public class CustomEffectRegistry : ICustomEffectRegistry
     /// </summary>
     public static void TargetShield(OpContext octx)
     {
-        // Passive: applies a marker buff to the host resource
         if (octx.Source is null)
         {
             return;
         }
 
-        // Check if there are other frontends
         var otherFrontends = octx.MyField.Frontend
             .Where(r => r.InstanceID != octx.Source.InstanceID && r.FaceUp)
             .Any();
@@ -394,7 +385,6 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         string attachmentId = octx.SupSource.InstanceID;
         string cardId = octx.SupSource.CardID;
 
-        // Remove from current host
         foreach (var r in FieldHelpers.AllResources(field))
         {
             var existing = r.Attachments.FirstOrDefault(a => a.InstanceID == attachmentId);
@@ -405,7 +395,6 @@ public class CustomEffectRegistry : ICustomEffectRegistry
             }
         }
 
-        // Add to new target
         newTarget.Attachments.Add(new AttachmentRef
         {
             InstanceID = attachmentId,

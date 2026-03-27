@@ -102,6 +102,54 @@ public class CustomFnOp(Action<OpContext> fn) : IEffectOp
 }
 
 /// <summary>
+/// Guards against re-use of an effect based on per-turn or per-game limit.
+/// </summary>
+public class CheckUseLimitOp(bool perGame) : IEffectOp
+{
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (perGame)
+        {
+            bool used = (ctx.Source?.EffectUsedThisGame ?? false) || (ctx.SupSource?.EffectUsedThisGame ?? false);
+            if (used)
+            {
+                throw new GameRuleException("Effect already used this game");
+            }
+        }
+        else
+        {
+            bool used = (ctx.Source?.EffectUsedThisTurn ?? false) || (ctx.SupSource?.EffectUsedThisTurn ?? false);
+            if (used)
+            {
+                throw new GameRuleException("Effect already used this turn");
+            }
+        }
+    }
+}
+
+/// <summary>
+/// Marks the source as having used its effect (per-turn or per-game).
+/// </summary>
+public class MarkUseLimitOp(bool perGame) : IEffectOp
+{
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (perGame)
+        {
+            if (ctx.Source is not null) ctx.Source.EffectUsedThisGame = true;
+            if (ctx.SupSource is not null) ctx.SupSource.EffectUsedThisGame = true;
+        }
+        else
+        {
+            if (ctx.Source is not null) ctx.Source.EffectUsedThisTurn = true;
+            if (ctx.SupSource is not null) ctx.SupSource.EffectUsedThisTurn = true;
+        }
+    }
+}
+
+/// <summary>
 /// Custom function with NPC classification metadata.
 /// </summary>
 public class CustomFnTaggedOp(Action<OpContext> fn) : IEffectOp

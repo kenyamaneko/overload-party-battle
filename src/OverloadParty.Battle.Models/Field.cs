@@ -34,6 +34,7 @@ public class ResourceInstance
     public long MonetizedAmount { get; set; }
     public bool HasAttacked { get; set; }
     public bool EffectUsedThisTurn { get; set; }
+    public bool EffectUsedThisGame { get; set; }
     public bool ScaleChangedThisTurn { get; set; }
     public long DeployedOnTurn { get; set; }
     public long DeployOrder { get; set; }
@@ -81,6 +82,7 @@ public class SupportInstance
     public long DeployingTurnsLeft { get; set; }
     public long DeployOrder { get; set; }
     public bool EffectUsedThisTurn { get; set; }
+    public bool EffectUsedThisGame { get; set; }
 }
 
 /// <summary>

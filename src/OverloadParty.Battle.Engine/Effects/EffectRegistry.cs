@@ -21,40 +21,12 @@ public class EffectRegistration
 }
 
 /// <summary>
-/// Data-driven passive effect definition for stat calculations.
-/// </summary>
-public class PassiveDef
-{
-    /// <summary>Card ID owning this passive.</summary>
-    public string CardId { get; init; } = "";
-
-    /// <summary>Type of passive effect (e.g. buff_yield).</summary>
-    public string PassiveType { get; init; } = "";
-
-    /// <summary>Scope of the passive (e.g. "self", "ally").</summary>
-    public string Scope { get; init; } = "";
-
-    /// <summary>Zone filter, or null for any zone.</summary>
-    public string? TargetZone { get; init; }
-
-    /// <summary>Faction filter, or null for any faction.</summary>
-    public string? TargetFaction { get; init; }
-
-    /// <summary>Numeric value of the passive effect.</summary>
-    public long Value { get; init; }
-
-    /// <summary>Optional runtime condition for the passive to apply.</summary>
-    public Func<OpContext, bool>? Condition { get; init; }
-}
-
-/// <summary>
 /// Concrete implementation of IEffectRegistry.
 /// Maps (cardId, triggerType) → EffectRegistration.
 /// </summary>
 public class EffectRegistry : IEffectRegistry
 {
     private readonly Dictionary<(string CardId, TriggerType Trigger), EffectRegistration> _handlers = new();
-    private readonly List<PassiveDef> _passives = [];
 
     /// <summary>
     /// Registers a custom effect handler for a card and trigger.
@@ -143,26 +115,8 @@ public class EffectRegistry : IEffectRegistry
         return new BudgetRequirement { MinBudget = minBudget, MaxBudget = maxBudget };
     }
 
-    /// <summary>
-    /// Adds a passive effect definition to the registry.
-    /// </summary>
-    /// <param name="passive">The passive definition to add.</param>
-    public void AddPassive(PassiveDef passive)
-    {
-        _passives.Add(passive);
-    }
-
-    /// <summary>
-    /// Returns all registered passive definitions.
-    /// </summary>
-    /// <returns>Read-only list of passive definitions.</returns>
-    public IReadOnlyList<PassiveDef> GetPassives() => _passives;
-
     /// <summary>Number of registered effect handlers.</summary>
     public int RegistrationCount => _handlers.Count;
-
-    /// <summary>Number of registered passive definitions.</summary>
-    public int PassiveCount => _passives.Count;
 
     /// <summary>
     /// Returns NPC classification for an effect. Null if no ops stored.

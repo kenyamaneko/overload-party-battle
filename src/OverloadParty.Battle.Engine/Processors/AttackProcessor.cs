@@ -86,6 +86,10 @@ public static class AttackProcessor
             events.AddRange(result.Events);
         }
 
+        // Fire OnHit effects for the defender and its attachments
+        var onHitEvents = FireOnHit(state, game, opponentNum, defender, cc, effects);
+        events.AddRange(onHitEvents);
+
         // Check destruction
         bool destroyed = defender.EffectiveAV <= 0;
         long slaPenalty = 0;
@@ -177,6 +181,11 @@ public static class AttackProcessor
             throw new GameRuleException("cannot attack backend while opponent has frontend resources");
         }
 
+        if (FieldHelpers.HasTemporaryEffect(defender, "target_shield"))
+        {
+            throw new GameRuleException("Target is protected by target_shield");
+        }
+
         return defender;
     }
 
@@ -263,6 +272,60 @@ public static class AttackProcessor
 
             var result = handler(ctx);
             allEvents.AddRange(result.Events);
+        }
+
+        return allEvents;
+    }
+
+    private static List<GameEvent> FireOnHit(
+        GameState state, Game game, long defenderPlayerNum,
+        ResourceInstance defender, ICardCache cc, IEffectRegistry? effects)
+    {
+        if (effects is null) { return []; }
+
+        var allEvents = new List<GameEvent>();
+
+        // Fire OnHit for the defender card itself
+        if (effects.Has(defender.CardID, TriggerType.OnHit))
+        {
+            var handler = effects.Get(defender.CardID, TriggerType.OnHit)!;
+            try
+            {
+                var result = handler(new EffectContext
+                {
+                    State = state,
+                    Game = game,
+                    PlayerNum = defenderPlayerNum,
+                    Source = defender,
+                    Target = defender,
+                    CardCache = cc,
+                });
+                allEvents.AddRange(result.Events);
+            }
+            catch (GameRuleException) { }
+        }
+
+        // Fire OnHit for the defender's attachments
+        foreach (var att in defender.Attachments)
+        {
+            if (effects.Has(att.CardID, TriggerType.OnHit))
+            {
+                var handler = effects.Get(att.CardID, TriggerType.OnHit)!;
+                try
+                {
+                    var result = handler(new EffectContext
+                    {
+                        State = state,
+                        Game = game,
+                        PlayerNum = defenderPlayerNum,
+                        Source = defender,
+                        Target = defender,
+                        CardCache = cc,
+                    });
+                    allEvents.AddRange(result.Events);
+                }
+                catch (GameRuleException) { }
+            }
         }
 
         return allEvents;

@@ -149,6 +149,14 @@ public static class EffectYamlLoader
             }
         }
 
+        // ActivateEffectProcessor already enforces once-per-turn for activate triggers
+        if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Activate)
+        {
+            bool perGame = def.UseLimit == "once_per_game";
+            ops.Insert(0, new CheckUseLimitOp(perGame));
+            ops.Add(new MarkUseLimitOp(perGame));
+        }
+
         return ops;
     }
 
@@ -327,6 +335,31 @@ public static class EffectYamlLoader
 
     private static ISelector BuildSelector(JsonElement el)
     {
+        if (el.ValueKind == JsonValueKind.Object)
+        {
+            string? pick = el.TryGetProperty("pick", out var pk) ? pk.GetString() : "all";
+            if (pick == "choice")
+            {
+                string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : "self";
+                string? zone = el.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
+                string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
+                var cardTypes = ParseCardTypes(el);
+
+                return new ByChoiceSelector
+                {
+                    Zone = zone,
+                    Faction = faction,
+                    CardType = cardTypes is { Count: 1 } ? cardTypes[0] : null,
+                    Owner = owner ?? "self",
+                };
+            }
+        }
+
+        return BuildSelectorCore(el);
+    }
+
+    private static ISelector BuildSelectorCore(JsonElement el)
+    {
         if (el.ValueKind == JsonValueKind.String)
         {
             return el.GetString() switch
@@ -340,20 +373,8 @@ public static class EffectYamlLoader
         string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : "self";
         string? zone = el.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
         string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
-        string? pick = el.TryGetProperty("pick", out var pk) ? pk.GetString() : "all";
         bool excludeSource = el.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
         var cardTypes = ParseCardTypes(el);
-
-        if (pick == "choice")
-        {
-            return new ByChoiceSelector
-            {
-                Zone = zone,
-                Faction = faction,
-                CardType = cardTypes is { Count: 1 } ? cardTypes[0] : null,
-                Owner = owner ?? "self",
-            };
-        }
 
         ISelector selector = owner switch
         {
@@ -419,43 +440,9 @@ public static class EffectYamlLoader
 
     /// <summary>
     /// Builds a selector for counting purposes (used in per-count amounts).
-    /// Handles support zone and card_id filters that standard selectors don't support.
+    /// Count selectors don't support pick:choice, so delegates directly to the core builder.
     /// </summary>
-    private static ISelector BuildCountSelector(JsonElement el)
-    {
-        if (el.ValueKind == JsonValueKind.String)
-        {
-            return el.GetString() switch
-            {
-                "source" => SourceSelector.Instance,
-                "target" => TargetSelector.Instance,
-                _ => throw new InvalidOperationException($"Unknown count selector: {el.GetString()}"),
-            };
-        }
-
-        string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : "self";
-        string? zone = el.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
-        string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
-        bool excludeSource = el.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
-        var cardTypes = ParseCardTypes(el);
-
-        ISelector selector = owner switch
-        {
-            "self" => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
-            "opponent" => new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
-            "both" => new UnionSelector(
-                new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
-                new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes }),
-            _ => throw new InvalidOperationException($"Unknown count selector owner: {owner}"),
-        };
-
-        if (excludeSource)
-        {
-            selector = new ExcludeSourceSelector(selector);
-        }
-
-        return selector;
-    }
+    private static ISelector BuildCountSelector(JsonElement el) => BuildSelectorCore(el);
 
     // ================================================================
     // Guard builder
@@ -713,176 +700,3 @@ public static class EffectYamlLoader
     };
 }
 
-// ================================================================
-// Internal helper ops for multi-block composition
-// ================================================================
-
-/// <summary>
-/// Wraps a block of ops so that guard failures (GameRuleException) are caught,
-/// allowing subsequent independent blocks in the same pipeline to run.
-/// </summary>
-internal class EffectBlockOp(IEffectOp[] ops) : IEffectOp
-{
-    internal bool Succeeded { get; private set; }
-
-    public void Execute(OpContext ctx)
-    {
-        try
-        {
-            foreach (var op in ops) op.Execute(ctx);
-            Succeeded = true;
-        }
-        catch (GameRuleException)
-        {
-            Succeeded = false;
-        }
-    }
-}
-
-/// <summary>
-/// Runs child ops only if the parent block succeeded.
-/// </summary>
-internal class AfterBlockOp(EffectBlockOp parent, IEffectOp[] ops) : IEffectOp
-{
-    public void Execute(OpContext ctx)
-    {
-        if (!parent.Succeeded) return;
-
-        try
-        {
-            foreach (var op in ops) op.Execute(ctx);
-        }
-        catch (GameRuleException)
-        {
-            // After-block guard failure is silently swallowed
-        }
-    }
-}
-
-/// <summary>
-/// Wraps a block of ops so that guard failures are silently swallowed.
-/// Used for after-dependent blocks whose guard failure should not abort the root pipeline.
-/// </summary>
-internal class SoftBlockOp(IEffectOp[] ops) : IEffectOp
-{
-    public void Execute(OpContext ctx)
-    {
-        try
-        {
-            foreach (var op in ops)
-            {
-                op.Execute(ctx);
-            }
-        }
-        catch (GameRuleException)
-        {
-            // Guard failure in dependent block is silently swallowed
-        }
-    }
-}
-
-/// <summary>
-/// Inverts a guard op: succeeds when the inner op throws GameRuleException,
-/// and throws when the inner op succeeds.
-/// </summary>
-internal class NegateGuardOp(IEffectOp inner) : IEffectOp
-{
-    public void Execute(OpContext ctx)
-    {
-        try
-        {
-            inner.Execute(ctx);
-        }
-        catch (GameRuleException)
-        {
-            return; // Inner failed → negated guard passes
-        }
-        throw new GameRuleException("Negated guard: inner condition was true");
-    }
-}
-
-/// <summary>
-/// General-purpose resource count guard. Counts resources (including support zone)
-/// matching the given criteria and fails if the count doesn't meet the minimum.
-/// </summary>
-internal class ResourceCountGuardOp(
-    string owner,
-    string? zone,
-    string? faction,
-    List<string>? cardTypes,
-    List<string>? cardIds,
-    int min,
-    bool negate) : IEffectOp
-{
-    public void Execute(OpContext ctx)
-    {
-        int count = CountResources(ctx);
-        bool satisfied = count >= min;
-        if (negate) satisfied = !satisfied;
-        if (!satisfied)
-        {
-            throw new GameRuleException($"Resource count guard failed: count={count}, min={min}, negate={negate}");
-        }
-    }
-
-    private int CountResources(OpContext ctx)
-    {
-        int total = 0;
-
-        if (owner is "self" or "both")
-        {
-            total += CountField(ctx.MyField, ctx.CardCache, ctx.Source);
-        }
-        if (owner is "opponent" or "both")
-        {
-            total += CountField(ctx.OpponentField, ctx.CardCache, ctx.Source);
-        }
-
-        return total;
-    }
-
-    private int CountField(Field field, ICardCache cc, ResourceInstance? source)
-    {
-        if (zone == "support")
-        {
-            return field.Support.Count(s =>
-                s.FaceUp
-                && s.DeployingTurnsLeft <= 0
-                && MatchesFaction(s.CardID, cc)
-                && MatchesCardTypes(s.CardID, cc)
-                && MatchesCardIds(s.CardID));
-        }
-
-        IEnumerable<ResourceInstance> candidates = zone switch
-        {
-            "frontend" => field.Frontend,
-            "backend" => field.Backend,
-            _ => field.Frontend.Concat(field.Backend),
-        };
-
-        return candidates.Count(r =>
-            r.FaceUp
-            && MatchesFaction(r.CardID, cc)
-            && MatchesCardTypes(r.CardID, cc)
-            && MatchesCardIds(r.CardID));
-    }
-
-    private bool MatchesFaction(string cardID, ICardCache cc)
-    {
-        if (faction is not { Length: > 0 }) return true;
-        return cc.Get(cardID)?.Faction == faction;
-    }
-
-    private bool MatchesCardTypes(string cardID, ICardCache cc)
-    {
-        if (cardTypes is not { Count: > 0 }) return true;
-        var card = cc.Get(cardID);
-        return card is not null && cardTypes.Contains(card.CardType);
-    }
-
-    private bool MatchesCardIds(string cardID)
-    {
-        if (cardIds is not { Count: > 0 }) return true;
-        return cardIds.Contains(cardID);
-    }
-}

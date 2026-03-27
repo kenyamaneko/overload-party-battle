@@ -125,17 +125,6 @@ public class EffectRegistryTests
     }
 
     [Fact]
-    public void AddPassive_TrackedSeparately()
-    {
-        var registry = new EffectRegistry();
-        registry.AddPassive(new PassiveDef { CardId = "SH-0009", PassiveType = "tp_bonus", Value = 200 });
-        registry.AddPassive(new PassiveDef { CardId = "SH-0010", PassiveType = "yield_bonus", Value = 100 });
-
-        registry.PassiveCount.Should().Be(2);
-        registry.GetPassives().Should().HaveCount(2);
-    }
-
-    [Fact]
     public void RegistrationCount_TracksHandlers()
     {
         var registry = new EffectRegistry();

@@ -47,7 +47,14 @@ public class IncidentDamageOp(ISelector sel, IAmountResolver value, IAmountResol
             long reduction = target.TemporaryEffects
                 .Where(e => e.EffectType == "incident_reduction")
                 .Sum(e => e.Value);
-            target.Damage += Math.Max(0, damage - reduction);
+            long effectiveDamage = Math.Max(0, damage - reduction);
+
+            if (FieldHelpers.HasTemporaryEffect(target, "incident_halve"))
+            {
+                effectiveDamage /= 2;
+            }
+
+            target.Damage += effectiveDamage;
         }
 
         if (budgetPenalty is null) { return; }

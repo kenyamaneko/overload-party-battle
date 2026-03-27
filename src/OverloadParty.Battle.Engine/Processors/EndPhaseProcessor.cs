@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
@@ -16,7 +17,7 @@ public static class EndPhaseProcessor
     /// <param name="cc">The card definition cache.</param>
     /// <returns>The action result containing phase change events and possible game-over or discard requirements.</returns>
     public static ActionResult Process(
-        GameState state, Game game, long playerNum, ICardCache cc)
+        GameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects = null)
     {
         var previousPhase = TurnManager.AdvancePhase(state);
 
@@ -25,7 +26,7 @@ public static class EndPhaseProcessor
 
         if (state.CurrentPhase == Phase.End)
         {
-            return ProcessEndPhaseTransition(state, game, playerNum, cc, events, playerId);
+            return ProcessEndPhaseTransition(state, game, playerNum, cc, effects, events, playerId);
         }
 
         events.Add(new GameEvent
@@ -44,9 +45,9 @@ public static class EndPhaseProcessor
 
     private static ActionResult ProcessEndPhaseTransition(
         GameState state, Game game, long playerNum, ICardCache cc,
-        List<GameEvent> events, string playerId)
+        IEffectRegistry? effects, List<GameEvent> events, string playerId)
     {
-        bool needsDiscard = ProcessEndPhaseLogic(state, cc);
+        bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects);
         var result = new ActionResult { Events = events, StateUpdated = true };
 
         if (needsDiscard)
@@ -92,11 +93,11 @@ public static class EndPhaseProcessor
     /// <summary>
     /// Returns true if the player needs to discard (hand > 6).
     /// </summary>
-    static bool ProcessEndPhaseLogic(GameState state, ICardCache cc)
+    static bool ProcessEndPhaseLogic(GameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects)
     {
-        var playerNum = state.ActivePlayer;
         var field = state.GetField(playerNum);
 
+        FirePassiveEffects(state, game, playerNum, field, cc, effects);
         CollectMaintenanceCost(state, playerNum, field, cc);
         GenerateInsight(state, playerNum, field, cc);
         ExpireTemporaryEffects(field);
@@ -179,6 +180,53 @@ public static class EndPhaseProcessor
         }
 
         state.SetIncidentPlayedThisTurn(playerNum, false);
+    }
+
+    static void FirePassiveEffects(
+        GameState state, Game game, long playerNum, Field field,
+        ICardCache cc, IEffectRegistry? effects)
+    {
+        if (effects is null) { return; }
+
+        foreach (var resource in FieldHelpers.AllFaceUpResources(field))
+        {
+            if (effects.Has(resource.CardID, TriggerType.Passive))
+            {
+                var handler = effects.Get(resource.CardID, TriggerType.Passive)!;
+                try
+                {
+                    handler(new EffectContext
+                    {
+                        State = state,
+                        Game = game,
+                        PlayerNum = playerNum,
+                        Source = resource,
+                        CardCache = cc,
+                    });
+                }
+                catch (GameRuleException) { }
+            }
+
+            foreach (var att in resource.Attachments)
+            {
+                if (effects.Has(att.CardID, TriggerType.Passive))
+                {
+                    var handler = effects.Get(att.CardID, TriggerType.Passive)!;
+                    try
+                    {
+                        handler(new EffectContext
+                        {
+                            State = state,
+                            Game = game,
+                            PlayerNum = playerNum,
+                            Source = resource,
+                            CardCache = cc,
+                        });
+                    }
+                    catch (GameRuleException) { }
+                }
+            }
+        }
     }
 
     private static GameEvent MakeTurnEndEvent(string gameID, string playerId, GameState state)

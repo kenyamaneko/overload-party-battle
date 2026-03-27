@@ -1,3 +1,5 @@
+using OverloadParty.Battle.Data;
+using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
 
@@ -9,10 +11,13 @@ namespace OverloadParty.Battle.Tests.Effects;
 public class EffectRegistrationTests
 {
     private readonly EffectRegistry _registry;
+    private readonly CardCache _cardCache;
+    private readonly Game _game;
 
     public EffectRegistrationTests()
     {
-        (_registry, _) = TestEffectSetup.Get();
+        (_registry, _cardCache) = TestEffectSetup.Get();
+        _game = TestFactory.MakeGame();
     }
 
     [Fact]
@@ -221,6 +226,66 @@ public class EffectRegistrationTests
         info.Should().NotBeNull();
     }
 
+    // ─── Budget effect behavior ──────────────────────────────────
+
+    [Fact]
+    public void NT0010_Activate_GainsBudget400()
+    {
+        var state = TestFactory.MakeGameState(p1Budget: 1000);
+
+        ExecuteEffect(state, "NT-0010", TriggerType.Activate, playerNum: 1);
+
+        state.Player1Budget.Should().Be(1400, "NT-0010 grants +400 budget");
+    }
+
+    [Fact]
+    public void NT0026_Activate_FailsIfBudgetOver1000()
+    {
+        var state = TestFactory.MakeGameState(p1Budget: 2000);
+
+        var act = () => ExecuteEffect(state, "NT-0026", TriggerType.Activate, playerNum: 1);
+
+        act.Should().Throw<GameRuleException>("NT-0026 requires budget <= 1000");
+    }
+
+    [Fact]
+    public void SH0019_Activate_FailsIfFewerThan3SHE()
+    {
+        var state = TestFactory.MakeGameState(p1Budget: 1000);
+        // Only 2 SHE resources on field — guard requires 3+
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
+        state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "r2");
+
+        var act = () => ExecuteEffect(state, "SH-0019", TriggerType.Activate, playerNum: 1);
+
+        act.Should().Throw<GameRuleException>("SH-0019 requires 3+ SHE cards on field");
+    }
+
+    // ─── Choice effect behavior ──────────────────────────────────
+
+    [Fact]
+    public void SH0010_Deploy_MemcachedChoice_GainsBudget400()
+    {
+        var state = TestFactory.MakeGameState(p1Budget: 1000);
+        var source = TestFactory.MakeResource(cardId: "SH-0010", instanceId: "cache_1");
+        state.Player1Field.Backend[0] = source;
+
+        var handler = _registry.Get("SH-0010", TriggerType.Deploy)
+            ?? throw new InvalidOperationException("SH-0010 Deploy handler not registered");
+        var ctx = new EffectContext
+        {
+            State = state,
+            Game = _game,
+            PlayerNum = 1,
+            Source = source,
+            CardCache = _cardCache,
+            ChoiceData = new Dictionary<string, object> { ["option"] = "memcached" },
+        };
+        handler(ctx);
+
+        state.Player1Budget.Should().Be(1400, "memcached choice grants +400 budget");
+    }
+
     // ─── CardIdsForTrigger ─────────────────────────────────────
 
     [Fact]
@@ -242,5 +307,23 @@ public class EffectRegistrationTests
     {
         var passiveCards = _registry.CardIdsForTrigger(TriggerType.Passive);
         passiveCards.Should().Contain("SL-0016");
+    }
+
+    // ─── Helper methods ──────────────────────────────────────────
+
+    private EffectResult ExecuteEffect(GameState state, string cardId, TriggerType trigger, long playerNum)
+    {
+        var handler = _registry.Get(cardId, trigger)
+            ?? throw new InvalidOperationException($"{cardId} {trigger} handler not registered");
+
+        var ctx = new EffectContext
+        {
+            State = state,
+            Game = _game,
+            PlayerNum = playerNum,
+            CardCache = _cardCache,
+        };
+
+        return handler(ctx);
     }
 }
