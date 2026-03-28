@@ -12,7 +12,7 @@ public interface ISelector
     /// </summary>
     /// <param name="ctx">The operation context.</param>
     /// <returns>List of selected resource instances.</returns>
-    List<ResourceInstance> Select(OpContext ctx);
+    List<DeployedResource> Select(OpContext ctx);
 }
 
 /// <summary>
@@ -24,7 +24,7 @@ public class SourceSelector : ISelector
     public static readonly SourceSelector Instance = new();
 
     /// <inheritdoc />
-    public List<ResourceInstance> Select(OpContext ctx) =>
+    public List<DeployedResource> Select(OpContext ctx) =>
         ctx.Source is { } s ? [s] : [];
 }
 
@@ -37,7 +37,7 @@ public class TargetSelector : ISelector
     public static readonly TargetSelector Instance = new();
 
     /// <inheritdoc />
-    public List<ResourceInstance> Select(OpContext ctx) =>
+    public List<DeployedResource> Select(OpContext ctx) =>
         ctx.Target is { } t ? [t] : [];
 }
 
@@ -59,7 +59,7 @@ public class ByChoiceSelector : ISelector
     public string Owner { get; init; } = "self";
 
     /// <inheritdoc />
-    public List<ResourceInstance> Select(OpContext ctx)
+    public List<DeployedResource> Select(OpContext ctx)
     {
         var instanceId = GetChoiceInstanceId(ctx);
         if (instanceId is null)
@@ -134,15 +134,15 @@ public class AllOwnSelector : ISelector
     public List<string>? CardTypes { get; init; }
 
     /// <inheritdoc />
-    public List<ResourceInstance> Select(OpContext ctx)
+    public List<DeployedResource> Select(OpContext ctx)
     {
         var field = ctx.MyField;
         return FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes);
     }
 
-    internal static List<ResourceInstance> FilterResources(Field field, string? zone, string? faction, ICardCache cc, List<string>? cardTypes = null)
+    internal static List<DeployedResource> FilterResources(Field field, string? zone, string? faction, ICardCache cc, List<string>? cardTypes = null)
     {
-        IEnumerable<ResourceInstance> candidates = zone switch
+        IEnumerable<DeployedResource> candidates = zone switch
         {
             GameConstants.ZoneFrontend => field.Frontend,
             GameConstants.ZoneBackend => field.Backend,
@@ -177,7 +177,7 @@ public class AllOpponentSelector : ISelector
     public List<string>? CardTypes { get; init; }
 
     /// <inheritdoc />
-    public List<ResourceInstance> Select(OpContext ctx)
+    public List<DeployedResource> Select(OpContext ctx)
     {
         var field = ctx.OpponentField;
         return AllOwnSelector.FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes);
@@ -190,7 +190,7 @@ public class AllOpponentSelector : ISelector
 public class UnionSelector(ISelector a, ISelector b) : ISelector
 {
     /// <inheritdoc />
-    public List<ResourceInstance> Select(OpContext ctx) =>
+    public List<DeployedResource> Select(OpContext ctx) =>
         a.Select(ctx).Concat(b.Select(ctx)).ToList();
 }
 
@@ -200,7 +200,7 @@ public class UnionSelector(ISelector a, ISelector b) : ISelector
 public class ExcludeSourceSelector(ISelector inner) : ISelector
 {
     /// <inheritdoc />
-    public List<ResourceInstance> Select(OpContext ctx)
+    public List<DeployedResource> Select(OpContext ctx)
     {
         var results = inner.Select(ctx);
         if (ctx.Source is null) return results;

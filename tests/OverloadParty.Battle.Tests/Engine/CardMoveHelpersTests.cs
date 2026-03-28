@@ -17,9 +17,9 @@ public class CardMoveHelpersTests
         var state = TestFactory.MakeGameState();
         state.Player1Repository.AddRange(new[]
         {
-            new HandCard { InstanceID = "r_1", CardID = "SH-0009" },
-            new HandCard { InstanceID = "r_2", CardID = "SH-0019" },
-            new HandCard { InstanceID = "r_3", CardID = "TK-0008" },
+            new UndeployedCard { InstanceID = "r_1", CardID = "SH-0009" },
+            new UndeployedCard { InstanceID = "r_2", CardID = "SH-0019" },
+            new UndeployedCard { InstanceID = "r_3", CardID = "TK-0008" },
         });
 
         int drawn = CardMoveHelpers.DrawCards(state, 1, 2);
@@ -35,7 +35,7 @@ public class CardMoveHelpersTests
     public void DrawCards_RepoSmallerThanCount_DrawsAll()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0009" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "SH-0009" });
 
         int drawn = CardMoveHelpers.DrawCards(state, 1, 5);
 
@@ -59,8 +59,8 @@ public class CardMoveHelpersTests
     public void DrawCards_AssignsNewInstanceIDs()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0009" });
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_2", CardID = "SH-0019" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "SH-0009" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "SH-0019" });
 
         CardMoveHelpers.DrawCards(state, 1, 2);
 
@@ -75,7 +75,7 @@ public class CardMoveHelpersTests
     public void DrawCards_Player2_UsesPlayer2State()
     {
         var state = TestFactory.MakeGameState();
-        state.Player2Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0009" });
+        state.Player2Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "SH-0009" });
 
         int drawn = CardMoveHelpers.DrawCards(state, 2, 1);
 
@@ -93,9 +93,9 @@ public class CardMoveHelpersTests
         var state = TestFactory.MakeGameState();
         state.Player1Repository.AddRange(new[]
         {
-            new HandCard { InstanceID = "r_1", CardID = "SH-0009" },
-            new HandCard { InstanceID = "r_2", CardID = "SH-0019" },
-            new HandCard { InstanceID = "r_3", CardID = "TK-0008" },
+            new UndeployedCard { InstanceID = "r_1", CardID = "SH-0009" },
+            new UndeployedCard { InstanceID = "r_2", CardID = "SH-0019" },
+            new UndeployedCard { InstanceID = "r_3", CardID = "TK-0008" },
         });
 
         bool found = CardMoveHelpers.SearchRepo(state, 1, c => c.CardID == "SH-0019");
@@ -110,7 +110,7 @@ public class CardMoveHelpersTests
     public void SearchRepo_NoMatch_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0009" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "SH-0009" });
 
         bool found = CardMoveHelpers.SearchRepo(state, 1, c => c.CardID == "TEST-0999");
 
@@ -166,7 +166,7 @@ public class CardMoveHelpersTests
     public void TrashToHand_MovesCardFromTrashToHand()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = "SL-0015", ArtNo = 3 });
+        state.Player1Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "SL-0015", ArtNo = 3 });
 
         bool result = CardMoveHelpers.TrashToHand(state, 1, "t_1");
 
@@ -181,7 +181,7 @@ public class CardMoveHelpersTests
     public void TrashToHand_NotFound_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = "SL-0015" });
+        state.Player1Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "SL-0015" });
 
         bool result = CardMoveHelpers.TrashToHand(state, 1, "nonexistent");
 
@@ -194,7 +194,7 @@ public class CardMoveHelpersTests
     public void TrashToHand_AssignsNewInstanceID()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = "SL-0015" });
+        state.Player1Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "SL-0015" });
 
         CardMoveHelpers.TrashToHand(state, 1, "t_1");
 
@@ -209,9 +209,9 @@ public class CardMoveHelpersTests
         var state = TestFactory.MakeGameState();
         state.Player1Hand.AddRange(new[]
         {
-            new HandCard { InstanceID = "h_1", CardID = "SH-0009" },
-            new HandCard { InstanceID = "h_2", CardID = "SH-0019" },
-            new HandCard { InstanceID = "h_3", CardID = "TK-0008" },
+            new UndeployedCard { InstanceID = "h_1", CardID = "SH-0009" },
+            new UndeployedCard { InstanceID = "h_2", CardID = "SH-0019" },
+            new UndeployedCard { InstanceID = "h_3", CardID = "TK-0008" },
         });
 
         int discarded = CardMoveHelpers.DiscardCards(state, 1, ["h_1", "h_3"]);
@@ -226,7 +226,7 @@ public class CardMoveHelpersTests
     public void DiscardCards_CardNotInHand_Throws()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0009" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0009" });
 
         var act = () => CardMoveHelpers.DiscardCards(state, 1, ["h_1", "h_missing"]);
 
@@ -237,7 +237,7 @@ public class CardMoveHelpersTests
     public void DiscardCards_EmptyList_DiscardsNothing()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0009" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0009" });
 
         int discarded = CardMoveHelpers.DiscardCards(state, 1, []);
 
@@ -252,8 +252,8 @@ public class CardMoveHelpersTests
         var state = TestFactory.MakeGameState();
         state.Player1Hand.AddRange(new[]
         {
-            new HandCard { InstanceID = "h_1", CardID = "SH-0009" },
-            new HandCard { InstanceID = "h_2", CardID = "SH-0019" },
+            new UndeployedCard { InstanceID = "h_1", CardID = "SH-0009" },
+            new UndeployedCard { InstanceID = "h_2", CardID = "SH-0019" },
         });
 
         int discarded = CardMoveHelpers.DiscardCards(state, 1, ["h_1", "h_2"]);

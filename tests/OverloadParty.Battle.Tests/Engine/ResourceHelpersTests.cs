@@ -9,14 +9,14 @@ namespace OverloadParty.Battle.Tests.Engine;
 /// </summary>
 public class ResourceHelpersTests
 {
-    // ─── CreateResourceInstance ────────────────────────────────
+    // ─── CreateDeployedResource ────────────────────────────────
 
     [Fact]
-    public void CreateResourceInstance_ComputeCard_SetsTPAndAV()
+    public void CreateDeployedResource_ComputeCard_SetsTPAndAV()
     {
         var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400);
 
-        var resource = ResourceHelpers.CreateResourceInstance(card, "inst_1", deployTurn: 3);
+        var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 3);
 
         resource.InstanceID.Should().Be("inst_1");
         resource.CardID.Should().Be("SH-0001");
@@ -28,11 +28,11 @@ public class ResourceHelpersTests
     }
 
     [Fact]
-    public void CreateResourceInstance_DataCard_SetsYieldAndAV()
+    public void CreateDeployedResource_DataCard_SetsYieldAndAV()
     {
         var card = TestFactory.DataCard(cardId: "NT-0009", yield: 400, av: 800);
 
-        var resource = ResourceHelpers.CreateResourceInstance(card, "inst_2", deployTurn: 1);
+        var resource = ResourceHelpers.CreateDeployedResource(card, "inst_2", deployTurn: 1);
 
         resource.MaxAV.Should().Be(800);
         resource.CurrentAV.Should().Be(800);
@@ -44,11 +44,11 @@ public class ResourceHelpersTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void CreateResourceInstance_ResizableFlag_SetsRank(bool resizable)
+    public void CreateDeployedResource_ResizableFlag_SetsRank(bool resizable)
     {
         var card = TestFactory.ComputeCard(cardId: "SH-0001", resizable: resizable);
 
-        var resource = ResourceHelpers.CreateResourceInstance(card, "inst_1", deployTurn: 1);
+        var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 1);
 
         if (resizable)
         {
@@ -63,23 +63,23 @@ public class ResourceHelpersTests
     [Theory]
     [InlineData(2, false, 2)]
     [InlineData(0, true, 0)]
-    public void CreateResourceInstance_DeployTurns_SetsFaceUpAndTurnsLeft(
+    public void CreateDeployedResource_DeployTurns_SetsFaceUpAndTurnsLeft(
         int deployTurns, bool expectedFaceUp, int expectedTurnsLeft)
     {
         var card = TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: deployTurns);
 
-        var resource = ResourceHelpers.CreateResourceInstance(card, "inst_1", deployTurn: 1);
+        var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 1);
 
         resource.FaceUp.Should().Be(expectedFaceUp);
         resource.DeployingTurnsLeft.Should().Be(expectedTurnsLeft);
     }
 
     [Fact]
-    public void CreateResourceInstance_SetsArtNo()
+    public void CreateDeployedResource_SetsArtNo()
     {
         var card = TestFactory.ComputeCard(cardId: "SH-0001");
 
-        var resource = ResourceHelpers.CreateResourceInstance(card, "inst_1", deployTurn: 1, artNo: 42);
+        var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 1, artNo: 42);
 
         resource.ArtNo.Should().Be(42);
     }
@@ -194,7 +194,7 @@ public class ResourceHelpersTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009", deployTurns: 0));
 
         var state = TestFactory.MakeGameState();
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0009", ArtNo = 5 });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0009", ArtNo = 5 });
 
         var field = state.Player1Field;
         ResourceHelpers.DeployFromHand(state, 1, field, cardId: "SH-0009", cc);
@@ -225,7 +225,7 @@ public class ResourceHelpersTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0019", deployTurns: 0));
 
         var state = TestFactory.MakeGameState();
-        var repoCard = new HandCard { InstanceID = "r_1", CardID = "SH-0019", ArtNo = 3 };
+        var repoCard = new UndeployedCard { InstanceID = "r_1", CardID = "SH-0019", ArtNo = 3 };
         state.Player1Repository.Add(repoCard);
 
         var field = state.Player1Field;
@@ -242,7 +242,7 @@ public class ResourceHelpersTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0019", av: 1400, deployTurns: 0));
 
         var state = TestFactory.MakeGameState();
-        var repoCard = new HandCard { InstanceID = "r_1", CardID = "SH-0019" };
+        var repoCard = new UndeployedCard { InstanceID = "r_1", CardID = "SH-0019" };
         state.Player1Repository.Add(repoCard);
 
         var field = state.Player1Field;

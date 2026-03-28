@@ -103,8 +103,8 @@ public class FactionAiTests
     {
         var ai = FactionAi.Create("Tenki", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_27", CardID = "TK-0005" });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_32", CardID = "TK-0010" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_27", CardID = "TK-0005" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_32", CardID = "TK-0010" });
 
         var available = new List<AvailableAction>
         {
@@ -144,8 +144,8 @@ public class FactionAiTests
         state.Player2Field.Backend[0] = TestFactory.MakeResource(
             cardId: "TK-0010", instanceId: "field_32", maxAV: 700, currentYield: 350, maxYield: 350, currentTP: null);
 
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_27", CardID = "TK-0005" });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_29", CardID = "TK-0007" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_27", CardID = "TK-0005" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_29", CardID = "TK-0007" });
 
         var available = new List<AvailableAction>
         {
@@ -180,8 +180,8 @@ public class FactionAiTests
         var ai = FactionAi.Create("SHE", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
 
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_data", CardID = "NT-0009" });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_compute", CardID = "SH-0001" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_data", CardID = "NT-0009" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_compute", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {
@@ -218,7 +218,7 @@ public class FactionAiTests
     {
         var ai = FactionAi.Create("Tenki", _cc, _effects);
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_32", CardID = "TK-0010" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_32", CardID = "TK-0010" });
 
         var available = new List<AvailableAction>
         {
@@ -282,8 +282,8 @@ public class FactionAiTests
         state.Player2Field.Backend[1] = TestFactory.MakeResource(
             cardId: "TK-0009", instanceId: "field_31", maxAV: 500, currentYield: 200, maxYield: 200, currentTP: null);
 
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_30", CardID = "TK-0008" });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_30", CardID = "TK-0008" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {

@@ -29,13 +29,13 @@ public class EffectContext
     public required long PlayerNum { get; init; }
 
     /// <summary>Source resource that triggered the effect, if any.</summary>
-    public ResourceInstance? Source { get; init; }
+    public DeployedResource? Source { get; init; }
 
     /// <summary>Target resource of the effect, if any.</summary>
-    public ResourceInstance? Target { get; init; }
+    public DeployedResource? Target { get; init; }
 
     /// <summary>Support-zone source (for platform/reactive cards).</summary>
-    public SupportInstance? SupSource { get; init; }
+    public DeployedSupport? SupSource { get; init; }
 
     /// <summary>Card definition cache for lookups.</summary>
     public required ICardCache CardCache { get; init; }

@@ -19,7 +19,7 @@ public class ActionEvaluatorTests
 
     private DecisionContext MakeCtx(
         Field? field = null, Field? oppField = null,
-        List<HandCard>? hand = null, long budget = 5000)
+        List<UndeployedCard>? hand = null, long budget = 5000)
     {
         var ai = new StandardAi(_cc, _effects);
         return new DecisionContext(
@@ -229,7 +229,7 @@ public class ActionEvaluatorTests
         int handSize, bool expectedUse, string expectedPriLabel)
     {
         var hand = Enumerable.Range(0, handSize)
-            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
+            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
             .ToList();
         var ctx = MakeCtx(hand: hand);
         var info = new EffectInfo();
@@ -254,7 +254,7 @@ public class ActionEvaluatorTests
         int handSize, bool expectedUse, string expectedPriLabel)
     {
         var hand = Enumerable.Range(0, handSize)
-            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
+            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
             .ToList();
         var ctx = MakeCtx(hand: hand);
         var info = new EffectInfo();
@@ -396,7 +396,7 @@ public class ActionEvaluatorTests
     public void EvaluateCategory_RevealReactive_WithFaceDownSupport_Usable()
     {
         var oppField = TestFactory.MakeField();
-        oppField.Support[0] = new SupportInstance { InstanceID = "sup1", FaceUp = false };
+        oppField.Support[0] = new DeployedSupport { InstanceID = "sup1", FaceUp = false };
         var ctx = MakeCtx(oppField: oppField);
         var info = new EffectInfo();
 
@@ -410,7 +410,7 @@ public class ActionEvaluatorTests
     public void EvaluateCategory_RevealReactive_AllFaceUp_NotUsable()
     {
         var oppField = TestFactory.MakeField();
-        oppField.Support[0] = new SupportInstance { InstanceID = "sup1", FaceUp = true };
+        oppField.Support[0] = new DeployedSupport { InstanceID = "sup1", FaceUp = true };
         var ctx = MakeCtx(oppField: oppField);
         var info = new EffectInfo();
 
@@ -423,7 +423,7 @@ public class ActionEvaluatorTests
     public void EvaluateCategory_DestroyPlatform_WithPlatform_Usable()
     {
         var oppField = TestFactory.MakeField();
-        oppField.Support[0] = new SupportInstance { InstanceID = "plat1", CardID = "TEST-0200", FaceUp = true };
+        oppField.Support[0] = new DeployedSupport { InstanceID = "plat1", CardID = "TEST-0200", FaceUp = true };
         var ctx = MakeCtx(oppField: oppField);
         var info = new EffectInfo();
 
@@ -641,7 +641,7 @@ public class ActionEvaluatorTests
     public void SelectTarget_DestroyPlatform_ReturnsFirstPlatform()
     {
         var oppField = TestFactory.MakeField();
-        oppField.Support[0] = new SupportInstance { InstanceID = "plat_1", CardID = "TEST-0200", FaceUp = true };
+        oppField.Support[0] = new DeployedSupport { InstanceID = "plat_1", CardID = "TEST-0200", FaceUp = true };
 
         var info = new EffectInfo().WithCategory(EffectCategory.DestroyPlatform);
         var ctx = MakeCtx(oppField: oppField);

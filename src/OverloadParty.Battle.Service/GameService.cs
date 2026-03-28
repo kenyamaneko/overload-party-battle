@@ -48,6 +48,13 @@ public class GameService
 
     private const int MaxNPCIterations = 50;
 
+    // TODO: Assembly version defaults to 1.0.0.0 locally. Ensure CI injects correct versions
+    // via <Version> in .csproj, or switch to git SHA / environment variable.
+    private static readonly string EngineVersion =
+        typeof(GameEngine).Assembly.GetName().Version?.ToString() ?? "unknown";
+    private static readonly string CardDataVersion =
+        typeof(GameConstants).Assembly.GetName().Version?.ToString() ?? "unknown";
+
     public GameService(
         GameEngine engine,
         IGameRepository gameRepo,
@@ -81,7 +88,8 @@ public class GameService
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
         var gameID = await _engine.CreateNewGame(
-            player1ID, player2ID, deck1, deck2, firstPlayer, ct);
+            player1ID, player2ID, deck1, deck2, firstPlayer,
+            EngineVersion, CardDataVersion, ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
@@ -116,7 +124,8 @@ public class GameService
             : null;
 
         var gameID = await _engine.CreateNewGame(
-            playerID, NpcConstants.PlayerId, deck1, deck2, firstPlayer, ct);
+            playerID, NpcConstants.PlayerId, deck1, deck2, firstPlayer,
+            EngineVersion, CardDataVersion, ct);
 
         if (factionAI is not null)
         {

@@ -20,7 +20,7 @@ public static class CardMoveHelpers
         {
             var card = repo[0];
             repo.RemoveAt(0);
-            hand.Add(new HandCard
+            hand.Add(new UndeployedCard
             {
                 InstanceID = state.NextInstanceID(),
                 CardID = card.CardID,
@@ -33,7 +33,7 @@ public static class CardMoveHelpers
     /// <summary>
     /// リポジトリから条件に合うカードを1枚探して手札に加える。
     /// </summary>
-    public static bool SearchRepo(GameState state, long playerNum, Predicate<HandCard> predicate)
+    public static bool SearchRepo(GameState state, long playerNum, Predicate<UndeployedCard> predicate)
     {
         var repo = state.GetRepository(playerNum);
         var found = repo.Find(predicate);
@@ -44,7 +44,7 @@ public static class CardMoveHelpers
 
         repo.Remove(found);
         var hand = state.GetHand(playerNum);
-        hand.Add(new HandCard
+        hand.Add(new UndeployedCard
         {
             InstanceID = state.NextInstanceID(),
             CardID = found.CardID,
@@ -59,7 +59,7 @@ public static class CardMoveHelpers
     public static void AddToHand(GameState state, long playerNum, string cardID)
     {
         var hand = state.GetHand(playerNum);
-        hand.Add(new HandCard
+        hand.Add(new UndeployedCard
         {
             InstanceID = state.NextInstanceID(),
             CardID = cardID,
@@ -82,7 +82,7 @@ public static class CardMoveHelpers
         trash.RemoveAt(idx);
 
         var hand = state.GetHand(playerNum);
-        hand.Add(new HandCard
+        hand.Add(new UndeployedCard
         {
             InstanceID = state.NextInstanceID(),
             CardID = card.CardID,
@@ -97,7 +97,7 @@ public static class CardMoveHelpers
     public static void AddToTrash(GameState state, long playerNum, string cardID, string instanceID, long artNo = 0)
     {
         var trash = state.GetTrash(playerNum);
-        trash.Add(new HandCard { InstanceID = instanceID, CardID = cardID, ArtNo = artNo });
+        trash.Add(new UndeployedCard { InstanceID = instanceID, CardID = cardID, ArtNo = artNo });
     }
 
     /// <summary>
@@ -107,7 +107,7 @@ public static class CardMoveHelpers
     {
         var hand = state.GetHand(playerNum);
         var discardSet = new HashSet<string>(cardInstanceIDs);
-        var discardedCards = new List<HandCard>();
+        var discardedCards = new List<UndeployedCard>();
 
         for (int i = hand.Count - 1; i >= 0; i--)
         {

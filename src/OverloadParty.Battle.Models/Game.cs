@@ -15,6 +15,8 @@ public class Game
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
+    public string EngineVersion { get; set; } = "";
+    public string CardDataVersion { get; set; } = "";
 
     public string GetPlayerID(long playerNum) => playerNum switch
     {
@@ -40,9 +42,9 @@ public class GameState
     public long Player1Budget { get; set; }
     public long Player1InsightPool { get; set; }
     public Field Player1Field { get; set; } = new();
-    public List<HandCard> Player1Hand { get; set; } = [];
-    public List<HandCard> Player1Repository { get; set; } = [];
-    public List<HandCard> Player1Trash { get; set; } = [];
+    public List<UndeployedCard> Player1Hand { get; set; } = [];
+    public List<UndeployedCard> Player1Repository { get; set; } = [];
+    public List<UndeployedCard> Player1Trash { get; set; } = [];
     public long Player1TimeBank { get; set; }
     public bool Player1IncidentPlayedThisTurn { get; set; }
     public bool Player1HasHadActiveResource { get; set; }
@@ -51,9 +53,9 @@ public class GameState
     public long Player2Budget { get; set; }
     public long Player2InsightPool { get; set; }
     public Field Player2Field { get; set; } = new();
-    public List<HandCard> Player2Hand { get; set; } = [];
-    public List<HandCard> Player2Repository { get; set; } = [];
-    public List<HandCard> Player2Trash { get; set; } = [];
+    public List<UndeployedCard> Player2Hand { get; set; } = [];
+    public List<UndeployedCard> Player2Repository { get; set; } = [];
+    public List<UndeployedCard> Player2Trash { get; set; } = [];
     public long Player2TimeBank { get; set; }
     public bool Player2IncidentPlayedThisTurn { get; set; }
     public bool Player2HasHadActiveResource { get; set; }
@@ -115,13 +117,13 @@ public class GameState
         }
     }
 
-    public List<HandCard> GetHand(long playerNum) => playerNum switch
+    public List<UndeployedCard> GetHand(long playerNum) => playerNum switch
     {
         1 => Player1Hand,
         2 => Player2Hand,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
-    public void SetHand(long playerNum, List<HandCard> hand)
+    public void SetHand(long playerNum, List<UndeployedCard> hand)
     {
         switch (playerNum)
         {
@@ -131,13 +133,13 @@ public class GameState
         }
     }
 
-    public List<HandCard> GetRepository(long playerNum) => playerNum switch
+    public List<UndeployedCard> GetRepository(long playerNum) => playerNum switch
     {
         1 => Player1Repository,
         2 => Player2Repository,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
-    public void SetRepository(long playerNum, List<HandCard> repo)
+    public void SetRepository(long playerNum, List<UndeployedCard> repo)
     {
         switch (playerNum)
         {
@@ -147,13 +149,13 @@ public class GameState
         }
     }
 
-    public List<HandCard> GetTrash(long playerNum) => playerNum switch
+    public List<UndeployedCard> GetTrash(long playerNum) => playerNum switch
     {
         1 => Player1Trash,
         2 => Player2Trash,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
-    public void SetTrash(long playerNum, List<HandCard> trash)
+    public void SetTrash(long playerNum, List<UndeployedCard> trash)
     {
         switch (playerNum)
         {
@@ -254,5 +256,18 @@ public class GameEvent
     public string EventType { get; set; } = "";
     public string? PlayerID { get; set; }
     public Dictionary<string, object>? EventData { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// GameAction maps to the game_actions table (append-only action log for replay).
+/// </summary>
+public class GameAction
+{
+    public string GameID { get; set; } = "";
+    public int Seq { get; set; }
+    public string PlayerID { get; set; } = "";
+    public string ActionType { get; set; } = "";
+    public Dictionary<string, object>? ActionData { get; set; }
     public DateTime CreatedAt { get; set; }
 }

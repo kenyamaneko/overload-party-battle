@@ -133,7 +133,7 @@ public static class AttackProcessor
         return new ActionResult { Events = events, StateUpdated = true };
     }
 
-    private static (ResourceInstance Attacker, CardDefinition Card) ValidateAttacker(
+    private static (DeployedResource Attacker, CardDefinition Card) ValidateAttacker(
         Field field, string instanceId, ICardCache cc)
     {
         var attacker = FieldHelpers.FindResourceByID(field, instanceId)
@@ -165,7 +165,7 @@ public static class AttackProcessor
         return (attacker, card);
     }
 
-    private static ResourceInstance ValidateDefender(Field oppField, string instanceId)
+    private static DeployedResource ValidateDefender(Field oppField, string instanceId)
     {
         var defender = FieldHelpers.FindResourceByID(oppField, instanceId)
             ?? throw new GameRuleException($"defender {instanceId} not found on opponent field");
@@ -191,7 +191,7 @@ public static class AttackProcessor
 
     private static (bool Cancelled, List<GameEvent> Events) FireReactives(
         GameState state, Game game, long defenderPlayerNum, Field defenderField,
-        ResourceInstance attacker, ResourceInstance target,
+        DeployedResource attacker, DeployedResource target,
         ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return (false, []); }
@@ -228,14 +228,14 @@ public static class AttackProcessor
 
     private static List<GameEvent> FireOnDestroy(
         GameState state, Game game, long ownerNum,
-        ResourceInstance destroyed, Field attackerField, Field ownerField,
+        DeployedResource destroyed, Field attackerField, Field ownerField,
         ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return []; }
 
         var allEvents = new List<GameEvent>();
 
-        var triggers = new List<(ResourceInstance Resource, string CardId, long DeployOrder)>();
+        var triggers = new List<(DeployedResource Resource, string CardId, long DeployOrder)>();
 
         if (effects.Has(destroyed.CardID, TriggerType.OnDestroy))
         {
@@ -279,7 +279,7 @@ public static class AttackProcessor
 
     private static List<GameEvent> FireOnHit(
         GameState state, Game game, long defenderPlayerNum,
-        ResourceInstance defender, ICardCache cc, IEffectRegistry? effects)
+        DeployedResource defender, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return []; }
 

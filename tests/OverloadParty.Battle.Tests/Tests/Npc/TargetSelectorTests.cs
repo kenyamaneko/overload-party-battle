@@ -234,7 +234,7 @@ public class TargetSelectorTests
     public void HasFaceDownSupport_WithFaceDown_ReturnsTrue()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup1", FaceUp = false };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup1", FaceUp = false };
 
         TargetSelector.HasFaceDownSupport(field).Should().BeTrue();
     }
@@ -243,7 +243,7 @@ public class TargetSelectorTests
     public void HasFaceDownSupport_AllFaceUp_ReturnsFalse()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup1", FaceUp = true };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup1", FaceUp = true };
 
         TargetSelector.HasFaceDownSupport(field).Should().BeFalse();
     }
@@ -262,7 +262,7 @@ public class TargetSelectorTests
     public void HasPlatform_WithPlatformCard_ReturnsTrue()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "plat1", CardID = "TEST-0200", FaceUp = true };
+        field.Support[0] = new DeployedSupport { InstanceID = "plat1", CardID = "TEST-0200", FaceUp = true };
 
         TargetSelector.HasPlatform(field, _cc).Should().BeTrue();
     }
@@ -271,7 +271,7 @@ public class TargetSelectorTests
     public void HasPlatform_NoPlatform_ReturnsFalse()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup1", CardID = "TEST-0999", FaceUp = true };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup1", CardID = "TEST-0999", FaceUp = true };
 
         TargetSelector.HasPlatform(field, _cc).Should().BeFalse();
     }
@@ -282,7 +282,7 @@ public class TargetSelectorTests
     public void FirstPlatformId_ReturnsPlatformInstanceID()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "plat_1", CardID = "TEST-0200", FaceUp = true };
+        field.Support[0] = new DeployedSupport { InstanceID = "plat_1", CardID = "TEST-0200", FaceUp = true };
 
         var result = TargetSelector.FirstPlatformId(field, _cc);
 

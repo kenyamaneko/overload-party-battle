@@ -86,7 +86,7 @@ public class GameStateTests
     public void SetHand_Player1_UpdatesPlayer1Hand()
     {
         var gs = TestFactory.MakeGameState();
-        var newHand = new List<HandCard> { new() { InstanceID = "h1" } };
+        var newHand = new List<UndeployedCard> { new() { InstanceID = "h1" } };
         gs.SetHand(1, newHand);
         gs.Player1Hand.Should().BeSameAs(newHand);
     }
@@ -95,7 +95,7 @@ public class GameStateTests
     public void SetHand_Player2_UpdatesPlayer2Hand()
     {
         var gs = TestFactory.MakeGameState();
-        var newHand = new List<HandCard> { new() { InstanceID = "h2" } };
+        var newHand = new List<UndeployedCard> { new() { InstanceID = "h2" } };
         gs.SetHand(2, newHand);
         gs.Player2Hand.Should().BeSameAs(newHand);
     }
@@ -229,7 +229,7 @@ public class GameStateTests
     public void SetRepository_Player1_Updates()
     {
         var gs = TestFactory.MakeGameState();
-        var repo = new List<HandCard> { new() { InstanceID = "r1" } };
+        var repo = new List<UndeployedCard> { new() { InstanceID = "r1" } };
         gs.SetRepository(1, repo);
         gs.Player1Repository.Should().BeSameAs(repo);
     }
@@ -238,7 +238,7 @@ public class GameStateTests
     public void SetRepository_Player2_Updates()
     {
         var gs = TestFactory.MakeGameState();
-        var repo = new List<HandCard> { new() { InstanceID = "r2" } };
+        var repo = new List<UndeployedCard> { new() { InstanceID = "r2" } };
         gs.SetRepository(2, repo);
         gs.Player2Repository.Should().BeSameAs(repo);
     }
@@ -279,7 +279,7 @@ public class GameStateTests
     public void SetTrash_Player1_Updates()
     {
         var gs = TestFactory.MakeGameState();
-        var trash = new List<HandCard> { new() { InstanceID = "t1" } };
+        var trash = new List<UndeployedCard> { new() { InstanceID = "t1" } };
         gs.SetTrash(1, trash);
         gs.Player1Trash.Should().BeSameAs(trash);
     }
@@ -288,7 +288,7 @@ public class GameStateTests
     public void SetTrash_Player2_Updates()
     {
         var gs = TestFactory.MakeGameState();
-        var trash = new List<HandCard> { new() { InstanceID = "t2" } };
+        var trash = new List<UndeployedCard> { new() { InstanceID = "t2" } };
         gs.SetTrash(2, trash);
         gs.Player2Trash.Should().BeSameAs(trash);
     }

@@ -237,10 +237,10 @@ public class ActionFilterTests
     }
 
     [Fact]
-    public void ResolveCardIdForInstance_FindsSupportInstance()
+    public void ResolveCardIdForInstance_FindsDeployedSupport()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = "NT-0008" };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "NT-0008" };
 
         ActionFilter.ResolveCardIdForInstance("sup_1", field).Should().Be("NT-0008");
     }

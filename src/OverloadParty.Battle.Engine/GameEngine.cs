@@ -42,11 +42,16 @@ public class GameEngine
     public async Task<string> CreateNewGame(
         string player1ID, string player2ID,
         DeckSnapshot deck1, DeckSnapshot deck2,
-        long firstPlayer, CancellationToken ct = default)
+        long firstPlayer,
+        string engineVersion = "", string cardDataVersion = "",
+        CancellationToken ct = default)
     {
         var gameID = Guid.NewGuid().ToString("N");
         var (game, state) = GameInitializer.CreateNewGame(
             gameID, player1ID, player2ID, deck1, deck2, firstPlayer, _cardCache);
+
+        game.EngineVersion = engineVersion;
+        game.CardDataVersion = cardDataVersion;
 
         await _repo.CreateGame(game, state, ct);
         return gameID;
@@ -71,7 +76,7 @@ public class GameEngine
             gameOverResult = DrawPhaseProcessor.Process(state, game, _cardCache);
 
             return Task.CompletedTask;
-        }, ct);
+        }, ct: ct);
 
         if (gameOverResult is not null)
         {
@@ -120,18 +125,17 @@ public class GameEngine
 
         ActionResult actionResult = null!;
 
+        var pending = new PendingAction(playerID, actionType.ToWireString(), actionData);
+
         await _repo.UpdateGameState(gameID, state =>
         {
-            // Validate active player (except for SetReactive which can be done by non-active player)
             if (actionType != ActionType.SetReactive && state.ActivePlayer != playerNum)
             {
                 throw new GameRuleException("not your turn");
             }
 
-            // Deduct elapsed time from active player's TimeBank
             DeductElapsedTime(state);
 
-            // Check timeout before processing the action
             var timeoutResult = WinConditionChecker.CheckTimeout(state);
             if (timeoutResult is not null)
             {
@@ -139,13 +143,11 @@ public class GameEngine
                 return Task.CompletedTask;
             }
 
-            // Validate action allowed in current phase
             if (!TurnManager.IsActionAllowedInPhase(state.CurrentPhase, actionType))
             {
                 throw new GameRuleException($"action {actionType.ToWireString()} not allowed in phase {state.CurrentPhase.ToWireString()}");
             }
 
-            // Dispatch to specific processor
             actionResult = actionType switch
             {
                 ActionType.PlayCard => PlayCardProcessor.Process(
@@ -170,7 +172,7 @@ public class GameEngine
             actionResult.GameOver ??= WinConditionChecker.Check(state, game);
 
             return Task.CompletedTask;
-        }, ct);
+        }, pending, ct);
 
         // Persist events
         var eventCount = await _repo.GetEventCount(gameID, ct);
@@ -243,7 +245,7 @@ public class GameEngine
     /// <param name="state">The current game state.</param>
     /// <param name="hand">The active player's hand.</param>
     /// <returns>Turn controls for the UI.</returns>
-    public TurnControls ComputeTurnControls(GameState state, List<HandCard> hand)
+    public TurnControls ComputeTurnControls(GameState state, List<UndeployedCard> hand)
     {
         return AvailableActions.ComputeTurnControls(state, hand);
     }

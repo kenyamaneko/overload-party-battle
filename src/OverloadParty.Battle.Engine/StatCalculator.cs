@@ -24,7 +24,7 @@ public static class StatCalculator
     /// <summary>
     /// Calculate effective throughput for a resource, including all bonuses.
     /// </summary>
-    public static long CalculateEffectiveTP(ResourceInstance instance, Field field, ICardCache cc)
+    public static long CalculateEffectiveTP(DeployedResource instance, Field field, ICardCache cc)
     {
         if (FieldHelpers.HasTemporaryEffect(instance, EffectTypes.TPSuppressed)) { return 0; }
 
@@ -67,7 +67,7 @@ public static class StatCalculator
     /// <summary>
     /// Calculate effective yield for a resource, including all bonuses.
     /// </summary>
-    public static long CalculateEffectiveInsight(ResourceInstance instance, Field field, ICardCache cc)
+    public static long CalculateEffectiveInsight(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
         if (!card.IsDataType || card.DataStats is null) { return 0; }
@@ -107,7 +107,7 @@ public static class StatCalculator
     /// <summary>
     /// Calculate max AV for a resource.
     /// </summary>
-    public static long CalculateMaxAV(ResourceInstance instance, ICardCache cc)
+    public static long CalculateMaxAV(DeployedResource instance, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
         long baseAV = card.BaseAvailability;
@@ -126,7 +126,7 @@ public static class StatCalculator
     /// <summary>
     /// Recalculate MaxTP after scale-up (non-elastic cards only).
     /// </summary>
-    public static long RecalculateMaxTP(ResourceInstance resource, CardDefinition card)
+    public static long RecalculateMaxTP(DeployedResource resource, CardDefinition card)
     {
         if (card.ComputeStats is null) { return 0; }
         long baseTP = card.ComputeStats.Throughput;
@@ -145,7 +145,7 @@ public static class StatCalculator
     /// <summary>
     /// Recalculate MaxYield after scale-up (non-elastic cards only).
     /// </summary>
-    public static long RecalculateMaxYield(ResourceInstance resource, CardDefinition card)
+    public static long RecalculateMaxYield(DeployedResource resource, CardDefinition card)
     {
         if (card.DataStats is null) { return 0; }
         long baseYield = card.DataStats.Yield;
@@ -164,7 +164,7 @@ public static class StatCalculator
     /// <summary>
     /// Apply elastic bonus increment to a resource.
     /// </summary>
-    public static void ApplyElasticBonus(ResourceInstance resource, CardDefinition card)
+    public static void ApplyElasticBonus(DeployedResource resource, CardDefinition card)
     {
         if (card.Elastic && card.ElasticIncrement > 0)
         {
@@ -178,19 +178,19 @@ public static class StatCalculator
 
     // ─── Passive bonuses ─────────────────────────────────────
 
-    static long CalculatePassiveTPBonus(ResourceInstance instance, Field field, ICardCache cc)
+    static long CalculatePassiveTPBonus(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
         return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, BattleConstants.StatTP));
     }
 
-    static long CalculatePassiveYieldBonus(ResourceInstance instance, Field field, ICardCache cc)
+    static long CalculatePassiveYieldBonus(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
         return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, BattleConstants.StatYield));
     }
 
-    private static long ApplyPassiveEffect(PassiveEffect pe, ResourceInstance instance, Field field, ICardCache cc, string statType)
+    private static long ApplyPassiveEffect(PassiveEffect pe, DeployedResource instance, Field field, ICardCache cc, string statType)
     {
         return pe.Type switch
         {
@@ -208,7 +208,7 @@ public static class StatCalculator
         };
     }
 
-    private static long CalculateTPPerBackendDB(ResourceInstance instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
+    private static long CalculateTPPerBackendDB(DeployedResource instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
         int count = 0;
         foreach (var res in field.Backend.Where(r => r.FaceUp))
@@ -224,7 +224,7 @@ public static class StatCalculator
         return cfg.BonusPerCard * count;
     }
 
-    private static long CalculateTPPerBackendData(ResourceInstance instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
+    private static long CalculateTPPerBackendData(DeployedResource instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
         int count = 0;
         foreach (var res in field.Backend.Where(r => r.FaceUp))
@@ -261,7 +261,7 @@ public static class StatCalculator
         return 0;
     }
 
-    private static long CalculateYieldPerOtherDB(ResourceInstance instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
+    private static long CalculateYieldPerOtherDB(DeployedResource instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
     {
         int count = 0;
         foreach (var res in field.Backend.Where(r => r.FaceUp))
@@ -291,7 +291,7 @@ public static class StatCalculator
 
     // ─── Platform bonuses ────────────────────────────────────
 
-    static long CalculatePlatformBonus(ResourceInstance instance, Field field, string statType, ICardCache cc)
+    static long CalculatePlatformBonus(DeployedResource instance, Field field, string statType, ICardCache cc)
     {
         long total = 0;
         foreach (var support in field.Support.Where(s => s.FaceUp && s.DeployingTurnsLeft <= 0))
@@ -307,7 +307,7 @@ public static class StatCalculator
         return total;
     }
 
-    private static long ApplyPlatformEffect(PlatformEffect pe, ResourceInstance target, string statType, ICardCache cc)
+    private static long ApplyPlatformEffect(PlatformEffect pe, DeployedResource target, string statType, ICardCache cc)
     {
         string expectedStatType = pe.Type switch
         {
@@ -334,7 +334,7 @@ public static class StatCalculator
 
     // ─── Attachment bonuses ──────────────────────────────────
 
-    static long CalculateAttachmentBonus(ResourceInstance instance, string statType, ICardCache cc)
+    static long CalculateAttachmentBonus(DeployedResource instance, string statType, ICardCache cc)
     {
         long total = 0;
         foreach (var att in instance.Attachments)

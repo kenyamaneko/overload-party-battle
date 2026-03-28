@@ -18,22 +18,22 @@ public class DiscardProcessorTests
     private static DiscardHandRequest MakeReq(params string[] ids) =>
         new() { CardInstanceIDs = [..ids] };
 
-    private static List<HandCard> MakeHand(int count)
+    private static List<UndeployedCard> MakeHand(int count)
     {
-        var hand = new List<HandCard>();
+        var hand = new List<UndeployedCard>();
         for (int i = 0; i < count; i++)
         {
-            hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
+            hand.Add(new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
         }
         return hand;
     }
 
-    private static List<HandCard> MakeRepo(int count)
+    private static List<UndeployedCard> MakeRepo(int count)
     {
-        var repo = new List<HandCard>();
+        var repo = new List<UndeployedCard>();
         for (int i = 0; i < count; i++)
         {
-            repo.Add(new HandCard { InstanceID = $"r_{i}", CardID = "SH-0001" });
+            repo.Add(new UndeployedCard { InstanceID = $"r_{i}", CardID = "SH-0001" });
         }
         return repo;
     }

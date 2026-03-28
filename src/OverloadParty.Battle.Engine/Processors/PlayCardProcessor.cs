@@ -87,10 +87,10 @@ public static class PlayCardProcessor
 
     private static void PlaceSupport(
         PlayContext ctx, Field field,
-        CardDefinition cardDef, HandCard handCard, PlayCardRequest req,
+        CardDefinition cardDef, UndeployedCard handCard, PlayCardRequest req,
         long deployOrder, List<GameEvent> events)
     {
-        var support = new SupportInstance
+        var support = new DeployedSupport
         {
             InstanceID = ctx.State.NextInstanceID(),
             CardID = cardDef.CardId,
@@ -137,10 +137,10 @@ public static class PlayCardProcessor
 
     private static bool PlaceResource(
         PlayContext ctx, Field field,
-        CardDefinition cardDef, HandCard handCard, PlayCardRequest req,
+        CardDefinition cardDef, UndeployedCard handCard, PlayCardRequest req,
         long deployOrder, List<GameEvent> events)
     {
-        var resource = ResourceHelpers.CreateResourceInstance(cardDef, ctx.State.NextInstanceID(), ctx.State.CurrentTurn, handCard.ArtNo);
+        var resource = ResourceHelpers.CreateDeployedResource(cardDef, ctx.State.NextInstanceID(), ctx.State.CurrentTurn, handCard.ArtNo);
         resource.DeployOrder = deployOrder;
 
         if (resource.FaceUp)
@@ -191,7 +191,7 @@ public static class PlayCardProcessor
 
     private static ActionResult ProcessAttachCard(
         PlayContext ctx,
-        List<HandCard> hand, int handIdx, HandCard handCard,
+        List<UndeployedCard> hand, int handIdx, UndeployedCard handCard,
         CardDefinition cardDef, PlayCardRequest req)
     {
         if (req.TargetInstanceID is null)
@@ -301,7 +301,7 @@ public static class PlayCardProcessor
     }
 
     private static (bool Cancelled, List<GameEvent> Events) FireDeployReactives(
-        PlayContext ctx, ResourceInstance deployed)
+        PlayContext ctx, DeployedResource deployed)
     {
         if (ctx.Effects is null) { return (false, []); }
 

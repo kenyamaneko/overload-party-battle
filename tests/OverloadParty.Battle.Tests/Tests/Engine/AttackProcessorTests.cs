@@ -371,7 +371,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         // Opponent has a support with reactive trigger
-        state.Player2Field.Support[0] = new SupportInstance
+        state.Player2Field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = false, DeployOrder = 1
         };
@@ -527,7 +527,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         // Opponent has support but effects are null
-        state.Player2Field.Support[0] = new SupportInstance
+        state.Player2Field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = false, DeployOrder = 1
         };

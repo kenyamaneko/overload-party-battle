@@ -5,15 +5,15 @@ namespace OverloadParty.Battle.Models;
 /// </summary>
 public class Field
 {
-    public Zone<ResourceInstance> Frontend { get; set; } = new();
-    public Zone<ResourceInstance> Backend { get; set; } = new();
-    public Zone<SupportInstance> Support { get; set; } = new();
+    public Zone<DeployedResource> Frontend { get; set; } = new();
+    public Zone<DeployedResource> Backend { get; set; } = new();
+    public Zone<DeployedSupport> Support { get; set; } = new();
 }
 
 /// <summary>
-/// ResourceInstance is a card deployed on the frontend or backend zone.
+/// DeployedResource is a card deployed on the frontend or backend zone.
 /// </summary>
-public class ResourceInstance
+public class DeployedResource
 {
     public string InstanceID { get; set; } = "";
     public string CardID { get; set; } = "";
@@ -71,9 +71,9 @@ public class TemporaryEffect
 }
 
 /// <summary>
-/// SupportInstance is a Platform or Reactive card in the support zone.
+/// DeployedSupport is a Platform or Reactive card in the support zone.
 /// </summary>
-public class SupportInstance
+public class DeployedSupport
 {
     public string InstanceID { get; set; } = "";
     public string CardID { get; set; } = "";
@@ -86,9 +86,9 @@ public class SupportInstance
 }
 
 /// <summary>
-/// HandCard represents a card in a player's hand.
+/// UndeployedCard represents a card not yet deployed (hand, repository, or trash).
 /// </summary>
-public class HandCard
+public class UndeployedCard
 {
     public string InstanceID { get; set; } = "";
     public string CardID { get; set; } = "";

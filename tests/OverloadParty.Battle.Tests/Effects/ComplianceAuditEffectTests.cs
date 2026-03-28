@@ -171,7 +171,7 @@ public class ComplianceAuditEffectTests
     private static void AddComplianceAuditSupport(GameState state, long playerNum)
     {
         var field = playerNum == 1 ? state.Player1Field : state.Player2Field;
-        field.Support[0] = new SupportInstance
+        field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_audit",
             CardID = CardId,
@@ -187,7 +187,7 @@ public class ComplianceAuditEffectTests
         bool faceUp = true,
         long deployingTurnsLeft = 0)
     {
-        field.Support[slotIndex] = new SupportInstance
+        field.Support[slotIndex] = new DeployedSupport
         {
             InstanceID = $"sup_platform_{slotIndex}",
             CardID = cardId,

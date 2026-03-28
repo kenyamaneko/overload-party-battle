@@ -10,9 +10,9 @@ public static class ResourceHelpers
     /// <summary>
     /// カード定義からリソースインスタンスを生成する。
     /// </summary>
-    public static ResourceInstance CreateResourceInstance(CardDefinition card, string instanceID, long deployTurn, long artNo = 0)
+    public static DeployedResource CreateDeployedResource(CardDefinition card, string instanceID, long deployTurn, long artNo = 0)
     {
-        var resource = new ResourceInstance
+        var resource = new DeployedResource
         {
             InstanceID = instanceID,
             CardID = card.CardId,
@@ -44,7 +44,7 @@ public static class ResourceHelpers
     /// <summary>
     /// リソースをフィールドの適切なゾーンに自動配置する。
     /// </summary>
-    public static void PlaceResourceOnField(Field field, ResourceInstance instance, string cardType)
+    public static void PlaceResourceOnField(Field field, DeployedResource instance, string cardType)
     {
         if (FieldHelpers.IsComputeType(cardType))
         {
@@ -85,20 +85,20 @@ public static class ResourceHelpers
         hand.RemoveAt(handIdx);
 
         var card = cc.MustGet(cardId);
-        var instance = CreateResourceInstance(card, state.NextInstanceID(), state.CurrentTurn, handCard.ArtNo);
+        var instance = CreateDeployedResource(card, state.NextInstanceID(), state.CurrentTurn, handCard.ArtNo);
         PlaceResourceOnField(field, instance, card.CardType);
     }
 
     /// <summary>
     /// リポジトリからカードを配置する。
     /// </summary>
-    public static void DeployFromRepo(GameState state, long playerNum, Field field, HandCard repoCard, long overrideAV, ICardCache cc)
+    public static void DeployFromRepo(GameState state, long playerNum, Field field, UndeployedCard repoCard, long overrideAV, ICardCache cc)
     {
         var repo = state.GetRepository(playerNum);
         repo.Remove(repoCard);
 
         var card = cc.MustGet(repoCard.CardID);
-        var instance = CreateResourceInstance(card, state.NextInstanceID(), state.CurrentTurn, repoCard.ArtNo);
+        var instance = CreateDeployedResource(card, state.NextInstanceID(), state.CurrentTurn, repoCard.ArtNo);
 
         if (overrideAV > 0)
         {
@@ -112,7 +112,7 @@ public static class ResourceHelpers
     /// <summary>
     /// リソースを破壊する（SLAペナルティ適用、マイグレーションリンククリア、トラッシュ移動、フィールド除去）。
     /// </summary>
-    public static void DestroyResource(GameState state, long ownerNum, Field field, ResourceInstance resource, ICardCache cc)
+    public static void DestroyResource(GameState state, long ownerNum, Field field, DeployedResource resource, ICardCache cc)
     {
         var card = cc.MustGet(resource.CardID);
 
@@ -142,7 +142,7 @@ public static class ResourceHelpers
     /// リソースのランクを変更し、MaxAV/MaxTP/MaxYield を再計算する。
     /// Elastic カードは TP/Yield を ElasticBonus から動的に算出するため MaxTP/MaxYield の再計算は不要。
     /// </summary>
-    public static void ChangeRank(ResourceInstance resource, Rank targetRank, ICardCache cc)
+    public static void ChangeRank(DeployedResource resource, Rank targetRank, ICardCache cc)
     {
         resource.Rank = targetRank;
         resource.MaxAV = StatCalculator.CalculateMaxAV(resource, cc);

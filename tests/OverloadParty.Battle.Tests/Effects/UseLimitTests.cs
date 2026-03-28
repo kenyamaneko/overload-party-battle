@@ -12,8 +12,8 @@ public class UseLimitTests
     private OpContext MakeOpContext(
         GameState state,
         long playerNum,
-        ResourceInstance? source = null,
-        SupportInstance? supSource = null)
+        DeployedResource? source = null,
+        DeployedSupport? supSource = null)
     {
         var cc = new TestCardCache();
         var ctx = new EffectContext
@@ -64,7 +64,7 @@ public class UseLimitTests
     public void CheckUseLimitOp_Throws_WhenSupSourceUsedThisTurn()
     {
         var state = TestFactory.MakeGameState();
-        var supSource = new SupportInstance
+        var supSource = new DeployedSupport
         {
             InstanceID = "sup_1",
             CardID = "TST-SUP",
@@ -101,7 +101,7 @@ public class UseLimitTests
     public void MarkUseLimitOp_SetsSupSourceFlag()
     {
         var state = TestFactory.MakeGameState();
-        var supSource = new SupportInstance
+        var supSource = new DeployedSupport
         {
             InstanceID = "sup_1",
             CardID = "TST-SUP",
@@ -170,7 +170,7 @@ public class UseLimitTests
     public void MarkUseLimitOp_PerGame_SetsSupSourceGameFlag()
     {
         var state = TestFactory.MakeGameState();
-        var supSource = new SupportInstance
+        var supSource = new DeployedSupport
         {
             InstanceID = "sup_1",
             CardID = "TST-SUP",

@@ -3,6 +3,11 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine;
 
 /// <summary>
+/// Action data to be atomically appended within an UpdateGameState transaction.
+/// </summary>
+public record PendingAction(string PlayerID, string ActionType, object ActionData);
+
+/// <summary>
 /// Data access contract for the game engine.
 /// Engine depends only on this interface; implementation lives in the Data layer.
 /// </summary>
@@ -25,8 +30,10 @@ public interface IGameRepository
     /// Updates GameState within a read-write transaction.
     /// The callback receives the current state; it must modify it in place.
     /// The implementation handles optimistic locking (version check + increment).
+    /// If <paramref name="pendingAction"/> is provided, it is appended atomically
+    /// within the same transaction with a safe auto-incremented seq number.
     /// </summary>
-    Task UpdateGameState(string gameID, Func<GameState, Task> fn, CancellationToken ct = default);
+    Task UpdateGameState(string gameID, Func<GameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default);
 
     /// <summary>Persists a game event to the event log.</summary>
     /// <param name="evt">The event to append.</param>
@@ -49,4 +56,15 @@ public interface IGameRepository
     /// <summary>Returns all events for a game in order.</summary>
     /// <param name="gameID">The game ID.</param>
     Task<List<GameEvent>> GetEvents(string gameID, CancellationToken ct = default);
+
+    /// <summary>Returns the initial game state (for replay).</summary>
+    /// <param name="gameID">The game ID.</param>
+    Task<GameState?> GetInitialState(string gameID, CancellationToken ct = default);
+
+    /// <summary>Appends a player action to the action log.</summary>
+    Task AppendAction(string gameID, int seq, string playerID, string actionType, object actionData, CancellationToken ct = default);
+
+    /// <summary>Returns all recorded actions for a game in order.</summary>
+    /// <param name="gameID">The game ID.</param>
+    Task<List<GameAction>> GetActions(string gameID, CancellationToken ct = default);
 }

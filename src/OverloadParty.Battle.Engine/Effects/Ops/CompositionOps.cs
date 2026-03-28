@@ -126,7 +126,7 @@ public class ResourceCountGuardOp(
         return total;
     }
 
-    private int CountField(Field field, ICardCache cc, ResourceInstance? source)
+    private int CountField(Field field, ICardCache cc, DeployedResource? source)
     {
         if (zone == "support")
         {
@@ -138,7 +138,7 @@ public class ResourceCountGuardOp(
                 && MatchesCardIds(s.CardID));
         }
 
-        IEnumerable<ResourceInstance> candidates = zone switch
+        IEnumerable<DeployedResource> candidates = zone switch
         {
             "frontend" => field.Frontend,
             "backend" => field.Backend,

@@ -51,7 +51,7 @@ public class PgGameRepositoryTests
             Player1Budget = 5000,
             Player1InsightPool = 0,
             Player1Field = new Field(),
-            Player1Hand = [new HandCard { InstanceID = "h1", CardID = "SH-0001" }],
+            Player1Hand = [new UndeployedCard { InstanceID = "h1", CardID = "SH-0001" }],
             Player1Repository = [],
             Player1Trash = [],
             Player1TimeBank = 480,
@@ -286,7 +286,7 @@ public class PgGameRepositoryTests
         var (game, state) = MakeFixture();
 
         // Populate field with resources via Zone indexer
-        state.Player1Field.Frontend[0] = new ResourceInstance
+        state.Player1Field.Frontend[0] = new DeployedResource
         {
             InstanceID = "inst_0",
             CardID = "SH-0001",
@@ -297,7 +297,7 @@ public class PgGameRepositoryTests
             MaxTP = 600,
             CurrentTP = 600,
         };
-        state.Player2Field.Backend[0] = new ResourceInstance
+        state.Player2Field.Backend[0] = new DeployedResource
         {
             InstanceID = "inst_1",
             CardID = "NT-0009",

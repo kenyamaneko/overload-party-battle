@@ -49,13 +49,13 @@ public static class ActivateEffectProcessor
 
     private static ActionResult ActivateResourceEffect(
         GameState state, Game game, long playerNum,
-        ResourceInstance source,
+        DeployedResource source,
         ActivateEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var card = ValidateResourceActivation(source, cc, effects);
 
         // Find target if specified
-        ResourceInstance? target = null;
+        DeployedResource? target = null;
         if (req.TargetInstanceID is { } targetId)
         {
             // Search own field first, then opponent field
@@ -98,7 +98,7 @@ public static class ActivateEffectProcessor
 
     private static ActionResult ActivateSupportEffect(
         GameState state, Game game, long playerNum,
-        Field field, SupportInstance support,
+        Field field, DeployedSupport support,
         ActivateEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var card = cc.MustGet(support.CardID);
@@ -140,7 +140,7 @@ public static class ActivateEffectProcessor
     }
 
     private static CardDefinition ValidateResourceActivation(
-        ResourceInstance source, ICardCache cc, IEffectRegistry effects)
+        DeployedResource source, ICardCache cc, IEffectRegistry effects)
     {
         var card = cc.MustGet(source.CardID);
 

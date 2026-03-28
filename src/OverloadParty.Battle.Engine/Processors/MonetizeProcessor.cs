@@ -81,7 +81,7 @@ public static class MonetizeProcessor
         };
     }
 
-    private static (ResourceInstance Resource, CardDefinition Card) ValidateDistribution(
+    private static (DeployedResource Resource, CardDefinition Card) ValidateDistribution(
         Field field, MonetizeDistribution dist, ICardCache cc)
     {
         if (dist.Amount <= 0)

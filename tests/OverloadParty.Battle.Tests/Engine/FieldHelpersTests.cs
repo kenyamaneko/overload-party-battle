@@ -71,7 +71,7 @@ public class FieldHelpersTests
     public void FindSupportByID_Found()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = "TEST-0200" };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TEST-0200" };
 
         var result = FieldHelpers.FindSupportByID(field, "sup_1");
         result.Should().NotBeNull();
@@ -253,16 +253,16 @@ public class FieldHelpersTests
         FieldHelpers.IsImmediateType(cardType).Should().Be(expected);
     }
 
-    // ─── CreateResourceInstance ───────────────────────────────
+    // ─── CreateDeployedResource ───────────────────────────────
 
     /// <summary>
     /// Serverless (deploy_turns=0) → immediate face-up.
     /// </summary>
     [Fact]
-    public void CreateResourceInstance_ZeroDeployTurns_FaceUp()
+    public void CreateDeployedResource_ZeroDeployTurns_FaceUp()
     {
         var card = TestFactory.ServerlessCard();
-        var res = ResourceHelpers.CreateResourceInstance(card, "inst_1", 1);
+        var res = ResourceHelpers.CreateDeployedResource(card, "inst_1", 1);
 
         res.FaceUp.Should().BeTrue();
         res.DeployingTurnsLeft.Should().Be(0);
@@ -273,10 +273,10 @@ public class FieldHelpersTests
     /// Compute (deploy_turns=1) → face-down with 1 turn left.
     /// </summary>
     [Fact]
-    public void CreateResourceInstance_OneDeployTurn_FaceDown()
+    public void CreateDeployedResource_OneDeployTurn_FaceDown()
     {
         var card = TestFactory.ComputeCard(deployTurns: 1);
-        var res = ResourceHelpers.CreateResourceInstance(card, "inst_1", 3);
+        var res = ResourceHelpers.CreateDeployedResource(card, "inst_1", 3);
 
         res.FaceUp.Should().BeFalse();
         res.DeployingTurnsLeft.Should().Be(1);
@@ -284,10 +284,10 @@ public class FieldHelpersTests
     }
 
     [Fact]
-    public void CreateResourceInstance_ComputeCard_SetsTpStats()
+    public void CreateDeployedResource_ComputeCard_SetsTpStats()
     {
         var card = TestFactory.ComputeCard(tp: 700, av: 1400);
-        var res = ResourceHelpers.CreateResourceInstance(card, "inst_1", 1);
+        var res = ResourceHelpers.CreateDeployedResource(card, "inst_1", 1);
 
         res.MaxTP.Should().Be(700);
         res.CurrentTP.Should().Be(700);
@@ -296,10 +296,10 @@ public class FieldHelpersTests
     }
 
     [Fact]
-    public void CreateResourceInstance_DataCard_SetsYieldStats()
+    public void CreateDeployedResource_DataCard_SetsYieldStats()
     {
         var card = TestFactory.DataCard(yield: 500, av: 800);
-        var res = ResourceHelpers.CreateResourceInstance(card, "inst_1", 1);
+        var res = ResourceHelpers.CreateDeployedResource(card, "inst_1", 1);
 
         res.MaxYield.Should().Be(500);
         res.CurrentYield.Should().Be(500);

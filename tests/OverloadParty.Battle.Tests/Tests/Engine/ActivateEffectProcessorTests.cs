@@ -141,7 +141,7 @@ public class ActivateEffectProcessorTests
     [Fact]
     public void Process_WithTargetOnOwnField_PassesTargetToHandler()
     {
-        ResourceInstance? capturedTarget = null;
+        DeployedResource? capturedTarget = null;
         var reg = new EffectRegistry();
         reg.Register("SH-0001", TriggerType.Activate, ctx =>
         {
@@ -165,7 +165,7 @@ public class ActivateEffectProcessorTests
     [Fact]
     public void Process_WithTargetOnOpponentField_PassesTargetToHandler()
     {
-        ResourceInstance? capturedTarget = null;
+        DeployedResource? capturedTarget = null;
         var reg = new EffectRegistry();
         reg.Register("SH-0001", TriggerType.Activate, ctx =>
         {
@@ -199,7 +199,7 @@ public class ActivateEffectProcessorTests
         });
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var support = new SupportInstance
+        var support = new DeployedSupport
         {
             InstanceID = "sup_1",
             CardID = "TEST-0200",
@@ -220,7 +220,7 @@ public class ActivateEffectProcessorTests
         var reg = new EffectRegistry(); // 200 not registered
 
         var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Support[0] = new SupportInstance
+        state.Player1Field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1",
             CardID = "TEST-0200",
@@ -240,7 +240,7 @@ public class ActivateEffectProcessorTests
         reg.Register("TEST-0200", TriggerType.Activate, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Support[0] = new SupportInstance
+        state.Player1Field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1",
             CardID = "TEST-0200",

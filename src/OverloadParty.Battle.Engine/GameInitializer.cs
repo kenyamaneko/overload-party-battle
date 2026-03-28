@@ -70,11 +70,11 @@ public static class GameInitializer
         }
 
         // Deal initial hand
-        var hand = new List<HandCard>();
+        var hand = new List<UndeployedCard>();
         int handSize = Math.Min(GameConstants.InitialHandSize, shuffled.Count);
         for (int i = 0; i < handSize; i++)
         {
-            hand.Add(new HandCard
+            hand.Add(new UndeployedCard
             {
                 InstanceID = state.NextInstanceID(),
                 CardID = shuffled[i].CardId,
@@ -83,10 +83,10 @@ public static class GameInitializer
         }
 
         // Remaining cards go to repository
-        var repo = new List<HandCard>();
+        var repo = new List<UndeployedCard>();
         for (int i = handSize; i < shuffled.Count; i++)
         {
-            repo.Add(new HandCard
+            repo.Add(new UndeployedCard
             {
                 InstanceID = state.NextInstanceID(),
                 CardID = shuffled[i].CardId,

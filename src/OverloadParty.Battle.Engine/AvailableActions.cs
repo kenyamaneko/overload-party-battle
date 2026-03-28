@@ -70,7 +70,7 @@ public static class AvailableActions
     /// <param name="state">The current game state.</param>
     /// <param name="hand">The active player's hand.</param>
     /// <returns>Turn control information for the UI.</returns>
-    public static TurnControls ComputeTurnControls(GameState state, List<HandCard> hand)
+    public static TurnControls ComputeTurnControls(GameState state, List<UndeployedCard> hand)
     {
         return new TurnControls
         {
@@ -95,7 +95,7 @@ public static class AvailableActions
     /// <returns>A list of all valid actions.</returns>
     public static List<AvailableAction> GetAllAvailableActions(
         GameState state,
-        Field myField, Field oppField, List<HandCard> hand,
+        Field myField, Field oppField, List<UndeployedCard> hand,
         long budget, long insightPool,
         ICardCache cc, IEffectRegistry? effects)
     {
@@ -121,7 +121,7 @@ public static class AvailableActions
     }
 
     private static IEnumerable<AvailableAction> EnumeratePlayCardActions(
-        GameState state, Field field, List<HandCard> hand,
+        GameState state, Field field, List<UndeployedCard> hand,
         long budget, ICardCache cc, IEffectRegistry? effects)
     {
         foreach (var handCard in hand)
@@ -135,7 +135,7 @@ public static class AvailableActions
     }
 
     private static AvailableAction? BuildPlayCardAction(
-        GameState state, Field field, HandCard handCard, CardDefinition card,
+        GameState state, Field field, UndeployedCard handCard, CardDefinition card,
         long budget, IEffectRegistry? effects)
     {
         return EnumExtensions.GetCategory(card.CardType) switch
@@ -147,7 +147,7 @@ public static class AvailableActions
     }
 
     private static AvailableAction? BuildSupportPlayAction(
-        GameState state, Field field, HandCard handCard, CardDefinition card,
+        GameState state, Field field, UndeployedCard handCard, CardDefinition card,
         long budget, IEffectRegistry? effects)
     {
         if (card.CardType == CardTypes.Attachment)
@@ -185,7 +185,7 @@ public static class AvailableActions
         return BuildSupportSlotAction(field, handCard);
     }
 
-    private static AvailableAction? BuildSupportSlotAction(Field field, HandCard handCard)
+    private static AvailableAction? BuildSupportSlotAction(Field field, UndeployedCard handCard)
     {
         // ワイヤーフォーマット: "{zone}_{slotIndex}" — クライアント/NPC 側で _ 分割してパース
         var zones = field.Support.EmptySlotIndices().Select(i => $"support_{i}").ToList();
@@ -202,7 +202,7 @@ public static class AvailableActions
     }
 
     private static AvailableAction? BuildResourcePlayAction(
-        Field field, HandCard handCard, CardDefinition card)
+        Field field, UndeployedCard handCard, CardDefinition card)
     {
         // ワイヤーフォーマット: "{zone}_{slotIndex}" — クライアント/NPC 側で _ 分割してパース
         var validZones = new List<string>();
@@ -374,8 +374,8 @@ public static class AvailableActions
 
     private static IEnumerable<AvailableAction> EnumerateMigrateActions(Field field, ICardCache cc)
     {
-        var sources = new List<(ResourceInstance Res, CardDefinition Card)>();
-        var targets = new List<(ResourceInstance Res, CardDefinition Card)>();
+        var sources = new List<(DeployedResource Res, CardDefinition Card)>();
+        var targets = new List<(DeployedResource Res, CardDefinition Card)>();
 
         foreach (var resource in FieldHelpers.AllFaceUpResources(field))
         {

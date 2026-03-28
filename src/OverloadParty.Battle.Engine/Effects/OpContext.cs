@@ -62,17 +62,17 @@ public class OpContext
     /// <summary>
     /// Source resource (the card that triggered the effect).
     /// </summary>
-    public ResourceInstance? Source => Ctx.Source;
+    public DeployedResource? Source => Ctx.Source;
 
     /// <summary>
     /// Target resource (may be null if no target specified).
     /// </summary>
-    public ResourceInstance? Target => Ctx.Target;
+    public DeployedResource? Target => Ctx.Target;
 
     /// <summary>
     /// Support zone source (for platform/reactive cards).
     /// </summary>
-    public SupportInstance? SupSource => Ctx.SupSource;
+    public DeployedSupport? SupSource => Ctx.SupSource;
 
     /// <summary>
     /// Choice data from the player (for branching effects).

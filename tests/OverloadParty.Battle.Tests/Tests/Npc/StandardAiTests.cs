@@ -27,7 +27,7 @@ public class StandardAiTests
     public void DecideMainPhaseActions_WithPlayCardActions_ReturnsNpcActionsWithCorrectKeys()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Hand.Add(new HandCard { InstanceID = "hand_1", CardID = "SH-0001" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "hand_1", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {
@@ -60,7 +60,7 @@ public class StandardAiTests
     public void DecideMainPhaseActions_ComputeCard_PrefersFrontendZone()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 2);
-        state.Player2Hand.Add(new HandCard { InstanceID = "hand_1", CardID = "SH-0001" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "hand_1", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {
@@ -253,7 +253,7 @@ public class StandardAiTests
         // HandLimit is 6, add fewer cards
         foreach (var i in Enumerable.Range(0, GameConstants.HandLimit))
         {
-            state.Player1Hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
         }
 
         var ai = CreateAi();
@@ -269,7 +269,7 @@ public class StandardAiTests
         var excess = 2;
         foreach (var i in Enumerable.Range(0, GameConstants.HandLimit + excess))
         {
-            state.Player1Hand.Add(new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
         }
 
         var ai = CreateAi();
@@ -284,14 +284,14 @@ public class StandardAiTests
         var state = TestFactory.MakeGameState();
         // CardId 1 has MC=150, CardId 2 has MC=50, CardId 100 has MC=100
         // Add 8 cards (HandLimit=6, so discard 2)
-        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_1", CardID = "SH-0001" });    // MC=150
-        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_1", CardID = "TEST-0002" });        // MC=50
-        state.Player1Hand.Add(new HandCard { InstanceID = "medium_1", CardID = "NT-0009" });     // MC=100
-        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_2", CardID = "SH-0001" });    // MC=150
-        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_2", CardID = "TEST-0002" });        // MC=50
-        state.Player1Hand.Add(new HandCard { InstanceID = "medium_2", CardID = "NT-0009" });     // MC=100
-        state.Player1Hand.Add(new HandCard { InstanceID = "cheap_3", CardID = "NT-0010" });      // MC=30
-        state.Player1Hand.Add(new HandCard { InstanceID = "expensive_3", CardID = "SH-0001" });    // MC=150
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "expensive_1", CardID = "SH-0001" });    // MC=150
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "cheap_1", CardID = "TEST-0002" });        // MC=50
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "medium_1", CardID = "NT-0009" });     // MC=100
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "expensive_2", CardID = "SH-0001" });    // MC=150
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "cheap_2", CardID = "TEST-0002" });        // MC=50
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "medium_2", CardID = "NT-0009" });     // MC=100
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "cheap_3", CardID = "NT-0010" });      // MC=30
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "expensive_3", CardID = "SH-0001" });    // MC=150
 
         var ai = CreateAi();
         var result = ai.DecideDiscard(state, 1);
@@ -319,7 +319,7 @@ public class StandardAiTests
     public void PlayCardPayload_UsesCamelCaseKeys()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h1", CardID = "SH-0001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h1", CardID = "SH-0001" });
 
         var available = new List<AvailableAction>
         {

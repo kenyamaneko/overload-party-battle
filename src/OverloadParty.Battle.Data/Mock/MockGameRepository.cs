@@ -1,3 +1,5 @@
+using System.Text.Json;
+using OverloadParty.Battle.Data.Json;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
 
@@ -11,7 +13,9 @@ public class MockGameRepository : IGameRepository
     private readonly Lock _lock = new();
     private readonly Dictionary<string, Game> _games = new();
     private readonly Dictionary<string, GameState> _states = new();
+    private readonly Dictionary<string, GameState> _initialStates = new();
     private readonly Dictionary<string, List<GameEvent>> _events = new();
+    private readonly Dictionary<string, List<GameAction>> _actions = new();
 
     public Task CreateGame(Game game, GameState state, CancellationToken ct = default)
     {
@@ -19,7 +23,11 @@ public class MockGameRepository : IGameRepository
         {
             _games[game.GameID] = game;
             _states[game.GameID] = state;
+            // Deep-copy via JSON round-trip to preserve the initial snapshot
+            var json = JsonSerializer.Serialize(state, DbJsonOptions.Default);
+            _initialStates[game.GameID] = JsonSerializer.Deserialize<GameState>(json, DbJsonOptions.Default)!;
             _events[game.GameID] = [];
+            _actions[game.GameID] = [];
         }
         return Task.CompletedTask;
     }
@@ -34,7 +42,7 @@ public class MockGameRepository : IGameRepository
         lock (_lock) { return Task.FromResult(_states.GetValueOrDefault(gameID)); }
     }
 
-    public async Task UpdateGameState(string gameID, Func<GameState, Task> fn, CancellationToken ct = default)
+    public async Task UpdateGameState(string gameID, Func<GameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
     {
         GameState state;
         lock (_lock)
@@ -49,6 +57,26 @@ public class MockGameRepository : IGameRepository
         {
             state.Version++;
             state.UpdatedAt = DateTime.UtcNow;
+
+            if (pendingAction is not null)
+            {
+                if (!_actions.TryGetValue(gameID, out var list))
+                {
+                    list = [];
+                    _actions[gameID] = list;
+                }
+                var json = JsonSerializer.Serialize(pendingAction.ActionData, DbJsonOptions.Default);
+                var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json, DbJsonOptions.Default);
+                list.Add(new GameAction
+                {
+                    GameID = gameID,
+                    Seq = list.Count + 1,
+                    PlayerID = pendingAction.PlayerID,
+                    ActionType = pendingAction.ActionType,
+                    ActionData = dict,
+                    CreatedAt = DateTime.UtcNow,
+                });
+            }
         }
     }
 
@@ -109,4 +137,43 @@ public class MockGameRepository : IGameRepository
         }
     }
 
+    public Task<GameState?> GetInitialState(string gameID, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            return Task.FromResult(_initialStates.GetValueOrDefault(gameID));
+        }
+    }
+
+    public Task AppendAction(string gameID, int seq, string playerID, string actionType, object actionData, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            if (!_actions.TryGetValue(gameID, out var list))
+            {
+                list = [];
+                _actions[gameID] = list;
+            }
+            var json = JsonSerializer.Serialize(actionData, DbJsonOptions.Default);
+            var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json, DbJsonOptions.Default);
+            list.Add(new GameAction
+            {
+                GameID = gameID,
+                Seq = seq,
+                PlayerID = playerID,
+                ActionType = actionType,
+                ActionData = dict,
+                CreatedAt = DateTime.UtcNow,
+            });
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<List<GameAction>> GetActions(string gameID, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            return Task.FromResult(_actions.GetValueOrDefault(gameID) ?? []);
+        }
+    }
 }

@@ -30,10 +30,10 @@ public class PlayerView
     public long InsightPool { get; init; }
     public long TimeBank { get; init; }
     public required Field Field { get; init; }
-    public required List<HandCard> Hand { get; init; }
+    public required List<UndeployedCard> Hand { get; init; }
     public int RepoCount { get; init; }
     public int TrashCount { get; init; }
-    public required List<HandCard> Trash { get; init; }
+    public required List<UndeployedCard> Trash { get; init; }
     public List<AvailableAction>? AvailableActions { get; set; }
 }
 
@@ -50,7 +50,7 @@ public class OpponentView
     public int HandCount { get; init; }
     public int RepoCount { get; init; }
     public int TrashCount { get; init; }
-    public required List<HandCard> Trash { get; init; }
+    public required List<UndeployedCard> Trash { get; init; }
 }
 
 /// <summary>
@@ -58,19 +58,19 @@ public class OpponentView
 /// </summary>
 public class OpponentField
 {
-    public ResourceInstance?[] Frontend { get; init; } = new ResourceInstance?[GameConstants.SlotsPerZone];
-    public ResourceInstance?[] Backend { get; init; } = new ResourceInstance?[GameConstants.SlotsPerZone];
-    public HiddenSupportInstance?[] Support { get; init; } = new HiddenSupportInstance?[GameConstants.SlotsPerZone];
+    public DeployedResource?[] Frontend { get; init; } = new DeployedResource?[GameConstants.SlotsPerZone];
+    public DeployedResource?[] Backend { get; init; } = new DeployedResource?[GameConstants.SlotsPerZone];
+    public HiddenDeployedSupport?[] Support { get; init; } = new HiddenDeployedSupport?[GameConstants.SlotsPerZone];
 }
 
 /// <summary>
 /// Support instance with face-down card details hidden.
 /// </summary>
-public class HiddenSupportInstance
+public class HiddenDeployedSupport
 {
     public string InstanceID { get; init; } = "";
     public string? CardID { get; init; }
-    public bool FaceUp { get; init; }
+    public bool FaceDown { get; init; }
 }
 
 /// <summary>
@@ -154,16 +154,16 @@ public static class GameStateView
         {
             Frontend = field.Frontend.ToArray().Select(HideResourceIfFaceDown).ToArray(),
             Backend = field.Backend.ToArray().Select(HideResourceIfFaceDown).ToArray(),
-            Support = field.Support.ToArray().Select(sup => sup is null ? null : new HiddenSupportInstance
+            Support = field.Support.ToArray().Select(sup => sup is null ? null : new HiddenDeployedSupport
             {
                 InstanceID = sup.InstanceID,
-                FaceUp = sup.FaceUp,
+                FaceDown = !sup.FaceUp,
                 CardID = sup.FaceUp ? sup.CardID : null,
             }).ToArray(),
         };
     }
 
-    private static ResourceInstance? HideResourceIfFaceDown(ResourceInstance? res)
+    private static DeployedResource? HideResourceIfFaceDown(DeployedResource? res)
     {
         if (res is null)
         {
@@ -175,7 +175,7 @@ public static class GameStateView
         }
 
         // Hide all stats for face-down (still deploying) resources
-        return new ResourceInstance
+        return new DeployedResource
         {
             InstanceID = res.InstanceID,
             FaceUp = false,

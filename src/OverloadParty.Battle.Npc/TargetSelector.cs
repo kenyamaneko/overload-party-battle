@@ -72,7 +72,7 @@ public static class TargetSelector
             ?.InstanceID;
     }
 
-    public static long ResourceValue(ResourceInstance r, ICardCache cc)
+    public static long ResourceValue(DeployedResource r, ICardCache cc)
     {
         if (r.CurrentTP is > 0)
         {
@@ -92,9 +92,9 @@ public static class TargetSelector
 
     // ─── Private helpers ────────────────────────────────────────
 
-    private static IEnumerable<ResourceInstance> FaceUpInZone(Field field, string? zone)
+    private static IEnumerable<DeployedResource> FaceUpInZone(Field field, string? zone)
     {
-        var sources = Enumerable.Empty<ResourceInstance>();
+        var sources = Enumerable.Empty<DeployedResource>();
         if (zone is null or "" or GameConstants.ZoneFrontend)
         {
             sources = sources.Concat(field.Frontend);

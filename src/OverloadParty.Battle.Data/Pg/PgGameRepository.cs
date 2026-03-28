@@ -22,8 +22,9 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 game_id, player1_id, player2_id,
                 player1_deck_snapshot, player2_deck_snapshot,
                 status, winner_id,
+                engine_version, card_data_version,
                 created_at, updated_at, finished_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", conn, tx))
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)", conn, tx))
         {
             cmd.Parameters.AddWithValue(game.GameID);
             cmd.Parameters.Add(UuidParam(game.Player1ID));
@@ -32,6 +33,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             cmd.Parameters.Add(JsonbParam(game.Player2DeckSnapshot));
             cmd.Parameters.AddWithValue(game.Status.ToWireString());
             cmd.Parameters.Add(NullableUuidParam(game.WinnerID));
+            cmd.Parameters.AddWithValue(game.EngineVersion);
+            cmd.Parameters.AddWithValue(game.CardDataVersion);
             cmd.Parameters.AddWithValue(game.CreatedAt);
             cmd.Parameters.AddWithValue(game.UpdatedAt);
             cmd.Parameters.AddWithValue((object?)game.FinishedAt ?? DBNull.Value);
@@ -49,7 +52,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             SELECT game_id, player1_id, player2_id,
                    player1_deck_snapshot, player2_deck_snapshot,
                    status, winner_id,
-                   created_at, updated_at, finished_at
+                   created_at, updated_at, finished_at,
+                   engine_version, card_data_version
             FROM games WHERE game_id = $1", conn);
         cmd.Parameters.AddWithValue(gameID);
 
@@ -75,12 +79,11 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return ReadGameState(reader);
     }
 
-    public async Task UpdateGameState(string gameID, Func<GameState, Task> fn, CancellationToken ct = default)
+    public async Task UpdateGameState(string gameID, Func<GameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
 
-        // SELECT FOR UPDATE to lock the row within the transaction.
         GameState state;
         await using (var cmd = new NpgsqlCommand(SelectGameStateSql + " FOR UPDATE", conn, tx))
         {
@@ -110,6 +113,24 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         {
             AddGameStateParams(cmd, state);
             cmd.Parameters.AddWithValue(state.GameID);
+            await cmd.ExecuteNonQueryAsync(ct);
+        }
+
+        if (pendingAction is not null)
+        {
+            await using var cmd = new NpgsqlCommand(@"
+                INSERT INTO game_actions (
+                    game_id, seq, player_id, action_type, action_data, created_at
+                ) VALUES (
+                    $1,
+                    COALESCE((SELECT MAX(seq) FROM game_actions WHERE game_id = $1), 0) + 1,
+                    $2, $3, $4, $5
+                )", conn, tx);
+            cmd.Parameters.AddWithValue(gameID);
+            cmd.Parameters.AddWithValue(pendingAction.PlayerID);
+            cmd.Parameters.AddWithValue(pendingAction.ActionType);
+            cmd.Parameters.Add(JsonbParam(pendingAction.ActionData));
+            cmd.Parameters.AddWithValue(DateTime.UtcNow);
             await cmd.ExecuteNonQueryAsync(ct);
         }
 
@@ -196,6 +217,68 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return events;
     }
 
+    public async Task<GameState?> GetInitialState(string gameID, CancellationToken ct = default)
+    {
+        await using var conn = await ds.OpenConnectionAsync(ct);
+        await using var cmd = new NpgsqlCommand(
+            "SELECT initial_state FROM game_states WHERE game_id = $1", conn);
+        cmd.Parameters.AddWithValue(gameID);
+
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        if (!await reader.ReadAsync(ct))
+        {
+            return null;
+        }
+        return reader.IsDBNull(0)
+            ? null
+            : JsonSerializer.Deserialize<GameState>(reader.GetString(0), DbJsonOptions.Default);
+    }
+
+    public async Task AppendAction(string gameID, int seq, string playerID, string actionType, object actionData, CancellationToken ct = default)
+    {
+        await using var conn = await ds.OpenConnectionAsync(ct);
+        await using var cmd = new NpgsqlCommand(@"
+            INSERT INTO game_actions (
+                game_id, seq, player_id, action_type, action_data, created_at
+            ) VALUES ($1,$2,$3,$4,$5,$6)", conn);
+        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(seq);
+        cmd.Parameters.AddWithValue(playerID);
+        cmd.Parameters.AddWithValue(actionType);
+        cmd.Parameters.Add(JsonbParam(actionData));
+        cmd.Parameters.AddWithValue(DateTime.UtcNow);
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    public async Task<List<GameAction>> GetActions(string gameID, CancellationToken ct = default)
+    {
+        await using var conn = await ds.OpenConnectionAsync(ct);
+        await using var cmd = new NpgsqlCommand(@"
+            SELECT game_id, seq, player_id, action_type, action_data, created_at
+            FROM game_actions
+            WHERE game_id = $1
+            ORDER BY seq", conn);
+        cmd.Parameters.AddWithValue(gameID);
+
+        var actions = new List<GameAction>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            actions.Add(new GameAction
+            {
+                GameID = reader.GetString(0),
+                Seq = reader.GetInt32(1),
+                PlayerID = reader.GetString(2),
+                ActionType = reader.GetString(3),
+                ActionData = reader.IsDBNull(4)
+                    ? null
+                    : JsonSerializer.Deserialize<Dictionary<string, object>>(reader.GetString(4), DbJsonOptions.Default),
+                CreatedAt = reader.GetDateTime(5),
+            });
+        }
+        return actions;
+    }
+
     // ─── SQL constants ──────────────────────────────────────────
 
     private const string SelectGameStateSql = @"
@@ -227,6 +310,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             CreatedAt = r.GetDateTime(7),
             UpdatedAt = r.GetDateTime(8),
             FinishedAt = r.IsDBNull(9) ? null : r.GetDateTime(9),
+            EngineVersion = r.IsDBNull(10) ? "" : r.GetString(10),
+            CardDataVersion = r.IsDBNull(11) ? "" : r.GetString(11),
         };
     }
 
@@ -243,17 +328,17 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             Player1Budget = r.GetInt64(5),
             Player1InsightPool = r.GetInt64(6),
             Player1Field = JsonSerializer.Deserialize<Field>(r.GetString(7), DbJsonOptions.Default) ?? new(),
-            Player1Hand = JsonSerializer.Deserialize<List<HandCard>>(r.GetString(8), DbJsonOptions.Default) ?? [],
-            Player1Repository = JsonSerializer.Deserialize<List<HandCard>>(r.GetString(9), DbJsonOptions.Default) ?? [],
-            Player1Trash = JsonSerializer.Deserialize<List<HandCard>>(r.GetString(10), DbJsonOptions.Default) ?? [],
+            Player1Hand = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(8), DbJsonOptions.Default) ?? [],
+            Player1Repository = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(9), DbJsonOptions.Default) ?? [],
+            Player1Trash = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(10), DbJsonOptions.Default) ?? [],
             Player1TimeBank = r.GetInt64(11),
 
             Player2Budget = r.GetInt64(12),
             Player2InsightPool = r.GetInt64(13),
             Player2Field = JsonSerializer.Deserialize<Field>(r.GetString(14), DbJsonOptions.Default) ?? new(),
-            Player2Hand = JsonSerializer.Deserialize<List<HandCard>>(r.GetString(15), DbJsonOptions.Default) ?? [],
-            Player2Repository = JsonSerializer.Deserialize<List<HandCard>>(r.GetString(16), DbJsonOptions.Default) ?? [],
-            Player2Trash = JsonSerializer.Deserialize<List<HandCard>>(r.GetString(17), DbJsonOptions.Default) ?? [],
+            Player2Hand = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(15), DbJsonOptions.Default) ?? [],
+            Player2Repository = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(16), DbJsonOptions.Default) ?? [],
+            Player2Trash = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(17), DbJsonOptions.Default) ?? [],
             Player2TimeBank = r.GetInt64(18),
 
             ChainStack = JsonSerializer.Deserialize<List<ChainEntry>>(r.GetString(19), DbJsonOptions.Default) ?? [],
@@ -265,16 +350,19 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
 
     private async Task InsertGameState(NpgsqlConnection conn, NpgsqlTransaction tx, GameState state, CancellationToken ct)
     {
+        var stateJson = JsonSerializer.Serialize(state, DbJsonOptions.Default);
+
         await using var cmd = new NpgsqlCommand(@"
             INSERT INTO game_states (
-                game_id, version, current_turn, current_phase, active_player,
+                game_id, initial_state, version, current_turn, current_phase, active_player,
                 player1_budget, player1_insight_pool, player1_field, player1_hand,
                 player1_repository, player1_trash, player1_time_bank,
                 player2_budget, player2_insight_pool, player2_field, player2_hand,
                 player2_repository, player2_trash, player2_time_bank,
                 chain_stack, current_action_timer, next_instance_seq, updated_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)", conn, tx);
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)", conn, tx);
         cmd.Parameters.AddWithValue(state.GameID);
+        cmd.Parameters.Add(new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = stateJson });
         AddGameStateParams(cmd, state);
         await cmd.ExecuteNonQueryAsync(ct);
     }

@@ -10,7 +10,7 @@ public static class FieldHelpers
     /// <summary>
     /// Find a resource on the field by InstanceID.
     /// </summary>
-    public static ResourceInstance? FindResourceByID(Field field, string instanceID)
+    public static DeployedResource? FindResourceByID(Field field, string instanceID)
     {
         return field.Frontend.FirstOrDefault(r => r.InstanceID == instanceID)
             ?? field.Backend.FirstOrDefault(r => r.InstanceID == instanceID);
@@ -29,7 +29,7 @@ public static class FieldHelpers
     /// <summary>
     /// Find a support instance by InstanceID.
     /// </summary>
-    public static SupportInstance? FindSupportByID(Field field, string instanceID)
+    public static DeployedSupport? FindSupportByID(Field field, string instanceID)
     {
         return field.Support.FirstOrDefault(s => s.InstanceID == instanceID);
     }
@@ -53,7 +53,7 @@ public static class FieldHelpers
     /// <summary>
     /// Check if a resource has a specific temporary effect.
     /// </summary>
-    public static bool HasTemporaryEffect(ResourceInstance resource, string effectType)
+    public static bool HasTemporaryEffect(DeployedResource resource, string effectType)
     {
         return resource.TemporaryEffects.Any(e => e.EffectType == effectType);
     }
@@ -74,7 +74,7 @@ public static class FieldHelpers
     /// 呼び出し元でフィールド状態が変更される可能性があるため、
     /// 遅延実行せず即時評価して結果を確定させる。
     /// </remarks>
-    public static List<ResourceInstance> AllFaceUpResources(Field field)
+    public static List<DeployedResource> AllFaceUpResources(Field field)
     {
         return field.Frontend.Concat(field.Backend).Where(r => r.FaceUp).ToList();
     }
@@ -86,7 +86,7 @@ public static class FieldHelpers
     /// 呼び出し元でフィールド状態が変更される可能性があるため、
     /// 遅延実行せず即時評価して結果を確定させる。
     /// </remarks>
-    public static List<ResourceInstance> AllResources(Field field)
+    public static List<DeployedResource> AllResources(Field field)
     {
         return field.Frontend.Concat(field.Backend).ToList();
     }
@@ -98,7 +98,7 @@ public static class FieldHelpers
     /// 呼び出し元でフィールド状態が変更される可能性があるため、
     /// 遅延実行せず即時評価して結果を確定させる。
     /// </remarks>
-    public static List<SupportInstance> AllSupports(Field field)
+    public static List<DeployedSupport> AllSupports(Field field)
     {
         return field.Support.ToList();
     }
@@ -171,7 +171,7 @@ public static class FieldHelpers
     /// <summary>
     /// Clear migration links when a migration source is destroyed.
     /// </summary>
-    public static void ClearMigrationOnSourceDestroyed(Field field, ResourceInstance destroyed)
+    public static void ClearMigrationOnSourceDestroyed(Field field, DeployedResource destroyed)
     {
         if (destroyed.MigrationTarget is null) { return; }
 

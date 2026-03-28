@@ -29,11 +29,11 @@ public class GameStateViewTests
         state.Player1Field.Frontend[0] = res;
 
         // Give player 1 a hand card
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         // Give player 1 repository and trash
-        state.Player1Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0001" });
-        state.Player1Trash.Add(new HandCard { InstanceID = "t_1", CardID = "SH-0001" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "SH-0001" });
+        state.Player1Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "SH-0001" });
 
         var result = GameStateView.Build(state, _game, 1, _cc, null);
 
@@ -55,8 +55,8 @@ public class GameStateViewTests
     public void Build_OpponentView_ShowsHandCountNotCards()
     {
         var state = TestFactory.MakeGameState();
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
-        state.Player2Hand.Add(new HandCard { InstanceID = "h_2", CardID = "NT-0009" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_2", CardID = "NT-0009" });
 
         var result = GameStateView.Build(state, _game, 1, _cc, null);
 
@@ -108,7 +108,7 @@ public class GameStateViewTests
     public void Build_OpponentView_KeepsCardIDForFaceDownSupport()
     {
         var state = TestFactory.MakeGameState();
-        state.Player2Field.Support[0] = new SupportInstance
+        state.Player2Field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1",
             CardID = "TEST-0200",
@@ -120,7 +120,7 @@ public class GameStateViewTests
         var oppSup = result.OppView.Field.Support[0];
         oppSup.Should().NotBeNull();
         oppSup!.InstanceID.Should().Be("sup_1");
-        oppSup.FaceUp.Should().BeFalse();
+        oppSup.FaceDown.Should().BeTrue();
         oppSup.CardID.Should().BeNull("face-down support should hide CardID");
     }
 
@@ -128,7 +128,7 @@ public class GameStateViewTests
     public void Build_OpponentView_ShowsFaceUpSupportCardID()
     {
         var state = TestFactory.MakeGameState();
-        state.Player2Field.Support[1] = new SupportInstance
+        state.Player2Field.Support[1] = new DeployedSupport
         {
             InstanceID = "sup_2",
             CardID = "TEST-0200",
@@ -139,7 +139,7 @@ public class GameStateViewTests
 
         var oppSup = result.OppView.Field.Support[1];
         oppSup.Should().NotBeNull();
-        oppSup!.FaceUp.Should().BeTrue();
+        oppSup!.FaceDown.Should().BeFalse();
         oppSup.CardID.Should().Be("TEST-0200");
     }
 
@@ -181,8 +181,8 @@ public class GameStateViewTests
     public void Build_AsPlayer2_SwapsMyViewAndOppView()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
-        state.Player1Hand.Add(new HandCard { InstanceID = "p1_h", CardID = "SH-0001" });
-        state.Player2Hand.Add(new HandCard { InstanceID = "p2_h", CardID = "NT-0009" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "p1_h", CardID = "SH-0001" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "p2_h", CardID = "NT-0009" });
 
         var result = GameStateView.Build(state, _game, 2, _cc, null);
 
@@ -215,9 +215,9 @@ public class GameStateViewTests
     public void Build_OpponentView_ReportsRepoAndTrashCounts()
     {
         var state = TestFactory.MakeGameState();
-        state.Player2Repository.Add(new HandCard { InstanceID = "r_1", CardID = "SH-0001" });
-        state.Player2Repository.Add(new HandCard { InstanceID = "r_2", CardID = "SH-0001" });
-        state.Player2Trash.Add(new HandCard { InstanceID = "t_1", CardID = "SH-0001" });
+        state.Player2Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "SH-0001" });
+        state.Player2Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "SH-0001" });
+        state.Player2Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "SH-0001" });
 
         var result = GameStateView.Build(state, _game, 1, _cc, null);
 

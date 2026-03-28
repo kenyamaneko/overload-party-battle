@@ -106,7 +106,7 @@ public static class EndPhaseProcessor
         return state.GetHand(playerNum).Count > GameConstants.HandLimit;
     }
 
-    static long CalculateMaintenanceCost(ResourceInstance resource, CardDefinition card)
+    static long CalculateMaintenanceCost(DeployedResource resource, CardDefinition card)
     {
         if (card.Elastic)
         {

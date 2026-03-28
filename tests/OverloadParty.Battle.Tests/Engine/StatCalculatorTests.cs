@@ -381,7 +381,7 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance { InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0 };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0 };
 
         var resource = TestFactory.MakeResource(cardId: "SH-0001");
         field.Frontend[0] = resource;
@@ -753,7 +753,7 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance
+        field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0
         };
@@ -784,7 +784,7 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance
+        field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 1
         };
@@ -926,7 +926,7 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance
+        field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0
         };
@@ -952,7 +952,7 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance
+        field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0
         };
@@ -984,7 +984,7 @@ public class StatCalculatorTests
         ]));
 
         var field = TestFactory.MakeField();
-        field.Support[0] = new SupportInstance
+        field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, DeployingTurnsLeft = 0
         };

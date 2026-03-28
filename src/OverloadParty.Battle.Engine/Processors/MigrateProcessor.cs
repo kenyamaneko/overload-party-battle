@@ -52,7 +52,7 @@ public static class MigrateProcessor
         };
     }
 
-    private static (ResourceInstance Source, ResourceInstance Target) ValidateMigration(
+    private static (DeployedResource Source, DeployedResource Target) ValidateMigration(
         Field field, MigrateRequest req, ICardCache cc)
     {
         var source = FieldHelpers.FindResourceByID(field, req.SourceInstanceID)

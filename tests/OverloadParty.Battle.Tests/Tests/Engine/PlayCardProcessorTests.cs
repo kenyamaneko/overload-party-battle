@@ -44,7 +44,7 @@ public class PlayCardProcessorTests
     public void Process_ComputeCardToFrontend_PlacesResourceAndGeneratesEvent()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var result = PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0), _cc, null);
@@ -66,7 +66,7 @@ public class PlayCardProcessorTests
     public void Process_ComputeCardToBackend_PlacesResourceInBackend()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneBackend, 0), _cc, null);
@@ -81,7 +81,7 @@ public class PlayCardProcessorTests
     public void Process_ZeroDeployTurns_ResourceIsFaceUp()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0002" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0002" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0), _cc, null);
@@ -110,7 +110,7 @@ public class PlayCardProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource();
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0), _cc, null);
@@ -124,7 +124,7 @@ public class PlayCardProcessorTests
     public void Process_DatabaseToFrontend_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "NT-0009" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "NT-0009" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0), _cc, null);
@@ -138,7 +138,7 @@ public class PlayCardProcessorTests
     public void Process_ComputeToSupportZone_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
@@ -154,7 +154,7 @@ public class PlayCardProcessorTests
     public void Process_InvalidSlotIndex_Throws(int index)
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, index), _cc, null);
@@ -170,7 +170,7 @@ public class PlayCardProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         var target = TestFactory.MakeResource(instanceId: "target_1");
         state.Player1Field.Frontend[0] = target;
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "TEST-0300" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0, targetInstanceId: "target_1"), _cc, null);
@@ -189,7 +189,7 @@ public class PlayCardProcessorTests
         target.Attachments.Add(new AttachmentRef { InstanceID = "a1", CardID = "TEST-0300" });
         target.Attachments.Add(new AttachmentRef { InstanceID = "a2", CardID = "TEST-0300" });
         state.Player1Field.Frontend[0] = target;
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "TEST-0300" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0, targetInstanceId: "target_1"), _cc, null);
@@ -203,7 +203,7 @@ public class PlayCardProcessorTests
     public void Process_AttachmentCard_NoTargetId_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "TEST-0300" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
@@ -217,7 +217,7 @@ public class PlayCardProcessorTests
     public void Process_IncidentCard_SetsIncidentPlayedFlag()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "TEST-0500" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0500" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
@@ -231,8 +231,8 @@ public class PlayCardProcessorTests
     public void Process_SecondIncidentSameTurn_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "TEST-0500" });
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_2", CardID = "TEST-0500" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0500" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_2", CardID = "TEST-0500" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
@@ -249,7 +249,7 @@ public class PlayCardProcessorTests
     public void Process_ReactiveCard_SetsFaceDown()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "TEST-0502" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0502" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
@@ -264,7 +264,7 @@ public class PlayCardProcessorTests
     public void Process_PlatformCard_SetsFaceUpWithDeployTurns()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new HandCard { InstanceID = "h_1", CardID = "TEST-0200" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0200" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);

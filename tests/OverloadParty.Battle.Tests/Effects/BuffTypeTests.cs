@@ -19,7 +19,7 @@ public class BuffTypeTests
 
     // ─── Helper: build OpContext with a fixed target list ─────────────
 
-    private OpContext MakeOpContext(GameState state, long playerNum, ResourceInstance? source = null, ResourceInstance? target = null)
+    private OpContext MakeOpContext(GameState state, long playerNum, DeployedResource? source = null, DeployedResource? target = null)
     {
         var ctx = new EffectContext
         {
@@ -250,8 +250,8 @@ public class BuffTypeTests
     /// <summary>
     /// Simple ISelector that returns a fixed list of resources.
     /// </summary>
-    private class FixedSelector(List<ResourceInstance> targets) : ISelector
+    private class FixedSelector(List<DeployedResource> targets) : ISelector
     {
-        public List<ResourceInstance> Select(OpContext ctx) => targets;
+        public List<DeployedResource> Select(OpContext ctx) => targets;
     }
 }

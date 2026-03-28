@@ -26,7 +26,7 @@ public class AvailableActionsTests
         myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
         myField.Backend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1");
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 100, cc, null);
@@ -76,7 +76,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -94,7 +94,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_db", CardID = "NT-0009" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "NT-0009" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -111,7 +111,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.DataCard(cardId: "NT-0010", cardType: CardTypes.CacheDB));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_cache", CardID = "NT-0010" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_cache", CardID = "NT-0010" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -129,7 +129,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.DataCard(cardId: "NT-0011", cardType: CardTypes.ObjectStorage));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_os", CardID = "NT-0011" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_os", CardID = "NT-0011" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -147,7 +147,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0004", cardType: CardTypes.AiMl, deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_ai", CardID = "SH-0004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_ai", CardID = "SH-0004" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -164,7 +164,7 @@ public class AvailableActionsTests
         cc.Add(new CardDefinition { CardId = "SL-0004", CardName = "S", CardType = CardTypes.Strategy });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_s", CardID = "SL-0004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "SL-0004" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -180,7 +180,7 @@ public class AvailableActionsTests
         cc.Add(new CardDefinition { CardId = "SL-0006", CardName = "R", CardType = CardTypes.Reactive });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_r", CardID = "SL-0006" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_r", CardID = "SL-0006" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -196,7 +196,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_p", CardID = "TEST-0200" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_p", CardID = "TEST-0200" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -224,7 +224,7 @@ public class AvailableActionsTests
         myField.Backend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1");
         myField.Backend[2] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_2");
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -240,11 +240,11 @@ public class AvailableActionsTests
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Support[0] = new SupportInstance { InstanceID = "s_0", CardID = "TEST-0200" };
-        myField.Support[1] = new SupportInstance { InstanceID = "s_1", CardID = "TEST-0200" };
-        myField.Support[2] = new SupportInstance { InstanceID = "s_2", CardID = "TEST-0200" };
+        myField.Support[0] = new DeployedSupport { InstanceID = "s_0", CardID = "TEST-0200" };
+        myField.Support[1] = new DeployedSupport { InstanceID = "s_1", CardID = "TEST-0200" };
+        myField.Support[2] = new DeployedSupport { InstanceID = "s_2", CardID = "TEST-0200" };
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_s", CardID = "SL-0004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "SL-0004" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -263,7 +263,7 @@ public class AvailableActionsTests
         myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_0");
         // Frontend slots 1,2 are empty; all backend slots are empty
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -284,7 +284,7 @@ public class AvailableActionsTests
         cc.Add(new CardDefinition { CardId = "SL-0015", CardName = "I", CardType = CardTypes.Incident });
 
         var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_i", CardID = "SL-0015" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "SL-0015" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -299,7 +299,7 @@ public class AvailableActionsTests
         cc.Add(new CardDefinition { CardId = "SL-0015", CardName = "I", CardType = CardTypes.Incident });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_i", CardID = "SL-0015" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "SL-0015" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -318,7 +318,7 @@ public class AvailableActionsTests
         state.Player1IncidentPlayedThisTurn = true;
         var myField = TestFactory.MakeField();
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_i", CardID = "SL-0015" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "SL-0015" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -340,7 +340,7 @@ public class AvailableActionsTests
         var myField = TestFactory.MakeField();
         myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -365,7 +365,7 @@ public class AvailableActionsTests
         res.Attachments.Add(new AttachmentRef { InstanceID = "att_2", CardID = "TEST-0300" });
         myField.Frontend[0] = res;
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -385,7 +385,7 @@ public class AvailableActionsTests
         var myField = TestFactory.MakeField();
         myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1", faceUp: false);
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1006,7 +1006,7 @@ public class AvailableActionsTests
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Support[0] = new SupportInstance
+        myField.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", DeployingTurnsLeft = 0
         };
@@ -1030,7 +1030,7 @@ public class AvailableActionsTests
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Support[0] = new SupportInstance
+        myField.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", DeployingTurnsLeft = 1
         };
@@ -1053,7 +1053,7 @@ public class AvailableActionsTests
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Support[0] = new SupportInstance
+        myField.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", DeployingTurnsLeft = 0, EffectUsedThisTurn = true
         };
@@ -1205,7 +1205,7 @@ public class AvailableActionsTests
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 200);
-        var hand = new List<HandCard> { new() { InstanceID = "hand_50", CardID = "SL-0004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "SL-0004" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 200, 0, cc, registry);
@@ -1225,7 +1225,7 @@ public class AvailableActionsTests
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 600);
-        var hand = new List<HandCard> { new() { InstanceID = "hand_50", CardID = "SL-0004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "SL-0004" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 600, 0, cc, registry);
@@ -1245,7 +1245,7 @@ public class AvailableActionsTests
             new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 100);
-        var hand = new List<HandCard> { new() { InstanceID = "hand_60", CardID = "SL-0015" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_60", CardID = "SL-0015" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 100, 0, cc, registry);
@@ -1406,7 +1406,7 @@ public class AvailableActionsTests
         // 手札上限6枚、超過分を捨てる
         var state = TestFactory.MakeGameState(phase: Phase.End);
         var hand = Enumerable.Range(0, 8)
-            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
+            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
             .ToList();
 
         var controls = AvailableActions.ComputeTurnControls(state, hand);
@@ -1418,7 +1418,7 @@ public class AvailableActionsTests
     {
         var state = TestFactory.MakeGameState(phase: Phase.End);
         var hand = Enumerable.Range(0, 5)
-            .Select(i => new HandCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
+            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
             .ToList();
 
         var controls = AvailableActions.ComputeTurnControls(state, hand);
@@ -1443,7 +1443,7 @@ public class AvailableActionsTests
         myField.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
         myField.Frontend[2] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_2");
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1466,7 +1466,7 @@ public class AvailableActionsTests
         myField.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
         myField.Frontend[2] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_2");
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_db", CardID = "NT-0009" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "NT-0009" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1488,7 +1488,7 @@ public class AvailableActionsTests
             myField.Backend[i] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: $"be_{i}");
         }
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "SH-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1505,7 +1505,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ElasticContainerCard(cardId: "TEST-0002"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_c", CardID = "TEST-0002" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_c", CardID = "TEST-0002" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1522,7 +1522,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ServerlessCard(cardId: "SH-0002"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_s", CardID = "SH-0002" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "SH-0002" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1539,7 +1539,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.OrchestratorCard(cardId: "SH-0003"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<HandCard> { new() { InstanceID = "h_o", CardID = "SH-0003" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_o", CardID = "SH-0003" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1570,7 +1570,7 @@ public class AvailableActionsTests
         var emptyRes = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "empty");
         myField.Frontend[1] = emptyRes;
 
-        var hand = new List<HandCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);

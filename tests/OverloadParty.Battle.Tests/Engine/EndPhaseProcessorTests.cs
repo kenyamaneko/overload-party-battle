@@ -115,7 +115,7 @@ public class EndPhaseProcessorTests
         // Add 7 cards to hand (limit is 6)
         foreach (var i in Enumerable.Range(0, 7))
         {
-            state.Player1Hand.Add(new HandCard
+            state.Player1Hand.Add(new UndeployedCard
             {
                 InstanceID = $"hand_{i}",
                 CardID = "SH-0001",
@@ -139,7 +139,7 @@ public class EndPhaseProcessorTests
         // 6 cards = at limit, no discard needed
         foreach (var i in Enumerable.Range(0, 6))
         {
-            state.Player1Hand.Add(new HandCard
+            state.Player1Hand.Add(new UndeployedCard
             {
                 InstanceID = $"hand_{i}",
                 CardID = "SH-0001",
@@ -346,7 +346,7 @@ public class EndPhaseProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
         AddRepoCards(state, 2);
 
-        state.Player1Field.Support[0] = new SupportInstance
+        state.Player1Field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, EffectUsedThisTurn = true
         };
@@ -408,7 +408,7 @@ public class EndPhaseProcessorTests
     private static void AddRepoCards(GameState state, long playerNum)
     {
         var repo = state.GetRepository(playerNum);
-        repo.Add(new HandCard { InstanceID = "repo_1", CardID = "SH-0001" });
-        repo.Add(new HandCard { InstanceID = "repo_2", CardID = "SH-0001" });
+        repo.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "SH-0001" });
+        repo.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "SH-0001" });
     }
 }

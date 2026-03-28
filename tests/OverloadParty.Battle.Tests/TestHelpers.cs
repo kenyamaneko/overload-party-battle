@@ -210,7 +210,7 @@ public static class TestFactory
 
     // ─── Resource Instance Builder ────────────────────────────
 
-    public static ResourceInstance MakeResource(
+    public static DeployedResource MakeResource(
         string cardId = "TST-0001",
         string instanceId = "inst_1",
         Rank? rank = Rank.Small,
@@ -226,7 +226,7 @@ public static class TestFactory
         long damage = 0,
         long elasticBonus = 0)
     {
-        return new ResourceInstance
+        return new DeployedResource
         {
             CardID = cardId,
             InstanceID = instanceId,

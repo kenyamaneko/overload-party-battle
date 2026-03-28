@@ -407,11 +407,11 @@ public class StandardAi : INpcStrategy
 /// <summary>
 /// Context holding all state needed for NPC category-based decisions.
 /// </summary>
-public class DecisionContext(Field field, Field oppField, List<HandCard> hand, long budget, StandardAi ai)
+public class DecisionContext(Field field, Field oppField, List<UndeployedCard> hand, long budget, StandardAi ai)
 {
     public Field Field { get; } = field;
     public Field OppField { get; } = oppField;
-    public List<HandCard> Hand { get; } = hand;
+    public List<UndeployedCard> Hand { get; } = hand;
     public long Budget { get; } = budget;
     public StandardAi Ai { get; } = ai;
 }
