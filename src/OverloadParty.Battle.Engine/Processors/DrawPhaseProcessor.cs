@@ -7,6 +7,11 @@ namespace OverloadParty.Battle.Engine.Processors;
 /// <summary>
 /// Processes the draw phase including deploy countdowns, migration completion, and card draw.
 /// </summary>
+/// <remarks>
+/// TODO: ドローフェーズの前に「スタートフェーズ」を設けることを検討する。
+/// 現在はマイグレーション完了やデプロイカウントダウンがドローフェーズで処理されているが、
+/// これらはドローとは独立したターン開始処理であり、別フェーズに分離すべき可能性がある。
+/// </remarks>
 public static class DrawPhaseProcessor
 {
     /// <summary>
