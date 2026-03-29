@@ -394,8 +394,9 @@ public class AttackProcessorTests
         var attackEvent = result.Events.First(e => e.EventType == WireActionTypes.Attack);
         attackEvent.EventData!["cancelled"].Should().Be(true);
         attackEvent.EventData!["damage"].Should().Be(0L);
-        // Reactive support should be flipped face-up
-        state.Player2Field.Support[0]!.FaceUp.Should().BeTrue();
+        // Reactive should be removed from support zone and sent to trash
+        state.Player2Field.Support[0].Should().BeNull();
+        state.Player2Trash.Should().Contain(c => c.CardID == "TEST-0200");
     }
 
     // ─── 17. OnDestroy trigger fires when defender is destroyed ─

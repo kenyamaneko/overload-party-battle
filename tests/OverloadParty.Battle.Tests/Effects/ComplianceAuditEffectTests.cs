@@ -46,14 +46,15 @@ public class ComplianceAuditEffectTests
     }
 
     [Fact]
-    public void Activate_InsufficientBudget_Throws()
+    public void Activate_InsufficientBudget_GuardFails()
     {
         var state = TestFactory.MakeGameState(p1Budget: 100, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
 
-        var act = () => ExecuteEffect(state, playerNum: 1);
+        var result = ExecuteEffect(state, playerNum: 1);
 
-        act.Should().Throw<GameRuleException>().WithMessage("*budget*");
+        result.GuardFailed.Should().BeTrue();
+        state.Player1Budget.Should().Be(100, "budget should not change when guard fails");
     }
 
     // ─── 相手 Budget 減少 ─────────────────────────────────────────
