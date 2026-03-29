@@ -423,11 +423,14 @@ public class AvailableActionsTests
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
         var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
-        // Small can only scale up to Medium×3 families = 3 options
-        scaleActions.Should().HaveCount(3);
+        // Small → Medium×3 families + Small → Large×3 families = 6 options
+        scaleActions.Should().HaveCount(6);
         scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "M");
         scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "C");
         scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "R");
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "C");
+        scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "R");
     }
 
     [Fact]

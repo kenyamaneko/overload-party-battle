@@ -53,37 +53,38 @@ public class ScaleUpProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*not resizable*");
     }
 
-    // ─── 4. Deploy turn → throws ────────────────────────────
+    // ─── 4. Deploy turn でもスケールアップ可能 ────────────────
 
     [Fact]
-    public void Process_DeployTurn_Throws()
+    public void Process_DeployTurn_Succeeds()
     {
         var state = TestFactory.MakeGameState(turn: 3);
         var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
-        resource.DeployedOnTurn = 3; // same as current turn
+        resource.DeployedOnTurn = 3;
         state.Player1Field.Frontend[0] = resource;
 
-        var act = () => ScaleUpProcessor.Process(
+        ScaleUpProcessor.Process(
             state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
 
-        act.Should().Throw<GameRuleException>().WithMessage("*deploy turn*");
+        resource.Rank.Should().Be(Rank.Medium);
     }
 
-    // ─── 5. Already scaled this turn → throws ───────────────
+    // ─── 5. 同一ターンに2回スケールアップ可能 ───────────────
 
     [Fact]
-    public void Process_AlreadyScaledThisTurn_Throws()
+    public void Process_TwiceInSameTurn_Succeeds()
     {
         var state = TestFactory.MakeGameState(turn: 3);
         var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
         resource.DeployedOnTurn = 1;
-        resource.ScaleChangedThisTurn = true;
         state.Player1Field.Frontend[0] = resource;
 
-        var act = () => ScaleUpProcessor.Process(
+        ScaleUpProcessor.Process(
             state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
+        ScaleUpProcessor.Process(
+            state, _game, 1, MakeReq("inst_1", "large", "M"), _cc);
 
-        act.Should().Throw<GameRuleException>().WithMessage("*already changed*");
+        resource.Rank.Should().Be(Rank.Large);
     }
 
     // ─── 6. Medium without family → throws ──────────────────

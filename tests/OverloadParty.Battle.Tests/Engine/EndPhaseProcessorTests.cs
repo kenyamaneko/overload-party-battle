@@ -322,7 +322,6 @@ public class EndPhaseProcessorTests
         var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1", faceUp: true);
         resource.HasAttacked = true;
         resource.EffectUsedThisTurn = true;
-        resource.ScaleChangedThisTurn = true;
         resource.MonetizedAmount = 100;
         state.Player1Field.Frontend[0] = resource;
 
@@ -332,7 +331,6 @@ public class EndPhaseProcessorTests
 
         resource.HasAttacked.Should().BeFalse();
         resource.EffectUsedThisTurn.Should().BeFalse();
-        resource.ScaleChangedThisTurn.Should().BeFalse();
         resource.MonetizedAmount.Should().Be(0);
         state.GetIncidentPlayedThisTurn(1).Should().BeFalse();
     }
