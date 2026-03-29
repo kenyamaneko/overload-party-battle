@@ -64,41 +64,46 @@ public static class EffectYamlLoader
 
         if (independent.Count == 1 && dependent.Count == 0)
         {
-            // Single block: flat ops with hard guards
             return BuildSingleBlock(independent[0], customRegistry);
         }
 
         if (independent.Count == 1 && dependent.Count > 0)
         {
-            // Single root with after-dependents: root keeps hard guards,
-            // dependents are wrapped so their guard failures don't abort the pipeline
-            var rootOps = BuildSingleBlock(independent[0], customRegistry);
+            // Single root: guards propagate normally (no exception isolation).
+            // Record success in GroupResults so DependentEffectOp can check.
+            string rootId = independent[0].Id
+                ?? throw new InvalidOperationException("Root block with dependents must have an id");
+            var allOps = BuildSingleBlock(independent[0], customRegistry);
+            allOps.Add(new MarkGroupSucceededOp(rootId));
+
             foreach (var dep in dependent)
             {
                 var depOps = BuildSingleBlock(dep, customRegistry);
-                if (depOps.Count > 0)
+                if (depOps.Count == 0) { continue; }
+
+                if (dep.After is null || dep.After != rootId)
                 {
-                    rootOps.Add(new SoftBlockOp(depOps.ToArray()));
+                    throw new InvalidOperationException(
+                        $"Effect block references unknown after target '{dep.After}'");
                 }
+                allOps.Add(new DependentEffectOp(dep.After, depOps.ToArray()));
             }
-            return rootOps;
+            return allOps;
         }
 
-        // Multiple independent blocks: wrap each for independence
-        var blockMap = new Dictionary<string, EffectBlockOp>();
-        var allOps = new List<IEffectOp>();
+        // Multiple independent blocks: wrap each for exception isolation.
+        var effectGroupIds = new HashSet<string>();
+        var isolatedOps = new List<IEffectOp>();
+        int autoId = 0;
 
         foreach (var def in independent)
         {
             var ops = BuildSingleBlock(def, customRegistry);
             if (ops.Count == 0) { continue; }
 
-            var block = new EffectBlockOp(ops.ToArray());
-            if (def.Id is not null)
-            {
-                blockMap[def.Id] = block;
-            }
-            allOps.Add(block);
+            string groupId = def.Id ?? $"_auto_{autoId++}";
+            isolatedOps.Add(new EffectGroupOp(groupId, ops.ToArray()));
+            effectGroupIds.Add(groupId);
         }
 
         foreach (var def in dependent)
@@ -106,13 +111,19 @@ public static class EffectYamlLoader
             var ops = BuildSingleBlock(def, customRegistry);
             if (ops.Count == 0) { continue; }
 
-            if (def.After is not null && blockMap.TryGetValue(def.After, out var parent))
+            if (def.After is null)
             {
-                allOps.Add(new AfterBlockOp(parent, ops.ToArray()));
+                continue;
             }
+            if (!effectGroupIds.Contains(def.After))
+            {
+                throw new InvalidOperationException(
+                    $"Effect block references unknown after target '{def.After}'");
+            }
+            isolatedOps.Add(new DependentEffectOp(def.After, ops.ToArray()));
         }
 
-        return allOps;
+        return isolatedOps;
     }
 
     private static List<IEffectOp> BuildSingleBlock(
@@ -272,6 +283,8 @@ public static class EffectYamlLoader
             "cancel_action" => SetCancelActionOp.Instance,
 
             "reveal_reactive" => new RevealReactiveOp(),
+
+            "peek_reactive" => new PeekReactiveOp(),
 
             "absorb_insight" => new AbsorbInsightOp(
                 BuildAmount(p.GetProperty("amount"))),

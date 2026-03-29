@@ -145,30 +145,6 @@ public class MockGameRepository : IGameRepository
         }
     }
 
-    public Task AppendAction(string gameID, int seq, string playerID, string actionType, object actionData, CancellationToken ct = default)
-    {
-        lock (_lock)
-        {
-            if (!_actions.TryGetValue(gameID, out var list))
-            {
-                list = [];
-                _actions[gameID] = list;
-            }
-            var json = JsonSerializer.Serialize(actionData, DbJsonOptions.Default);
-            var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json, DbJsonOptions.Default);
-            list.Add(new GameAction
-            {
-                GameID = gameID,
-                Seq = seq,
-                PlayerID = playerID,
-                ActionType = actionType,
-                ActionData = dict,
-                CreatedAt = DateTime.UtcNow,
-            });
-        }
-        return Task.CompletedTask;
-    }
-
     public Task<List<GameAction>> GetActions(string gameID, CancellationToken ct = default)
     {
         lock (_lock)

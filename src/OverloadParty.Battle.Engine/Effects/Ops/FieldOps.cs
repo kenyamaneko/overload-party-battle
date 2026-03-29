@@ -65,6 +65,26 @@ public class RevealReactiveOp : IEffectOp
 }
 
 /// <summary>
+/// Peeks at the first hidden reactive card in the opponent's support zone.
+/// The card stays face-down but becomes visible to the activating player.
+/// </summary>
+public class PeekReactiveOp : IEffectOp
+{
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        var oppField = ctx.OpponentField;
+        var hidden = oppField.Support.FirstOrDefault(s => !s.FaceUp);
+        if (hidden is null) { return; }
+
+        if (!hidden.PeekedBy.Contains(ctx.PlayerNum))
+        {
+            hidden.PeekedBy.Add(ctx.PlayerNum);
+        }
+    }
+}
+
+/// <summary>
 /// Destroys a platform card in the opponent's support zone.
 /// </summary>
 public class DestroyPlatformOp : IEffectOp

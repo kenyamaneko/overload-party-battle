@@ -3,35 +3,35 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Wraps a block of ops so that guard failures (GameRuleException) are caught,
-/// allowing subsequent independent blocks in the same pipeline to run.
+/// Wraps a named group of ops so that guard failures (GameRuleException) are caught,
+/// allowing subsequent independent groups in the same pipeline to run.
+/// The success/failure result is recorded in <see cref="OpContext.GroupResults"/>.
 /// </summary>
-public class EffectBlockOp(IEffectOp[] ops) : IEffectOp
+public class EffectGroupOp(string groupId, IEffectOp[] ops) : IEffectOp
 {
-    internal bool Succeeded { get; private set; }
-
     public void Execute(OpContext ctx)
     {
         try
         {
             foreach (var op in ops) op.Execute(ctx);
-            Succeeded = true;
+            ctx.GroupResults[groupId] = true;
         }
         catch (GameRuleException)
         {
-            Succeeded = false;
+            ctx.GroupResults[groupId] = false;
         }
     }
 }
 
 /// <summary>
-/// Runs child ops only if the parent block succeeded.
+/// Runs child ops only if the parent group succeeded.
+/// Guard failures in the child ops are silently swallowed.
 /// </summary>
-public class AfterBlockOp(EffectBlockOp parent, IEffectOp[] ops) : IEffectOp
+public class DependentEffectOp(string parentGroupId, IEffectOp[] ops) : IEffectOp
 {
     public void Execute(OpContext ctx)
     {
-        if (!parent.Succeeded) return;
+        if (!ctx.GroupResults.GetValueOrDefault(parentGroupId)) return;
 
         try
         {
@@ -39,30 +39,20 @@ public class AfterBlockOp(EffectBlockOp parent, IEffectOp[] ops) : IEffectOp
         }
         catch (GameRuleException)
         {
-            // After-block guard failure is silently swallowed
+            // Dependent group guard failure is silently swallowed
         }
     }
 }
 
 /// <summary>
-/// Wraps a block of ops so that guard failures are silently swallowed.
-/// Used for after-dependent blocks whose guard failure should not abort the root pipeline.
+/// Records that a group succeeded in <see cref="OpContext.GroupResults"/>.
+/// Used when the root block runs without exception isolation (single independent + dependents).
 /// </summary>
-public class SoftBlockOp(IEffectOp[] ops) : IEffectOp
+public class MarkGroupSucceededOp(string groupId) : IEffectOp
 {
     public void Execute(OpContext ctx)
     {
-        try
-        {
-            foreach (var op in ops)
-            {
-                op.Execute(ctx);
-            }
-        }
-        catch (GameRuleException)
-        {
-            // Guard failure in dependent block is silently swallowed
-        }
+        ctx.GroupResults[groupId] = true;
     }
 }
 

@@ -71,6 +71,7 @@ public class HiddenDeployedSupport
     public string InstanceID { get; init; } = "";
     public string? CardID { get; init; }
     public bool FaceDown { get; init; }
+    public bool Peeked { get; init; }
 }
 
 /// <summary>
@@ -117,7 +118,7 @@ public static class GameStateView
             Budget = state.GetBudget(oppNum),
             InsightPool = state.GetInsightPool(oppNum),
             TimeBank = state.GetTimeBank(oppNum),
-            Field = BuildOpponentField(oppField),
+            Field = BuildOpponentField(oppField, playerNum),
             HandCount = oppHand.Count,
             RepoCount = oppRepo.Count,
             TrashCount = oppTrash.Count,
@@ -148,17 +149,24 @@ public static class GameStateView
         return cgs;
     }
 
-    private static OpponentField BuildOpponentField(Field field)
+    private static OpponentField BuildOpponentField(Field field, long viewerPlayerNum)
     {
         return new OpponentField
         {
             Frontend = field.Frontend.ToArray().Select(HideResourceIfFaceDown).ToArray(),
             Backend = field.Backend.ToArray().Select(HideResourceIfFaceDown).ToArray(),
-            Support = field.Support.ToArray().Select(sup => sup is null ? null : new HiddenDeployedSupport
+            Support = field.Support.ToArray().Select(sup =>
             {
-                InstanceID = sup.InstanceID,
-                FaceDown = !sup.FaceUp,
-                CardID = sup.FaceUp ? sup.CardID : null,
+                if (sup is null) { return null; }
+
+                bool peeked = !sup.FaceUp && sup.PeekedBy.Contains(viewerPlayerNum);
+                return new HiddenDeployedSupport
+                {
+                    InstanceID = sup.InstanceID,
+                    FaceDown = !sup.FaceUp,
+                    CardID = sup.FaceUp || peeked ? sup.CardID : null,
+                    Peeked = peeked,
+                };
             }).ToArray(),
         };
     }

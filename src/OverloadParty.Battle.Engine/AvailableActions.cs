@@ -239,6 +239,7 @@ public static class AvailableActions
         var targetZone = oppHasFrontend ? oppField.Frontend : oppField.Backend;
         foreach (var res in targetZone.Where(r => r.FaceUp))
         {
+            if (FieldHelpers.IsTargetShielded(res, oppField, cc)) { continue; }
             validTargets.Add(res.InstanceID);
         }
 

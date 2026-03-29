@@ -169,6 +169,32 @@ public static class FieldHelpers
     }
 
     /// <summary>
+    /// Checks whether a resource is protected by a target_shield attachment
+    /// (e.g. Load Balancer) and has other face-up frontends on the same field.
+    /// </summary>
+    public static bool IsTargetShielded(DeployedResource resource, Field field, ICardCache cc)
+    {
+        bool hasShieldAttachment = resource.Attachments
+            .Any(a => cc.Get(a.CardID)?.Effects?.Any(e => e.Custom == "target_shield") == true);
+        if (!hasShieldAttachment) { return false; }
+
+        return field.Frontend.Any(r => r.InstanceID != resource.InstanceID && r.FaceUp);
+    }
+
+    /// <summary>
+    /// Removes all <c>while_on_field</c> buffs whose SourceID matches the given instance.
+    /// Called when a card leaves the field (destroyed, etc.) to clean up its persistent buffs.
+    /// </summary>
+    public static void RemoveWhileOnFieldBuffs(Field field, string sourceInstanceID)
+    {
+        foreach (var resource in AllResources(field))
+        {
+            resource.TemporaryEffects.RemoveAll(e =>
+                e.Duration == "while_on_field" && e.SourceID == sourceInstanceID);
+        }
+    }
+
+    /// <summary>
     /// Clear migration links when a migration source is destroyed.
     /// </summary>
     public static void ClearMigrationOnSourceDestroyed(Field field, DeployedResource destroyed)

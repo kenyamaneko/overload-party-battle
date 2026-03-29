@@ -234,22 +234,6 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             : JsonSerializer.Deserialize<GameState>(reader.GetString(0), DbJsonOptions.Default);
     }
 
-    public async Task AppendAction(string gameID, int seq, string playerID, string actionType, object actionData, CancellationToken ct = default)
-    {
-        await using var conn = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand(@"
-            INSERT INTO game_actions (
-                game_id, seq, player_id, action_type, action_data, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6)", conn);
-        cmd.Parameters.AddWithValue(gameID);
-        cmd.Parameters.AddWithValue(seq);
-        cmd.Parameters.AddWithValue(playerID);
-        cmd.Parameters.AddWithValue(actionType);
-        cmd.Parameters.Add(JsonbParam(actionData));
-        cmd.Parameters.AddWithValue(DateTime.UtcNow);
-        await cmd.ExecuteNonQueryAsync(ct);
-    }
-
     public async Task<List<GameAction>> GetActions(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);

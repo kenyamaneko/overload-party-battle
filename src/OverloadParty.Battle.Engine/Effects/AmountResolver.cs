@@ -72,7 +72,7 @@ public class TargetTPAmount : IAmountResolver
 }
 
 /// <summary>
-/// Half of target's MaxAV, rounded to nearest 200.
+/// Half of target's MaxAV, rounded down.
 /// </summary>
 public class HalfMaxAVAmount : IAmountResolver
 {
@@ -86,9 +86,7 @@ public class HalfMaxAVAmount : IAmountResolver
         {
             return 0;
         }
-        long half = (ctx.Target.MaxAV + 1) / 2;
-        // Round to nearest 200
-        return ((half + 99) / 200) * 200;
+        return ctx.Target.MaxAV / 2;
     }
 }
 
@@ -159,9 +157,7 @@ public class RefAmount(string who, string stat, double multiply = 1.0) : IAmount
 
         if (multiply == 1.0) return raw;
 
-        // Round to nearest 200 for half-value calculations
-        long scaled = (long)(raw * multiply);
-        return ((scaled + 99) / 200) * 200;
+        return (long)(raw * multiply);
     }
 }
 

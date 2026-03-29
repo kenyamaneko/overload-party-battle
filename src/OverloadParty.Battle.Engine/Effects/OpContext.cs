@@ -88,4 +88,10 @@ public class OpContext
     /// Mark this action as cancelled (for reactive effects).
     /// </summary>
     public void CancelAction() => Result.CancelAction = true;
+
+    /// <summary>
+    /// Tracks success/failure of named effect groups within this pipeline execution.
+    /// Used by <see cref="Ops.DependentEffectOp"/> to check whether the parent group succeeded.
+    /// </summary>
+    public Dictionary<string, bool> GroupResults { get; } = [];
 }

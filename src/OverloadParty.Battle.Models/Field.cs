@@ -83,6 +83,12 @@ public class DeployedSupport
     public long DeployOrder { get; set; }
     public bool EffectUsedThisTurn { get; set; }
     public bool EffectUsedThisGame { get; set; }
+
+    /// <summary>
+    /// Player numbers that have peeked at this face-down card.
+    /// Used to show the card info to specific players without flipping it face-up.
+    /// </summary>
+    public List<long> PeekedBy { get; set; } = [];
 }
 
 /// <summary>

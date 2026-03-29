@@ -27,7 +27,7 @@ public static class AttackProcessor
         var oppField = state.GetField(opponentNum);
 
         var (attacker, attackerCard) = ValidateAttacker(myField, req.AttackerInstanceID, cc);
-        var defender = ValidateDefender(oppField, req.TargetInstanceID);
+        var defender = ValidateDefender(oppField, req.TargetInstanceID, cc);
 
         // Calculate damage
         long damage = StatCalculator.CalculateEffectiveTP(attacker, myField, cc);
@@ -165,7 +165,7 @@ public static class AttackProcessor
         return (attacker, card);
     }
 
-    private static DeployedResource ValidateDefender(Field oppField, string instanceId)
+    private static DeployedResource ValidateDefender(Field oppField, string instanceId, ICardCache cc)
     {
         var defender = FieldHelpers.FindResourceByID(oppField, instanceId)
             ?? throw new GameRuleException($"defender {instanceId} not found on opponent field");
@@ -181,7 +181,7 @@ public static class AttackProcessor
             throw new GameRuleException("cannot attack backend while opponent has frontend resources");
         }
 
-        if (FieldHelpers.HasTemporaryEffect(defender, "target_shield"))
+        if (FieldHelpers.IsTargetShielded(defender, oppField, cc))
         {
             throw new GameRuleException("Target is protected by target_shield");
         }

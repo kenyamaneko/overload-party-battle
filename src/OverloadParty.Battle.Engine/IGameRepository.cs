@@ -61,9 +61,6 @@ public interface IGameRepository
     /// <param name="gameID">The game ID.</param>
     Task<GameState?> GetInitialState(string gameID, CancellationToken ct = default);
 
-    /// <summary>Appends a player action to the action log.</summary>
-    Task AppendAction(string gameID, int seq, string playerID, string actionType, object actionData, CancellationToken ct = default);
-
     /// <summary>Returns all recorded actions for a game in order.</summary>
     /// <param name="gameID">The game ID.</param>
     Task<List<GameAction>> GetActions(string gameID, CancellationToken ct = default);

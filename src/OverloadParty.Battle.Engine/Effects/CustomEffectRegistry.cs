@@ -22,7 +22,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         ["cloud_shift"] = BuildCloudShift,
         ["halve_incident_damage"] = _ => HalveIncidentDamage,
         ["buff_on_attacked"] = BuildBuffOnAttacked,
-        ["target_shield"] = _ => TargetShield,
+
         ["spot_expiry"] = BuildSpotExpiry,
         ["reattach"] = _ => Reattach,
 
@@ -302,39 +302,6 @@ public class CustomEffectRegistry : ICustomEffectRegistry
                 SourceID = "buff_on_attacked",
             });
         };
-    }
-
-    /// <summary>
-    /// While other frontends exist on own field, this resource can't be targeted by attacks.
-    /// Implemented as a passive marker; AttackProcessor checks for this.
-    /// </summary>
-    public static void TargetShield(OpContext octx)
-    {
-        if (octx.Source is null)
-        {
-            return;
-        }
-
-        bool hasOtherFrontends = octx.MyField.Frontend
-            .Any(r => r.InstanceID != octx.Source.InstanceID && r.FaceUp);
-
-        bool alreadyShielded = octx.Source.TemporaryEffects
-            .Any(e => e.EffectType == "target_shield");
-
-        if (hasOtherFrontends && !alreadyShielded)
-        {
-            octx.Source.TemporaryEffects.Add(new TemporaryEffect
-            {
-                EffectType = "target_shield",
-                Value = 1,
-                Duration = "permanent",
-                SourceID = "target_shield",
-            });
-        }
-        else if (!hasOtherFrontends && alreadyShielded)
-        {
-            octx.Source.TemporaryEffects.RemoveAll(e => e.EffectType == "target_shield");
-        }
     }
 
     /// <summary>
