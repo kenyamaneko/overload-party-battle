@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
@@ -18,7 +19,7 @@ public static class ScaleUpProcessor
     /// <returns>The action result containing the scale-up event and state update flag.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
-        ScaleUpRequest req, ICardCache cc)
+        ScaleUpRequest req, ICardCache cc, IEffectRegistry? effects = null)
     {
         var field = state.GetField(playerNum);
 
@@ -66,6 +67,13 @@ public static class ScaleUpProcessor
 
         ResourceHelpers.ChangeRank(resource, targetRank, cc);
 
+        // Fire OnScaleUp triggers (resource itself + attachments)
+        var events = new List<GameEvent>();
+        if (effects is not null)
+        {
+            FireOnScaleUp(state, game, playerNum, resource, cc, effects, events);
+        }
+
         var playerId = game.GetPlayerID(playerNum);
         var evt = new GameEvent
         {
@@ -80,6 +88,48 @@ public static class ScaleUpProcessor
             }.ToDictionary(),
         };
 
-        return new ActionResult { Events = [evt], StateUpdated = true };
+        events.Insert(0, evt);
+        return new ActionResult { Events = events, StateUpdated = true };
+    }
+
+    private static void FireOnScaleUp(
+        GameState state, Game game, long playerNum,
+        DeployedResource resource, ICardCache cc, IEffectRegistry effects,
+        List<GameEvent> events)
+    {
+        var candidates = new List<(string CardId, DeployedResource Source)>();
+
+        if (effects.Has(resource.CardID, TriggerType.OnScaleUp))
+        {
+            candidates.Add((resource.CardID, resource));
+        }
+
+        foreach (var att in resource.Attachments)
+        {
+            if (effects.Has(att.CardID, TriggerType.OnScaleUp))
+            {
+                candidates.Add((att.CardID, resource));
+            }
+        }
+
+        foreach (var (cardId, source) in candidates)
+        {
+            var handler = effects.Get(cardId, TriggerType.OnScaleUp);
+            if (handler is null) { continue; }
+
+            try
+            {
+                var result = handler(new EffectContext
+                {
+                    State = state,
+                    Game = game,
+                    PlayerNum = playerNum,
+                    Source = source,
+                    CardCache = cc,
+                });
+                events.AddRange(result.Events);
+            }
+            catch (GameRuleException) { }
+        }
     }
 }

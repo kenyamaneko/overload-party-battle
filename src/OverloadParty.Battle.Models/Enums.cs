@@ -100,5 +100,6 @@ public enum TriggerType
     Reactive,
     OnEnemyDeploy,
     OnEndPhase,
-    OnFieldChange
+    OnFieldChange,
+    OnScaleUp
 }

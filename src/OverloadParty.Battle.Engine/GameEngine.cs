@@ -155,7 +155,7 @@ public class GameEngine
                 ActionType.Attack => AttackProcessor.Process(
                     state, game, playerNum, (AttackRequest)actionData, _cardCache, _effects),
                 ActionType.ScaleUp => ScaleUpProcessor.Process(
-                    state, game, playerNum, (ScaleUpRequest)actionData, _cardCache),
+                    state, game, playerNum, (ScaleUpRequest)actionData, _cardCache, _effects),
                 ActionType.Monetize => MonetizeProcessor.Process(
                     state, game, playerNum, (MonetizeRequest)actionData, _cardCache),
                 ActionType.EndPhase => EndPhaseProcessor.Process(

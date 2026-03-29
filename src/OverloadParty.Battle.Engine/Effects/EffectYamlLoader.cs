@@ -608,6 +608,7 @@ public static class EffectYamlLoader
         "passive" => TriggerType.OnEndPhase, // 後方互換: passive → OnEndPhase
         "on_end_phase" => TriggerType.OnEndPhase,
         "on_field_change" => TriggerType.OnFieldChange,
+        "on_scale_up" => TriggerType.OnScaleUp,
         "on_attack" => TriggerType.OnAttack,
         "on_hit" => TriggerType.OnHit,
         "on_destroy" => TriggerType.OnDestroy,
