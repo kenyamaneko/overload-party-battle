@@ -372,7 +372,7 @@ public static class ActionDataDeserializer
         ActionType.ScaleUp => data.Deserialize<ScaleUpRequest>(JsonOpts)!,
         ActionType.Monetize => data.Deserialize<MonetizeRequest>(JsonOpts)!,
         ActionType.DiscardHand => data.Deserialize<DiscardHandRequest>(JsonOpts)!,
-        ActionType.ActivateEffect => data.Deserialize<ActivateEffectRequest>(JsonOpts)!,
+        ActionType.UseEffect => data.Deserialize<UseEffectRequest>(JsonOpts)!,
         ActionType.Migrate => data.Deserialize<MigrateRequest>(JsonOpts)!,
         ActionType.EndPhase => new object(),
         ActionType.SetReactive => new object(),

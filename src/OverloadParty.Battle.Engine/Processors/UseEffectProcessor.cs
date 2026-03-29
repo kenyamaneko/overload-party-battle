@@ -7,7 +7,7 @@ namespace OverloadParty.Battle.Engine.Processors;
 /// <summary>
 /// Processes effect activation actions for resources and support cards.
 /// </summary>
-public static class ActivateEffectProcessor
+public static class UseEffectProcessor
 {
     /// <summary>
     /// Activates the effect of a resource or support card on the player's field.
@@ -21,7 +21,7 @@ public static class ActivateEffectProcessor
     /// <returns>The action result containing effect events and state update flag.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
-        ActivateEffectRequest req, ICardCache cc, IEffectRegistry? effects)
+        UseEffectRequest req, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null)
         {
@@ -50,7 +50,7 @@ public static class ActivateEffectProcessor
     private static ActionResult ActivateResourceEffect(
         GameState state, Game game, long playerNum,
         DeployedResource source,
-        ActivateEffectRequest req, ICardCache cc, IEffectRegistry effects)
+        UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var card = ValidateResourceActivation(source, cc, effects);
 
@@ -83,9 +83,9 @@ public static class ActivateEffectProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = WireActionTypes.ActivateEffect,
+            EventType = WireActionTypes.UseEffect,
             PlayerID = playerId,
-            EventData = new ActivateEffectEventData
+            EventData = new UseEffectEventData
             {
                 CardId = card.CardId,
                 SourceId = req.InstanceID,
@@ -99,7 +99,7 @@ public static class ActivateEffectProcessor
     private static ActionResult ActivateSupportEffect(
         GameState state, Game game, long playerNum,
         Field field, DeployedSupport support,
-        ActivateEffectRequest req, ICardCache cc, IEffectRegistry effects)
+        UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var card = cc.MustGet(support.CardID);
 
@@ -127,9 +127,9 @@ public static class ActivateEffectProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = WireActionTypes.ActivateEffect,
+            EventType = WireActionTypes.UseEffect,
             PlayerID = playerId,
-            EventData = new ActivateEffectEventData
+            EventData = new UseEffectEventData
             {
                 CardId = card.CardId,
                 SourceId = req.InstanceID,

@@ -427,7 +427,7 @@ public class GameService
             ActionType.ScaleUp => json.Deserialize<ScaleUpRequest>(NpcJsonOpts)!,
             ActionType.Monetize => json.Deserialize<MonetizeRequest>(NpcJsonOpts)!,
             ActionType.DiscardHand => json.Deserialize<DiscardHandRequest>(NpcJsonOpts)!,
-            ActionType.ActivateEffect => json.Deserialize<ActivateEffectRequest>(NpcJsonOpts)!,
+            ActionType.UseEffect => json.Deserialize<UseEffectRequest>(NpcJsonOpts)!,
             ActionType.Migrate => json.Deserialize<MigrateRequest>(NpcJsonOpts)!,
             ActionType.EndPhase => new object(),
             ActionType.SetReactive => new object(),

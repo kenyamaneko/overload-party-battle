@@ -74,7 +74,7 @@ public class FactionAi : StandardAi
         }
 
         // 3. Activate field resource/support effects
-        actions.AddRange(DecideActivateActions(ctx, available));
+        actions.AddRange(DecideUseEffectActions(ctx, available));
 
         // 4. Scale up with faction-preferred instance family
         actions.AddRange(DoScaleUpActions(available, _instanceFamily));

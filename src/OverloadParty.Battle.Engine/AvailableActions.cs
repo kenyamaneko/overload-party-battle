@@ -21,7 +21,7 @@ public class AvailableAction
     /// <summary>Valid zone+slot combinations for placement (e.g. "frontend_0").</summary>
     public List<string>? ValidZones { get; set; }
 
-    /// <summary>The source resource/support instance ID (attack, scale_up, activate_effect, etc.).</summary>
+    /// <summary>The source resource/support instance ID (attack, scale_up, use_effect, etc.).</summary>
     public string? SourceInstanceID { get; set; }
 
     /// <summary>Valid target instance IDs (attack targets, attachment targets, etc.).</summary>
@@ -39,7 +39,7 @@ public class AvailableAction
     /// <summary>Remaining monetize capacity for the resource (monetize only).</summary>
     public long RemainingCapacity { get; set; }
 
-    /// <summary>The type of target the effect expects (activate_effect only).</summary>
+    /// <summary>The type of target the effect expects (use_effect only).</summary>
     public string? EffectTargetType { get; set; }
 
     /// <summary>Number of targets required for multi-target effects.</summary>
@@ -107,13 +107,13 @@ public static class AvailableActions
                 actions.AddRange(EnumeratePlayCardActions(state, myField, hand, budget, cc, effects));
                 actions.AddRange(EnumerateScaleUpActions(state, myField, cc));
                 actions.AddRange(EnumerateMonetizeActions(state, myField, insightPool, cc));
-                actions.AddRange(EnumerateActivateEffectActions(myField, oppField, budget, cc, effects));
+                actions.AddRange(EnumerateUseEffectActions(myField, oppField, budget, cc, effects));
                 actions.AddRange(EnumerateMigrateActions(myField, cc));
                 break;
 
             case Phase.Battle:
                 actions.AddRange(EnumerateAttackActions(myField, oppField, cc));
-                actions.AddRange(EnumerateActivateEffectActions(myField, oppField, budget, cc, effects));
+                actions.AddRange(EnumerateUseEffectActions(myField, oppField, budget, cc, effects));
                 break;
         }
 
@@ -320,7 +320,7 @@ public static class AvailableActions
         }
     }
 
-    private static IEnumerable<AvailableAction> EnumerateActivateEffectActions(
+    private static IEnumerable<AvailableAction> EnumerateUseEffectActions(
         Field myField, Field oppField, long budget, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { yield break; }
@@ -343,7 +343,7 @@ public static class AvailableActions
 
             yield return new AvailableAction
             {
-                Type = WireActionTypes.ActivateEffect,
+                Type = WireActionTypes.UseEffect,
                 SourceInstanceID = resource.InstanceID,
                 CardID = card.CardId,
             };
@@ -365,7 +365,7 @@ public static class AvailableActions
 
             yield return new AvailableAction
             {
-                Type = WireActionTypes.ActivateEffect,
+                Type = WireActionTypes.UseEffect,
                 SourceInstanceID = support.InstanceID,
                 CardID = card.CardId,
             };

@@ -129,23 +129,23 @@ public class GameServiceDeserializationTests
         result.Distributions[1].Amount.Should().Be(100);
     }
 
-    // ─── activate_effect ─────────────────────────────────────
+    // ─── use_effect ─────────────────────────────────────
 
     [Fact]
-    public void ActivateEffect_DeserializesToActivateEffectRequest()
+    public void UseEffect_DeserializesToUseEffectRequest()
     {
         var data = new Dictionary<string, object>
         {
             ["instanceId"] = "e1",
         };
 
-        var result = SerializeAndDeserialize<ActivateEffectRequest>(data);
+        var result = SerializeAndDeserialize<UseEffectRequest>(data);
 
         result.InstanceID.Should().Be("e1");
     }
 
     [Fact]
-    public void ActivateEffect_WithTargetInstanceId()
+    public void UseEffect_WithTargetInstanceId()
     {
         var data = new Dictionary<string, object>
         {
@@ -153,7 +153,7 @@ public class GameServiceDeserializationTests
             ["targetInstanceId"] = "target_1",
         };
 
-        var result = SerializeAndDeserialize<ActivateEffectRequest>(data);
+        var result = SerializeAndDeserialize<UseEffectRequest>(data);
 
         result.InstanceID.Should().Be("e2");
         result.TargetInstanceID.Should().Be("target_1");

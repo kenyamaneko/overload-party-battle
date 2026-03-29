@@ -146,24 +146,24 @@ public class ActionRequestDeserializationTests
         req.TargetInstanceID.Should().Be("t1");
     }
 
-    // ─── ActivateEffectRequest ───────────────────────────────
+    // ─── UseEffectRequest ───────────────────────────────
 
     [Fact]
-    public void ActivateEffectRequest_DeserializesCorrectly()
+    public void UseEffectRequest_DeserializesCorrectly()
     {
         var json = """{ "instanceId": "e1" }""";
 
-        var req = JsonSerializer.Deserialize<ActivateEffectRequest>(json, JsonOpts)!;
+        var req = JsonSerializer.Deserialize<UseEffectRequest>(json, JsonOpts)!;
 
         req.InstanceID.Should().Be("e1");
     }
 
     [Fact]
-    public void ActivateEffectRequest_ViaJsonElement()
+    public void UseEffectRequest_ViaJsonElement()
     {
         var json = """{ "instanceId": "e1", "targetInstanceId": "t1" }""";
 
-        var req = JsonDocument.Parse(json).RootElement.Deserialize<ActivateEffectRequest>(JsonOpts)!;
+        var req = JsonDocument.Parse(json).RootElement.Deserialize<UseEffectRequest>(JsonOpts)!;
 
         req.InstanceID.Should().Be("e1");
         req.TargetInstanceID.Should().Be("t1");

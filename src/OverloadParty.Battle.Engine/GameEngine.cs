@@ -162,8 +162,8 @@ public class GameEngine
                     state, game, playerNum, _cardCache, _effects),
                 ActionType.DiscardHand => DiscardProcessor.Process(
                     state, game, playerNum, (DiscardHandRequest)actionData, _cardCache),
-                ActionType.ActivateEffect => ActivateEffectProcessor.Process(
-                    state, game, playerNum, (ActivateEffectRequest)actionData, _cardCache, _effects),
+                ActionType.UseEffect => UseEffectProcessor.Process(
+                    state, game, playerNum, (UseEffectRequest)actionData, _cardCache, _effects),
                 ActionType.Migrate => MigrateProcessor.Process(
                     state, game, playerNum, (MigrateRequest)actionData, _cardCache),
                 _ => throw new GameRuleException($"unknown action type: {actionType}")

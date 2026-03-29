@@ -886,11 +886,11 @@ public class AvailableActionsTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  ActivateEffect — 効果発動ルール
+    //  UseEffect — 効果発動ルール
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void ActivateEffect_ResourceWithEffectIncluded()
+    public void UseEffect_ResourceWithEffectIncluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
@@ -906,11 +906,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_10");
+        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_10");
     }
 
     [Fact]
-    public void ActivateEffect_ResourceWithoutEffectExcluded()
+    public void UseEffect_ResourceWithoutEffectExcluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
@@ -925,11 +925,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
     }
 
     [Fact]
-    public void ActivateEffect_EffectUsedThisTurnExcluded()
+    public void UseEffect_EffectUsedThisTurnExcluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
@@ -947,11 +947,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
     }
 
     [Fact]
-    public void ActivateEffect_CannotOperateExcluded()
+    public void UseEffect_CannotOperateExcluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
@@ -969,11 +969,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
     }
 
     [Fact]
-    public void ActivateEffect_MigratingResourceExcluded()
+    public void UseEffect_MigratingResourceExcluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
@@ -991,11 +991,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
     }
 
     [Fact]
-    public void ActivateEffect_SupportWithEffectIncluded()
+    public void UseEffect_SupportWithEffectIncluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
@@ -1014,11 +1014,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "sup_1");
+        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "sup_1");
     }
 
     [Fact]
-    public void ActivateEffect_DeployingSupportExcluded()
+    public void UseEffect_DeployingSupportExcluded()
     {
         // デプロイ中のカードは稼働していない
         var cc = new TestCardCache();
@@ -1038,11 +1038,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
     }
 
     [Fact]
-    public void ActivateEffect_SupportEffectUsedThisTurnExcluded()
+    public void UseEffect_SupportEffectUsedThisTurnExcluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
@@ -1061,11 +1061,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
     }
 
     [Fact]
-    public void ActivateEffect_AvailableInBattlePhase()
+    public void UseEffect_AvailableInBattlePhase()
     {
         // エフェクト発動はバトルフェーズでも可能
         var cc = new TestCardCache();
@@ -1082,13 +1082,13 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_10");
+        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_10");
     }
 
-    // ─── ActivateEffect: budget filtering (既存テスト) ───────────
+    // ─── UseEffect: budget filtering (既存テスト) ───────────
 
     [Fact]
-    public void ActivateEffect_ExcludedWhenBudgetBelowMinimum()
+    public void UseEffect_ExcludedWhenBudgetBelowMinimum()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009", tp: 600, av: 1400));
@@ -1105,11 +1105,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 300, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_10");
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_10");
     }
 
     [Fact]
-    public void ActivateEffect_IncludedWhenBudgetMeetsMinimum()
+    public void UseEffect_IncludedWhenBudgetMeetsMinimum()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009", tp: 600, av: 1400));
@@ -1126,11 +1126,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 500, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_10");
+        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_10");
     }
 
     [Fact]
-    public void ActivateEffect_ExcludedWhenBudgetExceedsMaximum()
+    public void UseEffect_ExcludedWhenBudgetExceedsMaximum()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "NT-0026", tp: 600, av: 1400));
@@ -1147,11 +1147,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 1500, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_120");
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_120");
     }
 
     [Fact]
-    public void ActivateEffect_IncludedWhenBudgetWithinMaximum()
+    public void UseEffect_IncludedWhenBudgetWithinMaximum()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "NT-0026", tp: 600, av: 1400));
@@ -1168,11 +1168,11 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 800, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_120");
+        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_120");
     }
 
     [Fact]
-    public void ActivateEffect_IncludedWhenNoBudgetRequirement()
+    public void UseEffect_IncludedWhenNoBudgetRequirement()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "TK-0008", tp: 600, av: 1400));
@@ -1188,7 +1188,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 0, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.ActivateEffect && a.SourceInstanceID == "res_30");
+        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_30");
     }
 
     // ─── PlayCard: budget filtering for Strategy/Incident ───────
@@ -1730,10 +1730,10 @@ public class AvailableActionsTests
         a2.RemainingCapacity.Should().Be(500);
     }
 
-    // ─── ActivateEffect: FaceDown resource excluded ─────────────
+    // ─── UseEffect: FaceDown resource excluded ─────────────
 
     [Fact]
-    public void ActivateEffect_FaceDownResourceExcluded()
+    public void UseEffect_FaceDownResourceExcluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
@@ -1749,6 +1749,6 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ActivateEffect);
+        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
     }
 }

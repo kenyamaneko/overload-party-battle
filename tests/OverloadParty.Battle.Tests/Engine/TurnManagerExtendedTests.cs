@@ -16,7 +16,7 @@ public class TurnManagerExtendedTests
     [InlineData(ActionType.PlayCard, true)]
     [InlineData(ActionType.ScaleUp, true)]
     [InlineData(ActionType.Monetize, true)]
-    [InlineData(ActionType.ActivateEffect, true)]
+    [InlineData(ActionType.UseEffect, true)]
     [InlineData(ActionType.Migrate, true)]
     [InlineData(ActionType.EndPhase, true)]
     [InlineData(ActionType.Attack, false)]
@@ -32,7 +32,7 @@ public class TurnManagerExtendedTests
 
     [Theory]
     [InlineData(ActionType.Attack, true)]
-    [InlineData(ActionType.ActivateEffect, true)]
+    [InlineData(ActionType.UseEffect, true)]
     [InlineData(ActionType.SetReactive, true)]
     [InlineData(ActionType.EndPhase, true)]
     [InlineData(ActionType.PlayCard, false)]

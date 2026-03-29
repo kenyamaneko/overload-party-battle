@@ -152,7 +152,7 @@ public class GameLogService
             WireActionTypes.ScaleUp => DescribeScaleUp(playerTag, data),
             WireActionTypes.Monetize => DescribeMonetize(playerTag, data),
             WireActionTypes.DiscardHand => DescribeDiscardHand(playerTag, data),
-            WireActionTypes.ActivateEffect => DescribeActivateEffect(playerTag, data),
+            WireActionTypes.UseEffect => DescribeUseEffect(playerTag, data),
             "reactive_revealed" => $"{playerTag} reactive revealed",
             WireActionTypes.Migrate => DescribeMigrate(playerTag, data),
             "migration_complete" => "Migration complete",
@@ -231,7 +231,7 @@ public class GameLogService
         return $"{player} discarded {count} card{(count != 1 ? "s" : "")}";
     }
 
-    private string DescribeActivateEffect(string player, Dictionary<string, object>? data)
+    private string DescribeUseEffect(string player, Dictionary<string, object>? data)
     {
         if (data is null) return $"{player} activated an effect";
 

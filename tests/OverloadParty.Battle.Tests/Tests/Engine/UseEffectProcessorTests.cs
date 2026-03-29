@@ -5,12 +5,12 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Tests.Engine;
 
-public class ActivateEffectProcessorTests
+public class UseEffectProcessorTests
 {
     private readonly TestCardCache _cc = new();
     private readonly Game _game = TestFactory.MakeGame();
 
-    public ActivateEffectProcessorTests()
+    public UseEffectProcessorTests()
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
         _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
@@ -33,8 +33,8 @@ public class ActivateEffectProcessorTests
         var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1", faceUp: true);
         state.Player1Field.Frontend[0] = resource;
 
-        var req = new ActivateEffectRequest { InstanceID = "r_1" };
-        ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "r_1" };
+        UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         handlerCalled.Should().BeTrue();
         resource.EffectUsedThisTurn.Should().BeTrue();
@@ -49,22 +49,22 @@ public class ActivateEffectProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
 
-        var req = new ActivateEffectRequest { InstanceID = "r_1" };
-        var result = ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "r_1" };
+        var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-        result.Events.Should().ContainSingle(e => e.EventType == WireActionTypes.ActivateEffect);
+        result.Events.Should().ContainSingle(e => e.EventType == WireActionTypes.UseEffect);
     }
 
     [Fact]
-    public void Process_NoActivateEffect_Throws()
+    public void Process_NoUseEffect_Throws()
     {
         var reg = new EffectRegistry(); // nothing registered
 
         var state = TestFactory.MakeGameState(turn: 2);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
 
-        var req = new ActivateEffectRequest { InstanceID = "r_1" };
-        var act = () => ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "r_1" };
+        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         act.Should().Throw<GameRuleException>().WithMessage("*no activate effect*");
     }
@@ -80,8 +80,8 @@ public class ActivateEffectProcessorTests
         resource.EffectUsedThisTurn = true;
         state.Player1Field.Frontend[0] = resource;
 
-        var req = new ActivateEffectRequest { InstanceID = "r_1" };
-        var act = () => ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "r_1" };
+        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         act.Should().Throw<GameRuleException>().WithMessage("*already used*");
     }
@@ -103,8 +103,8 @@ public class ActivateEffectProcessorTests
         });
         state.Player1Field.Frontend[0] = resource;
 
-        var req = new ActivateEffectRequest { InstanceID = "r_1" };
-        var act = () => ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "r_1" };
+        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         act.Should().Throw<GameRuleException>().WithMessage("*cannot operate*");
     }
@@ -118,8 +118,8 @@ public class ActivateEffectProcessorTests
         var state = TestFactory.MakeGameState(turn: 2);
         // Nothing on the field
 
-        var req = new ActivateEffectRequest { InstanceID = "nonexistent" };
-        var act = () => ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "nonexistent" };
+        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         act.Should().Throw<GameRuleException>().WithMessage("*not found*");
     }
@@ -130,8 +130,8 @@ public class ActivateEffectProcessorTests
         var state = TestFactory.MakeGameState(turn: 2);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
 
-        var req = new ActivateEffectRequest { InstanceID = "r_1" };
-        var act = () => ActivateEffectProcessor.Process(state, _game, 1, req, _cc, effects: null);
+        var req = new UseEffectRequest { InstanceID = "r_1" };
+        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, effects: null);
 
         act.Should().Throw<GameRuleException>().WithMessage("*not initialized*");
     }
@@ -155,8 +155,8 @@ public class ActivateEffectProcessorTests
         state.Player1Field.Frontend[0] = source;
         state.Player1Field.Frontend[1] = target;
 
-        var req = new ActivateEffectRequest { InstanceID = "r_1", TargetInstanceID = "r_2" };
-        ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "r_1", TargetInstanceID = "r_2" };
+        UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         capturedTarget.Should().NotBeNull();
         capturedTarget!.InstanceID.Should().Be("r_2");
@@ -179,8 +179,8 @@ public class ActivateEffectProcessorTests
         state.Player1Field.Frontend[0] = source;
         state.Player2Field.Frontend[0] = oppTarget;
 
-        var req = new ActivateEffectRequest { InstanceID = "r_1", TargetInstanceID = "opp_r" };
-        ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "r_1", TargetInstanceID = "opp_r" };
+        UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         capturedTarget!.InstanceID.Should().Be("opp_r");
     }
@@ -207,15 +207,15 @@ public class ActivateEffectProcessorTests
         };
         state.Player1Field.Support[0] = support;
 
-        var req = new ActivateEffectRequest { InstanceID = "sup_1" };
-        ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "sup_1" };
+        UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         handlerCalled.Should().BeTrue();
         support.EffectUsedThisTurn.Should().BeTrue();
     }
 
     [Fact]
-    public void Process_SupportNoActivateEffect_Throws()
+    public void Process_SupportNoUseEffect_Throws()
     {
         var reg = new EffectRegistry(); // 200 not registered
 
@@ -227,8 +227,8 @@ public class ActivateEffectProcessorTests
             FaceUp = true,
         };
 
-        var req = new ActivateEffectRequest { InstanceID = "sup_1" };
-        var act = () => ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "sup_1" };
+        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         act.Should().Throw<GameRuleException>().WithMessage("*no activate effect*");
     }
@@ -247,9 +247,9 @@ public class ActivateEffectProcessorTests
             FaceUp = true,
         };
 
-        var req = new ActivateEffectRequest { InstanceID = "sup_1" };
-        var result = ActivateEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+        var req = new UseEffectRequest { InstanceID = "sup_1" };
+        var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-        result.Events.Should().ContainSingle(e => e.EventType == WireActionTypes.ActivateEffect);
+        result.Events.Should().ContainSingle(e => e.EventType == WireActionTypes.UseEffect);
     }
 }

@@ -39,7 +39,7 @@ public class StandardAi : INpcStrategy
         actions.AddRange(DoDeployActions(ctx, available, usedZones));
 
         // 3. Activate field resource/support effects
-        actions.AddRange(DecideActivateActions(ctx, available));
+        actions.AddRange(DecideUseEffectActions(ctx, available));
 
         // 4. Scale up existing resources
         actions.AddRange(DoScaleUpActions(available, GetInstanceFamily()));
@@ -209,9 +209,9 @@ public class StandardAi : INpcStrategy
 
     // ─── Activate effect actions ────────────────────────────────
 
-    protected List<NpcAction> DecideActivateActions(DecisionContext ctx, List<AvailableAction> available)
+    protected List<NpcAction> DecideUseEffectActions(DecisionContext ctx, List<AvailableAction> available)
     {
-        var activateActions = ActionFilter.FilterByType(available, WireActionTypes.ActivateEffect);
+        var activateActions = ActionFilter.FilterByType(available, WireActionTypes.UseEffect);
 
         var candidates = new List<(AvailableAction Action, string CardId, int Priority, Dictionary<string, object>? Choice)>();
         foreach (var a in activateActions)
@@ -261,7 +261,7 @@ public class StandardAi : INpcStrategy
                 payload["choiceData"] = c.Choice;
             }
 
-            actions.Add(new NpcAction { ActionType = WireActionTypes.ActivateEffect, Data = payload });
+            actions.Add(new NpcAction { ActionType = WireActionTypes.UseEffect, Data = payload });
         }
         return actions;
     }

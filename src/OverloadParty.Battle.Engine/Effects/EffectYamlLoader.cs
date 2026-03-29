@@ -149,7 +149,7 @@ public static class EffectYamlLoader
             }
         }
 
-        // ActivateEffectProcessor already enforces once-per-turn for activate triggers
+        // UseEffectProcessor already enforces once-per-turn for activate triggers
         if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Activate)
         {
             bool perGame = def.UseLimit == "once_per_game";

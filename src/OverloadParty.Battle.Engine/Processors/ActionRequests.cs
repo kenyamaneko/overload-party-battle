@@ -132,7 +132,7 @@ public class DiscardHandRequest
 /// <summary>
 /// Request to activate a resource's or support card's effect.
 /// </summary>
-public class ActivateEffectRequest
+public class UseEffectRequest
 {
     /// <summary>The instance ID of the resource or support card whose effect to activate.</summary>
     public string InstanceID { get; set; } = "";
