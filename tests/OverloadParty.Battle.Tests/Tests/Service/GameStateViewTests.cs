@@ -125,6 +125,27 @@ public class GameStateViewTests
     }
 
     [Fact]
+    public void Build_OpponentView_RevealsPeekedSupportCardID()
+    {
+        var state = TestFactory.MakeGameState();
+        state.Player2Field.Support[0] = new DeployedSupport
+        {
+            InstanceID = "sup_peek",
+            CardID = "TEST-0200",
+            FaceUp = false,
+            PeekedBy = [1],
+        };
+
+        var result = GameStateView.Build(state, _game, 1, _cc, null);
+
+        var oppSup = result.OppView.Field.Support[0];
+        oppSup.Should().NotBeNull();
+        oppSup!.FaceDown.Should().BeTrue("card should stay face-down");
+        oppSup.Peeked.Should().BeTrue("player 1 has peeked at this card");
+        oppSup.CardID.Should().Be("TEST-0200", "peeked card reveals CardID to the peeking player");
+    }
+
+    [Fact]
     public void Build_OpponentView_ShowsFaceUpSupportCardID()
     {
         var state = TestFactory.MakeGameState();

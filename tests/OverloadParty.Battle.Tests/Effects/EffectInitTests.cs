@@ -1,6 +1,7 @@
 using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Effects;
@@ -253,9 +254,10 @@ public class EffectRegistrationTests
     {
         var state = TestFactory.MakeGameState(p1Budget: 2000);
 
-        var act = () => ExecuteEffect(state, "NT-0026", TriggerType.Activate, playerNum: 1);
+        var result = ExecuteEffect(state, "NT-0026", TriggerType.Activate, playerNum: 1);
 
-        act.Should().Throw<GameRuleException>("NT-0026 requires budget <= 1000");
+        result.GuardFailed.Should().BeTrue("NT-0026 requires budget <= 1000");
+        state.Player1Budget.Should().Be(2000, "budget should not change when guard fails");
     }
 
     [Fact]
@@ -266,9 +268,10 @@ public class EffectRegistrationTests
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
         state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "r2");
 
-        var act = () => ExecuteEffect(state, "SH-0019", TriggerType.Activate, playerNum: 1);
+        var result = ExecuteEffect(state, "SH-0019", TriggerType.Activate, playerNum: 1);
 
-        act.Should().Throw<GameRuleException>("SH-0019 requires 3+ SHE cards on field");
+        result.GuardFailed.Should().BeTrue("SH-0019 requires 3+ SHE cards on field");
+        state.Player1Budget.Should().Be(1000, "budget should not change when guard fails");
     }
 
     // ─── Choice effect behavior ──────────────────────────────────
@@ -319,6 +322,80 @@ public class EffectRegistrationTests
         endPhaseCards.Should().Contain("SL-0016");
     }
 
+    // ─── TK-0025: peek_reactive + incident_reduction (while_on_field) ───
+
+    [Fact]
+    public void TK0025_Deploy_PeeksHiddenReactive_AndAppliesIncidentReduction()
+    {
+        var state = TestFactory.MakeGameState(p1Budget: 3000);
+
+        // Player 1's resource to receive the buff
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
+        state.Player1Field.Frontend[0] = resource;
+
+        // Opponent's hidden reactive
+        state.Player2Field.Support[0] = new DeployedSupport
+        {
+            InstanceID = "opp_react",
+            CardID = "TK-0024",
+            FaceUp = false,
+        };
+
+        var handler = _registry.Get("TK-0025", TriggerType.Deploy)
+            ?? throw new InvalidOperationException("TK-0025 Deploy handler not registered");
+        var ctx = new EffectContext
+        {
+            State = state,
+            Game = _game,
+            PlayerNum = 1,
+            CardCache = _cardCache,
+        };
+        handler(ctx);
+
+        // peek_reactive: card stays face-down, player 1 added to PeekedBy
+        var oppSupport = state.Player2Field.Support[0]!;
+        oppSupport.FaceUp.Should().BeFalse();
+        oppSupport.PeekedBy.Should().Contain(1);
+
+        // apply_buff: incident_reduction while_on_field
+        resource.TemporaryEffects.Should().ContainSingle(e =>
+            e.EffectType == "incident_reduction"
+            && e.Value == 300
+            && e.Duration == "while_on_field");
+    }
+
+    [Fact]
+    public void TK0025_IncidentReduction_ReducesDamageBy300()
+    {
+        var state = TestFactory.MakeGameState(p1Budget: 3000);
+        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
+        state.Player1Field.Frontend[0] = resource;
+
+        // Simulate TK-0025's while_on_field buff already applied
+        resource.TemporaryEffects.Add(new TemporaryEffect
+        {
+            EffectType = "incident_reduction",
+            Value = 300,
+            Duration = "while_on_field",
+            SourceID = "tk0025_inst",
+        });
+
+        // Fire an incident that deals 500 damage
+        var selector = new FixedSelector([resource]);
+        var op = new IncidentDamageOp(selector, new StaticAmount(500));
+        var opCtx = new OpContext(new EffectContext
+        {
+            State = state,
+            Game = _game,
+            PlayerNum = 1,
+            CardCache = _cardCache,
+        });
+
+        op.Execute(opCtx);
+
+        resource.Damage.Should().Be(200, "500 - 300 reduction = 200");
+    }
+
     // ─── Helper methods ──────────────────────────────────────────
 
     private EffectResult ExecuteEffect(GameState state, string cardId, TriggerType trigger, long playerNum)
@@ -335,5 +412,10 @@ public class EffectRegistrationTests
         };
 
         return handler(ctx);
+    }
+
+    private class FixedSelector(List<DeployedResource> targets) : ISelector
+    {
+        public List<DeployedResource> Select(OpContext ctx) => targets;
     }
 }
