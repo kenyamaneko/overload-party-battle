@@ -68,6 +68,14 @@ public static class FieldHelpers
     }
 
     /// <summary>
+    /// Remove a support card from the field by InstanceID. Returns true if found and removed.
+    /// </summary>
+    public static bool RemoveSupportFromField(Field field, string instanceID)
+    {
+        return field.Support.Remove(s => s.InstanceID == instanceID);
+    }
+
+    /// <summary>
     /// フィールド上の表向きリソースをすべて返す (frontend + backend)。
     /// </summary>
     /// <remarks>

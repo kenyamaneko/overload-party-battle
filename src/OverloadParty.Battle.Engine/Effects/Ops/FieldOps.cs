@@ -46,7 +46,7 @@ public class ScaleToRankOp(string rank) : IEffectOp
         if (ctx.Source is null) { return; }
 
         var targetRank = EnumExtensions.ParseRank(rank);
-        ResourceHelpers.ChangeRank(ctx.Source, targetRank, ctx.CardCache);
+        ResourceHelpers.ChangeRank(ctx.Source, targetRank, ctx.MyField, ctx.CardCache);
     }
 }
 

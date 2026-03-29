@@ -67,18 +67,14 @@ public static class DrawPhaseProcessor
                     && effects?.Has(support.CardID, TriggerType.Deploy) == true)
                 {
                     var handler = effects.Get(support.CardID, TriggerType.Deploy)!;
-                    try
+                    handler(new EffectContext
                     {
-                        handler(new EffectContext
-                        {
-                            State = state,
-                            Game = game,
-                            PlayerNum = playerNum,
-                            SupSource = support,
-                            CardCache = cc,
-                        });
-                    }
-                    catch (GameRuleException) { }
+                        State = state,
+                        Game = game,
+                        PlayerNum = playerNum,
+                        SupSource = support,
+                        CardCache = cc,
+                    });
                 }
             }
         }

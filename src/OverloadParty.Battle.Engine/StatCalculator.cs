@@ -105,9 +105,9 @@ public static class StatCalculator
     }
 
     /// <summary>
-    /// Calculate max AV for a resource.
+    /// Calculate max AV for a resource, including all bonuses.
     /// </summary>
-    public static long CalculateMaxAV(DeployedResource instance, ICardCache cc)
+    public static long CalculateMaxAV(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
         long baseAV = card.BaseAvailability;
@@ -120,7 +120,13 @@ public static class StatCalculator
             avMult = av;
         }
 
-        return Truncate(baseAV * rankMult * avMult);
+        long baseValue = Truncate(baseAV * rankMult * avMult);
+
+        long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatAV, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, BattleConstants.StatAV, cc);
+
+        long total = baseValue + platformBonus + attachmentBonus;
+        return Math.Max(0, total);
     }
 
     /// <summary>

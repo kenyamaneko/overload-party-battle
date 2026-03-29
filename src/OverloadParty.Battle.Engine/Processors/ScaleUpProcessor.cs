@@ -32,16 +32,6 @@ public static class ScaleUpProcessor
             throw new GameRuleException("card is not resizable");
         }
 
-        if (resource.DeployedOnTurn == state.CurrentTurn)
-        {
-            throw new GameRuleException("cannot change instance type on deploy turn");
-        }
-
-        if (resource.ScaleChangedThisTurn)
-        {
-            throw new GameRuleException("instance type already changed this turn");
-        }
-
         var targetRank = EnumExtensions.ParseRank(req.TargetRank);
 
         if (resource.Rank is null || targetRank <= resource.Rank)
@@ -63,9 +53,8 @@ public static class ScaleUpProcessor
             throw new GameRuleException("cannot change instance family when scaling up from medium");
         }
         resource.InstanceFamily = targetFamily;
-        resource.ScaleChangedThisTurn = true;
 
-        ResourceHelpers.ChangeRank(resource, targetRank, cc);
+        ResourceHelpers.ChangeRank(resource, targetRank, field, cc);
 
         // Fire OnScaleUp triggers (resource itself + attachments)
         var events = new List<GameEvent>();
@@ -117,19 +106,15 @@ public static class ScaleUpProcessor
             var handler = effects.Get(cardId, TriggerType.OnScaleUp);
             if (handler is null) { continue; }
 
-            try
+            var result = handler(new EffectContext
             {
-                var result = handler(new EffectContext
-                {
-                    State = state,
-                    Game = game,
-                    PlayerNum = playerNum,
-                    Source = source,
-                    CardCache = cc,
-                });
-                events.AddRange(result.Events);
-            }
-            catch (GameRuleException) { }
+                State = state,
+                Game = game,
+                PlayerNum = playerNum,
+                Source = source,
+                CardCache = cc,
+            });
+            if (!result.GuardFailed) { events.AddRange(result.Events); }
         }
     }
 }

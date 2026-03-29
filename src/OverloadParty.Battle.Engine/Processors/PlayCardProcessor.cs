@@ -378,8 +378,10 @@ public static class PlayCardProcessor
         var result = handler(effectCtx);
         allEvents.AddRange(result.Events);
 
-        // リアクティブは伏せた状態でセットされるため、発動時に表向きにする
-        if (!reactive.FaceUp) { reactive.FaceUp = true; }
+        // 発動時に表向きにしてからトラッシュへ送る
+        reactive.FaceUp = true;
+        FieldHelpers.RemoveSupportFromField(oppField, reactive.InstanceID);
+        CardMoveHelpers.AddToTrash(ctx.State, opponentNum, reactive.CardID, reactive.InstanceID, reactive.ArtNo);
 
         return (result.CancelAction, allEvents);
     }

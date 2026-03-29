@@ -331,7 +331,7 @@ public class ResourceHelpersTests
 
         var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Small);
 
-        ResourceHelpers.ChangeRank(resource, Rank.Medium, cc);
+        ResourceHelpers.ChangeRank(resource, Rank.Medium, TestFactory.MakeField(), cc);
 
         resource.Rank.Should().Be(Rank.Medium);
         resource.MaxAV.Should().Be(2800); // 1400 * 2
@@ -345,7 +345,7 @@ public class ResourceHelpersTests
 
         var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Small);
 
-        ResourceHelpers.ChangeRank(resource, Rank.Large, cc);
+        ResourceHelpers.ChangeRank(resource, Rank.Large, TestFactory.MakeField(), cc);
 
         resource.MaxTP.Should().Be(1800); // 600 * 3
         resource.CurrentTP.Should().Be(1800);
@@ -359,7 +359,7 @@ public class ResourceHelpersTests
 
         var resource = TestFactory.MakeResource(cardId: "NT-0009", rank: Rank.Small, maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
 
-        ResourceHelpers.ChangeRank(resource, Rank.Medium, cc);
+        ResourceHelpers.ChangeRank(resource, Rank.Medium, TestFactory.MakeField(), cc);
 
         resource.MaxYield.Should().Be(800); // 400 * 2
         resource.CurrentYield.Should().Be(800);
@@ -373,7 +373,7 @@ public class ResourceHelpersTests
 
         var resource = TestFactory.MakeResource(cardId: "TEST-0002", rank: Rank.Small, maxTP: 500, currentTP: 500);
 
-        ResourceHelpers.ChangeRank(resource, Rank.Medium, cc);
+        ResourceHelpers.ChangeRank(resource, Rank.Medium, TestFactory.MakeField(), cc);
 
         // Elastic cards should NOT have MaxTP recalculated
         resource.MaxTP.Should().Be(500);

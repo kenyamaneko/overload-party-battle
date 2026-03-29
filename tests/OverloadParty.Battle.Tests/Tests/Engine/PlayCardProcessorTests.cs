@@ -38,6 +38,14 @@ public class PlayCardProcessorTests
             TargetInstanceID = targetInstanceId,
         };
 
+    private static PlayCardRequest MakeReq(string instanceId) =>
+        new()
+        {
+            CardInstanceID = instanceId,
+            Zone = "",
+            Index = 0,
+        };
+
     // ─── 1. Compute card to frontend ─────────────────────────
 
     [Fact]
@@ -220,9 +228,21 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0500" });
 
         PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1"), _cc, null);
 
         state.GetIncidentPlayedThisTurn(1).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Process_IncidentCard_DoesNotOccupySupportSlot()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0500" });
+
+        PlayCardProcessor.Process(
+            state, _game, 1, MakeReq("h_1"), _cc, null);
+
+        state.Player1Field.Support.ToList().Should().AllSatisfy(s => s.Should().BeNull());
     }
 
     // ─── 13. Second incident same turn → throws ─────────────
@@ -235,10 +255,10 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_2", CardID = "TEST-0500" });
 
         PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1"), _cc, null);
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_2", GameConstants.ZoneSupport, 0), _cc, null);
+            state, _game, 1, MakeReq("h_2"), _cc, null);
 
         act.Should().Throw<GameRuleException>().WithMessage("*incident already played*");
     }

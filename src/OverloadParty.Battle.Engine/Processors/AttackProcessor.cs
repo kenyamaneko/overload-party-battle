@@ -68,6 +68,7 @@ public static class AttackProcessor
             .Sum(e => e.Value);
         defender.Damage += Math.Max(0, damage - damageReduction);
         attacker.HasAttacked = true;
+        attacker.LastAttackTurn = state.CurrentTurn;
 
         // Fire OnAttack trigger
         if (effects?.Has(attackerCard.CardId, TriggerType.OnAttack) == true)
@@ -221,8 +222,10 @@ public static class AttackProcessor
         var result = handler(ctx);
         allEvents.AddRange(result.Events);
 
-        // リアクティブは伏せた状態でセットされるため、発動時に表向きにする
-        if (!reactive.FaceUp) { reactive.FaceUp = true; }
+        // 発動時に表向きにしてからトラッシュへ送る
+        reactive.FaceUp = true;
+        FieldHelpers.RemoveSupportFromField(defenderField, reactive.InstanceID);
+        CardMoveHelpers.AddToTrash(state, defenderPlayerNum, reactive.CardID, reactive.InstanceID, reactive.ArtNo);
 
         return (result.CancelAction, allEvents);
     }
@@ -290,8 +293,24 @@ public static class AttackProcessor
         if (effects.Has(defender.CardID, TriggerType.OnHit))
         {
             var handler = effects.Get(defender.CardID, TriggerType.OnHit)!;
-            try
+            var result = handler(new EffectContext
             {
+                State = state,
+                Game = game,
+                PlayerNum = defenderPlayerNum,
+                Source = defender,
+                Target = defender,
+                CardCache = cc,
+            });
+            if (!result.GuardFailed) { allEvents.AddRange(result.Events); }
+        }
+
+        // Fire OnHit for the defender's attachments
+        foreach (var att in defender.Attachments)
+        {
+            if (effects.Has(att.CardID, TriggerType.OnHit))
+            {
+                var handler = effects.Get(att.CardID, TriggerType.OnHit)!;
                 var result = handler(new EffectContext
                 {
                     State = state,
@@ -301,31 +320,7 @@ public static class AttackProcessor
                     Target = defender,
                     CardCache = cc,
                 });
-                allEvents.AddRange(result.Events);
-            }
-            catch (GameRuleException) { }
-        }
-
-        // Fire OnHit for the defender's attachments
-        foreach (var att in defender.Attachments)
-        {
-            if (effects.Has(att.CardID, TriggerType.OnHit))
-            {
-                var handler = effects.Get(att.CardID, TriggerType.OnHit)!;
-                try
-                {
-                    var result = handler(new EffectContext
-                    {
-                        State = state,
-                        Game = game,
-                        PlayerNum = defenderPlayerNum,
-                        Source = defender,
-                        Target = defender,
-                        CardCache = cc,
-                    });
-                    allEvents.AddRange(result.Events);
-                }
-                catch (GameRuleException) { }
+                if (!result.GuardFailed) { allEvents.AddRange(result.Events); }
             }
         }
 

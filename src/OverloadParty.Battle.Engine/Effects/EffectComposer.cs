@@ -14,18 +14,8 @@ public static class EffectComposer
     /// <returns>An <see cref="EffectHandler"/> that executes the ops in sequence.</returns>
     public static EffectHandler Compose(params IEffectOp[] ops)
     {
-        // Capture a copy of the ops array
         var opsCopy = ops.ToArray();
-
-        return ctx =>
-        {
-            var octx = new OpContext(ctx);
-            foreach (var op in opsCopy)
-            {
-                op.Execute(octx);
-            }
-            return octx.Result;
-        };
+        return ctx => RunOps(opsCopy, ctx);
     }
 
     /// <summary>
@@ -35,16 +25,24 @@ public static class EffectComposer
     /// <returns>An <see cref="EffectHandler"/> that executes the ops in sequence.</returns>
     public static EffectHandler Compose(List<IEffectOp> ops)
     {
-        var opsCopy = ops.ToList();
+        var opsCopy = ops.ToArray();
+        return ctx => RunOps(opsCopy, ctx);
+    }
 
-        return ctx =>
+    private static EffectResult RunOps(IEffectOp[] ops, EffectContext ctx)
+    {
+        var octx = new OpContext(ctx);
+        try
         {
-            var octx = new OpContext(ctx);
-            foreach (var op in opsCopy)
+            foreach (var op in ops)
             {
                 op.Execute(octx);
             }
-            return octx.Result;
-        };
+        }
+        catch (GameRuleException)
+        {
+            octx.Result.GuardFailed = true;
+        }
+        return octx.Result;
     }
 }

@@ -71,19 +71,15 @@ public static class FieldChangeTrigger
             var handler = effects.Get(cardId, TriggerType.OnFieldChange);
             if (handler is null) { continue; }
 
-            try
+            handler(new EffectContext
             {
-                handler(new EffectContext
-                {
-                    State = state,
-                    Game = game,
-                    PlayerNum = playerNum,
-                    Source = source,
-                    SupSource = supSource,
-                    CardCache = cc,
-                });
-            }
-            catch (GameRuleException) { }
+                State = state,
+                Game = game,
+                PlayerNum = playerNum,
+                Source = source,
+                SupSource = supSource,
+                CardCache = cc,
+            });
         }
     }
 }

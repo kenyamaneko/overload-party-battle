@@ -170,12 +170,23 @@ public class PerCountAmount(long baseVal, ISelector countSelector, long perValue
     /// <inheritdoc />
     public long Resolve(OpContext ctx)
     {
-        int count = countSelector.Select(ctx).Count;
-        long bonus = (long)count * perValue;
+        var resources = countSelector.Select(ctx);
+        long count = resources.Sum(r => GetCountMultiplier(r));
+        long bonus = count * perValue;
         if (max is { } m)
         {
             bonus = Math.Min(bonus, m);
         }
         return baseVal + bonus;
+    }
+
+    private static long GetCountMultiplier(DeployedResource r)
+    {
+        var multiplier = r.TemporaryEffects
+            .Where(e => e.EffectType == "count_multiplier")
+            .Select(e => e.Value)
+            .DefaultIfEmpty(1)
+            .Max();
+        return multiplier;
     }
 }

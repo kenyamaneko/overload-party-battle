@@ -105,7 +105,7 @@ public static class AvailableActions
         {
             case Phase.Main:
                 actions.AddRange(EnumeratePlayCardActions(state, myField, hand, budget, cc, effects));
-                actions.AddRange(EnumerateScaleUpActions(state, myField, cc));
+                actions.AddRange(EnumerateScaleUpActions(myField, cc));
                 actions.AddRange(EnumerateMonetizeActions(state, myField, insightPool, cc));
                 actions.AddRange(EnumerateUseEffectActions(myField, oppField, budget, cc, effects));
                 actions.AddRange(EnumerateMigrateActions(myField, cc));
@@ -175,11 +175,20 @@ public static class AvailableActions
             if (TurnManager.IsFirstTurn(state.CurrentTurn)) { return null; }
         }
 
-        // Strategy/Incident は即時発動 — budget 条件を満たさなければ除外
-        if (FieldHelpers.IsImmediateType(card.CardType) && effects is not null)
+        // Strategy/Incident はサポートゾーンを使わず手札から直接発動
+        if (FieldHelpers.IsImmediateType(card.CardType))
         {
-            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
-            if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { return null; }
+            if (effects is not null)
+            {
+                var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
+                if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { return null; }
+            }
+            return new AvailableAction
+            {
+                Type = WireActionTypes.PlayCard,
+                HandInstanceID = handCard.InstanceID,
+                CardID = handCard.CardID,
+            };
         }
 
         return BuildSupportSlotAction(field, handCard);
@@ -266,31 +275,46 @@ public static class AvailableActions
 
     private static readonly InstanceFamily[] AllFamilies = [InstanceFamily.M, InstanceFamily.C, InstanceFamily.R];
 
-    private static IEnumerable<AvailableAction> EnumerateScaleUpActions(GameState state, Field field, ICardCache cc)
+    private static IEnumerable<AvailableAction> EnumerateScaleUpActions(Field field, ICardCache cc)
     {
         foreach (var resource in FieldHelpers.AllFaceUpResources(field))
         {
             var card = cc.Get(resource.CardID);
             if (card is null || !card.Resizable) { continue; }
 
-            if (resource.DeployedOnTurn == state.CurrentTurn
-                || resource.ScaleChangedThisTurn) { continue; }
-
             if (resource.Rank is not { } currentRank || currentRank == Rank.Large) { continue; }
 
-            var targetRank = currentRank + 1;
+            // Small → Medium, Small → Large, Medium → Large の全パターンを提示
+            Rank[] possibleRanks = currentRank == Rank.Small
+                ? [Rank.Medium, Rank.Large]
+                : [Rank.Large];
 
-            foreach (var family in AllFamilies)
+            foreach (var targetRank in possibleRanks)
             {
-                if (resource.Rank == Rank.Medium && resource.InstanceFamily != family) { continue; }
-
-                yield return new AvailableAction
+                // Family 選択は Small からの昇格時のみ
+                if (currentRank == Rank.Small)
                 {
-                    Type = WireActionTypes.ScaleUp,
-                    SourceInstanceID = resource.InstanceID,
-                    TargetRank = targetRank.ToWireString(),
-                    InstanceFamily = family.ToWireString(),
-                };
+                    foreach (var family in AllFamilies)
+                    {
+                        yield return new AvailableAction
+                        {
+                            Type = WireActionTypes.ScaleUp,
+                            SourceInstanceID = resource.InstanceID,
+                            TargetRank = targetRank.ToWireString(),
+                            InstanceFamily = family.ToWireString(),
+                        };
+                    }
+                }
+                else
+                {
+                    yield return new AvailableAction
+                    {
+                        Type = WireActionTypes.ScaleUp,
+                        SourceInstanceID = resource.InstanceID,
+                        TargetRank = targetRank.ToWireString(),
+                        InstanceFamily = resource.InstanceFamily!.Value.ToWireString(),
+                    };
+                }
             }
         }
     }

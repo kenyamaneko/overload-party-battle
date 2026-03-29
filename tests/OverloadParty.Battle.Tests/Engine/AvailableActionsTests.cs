@@ -158,7 +158,7 @@ public class AvailableActionsTests
     }
 
     [Fact]
-    public void PlayCard_StrategyGoesToSupportZone()
+    public void PlayCard_StrategyDoesNotRequireZone()
     {
         var cc = new TestCardCache();
         cc.Add(new CardDefinition { CardId = "SL-0004", CardName = "S", CardType = CardTypes.Strategy });
@@ -170,7 +170,7 @@ public class AvailableActionsTests
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
         var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
-        playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
+        playAction.ValidZones.Should().BeNullOrEmpty();
     }
 
     [Fact]
@@ -233,7 +233,7 @@ public class AvailableActionsTests
     }
 
     [Fact]
-    public void PlayCard_SupportExcludedWhenAllSupportSlotsOccupied()
+    public void PlayCard_StrategyAvailableEvenWhenAllSupportSlotsOccupied()
     {
         var cc = new TestCardCache();
         cc.Add(new CardDefinition { CardId = "SL-0004", CardName = "S", CardType = CardTypes.Strategy });
@@ -249,7 +249,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
+        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
     }
 
     [Fact]

@@ -12,6 +12,9 @@ public class EffectResult
 
     /// <summary>Whether the triggering action should be cancelled.</summary>
     public bool CancelAction { get; set; }
+
+    /// <summary>ガード条件が不満足で効果が発動しなかった場合 true。</summary>
+    public bool GuardFailed { get; set; }
 }
 
 /// <summary>

@@ -42,6 +42,7 @@ public class DeployedResource
     public string? MigrationTarget { get; set; }
     public long MigratingOnTurn { get; set; }
     public long ElasticBonus { get; set; }
+    public long LastAttackTurn { get; set; }
 
     /// <summary>
     /// Effective AV = MaxAV - Damage. Can go below zero.

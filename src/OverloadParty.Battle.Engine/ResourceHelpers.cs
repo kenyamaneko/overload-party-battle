@@ -149,10 +149,10 @@ public static class ResourceHelpers
     /// リソースのランクを変更し、MaxAV/MaxTP/MaxYield を再計算する。
     /// Elastic カードは TP/Yield を ElasticBonus から動的に算出するため MaxTP/MaxYield の再計算は不要。
     /// </summary>
-    public static void ChangeRank(DeployedResource resource, Rank targetRank, ICardCache cc)
+    public static void ChangeRank(DeployedResource resource, Rank targetRank, Field field, ICardCache cc)
     {
         resource.Rank = targetRank;
-        resource.MaxAV = StatCalculator.CalculateMaxAV(resource, cc);
+        resource.MaxAV = StatCalculator.CalculateMaxAV(resource, field, cc);
 
         var card = cc.MustGet(resource.CardID);
         if (!card.Elastic)

@@ -282,7 +282,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: rank, family: family);
 
-        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(expected);
+        StatCalculator.CalculateMaxAV(resource, TestFactory.MakeField(), cc).Should().Be(expected);
     }
 
     /// <summary>
@@ -296,7 +296,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: "SH-0001", family: InstanceFamily.R);
 
-        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(1820);
+        StatCalculator.CalculateMaxAV(resource, TestFactory.MakeField(), cc).Should().Be(1820);
     }
 
     /// <summary>
@@ -310,7 +310,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: "SH-0001", family: InstanceFamily.C);
 
-        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(979);
+        StatCalculator.CalculateMaxAV(resource, TestFactory.MakeField(), cc).Should().Be(979);
     }
 
     /// <summary>
@@ -324,7 +324,7 @@ public class StatCalculatorTests
 
         var resource = TestFactory.MakeResource(cardId: "SH-0001", family: InstanceFamily.C);
 
-        StatCalculator.CalculateMaxAV(resource, cc).Should().Be(944);
+        StatCalculator.CalculateMaxAV(resource, TestFactory.MakeField(), cc).Should().Be(944);
     }
 
     // ─── ApplyElasticBonus ────────────────────────────────────

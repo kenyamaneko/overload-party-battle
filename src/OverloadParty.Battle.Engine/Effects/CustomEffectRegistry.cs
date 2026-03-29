@@ -24,11 +24,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         ["spot_expiry"] = BuildSpotExpiry,
         ["reattach"] = _ => Reattach,
 
-        // Phase 7: passive customs (currently handled by StatCalculator's old passive system)
-        // ["tp_per_backend_data"] — StatCalculator.CalculateTPPerBackendData()
-
-        // ["scale_to_zero"] — needs attack history tracking (not yet available)
-
+        ["scale_to_zero"] = _ => ScaleToZero,
     };
 
     /// <inheritdoc />
@@ -327,6 +323,44 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         {
             InstanceID = attachmentId,
             CardID = cardId,
+        });
+    }
+
+    /// <summary>
+    /// Scale to Zero: if the source did not attack last turn and was not deployed this turn,
+    /// set its maintenance cost to 0 for this turn.
+    /// </summary>
+    public static void ScaleToZero(OpContext octx)
+    {
+        if (octx.Source is null)
+        {
+            return;
+        }
+
+        if (octx.Source.DeployedOnTurn == octx.State.CurrentTurn)
+        {
+            throw new GameRuleException("Cannot use on deploy turn");
+        }
+
+        if (octx.Source.LastAttackTurn >= octx.State.CurrentTurn - 1)
+        {
+            throw new GameRuleException("Source attacked last turn");
+        }
+
+        // Elastic カードの維持費を算出して同額の reduction を付与
+        var card = octx.CardCache.MustGet(octx.Source.CardID);
+        long intrinsic = card.IsComputeType ? card.BaseThroughput : card.BaseYield;
+        long scaledStat = intrinsic * BattleConstants.RankMultiplier(octx.Source.Rank) + octx.Source.ElasticBonus;
+        long maintenanceCost = Math.Max(0, scaledStat - card.FreeTier) * card.CostPerRequest / 100;
+
+        if (maintenanceCost <= 0) { return; }
+
+        octx.Source.TemporaryEffects.Add(new TemporaryEffect
+        {
+            EffectType = "maintenance_reduction",
+            Value = maintenanceCost,
+            Duration = "this_turn",
+            SourceID = "scale_to_zero",
         });
     }
 }

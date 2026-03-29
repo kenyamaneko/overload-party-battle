@@ -136,11 +136,16 @@ public class ResourceCountGuardOp(
             _ => field.Frontend.Concat(field.Backend),
         };
 
-        return candidates.Count(r =>
-            r.FaceUp
-            && MatchesFaction(r.CardID, cc)
-            && MatchesCardTypes(r.CardID, cc)
-            && MatchesCardIds(r.CardID));
+        return candidates
+            .Where(r => r.FaceUp
+                && MatchesFaction(r.CardID, cc)
+                && MatchesCardTypes(r.CardID, cc)
+                && MatchesCardIds(r.CardID))
+            .Sum(r => (int)r.TemporaryEffects
+                .Where(e => e.EffectType == "count_multiplier")
+                .Select(e => e.Value)
+                .DefaultIfEmpty(1)
+                .Max());
     }
 
     private bool MatchesFaction(string cardID, ICardCache cc)
