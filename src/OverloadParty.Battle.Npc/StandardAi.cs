@@ -400,6 +400,7 @@ public class StandardAi : INpcStrategy
         "SH-0006" => "use",       // SHE RDB - アデリース: 予約契約 — "use" saves budget long-term
         "SH-0010" => "redis",    // SHE Cache - メリーモ: Memcached (instant) vs Redis (permanent Yield)
         "SL-0012" => "redis",   // Sugar Lab Cache - メレンゲスト
+        "SL-0004" => "autopilot", // Sugar Orchestrator - クーヘンバウムティス: 自動操縦で早期展開
         _ => "",
     };
 }

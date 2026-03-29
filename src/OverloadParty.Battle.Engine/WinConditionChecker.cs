@@ -15,20 +15,32 @@ public static class WinConditionChecker
     /// <returns>Non-null if a win condition is met.</returns>
     public static GameOverResult? Check(GameState state, Game game)
     {
-        if (state.Player1Budget <= 0)
+        bool p1BudgetZero = state.Player1Budget <= 0;
+        bool p2BudgetZero = state.Player2Budget <= 0;
+        if (p1BudgetZero && p2BudgetZero)
+        {
+            return new GameOverResult(0, WinReason.Draw.ToWireString());
+        }
+        if (p1BudgetZero)
         {
             return new GameOverResult(2, WinReason.BudgetZero.ToWireString());
         }
-        if (state.Player2Budget <= 0)
+        if (p2BudgetZero)
         {
             return new GameOverResult(1, WinReason.BudgetZero.ToWireString());
         }
 
-        if (IsSystemDown(state, 1))
+        bool p1SystemDown = IsSystemDown(state, 1);
+        bool p2SystemDown = IsSystemDown(state, 2);
+        if (p1SystemDown && p2SystemDown)
+        {
+            return new GameOverResult(0, WinReason.Draw.ToWireString());
+        }
+        if (p1SystemDown)
         {
             return new GameOverResult(2, WinReason.SystemDown.ToWireString());
         }
-        if (IsSystemDown(state, 2))
+        if (p2SystemDown)
         {
             return new GameOverResult(1, WinReason.SystemDown.ToWireString());
         }
@@ -44,11 +56,17 @@ public static class WinConditionChecker
             return new GameOverResult(winnerNum, reason);
         }
 
-        if (state.Player1TimeBank <= 0)
+        bool p1Timeout = state.Player1TimeBank <= 0;
+        bool p2Timeout = state.Player2TimeBank <= 0;
+        if (p1Timeout && p2Timeout)
+        {
+            return new GameOverResult(0, WinReason.Draw.ToWireString());
+        }
+        if (p1Timeout)
         {
             return new GameOverResult(2, WinReason.Timeout.ToWireString());
         }
-        if (state.Player2TimeBank <= 0)
+        if (p2Timeout)
         {
             return new GameOverResult(1, WinReason.Timeout.ToWireString());
         }

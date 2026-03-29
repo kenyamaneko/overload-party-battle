@@ -21,8 +21,6 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         // Phase 2-3: new customs
         ["cloud_shift"] = BuildCloudShift,
         ["halve_incident_damage"] = _ => HalveIncidentDamage,
-        ["buff_on_attacked"] = BuildBuffOnAttacked,
-
         ["spot_expiry"] = BuildSpotExpiry,
         ["reattach"] = _ => Reattach,
 
@@ -259,49 +257,6 @@ public class CustomEffectRegistry : ICustomEffectRegistry
                 SourceID = "halve_incident",
             });
         }
-    }
-
-    /// <summary>
-    /// After being attacked, gain a TP buff until next own turn end.
-    /// meta: { buff, amount }
-    /// </summary>
-    private static Action<OpContext>? BuildBuffOnAttacked(Dictionary<string, JsonElement>? meta)
-    {
-        string buff = "buff_tp";
-        long amount = 300;
-
-        if (meta is not null)
-        {
-            if (meta.TryGetValue("buff", out var bEl))
-            {
-                buff = bEl.GetString() switch
-                {
-                    "tp" => EffectTypes.BuffTP,
-                    "yield" => EffectTypes.BuffYield,
-                    var s => s ?? buff,
-                };
-            }
-            if (meta.TryGetValue("amount", out var aEl))
-            {
-                amount = aEl.GetInt64();
-            }
-        }
-
-        return octx =>
-        {
-            if (octx.Target is null)
-            {
-                return;
-            }
-
-            octx.Target.TemporaryEffects.Add(new TemporaryEffect
-            {
-                EffectType = buff,
-                Value = amount,
-                Duration = "until_next_own_turn_end",
-                SourceID = "buff_on_attacked",
-            });
-        };
     }
 
     /// <summary>

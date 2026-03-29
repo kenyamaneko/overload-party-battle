@@ -50,6 +50,11 @@ public static class PlayCardProcessor
             return ProcessAttachCard(ctx, hand, handIdx, handCard, cardDef, req);
         }
 
+        if (FieldHelpers.IsImmediateType(cardDef.CardType))
+        {
+            return ProcessImmediateCard(ctx, hand, handIdx, handCard, cardDef, req);
+        }
+
         ValidatePlayPosition(cardDef, field, req);
 
         hand.RemoveAt(handIdx);
@@ -85,6 +90,59 @@ public static class PlayCardProcessor
         return new ActionResult { Events = events, StateUpdated = true };
     }
 
+    /// <summary>
+    /// Strategy/Incident: サポートゾーンを使わず、手札から直接発動してトラッシュへ送る。
+    /// </summary>
+    private static ActionResult ProcessImmediateCard(
+        PlayContext ctx,
+        List<UndeployedCard> hand, int handIdx, UndeployedCard handCard,
+        CardDefinition cardDef, PlayCardRequest req)
+    {
+        hand.RemoveAt(handIdx);
+
+        var instanceID = ctx.State.NextInstanceID();
+
+        if (cardDef.CardType == CardTypes.Incident)
+        {
+            ctx.State.SetIncidentPlayedThisTurn(ctx.PlayerNum, true);
+        }
+
+        var events = new List<GameEvent>();
+
+        if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Activate) == true)
+        {
+            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Activate)!;
+            var effectCtx = new EffectContext
+            {
+                State = ctx.State,
+                Game = ctx.Game,
+                PlayerNum = ctx.PlayerNum,
+                CardCache = ctx.CC,
+                ChoiceData = req.ChoiceData,
+            };
+            var effectResult = handler(effectCtx);
+            events.AddRange(effectResult.Events);
+        }
+
+        CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, instanceID, handCard.ArtNo);
+
+        var playerId = ctx.Game.GetPlayerID(ctx.PlayerNum);
+        events.Insert(0, new GameEvent
+        {
+            GameID = ctx.Game.GameID,
+            EventType = WireActionTypes.PlayCard,
+            PlayerID = playerId,
+            EventData = new PlayCardEventData
+            {
+                CardId = handCard.CardID,
+                Zone = "",
+                Index = -1,
+            }.ToDictionary(),
+        });
+
+        return new ActionResult { Events = events, StateUpdated = true };
+    }
+
     private static void PlaceSupport(
         PlayContext ctx, Field field,
         CardDefinition cardDef, UndeployedCard handCard, PlayCardRequest req,
@@ -102,9 +160,7 @@ public static class PlayCardProcessor
 
         field.Support[req.Index] = support;
 
-        // Non-immediate supports with deploy_turns=0: fire deploy trigger
-        if (!FieldHelpers.IsImmediateType(cardDef.CardType)
-            && support.DeployingTurnsLeft <= 0
+        if (support.DeployingTurnsLeft <= 0
             && ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
         {
             var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;
@@ -120,42 +176,7 @@ public static class PlayCardProcessor
             events.AddRange(effectResult.Events);
         }
 
-        if (!FieldHelpers.IsImmediateType(cardDef.CardType))
-        {
-            FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
-        }
-
-        // Immediate cards (Strategy, Incident): execute and remove
-        if (FieldHelpers.IsImmediateType(cardDef.CardType))
-        {
-            if (cardDef.CardType == CardTypes.Incident)
-            {
-                ctx.State.SetIncidentPlayedThisTurn(ctx.PlayerNum, true);
-            }
-
-            // Fire activate trigger
-            if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Activate) == true)
-            {
-                var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Activate)!;
-                var effectCtx = new EffectContext
-                {
-                    State = ctx.State,
-                    Game = ctx.Game,
-                    PlayerNum = ctx.PlayerNum,
-                    SupSource = support,
-                    CardCache = ctx.CC,
-                    ChoiceData = req.ChoiceData,
-                };
-                var effectResult = handler(effectCtx);
-                events.AddRange(effectResult.Events);
-            }
-
-            // Remove from support zone after execution
-            field.Support[req.Index] = null;
-
-            // Move to trash
-            CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, support.InstanceID, support.ArtNo);
-        }
+        FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
     }
 
     private static bool PlaceResource(

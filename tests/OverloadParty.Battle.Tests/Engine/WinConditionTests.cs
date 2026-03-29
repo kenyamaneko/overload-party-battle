@@ -42,17 +42,46 @@ public class WinConditionTests
     }
 
     [Fact]
-    public void Check_BothBudgetZero_Player1LosesFirst()
+    public void Check_BothBudgetZero_Draw()
     {
-        // Player1 is checked first, so player1 loses (player2 wins)
         var state = TestFactory.MakeGameState(p1Budget: 0, p2Budget: 0);
         var game = TestFactory.MakeGame();
 
         var result = WinConditionChecker.Check(state, game);
 
         result.Should().NotBeNull();
-        result!.WinnerNum.Should().Be(2);
-        result.Reason.Should().Be("budget_zero");
+        result!.WinnerNum.Should().Be(0);
+        result.Reason.Should().Be("draw");
+    }
+
+    [Fact]
+    public void Check_BothSystemDown_Draw()
+    {
+        var state = TestFactory.MakeGameState();
+        state.Player1HasHadActiveResource = true;
+        state.Player2HasHadActiveResource = true;
+        var game = TestFactory.MakeGame();
+
+        var result = WinConditionChecker.Check(state, game);
+
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(0);
+        result.Reason.Should().Be("draw");
+    }
+
+    [Fact]
+    public void Check_BothTimeout_Draw()
+    {
+        var state = TestFactory.MakeGameState();
+        state.Player1TimeBank = 0;
+        state.Player2TimeBank = 0;
+        var game = TestFactory.MakeGame();
+
+        var result = WinConditionChecker.Check(state, game);
+
+        result.Should().NotBeNull();
+        result!.WinnerNum.Should().Be(0);
+        result.Reason.Should().Be("draw");
     }
 
     // ─── System Down ──────────────────────────────────────────
