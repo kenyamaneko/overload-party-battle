@@ -531,9 +531,10 @@ public static class EffectYamlLoader
     {
         var selectorEl = el.GetProperty("selector");
         int min = el.TryGetProperty("min", out var minEl) ? minEl.GetInt32() : 1;
+        int? max = el.TryGetProperty("max", out var maxEl) ? maxEl.GetInt32() : null;
 
         // Try to map to existing RequireFactionCountOp for NPC classifier compatibility
-        if (!negate && selectorEl.ValueKind == JsonValueKind.Object)
+        if (!negate && max is null && selectorEl.ValueKind == JsonValueKind.Object)
         {
             string? owner = selectorEl.TryGetProperty("owner", out var ow) ? ow.GetString() : null;
             string? faction = selectorEl.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
@@ -548,10 +549,10 @@ public static class EffectYamlLoader
         }
 
         // General-purpose count guard
-        return BuildResourceCountGuard(selectorEl, min, negate);
+        return BuildResourceCountGuard(selectorEl, min, max, negate);
     }
 
-    private static IEffectOp BuildResourceCountGuard(JsonElement selectorEl, int min, bool negate)
+    private static IEffectOp BuildResourceCountGuard(JsonElement selectorEl, int min, int? max, bool negate)
     {
         string? owner = null;
         string? zone = null;
@@ -569,7 +570,7 @@ public static class EffectYamlLoader
         }
 
         return new ResourceCountGuardOp(
-            owner ?? "self", zone, faction, cardTypes, cardIds, min, negate);
+            owner ?? "self", zone, faction, cardTypes, cardIds, min, max, negate);
     }
 
     private static IEffectOp BuildMatchGuard(JsonElement el, bool negate)

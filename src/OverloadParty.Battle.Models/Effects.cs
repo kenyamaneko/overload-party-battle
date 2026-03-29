@@ -9,7 +9,6 @@ public static class PassiveEffectTypes
     public const string YieldPerOtherDB = "dv_per_other_db";
     public const string YieldIfCardOnField = "dv_if_card_on_field";
     public const string AVBonus = "av_bonus";
-    public const string ScaleCostFree = "scale_cost_free";
 }
 
 public static class PlatformEffectTypes

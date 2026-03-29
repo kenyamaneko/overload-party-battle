@@ -28,7 +28,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
 
         // Phase 7: passive customs (currently handled by StatCalculator's old passive system)
         // ["tp_per_backend_data"] — StatCalculator.CalculateTPPerBackendData()
-        // ["free_first_scale"] — StatCalculator passive_effects scale_cost_free
+
         // ["scale_to_zero"] — needs attack history tracking (not yet available)
 
     };

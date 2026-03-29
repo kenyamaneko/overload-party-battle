@@ -87,16 +87,17 @@ public class ResourceCountGuardOp(
     List<string>? cardTypes,
     List<string>? cardIds,
     int min,
+    int? max,
     bool negate) : IEffectOp
 {
     public void Execute(OpContext ctx)
     {
         int count = CountResources(ctx);
-        bool satisfied = count >= min;
+        bool satisfied = count >= min && (max is null || count <= max);
         if (negate) satisfied = !satisfied;
         if (!satisfied)
         {
-            throw new GameRuleException($"Resource count guard failed: count={count}, min={min}, negate={negate}");
+            throw new GameRuleException($"Resource count guard failed: count={count}, min={min}, max={max}, negate={negate}");
         }
     }
 
