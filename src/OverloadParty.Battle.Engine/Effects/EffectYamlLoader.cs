@@ -286,6 +286,9 @@ public static class EffectYamlLoader
 
             "peek_reactive" => new PeekReactiveOp(),
 
+            "reduce_deploy_turns" => new ReduceDeployTurnsOp(
+                BuildAmount(p.GetProperty("amount"))),
+
             "absorb_insight" => new AbsorbInsightOp(
                 BuildAmount(p.GetProperty("amount"))),
 

@@ -108,14 +108,23 @@ public static class EndPhaseProcessor
 
     static long CalculateMaintenanceCost(DeployedResource resource, CardDefinition card)
     {
+        long baseCost;
         if (card.Elastic)
         {
             long intrinsic = card.IsComputeType ? card.BaseThroughput : card.BaseYield;
             long scaledStat = intrinsic * BattleConstants.RankMultiplier(resource.Rank) + resource.ElasticBonus;
-            return Math.Max(0, scaledStat - card.FreeTier) * card.CostPerRequest / 100;
+            baseCost = Math.Max(0, scaledStat - card.FreeTier) * card.CostPerRequest / 100;
+        }
+        else
+        {
+            baseCost = card.MaintenanceCost * BattleConstants.RankMultiplier(resource.Rank);
         }
 
-        return card.MaintenanceCost * BattleConstants.RankMultiplier(resource.Rank);
+        long reduction = resource.TemporaryEffects
+            .Where(e => e.EffectType == "maintenance_reduction")
+            .Sum(e => e.Value);
+
+        return Math.Max(0, baseCost - reduction);
     }
 
     static void CollectMaintenanceCost(GameState state, long playerNum, Field field, ICardCache cc)

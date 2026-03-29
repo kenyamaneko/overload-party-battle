@@ -30,7 +30,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         // ["tp_per_backend_data"] — StatCalculator.CalculateTPPerBackendData()
         // ["free_first_scale"] — StatCalculator passive_effects scale_cost_free
         // ["scale_to_zero"] — needs attack history tracking (not yet available)
-        // ["fleet_deploy"] — needs deploy rule hook (not yet available)
+
     };
 
     /// <inheritdoc />

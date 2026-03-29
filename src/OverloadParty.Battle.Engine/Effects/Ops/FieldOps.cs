@@ -112,3 +112,18 @@ public class DestroyPlatformOp : IEffectOp
         FieldHelpers.DestroySupport(ctx.State, ctx.OpponentNum, oppField, target.InstanceID);
     }
 }
+
+/// <summary>
+/// Reduces the source resource's remaining deploy turns.
+/// </summary>
+public class ReduceDeployTurnsOp(IAmountResolver value) : IEffectOp
+{
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (ctx.Source is null) { return; }
+
+        long amount = value.Resolve(ctx);
+        ctx.Source.DeployingTurnsLeft = Math.Max(0, ctx.Source.DeployingTurnsLeft - amount);
+    }
+}
