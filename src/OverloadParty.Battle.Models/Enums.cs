@@ -98,5 +98,7 @@ public enum TriggerType
     OnHit,
     OnDestroy,
     Reactive,
-    OnEnemyDeploy
+    OnEnemyDeploy,
+    OnEndPhase,
+    OnFieldChange
 }

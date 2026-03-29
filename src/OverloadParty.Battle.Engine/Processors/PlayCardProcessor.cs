@@ -102,6 +102,29 @@ public static class PlayCardProcessor
 
         field.Support[req.Index] = support;
 
+        // Non-immediate supports with deploy_turns=0: fire deploy trigger
+        if (!FieldHelpers.IsImmediateType(cardDef.CardType)
+            && support.DeployingTurnsLeft <= 0
+            && ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
+        {
+            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;
+            var effectCtx = new EffectContext
+            {
+                State = ctx.State,
+                Game = ctx.Game,
+                PlayerNum = ctx.PlayerNum,
+                SupSource = support,
+                CardCache = ctx.CC,
+            };
+            var effectResult = handler(effectCtx);
+            events.AddRange(effectResult.Events);
+        }
+
+        if (!FieldHelpers.IsImmediateType(cardDef.CardType))
+        {
+            FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
+        }
+
         // Immediate cards (Strategy, Incident): execute and remove
         if (FieldHelpers.IsImmediateType(cardDef.CardType))
         {
@@ -186,6 +209,8 @@ public static class PlayCardProcessor
             events.AddRange(effectResult.Events);
         }
 
+        FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
+
         return false;
     }
 
@@ -236,6 +261,8 @@ public static class PlayCardProcessor
             var effectResult = handler(effectCtx);
             events.AddRange(effectResult.Events);
         }
+
+        FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
 
         var playerId = ctx.Game.GetPlayerID(ctx.PlayerNum);
         events.Insert(0, new GameEvent

@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
@@ -18,7 +19,7 @@ public static class DiscardProcessor
     /// <returns>The action result containing discard events and possible game-over result.</returns>
     public static ActionResult Process(
         GameState state, Game game, long playerNum,
-        DiscardHandRequest req, ICardCache cc)
+        DiscardHandRequest req, ICardCache cc, IEffectRegistry? effects = null)
     {
         var hand = state.GetHand(playerNum);
         int requiredDiscards = hand.Count - GameConstants.HandLimit;
@@ -61,7 +62,7 @@ public static class DiscardProcessor
         }
 
         TurnManager.SwitchActivePlayer(state);
-        var gameOverResult = DrawPhaseProcessor.Process(state, game, cc);
+        var gameOverResult = DrawPhaseProcessor.Process(state, game, cc, effects);
 
         if (gameOverResult is not null)
         {

@@ -1,5 +1,6 @@
 using System.Linq;
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
@@ -15,11 +16,11 @@ public static class DrawPhaseProcessor
     /// <param name="game">The game metadata.</param>
     /// <param name="cc">The card definition cache.</param>
     /// <returns>A game-over result if a win condition is met; otherwise <c>null</c>.</returns>
-    public static GameOverResult? Process(GameState state, Game game, ICardCache cc)
+    public static GameOverResult? Process(GameState state, Game game, ICardCache cc, IEffectRegistry? effects = null)
     {
         if (state.CurrentPhase != Phase.Draw) { return null; }
 
-        ProcessDeployCountdown(state);
+        ProcessDeployCountdown(state, game, cc, effects);
         ProcessMigrationCompletion(state);
 
         if (!CanDraw(state))
@@ -39,7 +40,7 @@ public static class DrawPhaseProcessor
     static bool CanDraw(GameState state) =>
         state.GetRepository(state.ActivePlayer).Count > 0;
 
-    static void ProcessDeployCountdown(GameState state)
+    static void ProcessDeployCountdown(GameState state, Game game, ICardCache cc, IEffectRegistry? effects)
     {
         var playerNum = state.ActivePlayer;
         var field = state.GetField(playerNum);
@@ -62,6 +63,23 @@ public static class DrawPhaseProcessor
             if (support.DeployingTurnsLeft > 0)
             {
                 support.DeployingTurnsLeft--;
+                if (support.DeployingTurnsLeft <= 0
+                    && effects?.Has(support.CardID, TriggerType.Deploy) == true)
+                {
+                    var handler = effects.Get(support.CardID, TriggerType.Deploy)!;
+                    try
+                    {
+                        handler(new EffectContext
+                        {
+                            State = state,
+                            Game = game,
+                            PlayerNum = playerNum,
+                            SupSource = support,
+                            CardCache = cc,
+                        });
+                    }
+                    catch (GameRuleException) { }
+                }
             }
         }
     }

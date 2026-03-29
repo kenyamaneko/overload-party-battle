@@ -163,6 +163,7 @@ public static class FieldHelpers
             return false;
         }
 
+        RemoveWhileOnFieldBuffs(field, support.InstanceID);
         CardMoveHelpers.AddToTrash(state, ownerNum, support.CardID, support.InstanceID, support.ArtNo);
         field.Support.Remove(s => s.InstanceID == instanceID);
         return true;

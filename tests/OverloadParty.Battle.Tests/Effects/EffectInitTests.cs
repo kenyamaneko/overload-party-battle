@@ -83,7 +83,7 @@ public class EffectRegistrationTests
     [InlineData("SL-0007", TriggerType.OnDestroy)]
     [InlineData("SL-0010", TriggerType.Deploy)]
     [InlineData("SL-0011", TriggerType.OnAttack)]
-    [InlineData("SL-0016", TriggerType.Passive)]
+    [InlineData("SL-0016", TriggerType.OnEndPhase)]
     [InlineData("SL-0018", TriggerType.OnAttack)]
     [InlineData("SL-0021", TriggerType.Activate)]
     [InlineData("SL-0022", TriggerType.Activate)]
@@ -303,10 +303,10 @@ public class EffectRegistrationTests
     }
 
     [Fact]
-    public void CardIdsForTrigger_Passive_ContainsCard61()
+    public void CardIdsForTrigger_OnEndPhase_ContainsCard61()
     {
-        var passiveCards = _registry.CardIdsForTrigger(TriggerType.Passive);
-        passiveCards.Should().Contain("SL-0016");
+        var endPhaseCards = _registry.CardIdsForTrigger(TriggerType.OnEndPhase);
+        endPhaseCards.Should().Contain("SL-0016");
     }
 
     // ─── Helper methods ──────────────────────────────────────────

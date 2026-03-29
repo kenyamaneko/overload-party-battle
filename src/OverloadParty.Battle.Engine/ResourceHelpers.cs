@@ -127,6 +127,13 @@ public static class ResourceHelpers
         // マイグレーションリンクをクリア
         FieldHelpers.ClearMigrationOnSourceDestroyed(field, resource);
 
+        // while_on_field バフを除去（リソース本体 + アタッチメント）
+        FieldHelpers.RemoveWhileOnFieldBuffs(field, resource.InstanceID);
+        foreach (var att in resource.Attachments)
+        {
+            FieldHelpers.RemoveWhileOnFieldBuffs(field, att.InstanceID);
+        }
+
         // ホスト＋アタッチメントをトラッシュに移動
         CardMoveHelpers.AddToTrash(state, ownerNum, resource.CardID, resource.InstanceID, resource.ArtNo);
         foreach (var att in resource.Attachments)

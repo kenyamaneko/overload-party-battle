@@ -104,6 +104,7 @@ public static class AttackProcessor
             events.AddRange(destroyEvents);
 
             ResourceHelpers.DestroyResource(state, opponentNum, oppField, defender, cc);
+            FieldChangeTrigger.Fire(state, game, cc, effects);
         }
         else
         {

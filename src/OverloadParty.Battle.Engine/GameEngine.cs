@@ -73,7 +73,7 @@ public class GameEngine
 
         await _repo.UpdateGameState(gameID, state =>
         {
-            gameOverResult = DrawPhaseProcessor.Process(state, game, _cardCache);
+            gameOverResult = DrawPhaseProcessor.Process(state, game, _cardCache, _effects);
 
             return Task.CompletedTask;
         }, ct: ct);
@@ -161,7 +161,7 @@ public class GameEngine
                 ActionType.EndPhase => EndPhaseProcessor.Process(
                     state, game, playerNum, _cardCache, _effects),
                 ActionType.DiscardHand => DiscardProcessor.Process(
-                    state, game, playerNum, (DiscardHandRequest)actionData, _cardCache),
+                    state, game, playerNum, (DiscardHandRequest)actionData, _cardCache, _effects),
                 ActionType.UseEffect => UseEffectProcessor.Process(
                     state, game, playerNum, (UseEffectRequest)actionData, _cardCache, _effects),
                 ActionType.Migrate => MigrateProcessor.Process(

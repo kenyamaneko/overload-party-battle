@@ -77,7 +77,7 @@ public static class EndPhaseProcessor
         }
 
         TurnManager.SwitchActivePlayer(state);
-        var gameOverResult = DrawPhaseProcessor.Process(state, game, cc);
+        var gameOverResult = DrawPhaseProcessor.Process(state, game, cc, effects);
 
         events.Add(MakeTurnEndEvent(game.GameID, playerId, state));
         events.Add(MakeTurnStartEvent(game.GameID, state));
@@ -188,45 +188,67 @@ public static class EndPhaseProcessor
     {
         if (effects is null) { return; }
 
+        // リソース＋アタッチメント＋サポートを DeployOrder 昇順で収集
+        var triggers = new List<(string CardId, long DeployOrder, DeployedResource? Source, DeployedSupport? SupSource)>();
+
         foreach (var resource in FieldHelpers.AllFaceUpResources(field))
         {
-            if (effects.Has(resource.CardID, TriggerType.Passive))
+            if (HasEndPhaseHandler(effects, resource.CardID))
             {
-                var handler = effects.Get(resource.CardID, TriggerType.Passive)!;
-                try
-                {
-                    handler(new EffectContext
-                    {
-                        State = state,
-                        Game = game,
-                        PlayerNum = playerNum,
-                        Source = resource,
-                        CardCache = cc,
-                    });
-                }
-                catch (GameRuleException) { }
+                triggers.Add((resource.CardID, resource.DeployOrder, resource, null));
             }
 
             foreach (var att in resource.Attachments)
             {
-                if (effects.Has(att.CardID, TriggerType.Passive))
+                if (HasEndPhaseHandler(effects, att.CardID))
                 {
-                    var handler = effects.Get(att.CardID, TriggerType.Passive)!;
-                    try
-                    {
-                        handler(new EffectContext
-                        {
-                            State = state,
-                            Game = game,
-                            PlayerNum = playerNum,
-                            Source = resource,
-                            CardCache = cc,
-                        });
-                    }
-                    catch (GameRuleException) { }
+                    triggers.Add((att.CardID, resource.DeployOrder, resource, null));
                 }
             }
         }
+
+        foreach (var support in FieldHelpers.AllSupports(field))
+        {
+            if (!support.FaceUp || support.DeployingTurnsLeft > 0) { continue; }
+            if (HasEndPhaseHandler(effects, support.CardID))
+            {
+                triggers.Add((support.CardID, support.DeployOrder, null, support));
+            }
+        }
+
+        triggers.Sort((a, b) => a.DeployOrder.CompareTo(b.DeployOrder));
+
+        foreach (var (cardId, _, source, supSource) in triggers)
+        {
+            var handler = GetEndPhaseHandler(effects, cardId);
+            if (handler is null) { continue; }
+
+            try
+            {
+                handler(new EffectContext
+                {
+                    State = state,
+                    Game = game,
+                    PlayerNum = playerNum,
+                    Source = source,
+                    SupSource = supSource,
+                    CardCache = cc,
+                });
+            }
+            catch (GameRuleException) { }
+        }
+    }
+
+    private static bool HasEndPhaseHandler(IEffectRegistry effects, string cardId)
+    {
+        return effects.Has(cardId, TriggerType.Passive)
+            || effects.Has(cardId, TriggerType.OnEndPhase);
+    }
+
+    private static EffectHandler? GetEndPhaseHandler(IEffectRegistry effects, string cardId)
+    {
+        return effects.Get(cardId, TriggerType.OnEndPhase)
+            ?? effects.Get(cardId, TriggerType.Passive);
     }
 
     private static GameEvent MakeTurnEndEvent(string gameID, string playerId, GameState state)
