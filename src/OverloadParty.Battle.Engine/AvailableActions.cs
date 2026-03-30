@@ -76,7 +76,7 @@ public static class AvailableActions
         {
             CanEndPhase = state.CurrentPhase is Phase.Main or Phase.Battle,
             DiscardRequired = state.CurrentPhase == Phase.End
-                ? Math.Max(0, hand.Count - GameConstants.HandLimit)
+                ? Math.Max(0, hand.Count - BattleConstants.HandLimit)
                 : 0,
         };
     }
@@ -153,7 +153,7 @@ public static class AvailableActions
         if (card.CardType == CardTypes.Attachment)
         {
             var targets = FieldHelpers.AllFaceUpResources(field)
-                .Where(r => r.Attachments.Count < GameConstants.MaxAttachments)
+                .Where(r => r.Attachments.Count < BattleConstants.MaxAttachments)
                 .Select(r => r.InstanceID)
                 .ToList();
 

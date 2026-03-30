@@ -31,8 +31,8 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        state.Player1Budget.Should().Be(GameConstants.InitialBudget);
-        state.Player2Budget.Should().Be(GameConstants.InitialBudget);
+        state.Player1Budget.Should().Be(BattleConstants.InitialBudget);
+        state.Player2Budget.Should().Be(BattleConstants.InitialBudget);
         state.Player1Budget.Should().Be(5000);
     }
 
@@ -59,7 +59,7 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        state.Player1Hand.Should().HaveCount(GameConstants.InitialHandSize);
+        state.Player1Hand.Should().HaveCount(BattleConstants.InitialHandSize);
         state.Player1Hand.Should().HaveCount(5);
         state.Player2Hand.Should().HaveCount(5);
     }
@@ -195,8 +195,8 @@ public class GameInitializerTests
 
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
-        state.Player1TimeBank.Should().Be(GameConstants.InitialTimeBank);
-        state.Player2TimeBank.Should().Be(GameConstants.InitialTimeBank);
+        state.Player1TimeBank.Should().Be(BattleConstants.InitialTimeBank);
+        state.Player2TimeBank.Should().Be(BattleConstants.InitialTimeBank);
         state.Player1TimeBank.Should().Be(480);
     }
 

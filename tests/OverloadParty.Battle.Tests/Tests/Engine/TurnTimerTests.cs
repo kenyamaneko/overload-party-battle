@@ -128,8 +128,8 @@ public class TurnTimerTests
         var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
 
         state.TurnStartedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        state.Player1TimeBank.Should().Be(GameConstants.InitialTimeBank);
-        state.Player2TimeBank.Should().Be(GameConstants.InitialTimeBank);
+        state.Player1TimeBank.Should().Be(BattleConstants.InitialTimeBank);
+        state.Player2TimeBank.Should().Be(BattleConstants.InitialTimeBank);
     }
 
     // ─── Integration: ProcessAction with timeout ─────────────

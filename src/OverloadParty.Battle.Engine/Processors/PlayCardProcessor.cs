@@ -248,9 +248,9 @@ public static class PlayCardProcessor
         var field = ctx.State.GetField(ctx.PlayerNum);
         var target = FieldHelpers.FindResourceByID(field, req.TargetInstanceID)
             ?? throw new GameRuleException($"target resource {req.TargetInstanceID} not found");
-        if (target.Attachments.Count >= GameConstants.MaxAttachments)
+        if (target.Attachments.Count >= BattleConstants.MaxAttachments)
         {
-            throw new GameRuleException($"target already has max attachments ({GameConstants.MaxAttachments})");
+            throw new GameRuleException($"target already has max attachments ({BattleConstants.MaxAttachments})");
         }
 
         var attachInstanceID = ctx.State.NextInstanceID();
@@ -303,7 +303,7 @@ public static class PlayCardProcessor
 
     private static void ValidatePlayPosition(CardDefinition cardDef, Field field, PlayCardRequest req)
     {
-        if (req.Index < 0 || req.Index >= GameConstants.SlotsPerZone)
+        if (req.Index < 0 || req.Index >= BattleConstants.SlotsPerZone)
         {
             throw new GameRuleException($"invalid slot index {req.Index}");
         }

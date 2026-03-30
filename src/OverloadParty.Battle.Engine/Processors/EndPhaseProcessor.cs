@@ -103,7 +103,7 @@ public static class EndPhaseProcessor
         ExpireTemporaryEffects(field);
         ResetPerTurnFlags(state, playerNum, field);
 
-        return state.GetHand(playerNum).Count > GameConstants.HandLimit;
+        return state.GetHand(playerNum).Count > BattleConstants.HandLimit;
     }
 
     static long CalculateMaintenanceCost(DeployedResource resource, CardDefinition card)

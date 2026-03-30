@@ -53,7 +53,7 @@ public static class SelectSlotProcessor
 
     private static void ValidateAndPlace(Field field, DeployedResource resource, string zone, int index)
     {
-        if (index < 0 || index >= GameConstants.SlotsPerZone)
+        if (index < 0 || index >= BattleConstants.SlotsPerZone)
         {
             throw new GameRuleException($"Invalid slot index {index}");
         }

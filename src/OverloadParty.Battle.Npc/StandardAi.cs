@@ -66,7 +66,7 @@ public class StandardAi : INpcStrategy
     public virtual List<string> DecideDiscard(GameState state, long npcPlayerNum)
     {
         var hand = state.GetHand(npcPlayerNum);
-        var discardCount = hand.Count - GameConstants.HandLimit;
+        var discardCount = hand.Count - BattleConstants.HandLimit;
         if (discardCount <= 0)
         {
             return [];

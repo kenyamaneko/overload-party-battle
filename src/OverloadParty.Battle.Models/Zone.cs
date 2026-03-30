@@ -13,7 +13,7 @@ public class Zone<T> : IEnumerable<T> where T : class
 
     public int Capacity { get; }
 
-    public Zone(int capacity = GameConstants.SlotsPerZone)
+    public Zone(int capacity = BattleConstants.SlotsPerZone)
     {
         Capacity = capacity;
         _slots = new T?[capacity];

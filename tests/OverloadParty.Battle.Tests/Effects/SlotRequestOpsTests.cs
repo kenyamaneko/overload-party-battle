@@ -124,7 +124,7 @@ public class SlotRequestOpsTests
         var state = TestFactory.MakeGameState();
         state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = "TST-DB01" }];
         // Fill all backend slots
-        for (int i = 0; i < GameConstants.SlotsPerZone; i++)
+        for (int i = 0; i < BattleConstants.SlotsPerZone; i++)
         {
             state.Player1Field.Backend[i] = TestFactory.MakeResource(instanceId: $"occ_{i}");
         }

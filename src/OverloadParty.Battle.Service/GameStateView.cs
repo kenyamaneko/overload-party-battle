@@ -58,9 +58,9 @@ public class OpponentView
 /// </summary>
 public class OpponentField
 {
-    public DeployedResource?[] Frontend { get; init; } = new DeployedResource?[GameConstants.SlotsPerZone];
-    public DeployedResource?[] Backend { get; init; } = new DeployedResource?[GameConstants.SlotsPerZone];
-    public HiddenDeployedSupport?[] Support { get; init; } = new HiddenDeployedSupport?[GameConstants.SlotsPerZone];
+    public DeployedResource?[] Frontend { get; init; } = new DeployedResource?[BattleConstants.SlotsPerZone];
+    public DeployedResource?[] Backend { get; init; } = new DeployedResource?[BattleConstants.SlotsPerZone];
+    public HiddenDeployedSupport?[] Support { get; init; } = new HiddenDeployedSupport?[BattleConstants.SlotsPerZone];
 }
 
 /// <summary>

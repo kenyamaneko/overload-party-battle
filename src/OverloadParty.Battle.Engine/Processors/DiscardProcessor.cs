@@ -22,7 +22,7 @@ public static class DiscardProcessor
         DiscardHandRequest req, ICardCache cc, IEffectRegistry? effects = null)
     {
         var hand = state.GetHand(playerNum);
-        int requiredDiscards = hand.Count - GameConstants.HandLimit;
+        int requiredDiscards = hand.Count - BattleConstants.HandLimit;
 
         if (requiredDiscards <= 0)
         {

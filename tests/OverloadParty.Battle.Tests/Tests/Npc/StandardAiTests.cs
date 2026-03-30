@@ -251,7 +251,7 @@ public class StandardAiTests
     {
         var state = TestFactory.MakeGameState();
         // HandLimit is 6, add fewer cards
-        foreach (var i in Enumerable.Range(0, GameConstants.HandLimit))
+        foreach (var i in Enumerable.Range(0, BattleConstants.HandLimit))
         {
             state.Player1Hand.Add(new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
         }
@@ -267,7 +267,7 @@ public class StandardAiTests
     {
         var state = TestFactory.MakeGameState();
         var excess = 2;
-        foreach (var i in Enumerable.Range(0, GameConstants.HandLimit + excess))
+        foreach (var i in Enumerable.Range(0, BattleConstants.HandLimit + excess))
         {
             state.Player1Hand.Add(new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
         }

@@ -1,10 +1,19 @@
 namespace OverloadParty.Battle.Models;
 
 // Battle-specific constants not in shared constants.json.
-// Generated constants (InitialBudget, Factions, Zones, etc.) are in OverloadParty.Generated.GameConstants.
+// Generated constants (DeckSize, Factions, Zones, etc.) are in OverloadParty.GameData.GameConstants.
 public static class BattleConstants
 {
-    // Game limits (not in shared constants.json)
+    // Game setup
+    public const int InitialBudget = 5000;
+    public const int InitialInsightPool = 0;
+    public const int InitialHandSize = 5;
+    public const int HandLimit = 6;
+    public const int InitialTimeBank = 480;
+    public const int MaxAttachments = 2;
+    public const int SlotsPerZone = 3;
+
+    // Game limits
     public const int MaxTurns = 30;
     public const int MaxChainLevel = 3;
     public const int LaunchFailureTurn = 3;

@@ -66,8 +66,8 @@ public class GameServiceTests
         var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
 
         var state = await _repo.GetGameState(game.GameID);
-        state!.Player1Budget.Should().Be(GameConstants.InitialBudget);
-        state.Player2Budget.Should().Be(GameConstants.InitialBudget);
+        state!.Player1Budget.Should().Be(BattleConstants.InitialBudget);
+        state.Player2Budget.Should().Be(BattleConstants.InitialBudget);
     }
 
     // ─── StartNPCBattle ─────────────────────────────────────

@@ -46,15 +46,15 @@ public class GameEngineTests
         state!.CurrentTurn.Should().Be(1);
         state.CurrentPhase.Should().Be(Phase.Draw);
         state.ActivePlayer.Should().Be(1);
-        state.Player1Budget.Should().Be(GameConstants.InitialBudget);
-        state.Player2Budget.Should().Be(GameConstants.InitialBudget);
+        state.Player1Budget.Should().Be(BattleConstants.InitialBudget);
+        state.Player2Budget.Should().Be(BattleConstants.InitialBudget);
 
         // Each player should have initial hand cards
-        state.Player1Hand.Should().HaveCount(GameConstants.InitialHandSize);
-        state.Player2Hand.Should().HaveCount(GameConstants.InitialHandSize);
+        state.Player1Hand.Should().HaveCount(BattleConstants.InitialHandSize);
+        state.Player2Hand.Should().HaveCount(BattleConstants.InitialHandSize);
 
         // Repository should have remaining cards
-        state.Player1Repository.Should().HaveCount(GameConstants.DeckSize - GameConstants.InitialHandSize);
+        state.Player1Repository.Should().HaveCount(GameConstants.DeckSize - BattleConstants.InitialHandSize);
 
         // All hand cards should reference the correct card
         state.Player1Hand.Should().AllSatisfy(h => h.CardID.Should().Be("SH-0001"));

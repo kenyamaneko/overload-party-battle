@@ -39,12 +39,12 @@ public static class GameInitializer
             CurrentTurn = 1,
             CurrentPhase = Phase.Draw,
             ActivePlayer = firstPlayer,
-            Player1Budget = GameConstants.InitialBudget,
-            Player1InsightPool = GameConstants.InitialInsightPool,
-            Player1TimeBank = GameConstants.InitialTimeBank,
-            Player2Budget = GameConstants.InitialBudget,
-            Player2InsightPool = GameConstants.InitialInsightPool,
-            Player2TimeBank = GameConstants.InitialTimeBank,
+            Player1Budget = BattleConstants.InitialBudget,
+            Player1InsightPool = BattleConstants.InitialInsightPool,
+            Player1TimeBank = BattleConstants.InitialTimeBank,
+            Player2Budget = BattleConstants.InitialBudget,
+            Player2InsightPool = BattleConstants.InitialInsightPool,
+            Player2TimeBank = BattleConstants.InitialTimeBank,
             TurnStartedAt = DateTime.UtcNow,
             NextInstanceSeq = 1,
             UpdatedAt = DateTime.UtcNow,
@@ -71,7 +71,7 @@ public static class GameInitializer
 
         // Deal initial hand
         var hand = new List<UndeployedCard>();
-        int handSize = Math.Min(GameConstants.InitialHandSize, shuffled.Count);
+        int handSize = Math.Min(BattleConstants.InitialHandSize, shuffled.Count);
         for (int i = 0; i < handSize; i++)
         {
             hand.Add(new UndeployedCard
