@@ -213,20 +213,8 @@ public static class AvailableActions
     private static AvailableAction? BuildResourcePlayAction(
         Field field, UndeployedCard handCard, CardDefinition card)
     {
-        // ワイヤーフォーマット: "{zone}_{slotIndex}" — クライアント/NPC 側で _ 分割してパース
-        var validZones = new List<string>();
+        var validZones = ResourceHelpers.BuildValidZones(field, card.CardType);
 
-        if (FieldHelpers.IsFrontendEligible(card.CardType))
-        {
-            validZones.AddRange(field.Frontend.EmptySlotIndices().Select(i => $"frontend_{i}"));
-        }
-
-        if (FieldHelpers.IsBackendEligible(card.CardType))
-        {
-            validZones.AddRange(field.Backend.EmptySlotIndices().Select(i => $"backend_{i}"));
-        }
-
-        // List<T> なので Any() ではなく Count で判定
         return validZones.Count > 0
             ? new AvailableAction
             {

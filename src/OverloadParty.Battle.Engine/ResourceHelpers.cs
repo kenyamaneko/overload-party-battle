@@ -110,6 +110,27 @@ public static class ResourceHelpers
     }
 
     /// <summary>
+    /// カードタイプに基づいて配置可能なスロット一覧を返す。
+    /// ワイヤーフォーマット: "{zone}_{slotIndex}" (例: "frontend_0", "backend_2")
+    /// </summary>
+    public static List<string> BuildValidZones(Field field, string cardType)
+    {
+        var validZones = new List<string>();
+
+        if (FieldHelpers.IsFrontendEligible(cardType))
+        {
+            validZones.AddRange(field.Frontend.EmptySlotIndices().Select(i => $"frontend_{i}"));
+        }
+
+        if (FieldHelpers.IsBackendEligible(cardType))
+        {
+            validZones.AddRange(field.Backend.EmptySlotIndices().Select(i => $"backend_{i}"));
+        }
+
+        return validZones;
+    }
+
+    /// <summary>
     /// リソースを破壊する（SLAペナルティ適用、マイグレーションリンククリア、トラッシュ移動、フィールド除去）。
     /// </summary>
     public static void DestroyResource(GameState state, long ownerNum, Field field, DeployedResource resource, ICardCache cc)

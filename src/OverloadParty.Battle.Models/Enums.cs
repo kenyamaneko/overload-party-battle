@@ -68,7 +68,8 @@ public enum ActionType
     SetReactive,
     Migrate,
     EndPhase,
-    Forfeit
+    Forfeit,
+    SelectSlot
 }
 
 public enum EventType

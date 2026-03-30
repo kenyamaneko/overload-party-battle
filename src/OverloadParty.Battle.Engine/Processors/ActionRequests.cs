@@ -145,6 +145,18 @@ public class UseEffectRequest
 }
 
 /// <summary>
+/// Request to select a deployment slot for a pending effect deploy.
+/// </summary>
+public class SelectSlotRequest
+{
+    /// <summary>The target zone (frontend or backend).</summary>
+    public string Zone { get; set; } = "";
+
+    /// <summary>The slot index within the target zone.</summary>
+    public int Index { get; set; }
+}
+
+/// <summary>
 /// Request to migrate a resource from one instance to another.
 /// </summary>
 public class MigrateRequest

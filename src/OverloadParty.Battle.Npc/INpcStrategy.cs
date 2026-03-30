@@ -12,4 +12,5 @@ public interface INpcStrategy
     List<NpcAction> DecideMainPhaseActions(GameState state, Game game, long npcPlayerNum, List<AvailableAction> available);
     List<NpcAction> DecideBattlePhaseActions(GameState state, Game game, long npcPlayerNum, List<AvailableAction> available);
     List<string> DecideDiscard(GameState state, long npcPlayerNum);
+    NpcAction? DecideSlotSelect(GameState state, long npcPlayerNum);
 }

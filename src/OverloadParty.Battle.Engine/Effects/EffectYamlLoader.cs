@@ -268,11 +268,11 @@ public static class EffectYamlLoader
 
             "trash_to_hand" => new TrashToHandOp(),
 
-            "deploy_from_hand" => BuildDeployFromHand(p),
+            "deploy_from_hand" => BuildRequestSlotFromHand(p),
 
-            "deploy_from_repo" => BuildDeployFromRepo(p),
+            "deploy_from_repo" => BuildRequestSlotFromRepo(p),
 
-            "deploy_from_repo_same_card" => new DeployFromRepoSameCardOp(
+            "deploy_from_repo_same_card" => new RequestSlotFromRepoSameCardOp(
                 p.TryGetProperty("override_av", out var oav) ? oav.GetInt64() : 0),
 
             "destroy_platform" => new DestroyPlatformOp(),
@@ -330,19 +330,19 @@ public static class EffectYamlLoader
         return new SearchRepoOp { Faction = faction };
     }
 
-    private static IEffectOp BuildDeployFromHand(JsonElement p)
+    private static IEffectOp BuildRequestSlotFromHand(JsonElement p)
     {
         Func<CardDefinition, bool>? filter = p.TryGetProperty("filter", out var filterEl)
             ? BuildCardFilter(filterEl) : null;
-        return new DeployFromHandOp { Filter = filter };
+        return new RequestSlotFromHandOp { Filter = filter };
     }
 
-    private static IEffectOp BuildDeployFromRepo(JsonElement p)
+    private static IEffectOp BuildRequestSlotFromRepo(JsonElement p)
     {
         Func<CardDefinition, bool>? filter = p.TryGetProperty("filter", out var filterEl)
             ? BuildCardFilter(filterEl) : null;
         long overrideAV = p.TryGetProperty("override_av", out var oav) ? oav.GetInt64() : 0;
-        return new DeployFromRepoOp { Filter = filter, OverrideAV = overrideAV };
+        return new RequestSlotFromRepoOp { Filter = filter, OverrideAV = overrideAV };
     }
 
     // ================================================================

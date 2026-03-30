@@ -66,6 +66,11 @@ public class GameState
     public DateTime TurnStartedAt { get; set; }
     public long NextInstanceSeq { get; set; }
     public DateTime UpdatedAt { get; set; }
+    /// <summary>
+    /// エフェクトデプロイのスロット選択待ち。同時に 1 件のみ保持する設計。
+    /// 複数の deploy op が同一パイプラインで連続発火するケースには未対応。
+    /// </summary>
+    public AwaitingSlotSelect? AwaitingSlotSelect { get; set; }
 
     // ─── Accessor helpers (by player number) ────────────────
 

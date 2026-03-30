@@ -17,6 +17,7 @@ public static class WireActionTypes
     public const string EndPhase = "end_phase";
     public const string Forfeit = "forfeit";
     public const string Reactive = "reactive";
+    public const string SelectSlot = "select_slot";
 
     // ─── イベント専用（アクションとしては使わない） ──────────
     public const string AttachCard = "attach_card";

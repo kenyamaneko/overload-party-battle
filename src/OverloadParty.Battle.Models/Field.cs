@@ -102,6 +102,17 @@ public class UndeployedCard
 }
 
 /// <summary>
+/// Holds a resource that has been removed from hand/repo but not yet placed on the field,
+/// awaiting the player's slot selection.
+/// </summary>
+public class AwaitingSlotSelect
+{
+    public long PlayerNum { get; set; }
+    public DeployedResource Resource { get; set; } = null!;
+    public List<string> ValidZones { get; set; } = [];
+}
+
+/// <summary>
 /// ChainEntry is one entry in the chain stack.
 /// </summary>
 public class ChainEntry

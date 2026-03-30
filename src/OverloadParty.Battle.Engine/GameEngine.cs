@@ -143,31 +143,52 @@ public class GameEngine
                 return Task.CompletedTask;
             }
 
-            if (!TurnManager.IsActionAllowedInPhase(state.CurrentPhase, actionType))
+            if (state.AwaitingSlotSelect is { PlayerNum: var pendingPlayer }
+                && pendingPlayer == playerNum
+                && actionType != ActionType.SelectSlot)
             {
-                throw new GameRuleException($"action {actionType.ToWireString()} not allowed in phase {state.CurrentPhase.ToWireString()}");
+                throw new GameRuleException("slot selection required");
             }
 
-            actionResult = actionType switch
+            if (actionType == ActionType.SelectSlot)
             {
-                ActionType.PlayCard => PlayCardProcessor.Process(
-                    state, game, playerNum, (PlayCardRequest)actionData, _cardCache, _effects),
-                ActionType.Attack => AttackProcessor.Process(
-                    state, game, playerNum, (AttackRequest)actionData, _cardCache, _effects),
-                ActionType.ScaleUp => ScaleUpProcessor.Process(
-                    state, game, playerNum, (ScaleUpRequest)actionData, _cardCache, _effects),
-                ActionType.Monetize => MonetizeProcessor.Process(
-                    state, game, playerNum, (MonetizeRequest)actionData, _cardCache),
-                ActionType.EndPhase => EndPhaseProcessor.Process(
-                    state, game, playerNum, _cardCache, _effects),
-                ActionType.DiscardHand => DiscardProcessor.Process(
-                    state, game, playerNum, (DiscardHandRequest)actionData, _cardCache, _effects),
-                ActionType.UseEffect => UseEffectProcessor.Process(
-                    state, game, playerNum, (UseEffectRequest)actionData, _cardCache, _effects),
-                ActionType.Migrate => MigrateProcessor.Process(
-                    state, game, playerNum, (MigrateRequest)actionData, _cardCache),
-                _ => throw new GameRuleException($"unknown action type: {actionType}")
-            };
+                actionResult = SelectSlotProcessor.Process(
+                    state, game, playerNum, (SelectSlotRequest)actionData, _cardCache);
+            }
+            else
+            {
+                if (!TurnManager.IsActionAllowedInPhase(state.CurrentPhase, actionType))
+                {
+                    throw new GameRuleException($"action {actionType.ToWireString()} not allowed in phase {state.CurrentPhase.ToWireString()}");
+                }
+
+                actionResult = actionType switch
+                {
+                    ActionType.PlayCard => PlayCardProcessor.Process(
+                        state, game, playerNum, (PlayCardRequest)actionData, _cardCache, _effects),
+                    ActionType.Attack => AttackProcessor.Process(
+                        state, game, playerNum, (AttackRequest)actionData, _cardCache, _effects),
+                    ActionType.ScaleUp => ScaleUpProcessor.Process(
+                        state, game, playerNum, (ScaleUpRequest)actionData, _cardCache, _effects),
+                    ActionType.Monetize => MonetizeProcessor.Process(
+                        state, game, playerNum, (MonetizeRequest)actionData, _cardCache),
+                    ActionType.EndPhase => EndPhaseProcessor.Process(
+                        state, game, playerNum, _cardCache, _effects),
+                    ActionType.DiscardHand => DiscardProcessor.Process(
+                        state, game, playerNum, (DiscardHandRequest)actionData, _cardCache, _effects),
+                    ActionType.UseEffect => UseEffectProcessor.Process(
+                        state, game, playerNum, (UseEffectRequest)actionData, _cardCache, _effects),
+                    ActionType.Migrate => MigrateProcessor.Process(
+                        state, game, playerNum, (MigrateRequest)actionData, _cardCache),
+                    _ => throw new GameRuleException($"unknown action type: {actionType}")
+                };
+            }
+
+            // エフェクト実行後に AwaitingSlotSelect がセットされていたら通知
+            if (state.AwaitingSlotSelect is not null)
+            {
+                actionResult.NeedsSlotSelect = true;
+            }
 
             actionResult.GameOver ??= WinConditionChecker.Check(state, game);
 

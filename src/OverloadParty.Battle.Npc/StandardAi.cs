@@ -90,6 +90,31 @@ public class StandardAi : INpcStrategy
         return ids;
     }
 
+    public virtual NpcAction? DecideSlotSelect(GameState state, long npcPlayerNum)
+    {
+        var pending = state.AwaitingSlotSelect;
+        if (pending is null || pending.PlayerNum != npcPlayerNum || pending.ValidZones.Count == 0)
+        {
+            return null;
+        }
+
+        var zone = ActionFilter.ParseZoneStr(pending.ValidZones[0]);
+        if (zone is null)
+        {
+            return null;
+        }
+
+        return new NpcAction
+        {
+            ActionType = WireActionTypes.SelectSlot,
+            Data = new Dictionary<string, object>
+            {
+                ["zone"] = zone.Zone,
+                ["index"] = zone.Index,
+            },
+        };
+    }
+
     protected virtual string GetInstanceFamily() => "M";
 
     // ─── Immediate (Strategy/Incident) actions ─────────────────

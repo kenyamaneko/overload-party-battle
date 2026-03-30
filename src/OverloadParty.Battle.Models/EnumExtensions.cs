@@ -118,6 +118,7 @@ public static class EnumExtensions
         ActionType.Migrate => WireActionTypes.Migrate,
         ActionType.EndPhase => WireActionTypes.EndPhase,
         ActionType.Forfeit => WireActionTypes.Forfeit,
+        ActionType.SelectSlot => WireActionTypes.SelectSlot,
         _ => throw new ArgumentOutOfRangeException(nameof(action))
     };
 
@@ -133,6 +134,7 @@ public static class EnumExtensions
         WireActionTypes.Migrate => ActionType.Migrate,
         WireActionTypes.EndPhase => ActionType.EndPhase,
         WireActionTypes.Forfeit => ActionType.Forfeit,
+        WireActionTypes.SelectSlot => ActionType.SelectSlot,
         _ => throw new ArgumentException($"Unknown action type: {s}")
     };
 

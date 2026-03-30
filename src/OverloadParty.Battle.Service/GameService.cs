@@ -392,6 +392,39 @@ public class GameService
                         _npcStrategies.TryRemove(gameID, out _);
                         return (npcEvents, result.GameOver);
                     }
+
+                    // エフェクトデプロイでスロット選択が必要になった場合、即座に選択
+                    if (result.NeedsSlotSelect)
+                    {
+                        var latestState = await _gameRepo.GetGameState(gameID, ct);
+                        if (latestState is not null)
+                        {
+                            var slotAction = npcAI.DecideSlotSelect(latestState, npcPlayerNum);
+                            if (slotAction is not null)
+                            {
+                                var slotType = EnumExtensions.ParseActionType(slotAction.ActionType);
+                                var slotData = DeserializeNpcActionData(slotType, slotAction.Data);
+                                var slotResult = await _engine.ProcessAction(
+                                    gameID, NpcConstants.PlayerId, slotType, slotData, ct);
+
+                                ClientGameState? slotSnapshot = null;
+                                if (stateForPlayerID is not null)
+                                {
+                                    slotSnapshot = await GetStateForPlayer(gameID, stateForPlayerID, ct);
+                                }
+                                foreach (var evt in slotResult.Events)
+                                {
+                                    npcEvents.Add(new ActionEventWithState { Event = evt, State = slotSnapshot });
+                                }
+
+                                if (slotResult.GameOver is not null)
+                                {
+                                    _npcStrategies.TryRemove(gameID, out _);
+                                    return (npcEvents, slotResult.GameOver);
+                                }
+                            }
+                        }
+                    }
                 }
                 catch (GameRuleException ex)
                 {
@@ -429,6 +462,7 @@ public class GameService
             ActionType.DiscardHand => json.Deserialize<DiscardHandRequest>(NpcJsonOpts)!,
             ActionType.UseEffect => json.Deserialize<UseEffectRequest>(NpcJsonOpts)!,
             ActionType.Migrate => json.Deserialize<MigrateRequest>(NpcJsonOpts)!,
+            ActionType.SelectSlot => json.Deserialize<SelectSlotRequest>(NpcJsonOpts)!,
             ActionType.EndPhase => new object(),
             ActionType.SetReactive => new object(),
             ActionType.Forfeit => new object(),

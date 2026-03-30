@@ -346,4 +346,124 @@ public class GameEngineTests
         game!.EngineVersion.Should().Be("1.2.3");
         game.CardDataVersion.Should().Be("4.5.6");
     }
+
+    // ─── SelectSlot gate ────────────────────────────────────
+
+    [Fact]
+    public async Task ProcessAction_AwaitingSlotSelect_BlocksOtherActions()
+    {
+        var deck = MakeSingleCardDeck("SH-0001");
+        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        await _engine.RunAutoAdvance(gameID);
+
+        var state = await _repo.GetGameState(gameID);
+        state!.AwaitingSlotSelect = new AwaitingSlotSelect
+        {
+            PlayerNum = 1,
+            Resource = TestFactory.MakeResource(instanceId: "pending_1"),
+            ValidZones = ["frontend_1"],
+        };
+
+        var act = () => _engine.ProcessAction(
+            gameID, "p1", ActionType.EndPhase, new object());
+
+        await act.Should().ThrowAsync<GameRuleException>().WithMessage("*slot selection*");
+    }
+
+    [Fact]
+    public async Task ProcessAction_AwaitingSlotSelect_AllowsSelectSlot()
+    {
+        var deck = MakeSingleCardDeck("SH-0001");
+        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        await _engine.RunAutoAdvance(gameID);
+
+        var state = await _repo.GetGameState(gameID);
+        state!.AwaitingSlotSelect = new AwaitingSlotSelect
+        {
+            PlayerNum = 1,
+            Resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "pending_1"),
+            ValidZones = ["frontend_1"],
+        };
+
+        var result = await _engine.ProcessAction(
+            gameID, "p1", ActionType.SelectSlot,
+            new SelectSlotRequest { Zone = GameConstants.ZoneFrontend, Index = 1 });
+
+        result.Events.Should().Contain(e => e.EventType == WireActionTypes.SelectSlot);
+        state.AwaitingSlotSelect.Should().BeNull();
+        state.Player1Field.Frontend[1].Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task ProcessAction_AwaitingSlotSelect_DoesNotBlockOtherPlayer()
+    {
+        var deck = MakeSingleCardDeck("SH-0001");
+        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        await _engine.RunAutoAdvance(gameID);
+
+        var state = await _repo.GetGameState(gameID);
+        // Player 2 is awaiting slot select, but it's Player 1's turn
+        state!.AwaitingSlotSelect = new AwaitingSlotSelect
+        {
+            PlayerNum = 2,
+            Resource = TestFactory.MakeResource(instanceId: "pending_1"),
+            ValidZones = ["frontend_0"],
+        };
+
+        // Player 1 should still be able to act
+        var cardToPlay = state.Player1Hand.First();
+        var result = await _engine.ProcessAction(
+            gameID, "p1", ActionType.PlayCard,
+            new PlayCardRequest
+            {
+                CardInstanceID = cardToPlay.InstanceID,
+                Zone = GameConstants.ZoneFrontend,
+                Index = 0,
+            });
+
+        result.Events.Should().Contain(e => e.EventType == WireActionTypes.PlayCard);
+    }
+
+    [Fact]
+    public async Task ProcessAction_EffectSetsAwaitingSlotSelect_ResultHasNeedsSlotSelect()
+    {
+        var deck = MakeSingleCardDeck("SH-0001");
+        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        await _engine.RunAutoAdvance(gameID);
+
+        var state = await _repo.GetGameState(gameID);
+        var cardToPlay = state!.Player1Hand.First();
+
+        // Play a card, then manually set AwaitingSlotSelect to simulate effect
+        await _engine.ProcessAction(
+            gameID, "p1", ActionType.PlayCard,
+            new PlayCardRequest
+            {
+                CardInstanceID = cardToPlay.InstanceID,
+                Zone = GameConstants.ZoneFrontend,
+                Index = 0,
+            });
+
+        // Manually inject AwaitingSlotSelect to test NeedsSlotSelect detection
+        state.AwaitingSlotSelect = new AwaitingSlotSelect
+        {
+            PlayerNum = 1,
+            Resource = TestFactory.MakeResource(instanceId: "pending_1"),
+            ValidZones = ["frontend_1"],
+        };
+
+        // Next action should report NeedsSlotSelect
+        var cardToPlay2 = state.Player1Hand.First();
+        var act = () => _engine.ProcessAction(
+            gameID, "p1", ActionType.PlayCard,
+            new PlayCardRequest
+            {
+                CardInstanceID = cardToPlay2.InstanceID,
+                Zone = GameConstants.ZoneFrontend,
+                Index = 1,
+            });
+
+        // Gate blocks the action because AwaitingSlotSelect is set for player 1
+        await act.Should().ThrowAsync<GameRuleException>().WithMessage("*slot selection*");
+    }
 }
