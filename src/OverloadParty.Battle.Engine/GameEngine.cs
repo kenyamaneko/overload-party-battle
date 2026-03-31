@@ -143,8 +143,8 @@ public class GameEngine
                 return Task.CompletedTask;
             }
 
-            if (state.AwaitingSlotSelect is { PlayerNum: var pendingPlayer }
-                && pendingPlayer == playerNum
+            if (state.PendingSlotSelects.Count > 0
+                && state.PendingSlotSelects[0].PlayerNum == playerNum
                 && actionType != ActionType.SelectSlot)
             {
                 throw new GameRuleException("slot selection required");
@@ -184,8 +184,9 @@ public class GameEngine
                 };
             }
 
-            // エフェクト実行後に AwaitingSlotSelect がセットされていたら通知
-            if (state.AwaitingSlotSelect is not null)
+            // SelectSlot 以外のアクション後にキューが生じた場合に通知
+            // （SelectSlotProcessor は自身の戻り値で NeedsSlotSelect を設定済み）
+            if (actionType != ActionType.SelectSlot && state.PendingSlotSelects.Count > 0)
             {
                 actionResult.NeedsSlotSelect = true;
             }

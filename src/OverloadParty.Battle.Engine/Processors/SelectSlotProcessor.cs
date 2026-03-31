@@ -11,8 +11,12 @@ public static class SelectSlotProcessor
         GameState state, Game game, long playerNum,
         SelectSlotRequest req, ICardCache cc)
     {
-        var pending = state.AwaitingSlotSelect
-            ?? throw new GameRuleException("No pending slot selection");
+        if (state.PendingSlotSelects.Count == 0)
+        {
+            throw new GameRuleException("No pending slot selection");
+        }
+
+        var pending = state.PendingSlotSelects[0];
 
         if (pending.PlayerNum != playerNum)
         {
@@ -28,7 +32,7 @@ public static class SelectSlotProcessor
         var field = state.GetField(playerNum);
         ValidateAndPlace(field, pending.Resource, req.Zone, req.Index);
 
-        state.AwaitingSlotSelect = null;
+        state.PendingSlotSelects.RemoveAt(0);
 
         string playerId = game.GetPlayerID(playerNum);
         var events = new List<GameEvent>
@@ -48,7 +52,12 @@ public static class SelectSlotProcessor
             },
         };
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult
+        {
+            Events = events,
+            StateUpdated = true,
+            NeedsSlotSelect = state.PendingSlotSelects.Count > 0,
+        };
     }
 
     private static void ValidateAndPlace(Field field, DeployedResource resource, string zone, int index)

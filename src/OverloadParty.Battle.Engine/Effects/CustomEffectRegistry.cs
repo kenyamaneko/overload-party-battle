@@ -1,4 +1,5 @@
 using System.Text.Json;
+using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Effects;
@@ -91,33 +92,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
             throw new GameRuleException("Must deploy same type as destroyed card");
         }
 
-        var hand = octx.State.GetHand(octx.PlayerNum);
-        int handIdx = hand.FindIndex(c => c.CardID == choiceCardId);
-        if (handIdx < 0)
-        {
-            throw new GameRuleException($"Card {choiceCardId} not in hand");
-        }
-
-        var handCard = hand[handIdx];
-        hand.RemoveAt(handIdx);
-
-        var instance = ResourceHelpers.CreateDeployedResource(
-            choiceCard, octx.State.NextInstanceID(), octx.State.CurrentTurn, handCard.ArtNo);
-        instance.DeployOrder = octx.State.NextDeployOrder();
-
-        var field = octx.GetField(octx.PlayerNum);
-        var validZones = ResourceHelpers.BuildValidZones(field, choiceCard.CardType);
-        if (validZones.Count == 0)
-        {
-            throw new GameRuleException("No empty slot for effect deploy");
-        }
-
-        octx.State.AwaitingSlotSelect = new AwaitingSlotSelect
-        {
-            PlayerNum = octx.PlayerNum,
-            Resource = instance,
-            ValidZones = validZones,
-        };
+        SlotRequestHelpers.DeployFromHand(octx, choiceCardId);
     }
 
     /// <summary>
@@ -251,37 +226,11 @@ public class CustomEffectRegistry : ICustomEffectRegistry
                 octx.State.SetBudget(octx.PlayerNum, budget + discount);
             }
 
-            var hand = octx.State.GetHand(octx.PlayerNum);
-            int handIdx = hand.FindIndex(c => c.CardID == choiceCardId);
-            if (handIdx < 0)
-            {
-                throw new GameRuleException($"Card {choiceCardId} not in hand");
-            }
-
-            var handCard = hand[handIdx];
-            hand.RemoveAt(handIdx);
-
-            var instance = ResourceHelpers.CreateDeployedResource(
-                card, octx.State.NextInstanceID(), octx.State.CurrentTurn, handCard.ArtNo);
-            instance.DeployOrder = octx.State.NextDeployOrder();
-
-            var field = octx.GetField(octx.PlayerNum);
-            var validZones = ResourceHelpers.BuildValidZones(field, card.CardType);
-            if (validZones.Count == 0)
-            {
-                throw new GameRuleException("No empty slot for effect deploy");
-            }
-
-            octx.State.AwaitingSlotSelect = new AwaitingSlotSelect
-            {
-                PlayerNum = octx.PlayerNum,
-                Resource = instance,
-                ValidZones = validZones,
-            };
+            SlotRequestHelpers.DeployFromHand(octx, choiceCardId);
 
             if (octx.SupSource is not null)
             {
-                FieldHelpers.DestroySupport(octx.State, octx.PlayerNum, field, octx.SupSource.InstanceID);
+                FieldHelpers.DestroySupport(octx.State, octx.PlayerNum, octx.MyField, octx.SupSource.InstanceID);
             }
         };
     }

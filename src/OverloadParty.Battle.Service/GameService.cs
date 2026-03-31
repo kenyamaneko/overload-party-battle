@@ -393,37 +393,38 @@ public class GameService
                         return (npcEvents, result.GameOver);
                     }
 
-                    // エフェクトデプロイでスロット選択が必要になった場合、即座に選択
-                    if (result.NeedsSlotSelect)
+                    // エフェクトデプロイでスロット選択が必要になった場合、キューが空になるまで処理
+                    var needsSlot = result.NeedsSlotSelect;
+                    while (needsSlot)
                     {
-                        var latestState = await _gameRepo.GetGameState(gameID, ct);
-                        if (latestState is not null)
+                        var latestState = await _gameRepo.GetGameState(gameID, ct)
+                            ?? throw new InvalidOperationException($"Game state lost during NPC slot select (game={gameID})");
+
+                        var slotAction = npcAI.DecideSlotSelect(latestState, npcPlayerNum)
+                            ?? throw new InvalidOperationException($"NPC failed to decide slot selection (game={gameID})");
+
+                        var slotType = EnumExtensions.ParseActionType(slotAction.ActionType);
+                        var slotData = DeserializeNpcActionData(slotType, slotAction.Data);
+                        var slotResult = await _engine.ProcessAction(
+                            gameID, NpcConstants.PlayerId, slotType, slotData, ct);
+
+                        ClientGameState? slotSnapshot = null;
+                        if (stateForPlayerID is not null)
                         {
-                            var slotAction = npcAI.DecideSlotSelect(latestState, npcPlayerNum);
-                            if (slotAction is not null)
-                            {
-                                var slotType = EnumExtensions.ParseActionType(slotAction.ActionType);
-                                var slotData = DeserializeNpcActionData(slotType, slotAction.Data);
-                                var slotResult = await _engine.ProcessAction(
-                                    gameID, NpcConstants.PlayerId, slotType, slotData, ct);
-
-                                ClientGameState? slotSnapshot = null;
-                                if (stateForPlayerID is not null)
-                                {
-                                    slotSnapshot = await GetStateForPlayer(gameID, stateForPlayerID, ct);
-                                }
-                                foreach (var evt in slotResult.Events)
-                                {
-                                    npcEvents.Add(new ActionEventWithState { Event = evt, State = slotSnapshot });
-                                }
-
-                                if (slotResult.GameOver is not null)
-                                {
-                                    _npcStrategies.TryRemove(gameID, out _);
-                                    return (npcEvents, slotResult.GameOver);
-                                }
-                            }
+                            slotSnapshot = await GetStateForPlayer(gameID, stateForPlayerID, ct);
                         }
+                        foreach (var evt in slotResult.Events)
+                        {
+                            npcEvents.Add(new ActionEventWithState { Event = evt, State = slotSnapshot });
+                        }
+
+                        if (slotResult.GameOver is not null)
+                        {
+                            _npcStrategies.TryRemove(gameID, out _);
+                            return (npcEvents, slotResult.GameOver);
+                        }
+
+                        needsSlot = slotResult.NeedsSlotSelect;
                     }
                 }
                 catch (GameRuleException ex)

@@ -17,12 +17,12 @@ public class SelectSlotProcessorTests
     private GameState MakeStateWithPending(string zone = "frontend", int index = 0)
     {
         var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.AwaitingSlotSelect = new AwaitingSlotSelect
+        state.PendingSlotSelects.Add(new AwaitingSlotSelect
         {
             PlayerNum = 1,
             Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
             ValidZones = [$"{zone}_{index}"],
-        };
+        });
         return state;
     }
 
@@ -36,7 +36,7 @@ public class SelectSlotProcessorTests
 
         state.Player1Field.Frontend[0].Should().NotBeNull();
         state.Player1Field.Frontend[0]!.InstanceID.Should().Be("pending_1");
-        state.AwaitingSlotSelect.Should().BeNull();
+        state.PendingSlotSelects.Should().BeEmpty();
         result.StateUpdated.Should().BeTrue();
     }
 
@@ -44,7 +44,7 @@ public class SelectSlotProcessorTests
     public void Process_ValidBackendSlot_PlacesInBackend()
     {
         var state = MakeStateWithPending("backend", 1);
-        state.AwaitingSlotSelect!.ValidZones = ["backend_1"];
+        state.PendingSlotSelects[0].ValidZones = ["backend_1"];
         var req = new SelectSlotRequest { Zone = "backend", Index = 1 };
 
         SelectSlotProcessor.Process(state, _game, 1, req, _cc);
@@ -57,7 +57,7 @@ public class SelectSlotProcessorTests
     public void Process_EmitsSelectSlotEvent()
     {
         var state = MakeStateWithPending("frontend", 2);
-        state.AwaitingSlotSelect!.ValidZones = ["frontend_2"];
+        state.PendingSlotSelects[0].ValidZones = ["frontend_2"];
         var req = new SelectSlotRequest { Zone = "frontend", Index = 2 };
 
         var result = SelectSlotProcessor.Process(state, _game, 1, req, _cc);
@@ -106,7 +106,7 @@ public class SelectSlotProcessorTests
     public void Process_OccupiedSlot_Throws()
     {
         var state = MakeStateWithPending("frontend", 0);
-        state.AwaitingSlotSelect!.ValidZones = ["frontend_0"];
+        state.PendingSlotSelects[0].ValidZones = ["frontend_0"];
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(instanceId: "existing");
         var req = new SelectSlotRequest { Zone = "frontend", Index = 0 };
 
@@ -119,7 +119,7 @@ public class SelectSlotProcessorTests
     public void Process_UnknownZone_Throws()
     {
         var state = MakeStateWithPending("frontend", 0);
-        state.AwaitingSlotSelect!.ValidZones = ["support_0"];
+        state.PendingSlotSelects[0].ValidZones = ["support_0"];
         var req = new SelectSlotRequest { Zone = "support", Index = 0 };
 
         var act = () => SelectSlotProcessor.Process(state, _game, 1, req, _cc);
@@ -131,11 +131,42 @@ public class SelectSlotProcessorTests
     public void Process_OutOfBoundsIndex_Throws()
     {
         var state = MakeStateWithPending("frontend", 0);
-        state.AwaitingSlotSelect!.ValidZones = ["frontend_99"];
+        state.PendingSlotSelects[0].ValidZones = ["frontend_99"];
         var req = new SelectSlotRequest { Zone = "frontend", Index = 99 };
 
         var act = () => SelectSlotProcessor.Process(state, _game, 1, req, _cc);
 
         act.Should().Throw<GameRuleException>();
+    }
+
+    [Fact]
+    public void Process_MultiplePending_ConsumesFirstAndKeepsNeedsSlotSelect()
+    {
+        var state = MakeStateWithPending("frontend", 0);
+        state.PendingSlotSelects.Add(new AwaitingSlotSelect
+        {
+            PlayerNum = 1,
+            Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_2"),
+            ValidZones = ["frontend_1"],
+        });
+        var req = new SelectSlotRequest { Zone = "frontend", Index = 0 };
+
+        var result = SelectSlotProcessor.Process(state, _game, 1, req, _cc);
+
+        state.Player1Field.Frontend[0]!.InstanceID.Should().Be("pending_1");
+        state.PendingSlotSelects.Should().ContainSingle();
+        state.PendingSlotSelects[0].Resource.InstanceID.Should().Be("pending_2");
+        result.NeedsSlotSelect.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Process_SinglePending_NeedsSlotSelectIsFalse()
+    {
+        var state = MakeStateWithPending("frontend", 0);
+        var req = new SelectSlotRequest { Zone = "frontend", Index = 0 };
+
+        var result = SelectSlotProcessor.Process(state, _game, 1, req, _cc);
+
+        result.NeedsSlotSelect.Should().BeFalse();
     }
 }

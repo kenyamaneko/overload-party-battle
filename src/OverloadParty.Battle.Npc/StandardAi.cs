@@ -92,7 +92,7 @@ public class StandardAi : INpcStrategy
 
     public virtual NpcAction? DecideSlotSelect(GameState state, long npcPlayerNum)
     {
-        var pending = state.AwaitingSlotSelect;
+        var pending = state.PendingSlotSelects.FirstOrDefault();
         if (pending is null || pending.PlayerNum != npcPlayerNum || pending.ValidZones.Count == 0)
         {
             return null;

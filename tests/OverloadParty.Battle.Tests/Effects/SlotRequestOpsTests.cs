@@ -34,7 +34,7 @@ public class SlotRequestOpsTests
     // ─── RequestSlotFromRepoOp ─────────────────────────────
 
     [Fact]
-    public void RequestSlotFromRepo_SetsAwaitingSlotSelect()
+    public void RequestSlotFromRepo_EnqueuesPendingSlotSelect()
     {
         var state = TestFactory.MakeGameState();
         state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" }];
@@ -43,10 +43,11 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         handler(MakeContext(state));
 
-        state.AwaitingSlotSelect.Should().NotBeNull();
-        state.AwaitingSlotSelect!.PlayerNum.Should().Be(1);
-        state.AwaitingSlotSelect.Resource.CardID.Should().Be("TST-0001");
-        state.AwaitingSlotSelect.ValidZones.Should().NotBeEmpty();
+        state.PendingSlotSelects.Should().ContainSingle();
+        var pending = state.PendingSlotSelects[0];
+        pending.PlayerNum.Should().Be(1);
+        pending.Resource.CardID.Should().Be("TST-0001");
+        pending.ValidZones.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -72,7 +73,7 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         handler(MakeContext(state));
 
-        state.AwaitingSlotSelect!.Resource.MaxAV.Should().Be(200);
+        state.PendingSlotSelects[0].Resource.MaxAV.Should().Be(200);
     }
 
     [Fact]
@@ -85,7 +86,7 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         handler(MakeContext(state));
 
-        state.AwaitingSlotSelect.Should().BeNull();
+        state.PendingSlotSelects.Should().BeEmpty();
         state.Player1Repository.Should().HaveCount(1);
     }
 
@@ -99,7 +100,7 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         handler(MakeContext(state));
 
-        var zones = state.AwaitingSlotSelect!.ValidZones;
+        var zones = state.PendingSlotSelects[0].ValidZones;
         zones.Should().Contain(z => z.StartsWith("frontend_"));
         zones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -114,7 +115,7 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         handler(MakeContext(state));
 
-        var zones = state.AwaitingSlotSelect!.ValidZones;
+        var zones = state.PendingSlotSelects[0].ValidZones;
         zones.Should().AllSatisfy(z => z.Should().StartWith("backend_"));
     }
 
@@ -140,7 +141,7 @@ public class SlotRequestOpsTests
     // ─── RequestSlotFromHandOp ─────────────────────────────
 
     [Fact]
-    public void RequestSlotFromHand_SetsAwaitingSlotSelect()
+    public void RequestSlotFromHand_EnqueuesPendingSlotSelect()
     {
         var state = TestFactory.MakeGameState();
         state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
@@ -150,8 +151,8 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         handler(MakeContext(state, choiceData: choiceData));
 
-        state.AwaitingSlotSelect.Should().NotBeNull();
-        state.AwaitingSlotSelect!.Resource.CardID.Should().Be("TST-0001");
+        state.PendingSlotSelects.Should().ContainSingle();
+        state.PendingSlotSelects[0].Resource.CardID.Should().Be("TST-0001");
     }
 
     [Fact]
@@ -198,8 +199,8 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         handler(MakeContext(state, target: target));
 
-        state.AwaitingSlotSelect.Should().NotBeNull();
-        state.AwaitingSlotSelect!.Resource.CardID.Should().Be("TST-DB01");
+        state.PendingSlotSelects.Should().ContainSingle();
+        state.PendingSlotSelects[0].Resource.CardID.Should().Be("TST-DB01");
         state.Player1Repository.Should().HaveCount(1);
         state.Player1Repository[0].CardID.Should().Be("TST-0001");
     }
@@ -215,5 +216,20 @@ public class SlotRequestOpsTests
         var result = handler(MakeContext(state));
 
         result.GuardFailed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void RequestSlotFromHand_FilterRejectsCard_GuardFails()
+    {
+        var state = TestFactory.MakeGameState();
+        state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
+        var op = new RequestSlotFromHandOp { Filter = _ => false };
+        var choiceData = new Dictionary<string, object> { ["cardId"] = "TST-0001" };
+
+        var handler = EffectComposer.Compose(op);
+        var result = handler(MakeContext(state, choiceData: choiceData));
+
+        result.GuardFailed.Should().BeTrue();
+        state.Player1Hand.Should().HaveCount(1);
     }
 }
