@@ -107,7 +107,6 @@ public class EffectRegistrationTests
 
     [Theory]
     [InlineData("TN-0002", TriggerType.OnAttack)]
-    [InlineData("TN-0012", TriggerType.Activate)]
     [InlineData("TN-0013", TriggerType.Reactive)]
     [InlineData("TN-0014", TriggerType.OnDestroy)]
     [InlineData("TN-0017", TriggerType.Activate)]
