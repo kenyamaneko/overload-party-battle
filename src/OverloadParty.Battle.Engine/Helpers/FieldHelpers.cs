@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Engine;
+namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
 /// フィールド上のリソース・サポートの検索・問い合わせを扱うヘルパー。

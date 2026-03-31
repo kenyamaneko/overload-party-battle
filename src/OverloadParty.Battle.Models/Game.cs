@@ -262,16 +262,3 @@ public class GameEvent
     public Dictionary<string, object>? EventData { get; set; }
     public DateTime CreatedAt { get; set; }
 }
-
-/// <summary>
-/// GameAction maps to the game_actions table (append-only action log for replay).
-/// </summary>
-public class GameAction
-{
-    public string GameID { get; set; } = "";
-    public int Seq { get; set; }
-    public string PlayerID { get; set; } = "";
-    public string ActionType { get; set; } = "";
-    public Dictionary<string, object>? ActionData { get; set; }
-    public DateTime CreatedAt { get; set; }
-}

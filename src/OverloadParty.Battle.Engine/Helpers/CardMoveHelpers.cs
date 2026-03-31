@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Engine;
+namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
 /// カードのゾーン間移動（リポジトリ→手札、手札→トラッシュ等）を扱うヘルパー。

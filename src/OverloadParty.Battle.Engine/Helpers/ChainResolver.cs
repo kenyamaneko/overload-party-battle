@@ -1,7 +1,7 @@
 using System.Linq;
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Engine;
+namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
 /// Manages the chain stack (LIFO, max 3 levels) for reactive effects.

@@ -15,7 +15,6 @@ public class MockGameRepository : IGameRepository
     private readonly Dictionary<string, GameState> _states = new();
     private readonly Dictionary<string, GameState> _initialStates = new();
     private readonly Dictionary<string, List<GameEvent>> _events = new();
-    private readonly Dictionary<string, List<GameAction>> _actions = new();
 
     public Task CreateGame(Game game, GameState state, CancellationToken ct = default)
     {
@@ -27,7 +26,6 @@ public class MockGameRepository : IGameRepository
             var json = JsonSerializer.Serialize(state, DbJsonOptions.Default);
             _initialStates[game.GameID] = JsonSerializer.Deserialize<GameState>(json, DbJsonOptions.Default)!;
             _events[game.GameID] = [];
-            _actions[game.GameID] = [];
         }
         return Task.CompletedTask;
     }
@@ -58,25 +56,7 @@ public class MockGameRepository : IGameRepository
             state.Version++;
             state.UpdatedAt = DateTime.UtcNow;
 
-            if (pendingAction is not null)
-            {
-                if (!_actions.TryGetValue(gameID, out var list))
-                {
-                    list = [];
-                    _actions[gameID] = list;
-                }
-                var json = JsonSerializer.Serialize(pendingAction.ActionData, DbJsonOptions.Default);
-                var dict = JsonSerializer.Deserialize<Dictionary<string, object>>(json, DbJsonOptions.Default);
-                list.Add(new GameAction
-                {
-                    GameID = gameID,
-                    Seq = list.Count + 1,
-                    PlayerID = pendingAction.PlayerID,
-                    ActionType = pendingAction.ActionType,
-                    ActionData = dict,
-                    CreatedAt = DateTime.UtcNow,
-                });
-            }
+            // pendingAction is written to the DB in production but not tracked in-memory
         }
     }
 
@@ -145,11 +125,4 @@ public class MockGameRepository : IGameRepository
         }
     }
 
-    public Task<List<GameAction>> GetActions(string gameID, CancellationToken ct = default)
-    {
-        lock (_lock)
-        {
-            return Task.FromResult(_actions.GetValueOrDefault(gameID) ?? []);
-        }
-    }
 }

@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Engine;
+namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
 /// リソースインスタンスのライフサイクル（生成・配置・破壊・ランク変更）を扱うヘルパー。

@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Engine;
+namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
 /// Checks all win conditions and returns the result.

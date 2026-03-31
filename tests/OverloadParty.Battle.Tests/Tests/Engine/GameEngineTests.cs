@@ -282,57 +282,6 @@ public class GameEngineTests
         preserved.Player1Hand.Should().HaveCount(originalHandCount);
     }
 
-    // ─── Action logging ─────────────────────────────────────
-
-    [Fact]
-    public async Task ProcessAction_LogsActionWithCorrectFields()
-    {
-        var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
-
-        var state = await _repo.GetGameState(gameID);
-        var card = state!.Player1Hand.First();
-        var req = new PlayCardRequest
-        {
-            CardInstanceID = card.InstanceID,
-            Zone = GameConstants.ZoneFrontend,
-            Index = 0,
-        };
-
-        await _engine.ProcessAction(gameID, "p1", ActionType.PlayCard, req);
-
-        var actions = await _repo.GetActions(gameID);
-        actions.Should().HaveCount(1);
-        actions[0].Seq.Should().Be(1);
-        actions[0].PlayerID.Should().Be("p1");
-        actions[0].ActionType.Should().Be("play_card");
-        actions[0].ActionData.Should().NotBeNull();
-        actions[0].ActionData.Should().ContainKey("card_instance_id");
-    }
-
-    [Fact]
-    public async Task ProcessAction_MultipleActions_IncrementSeq()
-    {
-        var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
-
-        var state = await _repo.GetGameState(gameID);
-        var card1 = state!.Player1Hand[0];
-        var card2 = state.Player1Hand[1];
-
-        await _engine.ProcessAction(gameID, "p1", ActionType.PlayCard,
-            new PlayCardRequest { CardInstanceID = card1.InstanceID, Zone = GameConstants.ZoneFrontend, Index = 0 });
-        await _engine.ProcessAction(gameID, "p1", ActionType.PlayCard,
-            new PlayCardRequest { CardInstanceID = card2.InstanceID, Zone = GameConstants.ZoneFrontend, Index = 1 });
-
-        var actions = await _repo.GetActions(gameID);
-        actions.Should().HaveCount(2);
-        actions[0].Seq.Should().Be(1);
-        actions[1].Seq.Should().Be(2);
-    }
-
     // ─── Version recording ──────────────────────────────────
 
     [Fact]

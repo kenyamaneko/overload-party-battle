@@ -1,7 +1,7 @@
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Engine.Effects;
 
-namespace OverloadParty.Battle.Engine.Processors;
+namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
 /// Fires OnFieldChange triggers on both players' fields when a card is deployed or destroyed.
@@ -9,27 +9,16 @@ namespace OverloadParty.Battle.Engine.Processors;
 /// </summary>
 public static class FieldChangeTrigger
 {
-    private static bool _firing;
-
     /// <summary>
     /// Fires OnFieldChange for all eligible cards on both players' fields.
-    /// Re-entrant calls are ignored to prevent infinite loops.
     /// </summary>
     public static void Fire(
         GameState state, Game game, ICardCache cc, IEffectRegistry? effects)
     {
-        if (effects is null || _firing) { return; }
+        if (effects is null) { return; }
 
-        _firing = true;
-        try
-        {
-            FireForPlayer(state, game, 1, cc, effects);
-            FireForPlayer(state, game, 2, cc, effects);
-        }
-        finally
-        {
-            _firing = false;
-        }
+        FireForPlayer(state, game, 1, cc, effects);
+        FireForPlayer(state, game, 2, cc, effects);
     }
 
     private static void FireForPlayer(

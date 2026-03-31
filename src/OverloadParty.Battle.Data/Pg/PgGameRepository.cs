@@ -234,35 +234,6 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             : JsonSerializer.Deserialize<GameState>(reader.GetString(0), DbJsonOptions.Default);
     }
 
-    public async Task<List<GameAction>> GetActions(string gameID, CancellationToken ct = default)
-    {
-        await using var conn = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand(@"
-            SELECT game_id, seq, player_id, action_type, action_data, created_at
-            FROM game_actions
-            WHERE game_id = $1
-            ORDER BY seq", conn);
-        cmd.Parameters.AddWithValue(gameID);
-
-        var actions = new List<GameAction>();
-        await using var reader = await cmd.ExecuteReaderAsync(ct);
-        while (await reader.ReadAsync(ct))
-        {
-            actions.Add(new GameAction
-            {
-                GameID = reader.GetString(0),
-                Seq = reader.GetInt32(1),
-                PlayerID = reader.GetString(2),
-                ActionType = reader.GetString(3),
-                ActionData = reader.IsDBNull(4)
-                    ? null
-                    : JsonSerializer.Deserialize<Dictionary<string, object>>(reader.GetString(4), DbJsonOptions.Default),
-                CreatedAt = reader.GetDateTime(5),
-            });
-        }
-        return actions;
-    }
-
     // ─── SQL constants ──────────────────────────────────────────
 
     private const string SelectGameStateSql = @"

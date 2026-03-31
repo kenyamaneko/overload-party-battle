@@ -1,7 +1,7 @@
 using System.Linq;
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Engine;
+namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
 /// Calculates effective stats for resources (TP, Yield, AV, MC).
