@@ -306,7 +306,8 @@ public static class AttackProcessor
         }
 
         // Fire OnHit for the defender's attachments
-        foreach (var att in defender.Attachments)
+        var oppField = state.GetField(defenderPlayerNum);
+        foreach (var att in oppField.Support.Where(a => a.TargetInstanceID == defender.InstanceID))
         {
             if (effects.Has(att.CardID, TriggerType.OnHit))
             {

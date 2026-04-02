@@ -150,17 +150,19 @@ public static class ResourceHelpers
 
         // while_on_field バフを除去（リソース本体 + アタッチメント）
         FieldHelpers.RemoveWhileOnFieldBuffs(field, resource.InstanceID);
-        foreach (var att in resource.Attachments)
+        var attachments = field.Support.Where(a => a.TargetInstanceID == resource.InstanceID).ToList();
+        foreach (var att in attachments)
         {
             FieldHelpers.RemoveWhileOnFieldBuffs(field, att.InstanceID);
         }
 
         // ホスト＋アタッチメントをトラッシュに移動
         CardMoveHelpers.AddToTrash(state, ownerNum, resource.CardID, resource.InstanceID, resource.ArtNo);
-        foreach (var att in resource.Attachments)
+        foreach (var att in attachments)
         {
             CardMoveHelpers.AddToTrash(state, ownerNum, att.CardID, att.InstanceID, att.ArtNo);
         }
+        field.Support.RemoveAll(a => a.TargetInstanceID == resource.InstanceID);
 
         // フィールドから除去
         FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);

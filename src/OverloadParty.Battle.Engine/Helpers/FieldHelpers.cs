@@ -183,7 +183,8 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsTargetShielded(DeployedResource resource, Field field, ICardCache cc)
     {
-        bool hasShieldAttachment = resource.Attachments
+        bool hasShieldAttachment = field.Support
+            .Where(a => a.TargetInstanceID == resource.InstanceID)
             .Any(a => cc.Get(a.CardID)?.Effects?.Any(e => e.Custom == "target_shield") == true);
         if (!hasShieldAttachment) { return false; }
 

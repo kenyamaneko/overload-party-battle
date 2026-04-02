@@ -248,17 +248,23 @@ public static class PlayCardProcessor
         var field = ctx.State.GetField(ctx.PlayerNum);
         var target = FieldHelpers.FindResourceByID(field, req.TargetInstanceID)
             ?? throw new GameRuleException($"target resource {req.TargetInstanceID} not found");
-        if (target.Attachments.Count >= BattleConstants.MaxAttachments)
+        if (field.Support.Count(a => a.TargetInstanceID == target.InstanceID) >= BattleConstants.MaxAttachments)
         {
             throw new GameRuleException($"target already has max attachments ({BattleConstants.MaxAttachments})");
         }
+        if (field.Support.FindEmptySlot() < 0)
+        {
+            throw new GameRuleException("no empty attachment slot");
+        }
 
         var attachInstanceID = ctx.State.NextInstanceID();
-        target.Attachments.Add(new AttachmentRef
+        field.Support.TryPlace(new DeployedSupport
         {
             InstanceID = attachInstanceID,
             CardID = cardDef.CardId,
             ArtNo = handCard.ArtNo,
+            TargetInstanceID = target.InstanceID,
+            DeployOrder = ctx.State.NextDeployOrder(),
         });
 
         hand.RemoveAt(handIdx);

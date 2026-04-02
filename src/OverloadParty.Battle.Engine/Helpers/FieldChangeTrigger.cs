@@ -35,7 +35,7 @@ public static class FieldChangeTrigger
                 triggers.Add((resource.CardID, resource.DeployOrder, resource, null));
             }
 
-            foreach (var att in resource.Attachments)
+            foreach (var att in field.Support.Where(a => a.TargetInstanceID == resource.InstanceID))
             {
                 if (effects.Has(att.CardID, TriggerType.OnFieldChange))
                 {

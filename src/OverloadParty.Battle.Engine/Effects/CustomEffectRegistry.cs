@@ -306,23 +306,14 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         }
 
         string attachmentId = octx.SupSource.InstanceID;
-        string cardId = octx.SupSource.CardID;
 
-        foreach (var r in FieldHelpers.AllResources(field))
+        var attachment = field.Support.FirstOrDefault(a => a.InstanceID == attachmentId);
+        if (attachment is null)
         {
-            var existing = r.Attachments.FirstOrDefault(a => a.InstanceID == attachmentId);
-            if (existing is not null)
-            {
-                r.Attachments.Remove(existing);
-                break;
-            }
+            throw new GameRuleException("Attachment not found in attachment zone");
         }
 
-        newTarget.Attachments.Add(new AttachmentRef
-        {
-            InstanceID = attachmentId,
-            CardID = cardId,
-        });
+        attachment.TargetInstanceID = newTarget.InstanceID;
     }
 
     /// <summary>

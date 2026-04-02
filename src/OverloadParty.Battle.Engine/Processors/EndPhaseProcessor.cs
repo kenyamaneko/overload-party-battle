@@ -187,6 +187,11 @@ public static class EndPhaseProcessor
             support.EffectUsedThisTurn = false;
         }
 
+        foreach (var att in field.Support)
+        {
+            att.EffectUsedThisTurn = false;
+        }
+
         state.SetIncidentPlayedThisTurn(playerNum, false);
     }
 
@@ -206,7 +211,7 @@ public static class EndPhaseProcessor
                 triggers.Add((resource.CardID, resource.DeployOrder, resource, null));
             }
 
-            foreach (var att in resource.Attachments)
+            foreach (var att in field.Support.Where(a => a.TargetInstanceID == resource.InstanceID))
             {
                 if (HasEndPhaseHandler(effects, att.CardID))
                 {

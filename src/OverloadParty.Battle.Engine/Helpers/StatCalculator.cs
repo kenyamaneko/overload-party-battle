@@ -53,7 +53,7 @@ public static class StatCalculator
 
         long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatTP, cc);
         long passiveBonus = CalculatePassiveTPBonus(instance, field, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, BattleConstants.StatTP, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, field, BattleConstants.StatTP, cc);
 
         long tempBonus = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.BuffTP).Sum(e => e.Value);
@@ -93,7 +93,7 @@ public static class StatCalculator
 
         long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatYield, cc);
         long passiveBonus = CalculatePassiveYieldBonus(instance, field, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, BattleConstants.StatYield, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, field, BattleConstants.StatYield, cc);
 
         long tempBonus = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.BuffYield).Sum(e => e.Value);
@@ -123,7 +123,7 @@ public static class StatCalculator
         long baseValue = Truncate(baseAV * rankMult * avMult);
 
         long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatAV, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, BattleConstants.StatAV, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, field, BattleConstants.StatAV, cc);
 
         long total = baseValue + platformBonus + attachmentBonus;
         return Math.Max(0, total);
@@ -340,10 +340,10 @@ public static class StatCalculator
 
     // ─── Attachment bonuses ──────────────────────────────────
 
-    static long CalculateAttachmentBonus(DeployedResource instance, string statType, ICardCache cc)
+    static long CalculateAttachmentBonus(DeployedResource instance, Field field, string statType, ICardCache cc)
     {
         long total = 0;
-        foreach (var att in instance.Attachments)
+        foreach (var att in field.Support.Where(a => a.TargetInstanceID == instance.InstanceID))
         {
             var attCard = cc.Get(att.CardID);
             if (attCard is null) { continue; }

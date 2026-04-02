@@ -407,7 +407,7 @@ public class StatCalculatorTests
 
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(cardId: "SH-0001");
-        resource.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = "TEST-0300" });
+        field.Support.TryPlace(new DeployedSupport { InstanceID = "att_1", CardID = "TEST-0300", TargetInstanceID = resource.InstanceID });
         field.Frontend[0] = resource;
 
         StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(800); // 600 + 200
@@ -903,7 +903,7 @@ public class StatCalculatorTests
         var resource = TestFactory.MakeResource(
             cardId: "NT-0009", instanceId: "db_1",
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
-        resource.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = "TEST-0300" });
+        field.Support.TryPlace(new DeployedSupport { InstanceID = "att_1", CardID = "TEST-0300", TargetInstanceID = resource.InstanceID });
         field.Backend[0] = resource;
 
         StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(500);

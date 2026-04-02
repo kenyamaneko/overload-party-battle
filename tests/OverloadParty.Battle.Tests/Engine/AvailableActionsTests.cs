@@ -361,9 +361,9 @@ public class AvailableActionsTests
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
         var res = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
-        res.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = "TEST-0300" });
-        res.Attachments.Add(new AttachmentRef { InstanceID = "att_2", CardID = "TEST-0300" });
         myField.Frontend[0] = res;
+        myField.Support.TryPlace(new DeployedSupport { InstanceID = "att_1", CardID = "TEST-0300", TargetInstanceID = "fe_1" });
+        myField.Support.TryPlace(new DeployedSupport { InstanceID = "att_2", CardID = "TEST-0300", TargetInstanceID = "fe_1" });
 
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
@@ -1566,9 +1566,9 @@ public class AvailableActionsTests
         var myField = TestFactory.MakeField();
 
         var fullRes = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "full");
-        fullRes.Attachments.Add(new AttachmentRef { InstanceID = "a1", CardID = "TEST-0300" });
-        fullRes.Attachments.Add(new AttachmentRef { InstanceID = "a2", CardID = "TEST-0300" });
         myField.Frontend[0] = fullRes;
+        myField.Support.TryPlace(new DeployedSupport { InstanceID = "a1", CardID = "TEST-0300", TargetInstanceID = "full" });
+        myField.Support.TryPlace(new DeployedSupport { InstanceID = "a2", CardID = "TEST-0300", TargetInstanceID = "full" });
 
         var emptyRes = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "empty");
         myField.Frontend[1] = emptyRes;

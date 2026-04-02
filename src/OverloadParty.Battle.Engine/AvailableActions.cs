@@ -152,8 +152,10 @@ public static class AvailableActions
     {
         if (card.CardType == CardTypes.Attachment)
         {
+            if (field.Support.FindEmptySlot() < 0) { return null; }
+
             var targets = FieldHelpers.AllFaceUpResources(field)
-                .Where(r => r.Attachments.Count < BattleConstants.MaxAttachments)
+                .Where(r => field.Support.Count(a => a.TargetInstanceID == r.InstanceID) < BattleConstants.MaxAttachments)
                 .Select(r => r.InstanceID)
                 .ToList();
 

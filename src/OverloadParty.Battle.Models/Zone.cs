@@ -60,6 +60,23 @@ public class Zone<T> : IEnumerable<T> where T : class
     }
 
     /// <summary>
+    /// Removes all items matching the predicate. Returns the number of items removed.
+    /// </summary>
+    public int RemoveAll(Func<T, bool> predicate)
+    {
+        int removed = 0;
+        for (int i = 0; i < _slots.Length; i++)
+        {
+            if (_slots[i] is { } item && predicate(item))
+            {
+                _slots[i] = null;
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    /// <summary>
     /// Places an item in the first empty slot. Returns true if placed.
     /// </summary>
     public bool TryPlace(T item)

@@ -29,7 +29,6 @@ public class DeployedResource
     public long? CurrentYield { get; set; }
     public long? MaxYield { get; set; }
     public long Damage { get; set; }
-    public List<AttachmentRef> Attachments { get; set; } = [];
     public List<TemporaryEffect> TemporaryEffects { get; set; } = [];
     public long MonetizedAmount { get; set; }
     public bool HasAttacked { get; set; }
@@ -50,16 +49,6 @@ public class DeployedResource
 }
 
 /// <summary>
-/// AttachmentRef references an attachment card on a resource.
-/// </summary>
-public class AttachmentRef
-{
-    public string InstanceID { get; set; } = "";
-    public string CardID { get; set; } = "";
-    public long ArtNo { get; set; }
-}
-
-/// <summary>
 /// TemporaryEffect is a time-limited modifier on a resource.
 /// </summary>
 public class TemporaryEffect
@@ -71,7 +60,8 @@ public class TemporaryEffect
 }
 
 /// <summary>
-/// DeployedSupport is a Platform or Reactive card in the support zone.
+/// DeployedSupport is a Platform, Reactive, or Attachment card in the support zone.
+/// Attachment cards use TargetInstanceID to reference the resource they are equipped to.
 /// </summary>
 public class DeployedSupport
 {
@@ -83,6 +73,12 @@ public class DeployedSupport
     public long DeployOrder { get; set; }
     public bool EffectUsedThisTurn { get; set; }
     public bool EffectUsedThisGame { get; set; }
+
+    /// <summary>
+    /// For Attachment cards: the instance ID of the resource this attachment targets.
+    /// Null for Platform and Reactive cards.
+    /// </summary>
+    public string? TargetInstanceID { get; set; }
 
     /// <summary>
     /// Player numbers that have peeked at this face-down card.

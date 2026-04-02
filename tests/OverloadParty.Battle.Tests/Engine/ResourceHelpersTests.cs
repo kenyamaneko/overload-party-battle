@@ -312,9 +312,9 @@ public class ResourceHelpersTests
         var state = TestFactory.MakeGameState();
         var field = state.Player1Field;
         var resource = TestFactory.MakeResource(cardId: "SH-0009", instanceId: "inst_1");
-        resource.Attachments.Add(new AttachmentRef { InstanceID = "att_1", CardID = "TEST-0300", ArtNo = 0 });
-        resource.Attachments.Add(new AttachmentRef { InstanceID = "att_2", CardID = "TEST-0301", ArtNo = 0 });
         field.Frontend[0] = resource;
+        field.Support.TryPlace(new DeployedSupport { InstanceID = "att_1", CardID = "TEST-0300", ArtNo = 0, TargetInstanceID = "inst_1" });
+        field.Support.TryPlace(new DeployedSupport { InstanceID = "att_2", CardID = "TEST-0301", ArtNo = 0, TargetInstanceID = "inst_1" });
 
         ResourceHelpers.DestroyResource(state, 1, field, resource, cc);
 

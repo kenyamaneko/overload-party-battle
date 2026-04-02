@@ -183,8 +183,10 @@ public class PlayCardProcessorTests
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0, targetInstanceId: "target_1"), _cc, null);
 
-        target.Attachments.Should().HaveCount(1);
-        target.Attachments[0].CardID.Should().Be("TEST-0300");
+        var attachment = state.Player1Field.Support.FirstOrDefault(s => _cc.Get(s.CardID)?.CardType == CardTypes.Attachment);
+        attachment.Should().NotBeNull();
+        attachment!.CardID.Should().Be("TEST-0300");
+        attachment.TargetInstanceID.Should().Be("target_1");
     }
 
     // ─── 10. Attachment max → throws ────────────────────────
@@ -194,9 +196,9 @@ public class PlayCardProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         var target = TestFactory.MakeResource(instanceId: "target_1");
-        target.Attachments.Add(new AttachmentRef { InstanceID = "a1", CardID = "TEST-0300" });
-        target.Attachments.Add(new AttachmentRef { InstanceID = "a2", CardID = "TEST-0300" });
         state.Player1Field.Frontend[0] = target;
+        state.Player1Field.Support.TryPlace(new DeployedSupport { InstanceID = "a1", CardID = "TEST-0300", TargetInstanceID = "target_1" });
+        state.Player1Field.Support.TryPlace(new DeployedSupport { InstanceID = "a2", CardID = "TEST-0300", TargetInstanceID = "target_1" });
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         var act = () => PlayCardProcessor.Process(

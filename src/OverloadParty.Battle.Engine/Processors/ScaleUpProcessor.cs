@@ -93,7 +93,8 @@ public static class ScaleUpProcessor
             candidates.Add((resource.CardID, resource));
         }
 
-        foreach (var att in resource.Attachments)
+        var field = state.GetField(playerNum);
+        foreach (var att in field.Support.Where(a => a.TargetInstanceID == resource.InstanceID))
         {
             if (effects.Has(att.CardID, TriggerType.OnScaleUp))
             {
