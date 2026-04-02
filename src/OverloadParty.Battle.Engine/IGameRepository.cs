@@ -39,10 +39,11 @@ public interface IGameRepository
     /// <param name="evt">The event to append.</param>
     Task AppendEvent(GameEvent evt, CancellationToken ct = default);
 
-    /// <summary>Marks the game as finished and records the winner.</summary>
+    /// <summary>Marks the game as finished and records the winner and reason.</summary>
     /// <param name="gameID">The game ID.</param>
-    /// <param name="winnerID">The winning player's ID, or empty for a draw.</param>
-    Task FinishGame(string gameID, string winnerID, CancellationToken ct = default);
+    /// <param name="winnerNum">The winner number (0=draw, 1 or 2).</param>
+    /// <param name="winReason">The wire-format win reason string.</param>
+    Task FinishGame(string gameID, long winnerNum, string winReason, CancellationToken ct = default);
 
     /// <summary>Returns the total number of events recorded for a game.</summary>
     /// <param name="gameID">The game ID.</param>

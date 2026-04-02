@@ -67,11 +67,12 @@ users.ForEach(u => u.Deactivate());
 
 ```csharp
 // Good: switch 式
-var winnerID = actionResult.WinnerNum switch
+var winnerLabel = game.WinnerNum switch
 {
-    0 => "",
-    1 => game.Player1ID,
-    _ => game.Player2ID,
+    null => null,
+    0 => null,
+    1 => "player1",
+    _ => "player2",
 };
 
 // Good: LINQ と組み合わせ

@@ -11,7 +11,10 @@ public class Game
     public DeckSnapshot? Player1DeckSnapshot { get; set; }
     public DeckSnapshot? Player2DeckSnapshot { get; set; }
     public GameStatus Status { get; set; } = GameStatus.Playing;
-    public string? WinnerID { get; set; }
+    public string? Npc1Model { get; set; }
+    public string? Npc2Model { get; set; }
+    public long? WinnerNum { get; set; }
+    public string? WinReason { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
@@ -22,6 +25,20 @@ public class Game
     {
         1 => Player1ID,
         2 => Player2ID,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+
+    public long ResolvePlayerNum(string playerID)
+    {
+        if (playerID == Player1ID && Npc1Model is null) return 1;
+        if (playerID == Player2ID && Npc2Model is null) return 2;
+        throw new ArgumentException($"player {playerID} is not in this game");
+    }
+
+    public string? GetNpcModel(long playerNum) => playerNum switch
+    {
+        1 => Npc1Model,
+        2 => Npc2Model,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
 }

@@ -95,11 +95,11 @@ public static class TargetSelector
     private static IEnumerable<DeployedResource> FaceUpInZone(Field field, string? zone)
     {
         var sources = Enumerable.Empty<DeployedResource>();
-        if (zone is null or "" or GameConstants.ZoneFrontend)
+        if (zone is null or "" or Zones.Frontend)
         {
             sources = sources.Concat(field.Frontend);
         }
-        if (zone is null or "" or GameConstants.ZoneBackend)
+        if (zone is null or "" or Zones.Backend)
         {
             sources = sources.Concat(field.Backend);
         }

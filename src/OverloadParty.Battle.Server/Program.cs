@@ -82,26 +82,19 @@ builder.Services.AddSingleton(sp =>
 
 // ─── Services ───────────────────────────────────────────────
 
-builder.Services.AddSingleton<GameService>(sp =>
-{
-    var svc = new GameService(
+builder.Services.AddSingleton<NpcRunner>(sp =>
+    new NpcRunner(
         sp.GetRequiredService<GameEngine>(),
         sp.GetRequiredService<IGameRepository>(),
         sp.GetRequiredService<ICardCache>(),
-        sp.GetRequiredService<ILogger<GameService>>());
+        sp.GetRequiredService<ILogger<NpcRunner>>()));
 
-    // Set default NPC AI
-    // EffectRegistry は起動時に必ずセットされるため null にはならない。
-    // null ガードは GameEngine が nullable で公開しているための防御コード。
-    var cc = sp.GetRequiredService<ICardCache>();
-    var engine = sp.GetRequiredService<GameEngine>();
-    if (engine.EffectRegistry is not null)
-    {
-        svc.SetNpcAI(new StandardAi(cc, engine.EffectRegistry));
-    }
-
-    return svc;
-});
+builder.Services.AddSingleton<GameService>(sp =>
+    new GameService(
+        sp.GetRequiredService<GameEngine>(),
+        sp.GetRequiredService<IGameRepository>(),
+        sp.GetRequiredService<ICardCache>(),
+        sp.GetRequiredService<NpcRunner>()));
 
 builder.Services.AddSingleton<GameLogService>(sp =>
     new GameLogService(
@@ -178,7 +171,7 @@ api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
     {
         var cards = req.Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
         var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, cards, req.NpcFaction);
-        return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
+        return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID, npc1_model = game.Npc1Model, npc2_model = game.Npc2Model });
     }
     catch (GameRuleException ex)
     {
@@ -256,7 +249,6 @@ api.MapGet("/games/{gameId}/state/{playerId}", async (GameService gameSvc, strin
     try
     {
         var state = await gameSvc.GetGameStateForPlayer(gameId, playerId);
-        if (state == null) { return Results.NotFound(); }
         return Results.Ok(state);
     }
     catch (GameRuleException ex)
@@ -376,7 +368,7 @@ public static class ActionDataDeserializer
         ActionType.Migrate => data.Deserialize<MigrateRequest>(JsonOpts)!,
         ActionType.EndPhase => new object(),
         ActionType.SetReactive => new object(),
-        ActionType.Forfeit => new object(),
+        ActionType.Forfeit => data.Deserialize<ForfeitRequest>(JsonOpts)!,
         _ => throw new ArgumentException($"unknown action type: {actionType}"),
     };
 }

@@ -21,7 +21,8 @@ public class GameServiceTests
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
         _cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
         _engine = new GameEngine(_repo, _cc);
-        _svc = new GameService(_engine, _repo, _cc, NullLogger.Instance);
+        var npcRunner = new NpcRunner(_engine, _repo, _cc, NullNpcLogger.Instance);
+        _svc = new GameService(_engine, _repo, _cc, npcRunner);
     }
 
     private List<DeckSnapshotCard> MakePlayerCards(string cardId = "SH-0001")
@@ -76,18 +77,19 @@ public class GameServiceTests
     public async Task StartNPCBattle_CreatesGame_WithNpcPlayer()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.StartNPCBattle("player1", 1, cards, GameConstants.FactionSHE);
+        var game = await _svc.StartNPCBattle("player1", 1, cards, Factions.SHE);
 
         game.Should().NotBeNull();
         game.Player1ID.Should().Be("player1");
-        game.Player2ID.Should().Be(NpcConstants.PlayerId);
+        game.Player2ID.Should().Be("");
+        game.Npc2Model.Should().NotBeNull();
         game.Status.Should().Be(GameStatus.Playing);
     }
 
     [Fact]
     public async Task StartNPCBattle_EmptyDeck_Throws()
     {
-        var act = () => _svc.StartNPCBattle("player1", 1, [], GameConstants.FactionSHE);
+        var act = () => _svc.StartNPCBattle("player1", 1, [], Factions.SHE);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*empty*");
@@ -118,7 +120,7 @@ public class GameServiceTests
         var req = new PlayCardRequest
         {
             CardInstanceID = cardToPlay.InstanceID,
-            Zone = GameConstants.ZoneFrontend,
+            Zone = Zones.Frontend,
             Index = 0,
         };
 
@@ -138,7 +140,7 @@ public class GameServiceTests
         var state = await _repo.GetGameState(game.GameID);
         string activePlayerID = state!.ActivePlayer == 1 ? "alice" : "bob";
 
-        var result = await _svc.ProcessAction(game.GameID, activePlayerID, ActionType.Forfeit, new object());
+        var result = await _svc.ProcessAction(game.GameID, activePlayerID, ActionType.Forfeit, new ForfeitRequest { Reason = WinReasons.Surrender });
 
         result.Should().NotBeNull();
         result.GameOver.Should().NotBeNull();
@@ -179,22 +181,22 @@ public class GameServiceTests
     }
 
     [Fact]
-    public async Task GetGameStateForPlayer_UnknownPlayer_ReturnsNull()
+    public async Task GetGameStateForPlayer_UnknownPlayer_Throws()
     {
         var cards = MakePlayerCards();
         var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
 
-        var clientState = await _svc.GetGameStateForPlayer(game.GameID, "charlie");
+        var act = () => _svc.GetGameStateForPlayer(game.GameID, "charlie");
 
-        clientState.Should().BeNull();
+        await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in this game*");
     }
 
     [Fact]
-    public async Task GetGameStateForPlayer_UnknownGame_ReturnsNull()
+    public async Task GetGameStateForPlayer_UnknownGame_Throws()
     {
-        var clientState = await _svc.GetGameStateForPlayer("nonexistent", "alice");
+        var act = () => _svc.GetGameStateForPlayer("nonexistent", "alice");
 
-        clientState.Should().BeNull();
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ─── GetTurnControlsForPlayer ───────────────────────────
@@ -229,29 +231,29 @@ public class GameServiceTests
     }
 
     [Fact]
-    public async Task GetTurnControlsForPlayer_UnknownPlayer_ReturnsNull()
+    public async Task GetTurnControlsForPlayer_UnknownPlayer_Throws()
     {
         var cards = MakePlayerCards();
         var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
 
-        var controls = await _svc.GetTurnControlsForPlayer(game.GameID, "charlie");
+        var act = () => _svc.GetTurnControlsForPlayer(game.GameID, "charlie");
 
-        controls.Should().BeNull();
+        await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in this game*");
     }
 
     [Fact]
-    public async Task GetTurnControlsForPlayer_UnknownGame_ReturnsNull()
+    public async Task GetTurnControlsForPlayer_UnknownGame_Throws()
     {
-        var controls = await _svc.GetTurnControlsForPlayer("nonexistent", "alice");
+        var act = () => _svc.GetTurnControlsForPlayer("nonexistent", "alice");
 
-        controls.Should().BeNull();
+        await act.Should().ThrowAsync<GameRuleException>();
     }
 
     // ─── NullLogger stub ────────────────────────────────────
 
-    private class NullLogger : ILogger<GameService>
+    private class NullNpcLogger : ILogger<NpcRunner>
     {
-        public static readonly NullLogger Instance = new();
+        public static readonly NullNpcLogger Instance = new();
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => false;
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }

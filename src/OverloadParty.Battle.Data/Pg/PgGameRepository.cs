@@ -21,18 +21,21 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             INSERT INTO games (
                 game_id, player1_id, player2_id,
                 player1_deck_snapshot, player2_deck_snapshot,
-                status, winner_id,
+                status, npc1_model, npc2_model, winner_num, win_reason,
                 engine_version, card_data_version,
                 created_at, updated_at, finished_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)", conn, tx))
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)", conn, tx))
         {
             cmd.Parameters.AddWithValue(game.GameID);
-            cmd.Parameters.Add(UuidParam(game.Player1ID));
-            cmd.Parameters.Add(UuidParam(game.Player2ID));
+            cmd.Parameters.Add(NullableUuidParam(game.Player1ID));
+            cmd.Parameters.Add(NullableUuidParam(game.Player2ID));
             cmd.Parameters.Add(JsonbParam(game.Player1DeckSnapshot));
             cmd.Parameters.Add(JsonbParam(game.Player2DeckSnapshot));
             cmd.Parameters.AddWithValue(game.Status.ToWireString());
-            cmd.Parameters.Add(NullableUuidParam(game.WinnerID));
+            cmd.Parameters.AddWithValue((object?)game.Npc1Model ?? DBNull.Value);
+            cmd.Parameters.AddWithValue((object?)game.Npc2Model ?? DBNull.Value);
+            cmd.Parameters.AddWithValue((object?)game.WinnerNum ?? DBNull.Value);
+            cmd.Parameters.AddWithValue((object?)game.WinReason ?? DBNull.Value);
             cmd.Parameters.AddWithValue(game.EngineVersion);
             cmd.Parameters.AddWithValue(game.CardDataVersion);
             cmd.Parameters.AddWithValue(game.CreatedAt);
@@ -51,7 +54,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await using var cmd = new NpgsqlCommand(@"
             SELECT game_id, player1_id, player2_id,
                    player1_deck_snapshot, player2_deck_snapshot,
-                   status, winner_id,
+                   status, npc1_model, npc2_model, winner_num, win_reason,
                    created_at, updated_at, finished_at,
                    engine_version, card_data_version
             FROM games WHERE game_id = $1", conn);
@@ -153,15 +156,17 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
-    public async Task FinishGame(string gameID, string winnerID, CancellationToken ct = default)
+    public async Task FinishGame(string gameID, long winnerNum, string winReason, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
-            UPDATE games SET status = $1, winner_id = $2, finished_at = $3, updated_at = $4
-            WHERE game_id = $5", conn);
+            UPDATE games SET status = $1, winner_num = $2, win_reason = $3,
+                             finished_at = $4, updated_at = $5
+            WHERE game_id = $6", conn);
         cmd.Parameters.AddWithValue(GameStatus.Finished.ToWireString());
-        cmd.Parameters.Add(UuidParam(winnerID));
+        cmd.Parameters.AddWithValue(winnerNum);
+        cmd.Parameters.AddWithValue(winReason);
         cmd.Parameters.AddWithValue(now);
         cmd.Parameters.AddWithValue(now);
         cmd.Parameters.AddWithValue(gameID);
@@ -252,8 +257,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return new Game
         {
             GameID = r.GetString(0),
-            Player1ID = r.GetGuid(1).ToString(),
-            Player2ID = r.GetGuid(2).ToString(),
+            Player1ID = r.IsDBNull(1) ? "" : r.GetGuid(1).ToString(),
+            Player2ID = r.IsDBNull(2) ? "" : r.GetGuid(2).ToString(),
             Player1DeckSnapshot = r.IsDBNull(3)
                 ? null
                 : JsonSerializer.Deserialize<DeckSnapshot>(r.GetString(3), DbJsonOptions.Default),
@@ -261,12 +266,15 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 ? null
                 : JsonSerializer.Deserialize<DeckSnapshot>(r.GetString(4), DbJsonOptions.Default),
             Status = EnumExtensions.ParseGameStatus(r.GetString(5)),
-            WinnerID = r.IsDBNull(6) ? null : r.GetGuid(6).ToString(),
-            CreatedAt = r.GetDateTime(7),
-            UpdatedAt = r.GetDateTime(8),
-            FinishedAt = r.IsDBNull(9) ? null : r.GetDateTime(9),
-            EngineVersion = r.IsDBNull(10) ? "" : r.GetString(10),
-            CardDataVersion = r.IsDBNull(11) ? "" : r.GetString(11),
+            Npc1Model = r.IsDBNull(6) ? null : r.GetString(6),
+            Npc2Model = r.IsDBNull(7) ? null : r.GetString(7),
+            WinnerNum = r.IsDBNull(8) ? null : r.GetInt16(8),
+            WinReason = r.IsDBNull(9) ? null : r.GetString(9),
+            CreatedAt = r.GetDateTime(10),
+            UpdatedAt = r.GetDateTime(11),
+            FinishedAt = r.IsDBNull(12) ? null : r.GetDateTime(12),
+            EngineVersion = r.IsDBNull(13) ? "" : r.GetString(13),
+            CardDataVersion = r.IsDBNull(14) ? "" : r.GetString(14),
         };
     }
 
@@ -367,7 +375,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return new NpgsqlParameter
         {
             NpgsqlDbType = NpgsqlDbType.Uuid,
-            Value = value is null ? DBNull.Value : Guid.Parse(value),
+            Value = string.IsNullOrEmpty(value) ? DBNull.Value : Guid.Parse(value),
         };
     }
 }

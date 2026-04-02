@@ -33,16 +33,11 @@ public class GameEngine
     /// <summary>
     /// Creates a new game with shuffled decks and initial hands.
     /// </summary>
-    /// <param name="player1ID">Player 1's ID.</param>
-    /// <param name="player2ID">Player 2's ID.</param>
-    /// <param name="deck1">Player 1's deck snapshot.</param>
-    /// <param name="deck2">Player 2's deck snapshot.</param>
-    /// <param name="firstPlayer">Which player goes first (1 or 2).</param>
-    /// <returns>The new game's ID.</returns>
     public async Task<string> CreateNewGame(
         string player1ID, string player2ID,
         DeckSnapshot deck1, DeckSnapshot deck2,
         long firstPlayer,
+        string? npc1Model = null, string? npc2Model = null,
         string engineVersion = "", string cardDataVersion = "",
         CancellationToken ct = default)
     {
@@ -50,6 +45,8 @@ public class GameEngine
         var (game, state) = GameInitializer.CreateNewGame(
             gameID, player1ID, player2ID, deck1, deck2, firstPlayer, _cardCache);
 
+        game.Npc1Model = npc1Model;
+        game.Npc2Model = npc2Model;
         game.EngineVersion = engineVersion;
         game.CardDataVersion = cardDataVersion;
 
@@ -61,17 +58,12 @@ public class GameEngine
     /// Runs the draw-phase auto-advance for the active player.
     /// Called at the start of each turn before player actions.
     /// </summary>
-    /// <param name="gameID">The game ID.</param>
-    /// <returns>Non-null if the game ended (e.g. repository out).</returns>
     public async Task<GameOverResult?> RunAutoAdvance(
-        string gameID, CancellationToken ct = default)
+        Game game, CancellationToken ct = default)
     {
-        var game = await _repo.GetGame(gameID, ct)
-            ?? throw new GameRuleException($"game {gameID} not found");
-
         GameOverResult? gameOverResult = null;
 
-        await _repo.UpdateGameState(gameID, state =>
+        await _repo.UpdateGameState(game.GameID, state =>
         {
             gameOverResult = DrawPhaseProcessor.Process(state, game, _cardCache, _effects);
 
@@ -80,54 +72,57 @@ public class GameEngine
 
         if (gameOverResult is not null)
         {
-            await _repo.FinishGame(gameID, ResolveWinnerID(game, gameOverResult.WinnerNum), ct);
+            await _repo.FinishGame(game.GameID, gameOverResult.WinnerNum, gameOverResult.Reason, ct);
         }
 
         return gameOverResult;
     }
 
     /// <summary>
-    /// Processes a player action (play card, attack, etc.) and persists the resulting events.
+    /// Immediately ends the game as a forfeit.
     /// </summary>
-    /// <param name="gameID">The game ID.</param>
-    /// <param name="playerID">The acting player's ID.</param>
-    /// <param name="actionType">The type of action to process.</param>
-    /// <param name="actionData">The action-specific request data.</param>
-    /// <returns>The result including events and possible game-over.</returns>
-    public async Task<ActionResult> ProcessAction(
-        string gameID, string playerID, ActionType actionType, object actionData,
+    /// <param name="game">The game metadata.</param>
+    /// <param name="playerNum">The forfeiting player's number (1 or 2).</param>
+    /// <param name="reason">The reason for the forfeit.</param>
+    public async Task<ActionResult> Forfeit(
+        Game game, long playerNum, WinReason reason,
         CancellationToken ct = default)
     {
-        var game = await _repo.GetGame(gameID, ct)
-            ?? throw new GameRuleException($"game {gameID} not found");
-
         if (game.Status != GameStatus.Playing)
         {
             throw new GameRuleException("game is not in playing state");
         }
 
-        long playerNum
-            = playerID == game.Player1ID ? 1
-            : playerID == game.Player2ID ? 2
-            : throw new GameRuleException($"player {playerID} is not in this game");
-
-        // Forfeit: immediate game over, no phase/turn restrictions
-        if (actionType == ActionType.Forfeit)
+        var opponentNum = playerNum == 1 ? 2 : 1;
+        await _repo.FinishGame(game.GameID, opponentNum, reason.ToWireString(), ct);
+        return new ActionResult
         {
-            var opponentNum = playerNum == 1 ? 2 : 1;
-            var winnerID = game.GetPlayerID(opponentNum);
-            await _repo.FinishGame(gameID, winnerID, ct);
-            return new ActionResult
-            {
-                GameOver = new GameOverResult(opponentNum, WinReason.Timeout.ToWireString()),
-            };
+            GameOver = new GameOverResult(opponentNum, reason.ToWireString()),
+        };
+    }
+
+    /// <summary>
+    /// Processes a player action (play card, attack, etc.) and persists the resulting events.
+    /// </summary>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="playerNum">The acting player's number (1 or 2).</param>
+    /// <param name="actionType">The type of action to process.</param>
+    /// <param name="actionData">The action-specific request data.</param>
+    public async Task<ActionResult> ProcessAction(
+        Game game, long playerNum, ActionType actionType, object actionData,
+        CancellationToken ct = default)
+    {
+        if (game.Status != GameStatus.Playing)
+        {
+            throw new GameRuleException("game is not in playing state");
         }
 
         ActionResult actionResult = null!;
 
+        var playerID = game.GetPlayerID(playerNum);
         var pending = new PendingAction(playerID, actionType.ToWireString(), actionData);
 
-        await _repo.UpdateGameState(gameID, state =>
+        await _repo.UpdateGameState(game.GameID, state =>
         {
             if (actionType != ActionType.SetReactive && state.ActivePlayer != playerNum)
             {
@@ -184,8 +179,6 @@ public class GameEngine
                 };
             }
 
-            // SelectSlot 以外のアクション後にキューが生じた場合に通知
-            // （SelectSlotProcessor は自身の戻り値で NeedsSlotSelect を設定済み）
             if (actionType != ActionType.SelectSlot && state.PendingSlotSelects.Count > 0)
             {
                 actionResult.NeedsSlotSelect = true;
@@ -197,7 +190,7 @@ public class GameEngine
         }, pending, ct);
 
         // Persist events
-        var eventCount = await _repo.GetEventCount(gameID, ct);
+        var eventCount = await _repo.GetEventCount(game.GameID, ct);
         foreach (var evt in actionResult.Events)
         {
             eventCount++;
@@ -208,7 +201,7 @@ public class GameEngine
 
         if (actionResult.GameOver is { } over)
         {
-            await _repo.FinishGame(gameID, ResolveWinnerID(game, over.WinnerNum), ct);
+            await _repo.FinishGame(game.GameID, over.WinnerNum, over.Reason, ct);
         }
 
         return actionResult;
@@ -230,19 +223,9 @@ public class GameEngine
         state.TurnStartedAt = now;
     }
 
-    private static string ResolveWinnerID(Game game, long winnerNum) => winnerNum switch
-    {
-        0 => "",
-        1 => game.Player1ID,
-        _ => game.Player2ID,
-    };
-
     /// <summary>
     /// Computes all valid actions available to a player in the current game state.
     /// </summary>
-    /// <param name="gameID">The game ID.</param>
-    /// <param name="playerNum">The player number (1 or 2).</param>
-    /// <returns>A list of available actions the player can take.</returns>
     public async Task<List<AvailableAction>> ComputeAvailableActions(
         string gameID, long playerNum, CancellationToken ct = default)
     {
@@ -264,9 +247,6 @@ public class GameEngine
     /// <summary>
     /// Computes turn control information (whether the player can end the phase, discard count).
     /// </summary>
-    /// <param name="state">The current game state.</param>
-    /// <param name="hand">The active player's hand.</param>
-    /// <returns>Turn controls for the UI.</returns>
     public TurnControls ComputeTurnControls(GameState state, List<UndeployedCard> hand)
     {
         return AvailableActions.ComputeTurnControls(state, hand);

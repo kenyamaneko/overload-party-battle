@@ -57,7 +57,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
             .FirstOrDefault(r =>
             {
                 var card = octx.CardCache.Get(r.CardID);
-                return card is not null && card.Faction == GameConstants.FactionSugar && card.IsComputeType;
+                return card is not null && card.Faction == Factions.Sugar && card.IsComputeType;
             });
         if (ally is not null)
         {

@@ -167,3 +167,15 @@ public class MigrateRequest
     /// <summary>The instance ID of the target resource being migrated to.</summary>
     public string TargetInstanceID { get; set; } = "";
 }
+
+/// <summary>
+/// Request to forfeit a game, with an optional reason indicating why.
+/// </summary>
+public class ForfeitRequest
+{
+    /// <summary>
+    /// The reason for the forfeit (e.g. "turn_timeout", "disconnect", "surrender").
+    /// Defaults to TurnTimeout if not specified.
+    /// </summary>
+    public string? Reason { get; set; }
+}

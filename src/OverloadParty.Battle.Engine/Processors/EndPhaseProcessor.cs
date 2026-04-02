@@ -60,7 +60,7 @@ public static class EndPhaseProcessor
                 PlayerID = playerId,
                 EventData = new PhaseEndEventData
                 {
-                    Phase = "end",
+                    Phase = Phases.End,
                     NeedsDiscard = true,
                 }.ToDictionary(),
             });
@@ -264,7 +264,7 @@ public static class EndPhaseProcessor
             PlayerID = playerId,
             EventData = new TurnEndEventData
             {
-                Phase = "end",
+                Phase = Phases.End,
                 NextTurn = state.CurrentTurn,
                 ActivePlayer = state.ActivePlayer,
                 CurrentPhase = state.CurrentPhase.ToWireString(),

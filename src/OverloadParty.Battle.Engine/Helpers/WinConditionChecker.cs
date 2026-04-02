@@ -64,11 +64,11 @@ public static class WinConditionChecker
         }
         if (p1Timeout)
         {
-            return new GameOverResult(2, WinReason.Timeout.ToWireString());
+            return new GameOverResult(2, WinReason.TurnTimeout.ToWireString());
         }
         if (p2Timeout)
         {
-            return new GameOverResult(1, WinReason.Timeout.ToWireString());
+            return new GameOverResult(1, WinReason.TurnTimeout.ToWireString());
         }
 
         return null;
@@ -82,11 +82,11 @@ public static class WinConditionChecker
     {
         if (state.Player1TimeBank <= 0)
         {
-            return new GameOverResult(2, WinReason.Timeout.ToWireString());
+            return new GameOverResult(2, WinReason.TurnTimeout.ToWireString());
         }
         if (state.Player2TimeBank <= 0)
         {
-            return new GameOverResult(1, WinReason.Timeout.ToWireString());
+            return new GameOverResult(1, WinReason.TurnTimeout.ToWireString());
         }
         return null;
     }

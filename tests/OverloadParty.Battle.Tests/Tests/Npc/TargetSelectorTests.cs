@@ -24,7 +24,7 @@ public class TargetSelectorTests
         field.Frontend[0] = TestFactory.MakeResource(instanceId: "strong", maxAV: 2000, damage: 0);
         field.Frontend[1] = TestFactory.MakeResource(instanceId: "weak", maxAV: 600, damage: 0);
 
-        var result = TargetSelector.WeakestInZone(field, GameConstants.ZoneFrontend);
+        var result = TargetSelector.WeakestInZone(field, Zones.Frontend);
 
         result.Should().Be("weak");
     }
@@ -36,7 +36,7 @@ public class TargetSelectorTests
         field.Frontend[0] = TestFactory.MakeResource(instanceId: "high_av_damaged", maxAV: 2000, damage: 1800);
         field.Frontend[1] = TestFactory.MakeResource(instanceId: "low_av_healthy", maxAV: 500, damage: 0);
 
-        var result = TargetSelector.WeakestInZone(field, GameConstants.ZoneFrontend);
+        var result = TargetSelector.WeakestInZone(field, Zones.Frontend);
 
         // EffectiveAV: high_av_damaged = 200, low_av_healthy = 500
         result.Should().Be("high_av_damaged");
@@ -61,7 +61,7 @@ public class TargetSelectorTests
         field.Frontend[0] = TestFactory.MakeResource(instanceId: "face_down", maxAV: 100, faceUp: false);
         field.Frontend[1] = TestFactory.MakeResource(instanceId: "face_up", maxAV: 800);
 
-        var result = TargetSelector.WeakestInZone(field, GameConstants.ZoneFrontend);
+        var result = TargetSelector.WeakestInZone(field, Zones.Frontend);
 
         result.Should().Be("face_up");
     }
@@ -71,7 +71,7 @@ public class TargetSelectorTests
     {
         var field = TestFactory.MakeField();
 
-        var result = TargetSelector.WeakestInZone(field, GameConstants.ZoneFrontend);
+        var result = TargetSelector.WeakestInZone(field, Zones.Frontend);
 
         result.Should().BeNull();
     }
@@ -85,7 +85,7 @@ public class TargetSelectorTests
         field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "low_tp", currentTP: 300);
         field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "high_tp", currentTP: 900);
 
-        var result = TargetSelector.StrongestInZone(field, GameConstants.ZoneFrontend, _cc);
+        var result = TargetSelector.StrongestInZone(field, Zones.Frontend, _cc);
 
         result.Should().Be("high_tp");
     }
@@ -99,7 +99,7 @@ public class TargetSelectorTests
         field.Backend[1] = TestFactory.MakeResource(
             cardId: "SH-0001", instanceId: "compute_res", currentTP: 200, currentYield: null);
 
-        var result = TargetSelector.StrongestInZone(field, GameConstants.ZoneBackend, _cc);
+        var result = TargetSelector.StrongestInZone(field, Zones.Backend, _cc);
 
         result.Should().Be("data_res");
     }
@@ -109,7 +109,7 @@ public class TargetSelectorTests
     {
         var field = TestFactory.MakeField();
 
-        var result = TargetSelector.StrongestInZone(field, GameConstants.ZoneFrontend, _cc);
+        var result = TargetSelector.StrongestInZone(field, Zones.Frontend, _cc);
 
         result.Should().BeNull();
     }
@@ -183,7 +183,7 @@ public class TargetSelectorTests
         field.Frontend[1] = TestFactory.MakeResource(instanceId: "fe2");
         field.Backend[0] = TestFactory.MakeResource(instanceId: "be1");
 
-        var count = TargetSelector.CountResourcesInZone(field, GameConstants.ZoneFrontend);
+        var count = TargetSelector.CountResourcesInZone(field, Zones.Frontend);
 
         count.Should().Be(2);
     }

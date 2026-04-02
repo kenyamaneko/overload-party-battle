@@ -90,7 +90,7 @@ public class PgGameRepositoryTests
         got.Player1DeckSnapshot.Should().NotBeNull();
         got.Player1DeckSnapshot!.Cards.Should().HaveCount(2);
         got.Player2DeckSnapshot!.Cards.Should().HaveCount(1);
-        got.WinnerID.Should().BeNull();
+        got.WinnerNum.Should().BeNull();
         got.FinishedAt.Should().BeNull();
     }
 
@@ -252,11 +252,12 @@ public class PgGameRepositoryTests
         var (game, state) = MakeFixture();
         await repo.CreateGame(game, state);
 
-        await repo.FinishGame(game.GameID, game.Player1ID);
+        await repo.FinishGame(game.GameID, 1, WinReasons.BudgetZero);
 
         var got = await repo.GetGame(game.GameID);
         got!.Status.Should().Be(GameStatus.Finished);
-        got.WinnerID.Should().Be(game.Player1ID);
+        got.WinnerNum.Should().Be(1);
+        got.WinReason.Should().Be(WinReasons.BudgetZero);
         got.FinishedAt.Should().NotBeNull();
     }
 

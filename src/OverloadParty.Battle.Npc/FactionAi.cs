@@ -38,10 +38,10 @@ public class FactionAi : StandardAi
     {
         return faction switch
         {
-            GameConstants.FactionSHE or
-            GameConstants.FactionTenki or
-            GameConstants.FactionSugar or
-            GameConstants.FactionTuners => Create(faction, cc, reg),
+            Factions.SHE or
+            Factions.Tenki or
+            Factions.Sugar or
+            Factions.Tuners => Create(faction, cc, reg),
             _ => new StandardAi(cc, reg),
         };
     }
@@ -64,7 +64,7 @@ public class FactionAi : StandardAi
         actions.AddRange(DoImmediateActions(ctx, available, usedZones));
 
         // 2. Deploy resource cards (with faction ordering)
-        if (_faction == GameConstants.FactionTenki)
+        if (_faction == Factions.Tenki)
         {
             actions.AddRange(DoTenkiDeployActions(ctx, available, usedZones));
         }

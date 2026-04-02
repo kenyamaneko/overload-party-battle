@@ -11,10 +11,10 @@ public static class NpcParams
 {
     public static readonly Dictionary<string, FactionParams> FactionParamsTable = new()
     {
-        [GameConstants.FactionSHE] = new FactionParams { InstanceFamily = "M" },
-        [GameConstants.FactionTenki] = new FactionParams { InstanceFamily = "R" },
-        [GameConstants.FactionSugar] = new FactionParams { InstanceFamily = "C" },
-        [GameConstants.FactionTuners] = new FactionParams { InstanceFamily = "M" },
+        [Factions.SHE] = new FactionParams { InstanceFamily = "M" },
+        [Factions.Tenki] = new FactionParams { InstanceFamily = "R" },
+        [Factions.Sugar] = new FactionParams { InstanceFamily = "C" },
+        [Factions.Tuners] = new FactionParams { InstanceFamily = "M" },
     };
 
     // Budget threshold below which BudgetGain priority is boosted.

@@ -91,7 +91,7 @@ public class ActionEvaluatorTests
         var info = new EffectInfo
         {
             TargetType = EffectTargetType.Choice,
-            TargetZone = GameConstants.ZoneFrontend,
+            TargetZone = Zones.Frontend,
         }.WithCategory(EffectCategory.SingleDamage);
         reg.SetEffectInfo("SH-0009", TriggerType.Activate, info);
 
@@ -112,7 +112,7 @@ public class ActionEvaluatorTests
         var info = new EffectInfo
         {
             TargetType = EffectTargetType.Choice,
-            TargetZone = GameConstants.ZoneFrontend,
+            TargetZone = Zones.Frontend,
         }.WithCategory(EffectCategory.SingleDamage);
         reg.SetEffectInfo("SH-0009", TriggerType.Activate, info);
 
@@ -278,7 +278,7 @@ public class ActionEvaluatorTests
         oppField.Frontend[0] = TestFactory.MakeResource(instanceId: "t1");
         oppField.Frontend[1] = TestFactory.MakeResource(instanceId: "t2");
         var ctx = MakeCtx(oppField: oppField);
-        var info = new EffectInfo { TargetZone = GameConstants.ZoneFrontend };
+        var info = new EffectInfo { TargetZone = Zones.Frontend };
 
         var (pri, use) = ActionEvaluator.EvaluateCategory(EffectCategory.AoEDamage, info, ctx);
 
@@ -292,7 +292,7 @@ public class ActionEvaluatorTests
         var oppField = TestFactory.MakeField();
         oppField.Frontend[0] = TestFactory.MakeResource(instanceId: "t1");
         var ctx = MakeCtx(oppField: oppField);
-        var info = new EffectInfo { TargetZone = GameConstants.ZoneFrontend };
+        var info = new EffectInfo { TargetZone = Zones.Frontend };
 
         var (_, use) = ActionEvaluator.EvaluateCategory(EffectCategory.AoEDamage, info, ctx);
 
@@ -305,7 +305,7 @@ public class ActionEvaluatorTests
         var oppField = TestFactory.MakeField();
         oppField.Frontend[0] = TestFactory.MakeResource(instanceId: "t1");
         var ctx = MakeCtx(oppField: oppField);
-        var info = new EffectInfo { TargetZone = GameConstants.ZoneFrontend };
+        var info = new EffectInfo { TargetZone = Zones.Frontend };
 
         var (pri, use) = ActionEvaluator.EvaluateCategory(EffectCategory.SingleDamage, info, ctx);
 
@@ -317,7 +317,7 @@ public class ActionEvaluatorTests
     public void EvaluateCategory_SingleDamage_NoTarget_NotUsable()
     {
         var ctx = MakeCtx();
-        var info = new EffectInfo { TargetZone = GameConstants.ZoneFrontend };
+        var info = new EffectInfo { TargetZone = Zones.Frontend };
 
         var (_, use) = ActionEvaluator.EvaluateCategory(EffectCategory.SingleDamage, info, ctx);
 
@@ -577,7 +577,7 @@ public class ActionEvaluatorTests
 
         var info = new EffectInfo
         {
-            TargetZone = GameConstants.ZoneFrontend,
+            TargetZone = Zones.Frontend,
         }.WithCategory(EffectCategory.SingleDamage);
         var ctx = MakeCtx(oppField: oppField);
 
@@ -595,7 +595,7 @@ public class ActionEvaluatorTests
 
         var info = new EffectInfo
         {
-            TargetZone = GameConstants.ZoneFrontend,
+            TargetZone = Zones.Frontend,
         }.WithCategory(EffectCategory.Debuff);
         var ctx = MakeCtx(oppField: oppField);
 
@@ -628,7 +628,7 @@ public class ActionEvaluatorTests
 
         var info = new EffectInfo
         {
-            TargetZone = GameConstants.ZoneFrontend,
+            TargetZone = Zones.Frontend,
         }.WithCategory(EffectCategory.Buff);
         var ctx = MakeCtx(field: field);
 
@@ -661,7 +661,7 @@ public class ActionEvaluatorTests
         // An info with no damage/debuff/heal/buff/platform category triggers fallback
         var info = new EffectInfo
         {
-            TargetZone = GameConstants.ZoneFrontend,
+            TargetZone = Zones.Frontend,
         }.WithCategory(EffectCategory.InsightGain);
         var ctx = MakeCtx(oppField: oppField);
 

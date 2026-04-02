@@ -198,7 +198,7 @@ public class WinConditionTests
 
         result.Should().NotBeNull();
         result!.WinnerNum.Should().Be(2);
-        result.Reason.Should().Be("timeout");
+        result.Reason.Should().Be("turn_timeout");
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public class WinConditionTests
 
         result.Should().NotBeNull();
         result!.WinnerNum.Should().Be(1);
-        result.Reason.Should().Be("timeout");
+        result.Reason.Should().Be("turn_timeout");
     }
 
     // ─── Launch Failure ───────────────────────────────────────

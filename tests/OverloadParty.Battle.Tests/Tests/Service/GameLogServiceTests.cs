@@ -20,7 +20,8 @@ public class GameLogServiceTests
 
     private async Task<string> SeedFinishedGame()
     {
-        var game = TestFactory.MakeGame("player-abc", NpcConstants.PlayerId);
+        var game = TestFactory.MakeGame("player-abc", "");
+        game.Npc2Model = "SHE";
         game.CreatedAt = new DateTime(2026, 3, 1, 10, 0, 0, DateTimeKind.Utc);
         var state = TestFactory.MakeGameState(turn: 8, p1Budget: 1200, p2Budget: 0);
 
@@ -64,7 +65,7 @@ public class GameLogServiceTests
             EventType = "game_over",
         });
 
-        await _repo.FinishGame("test-game", "player-abc");
+        await _repo.FinishGame("test-game", 1, WinReasons.BudgetZero);
         return "test-game";
     }
 
@@ -86,7 +87,7 @@ public class GameLogServiceTests
         log.Should().NotBeNull();
         log!.GameId.Should().Be(gameId);
         log.Player1Id.Should().Be("player-abc");
-        log.Player2Id.Should().Be(NpcConstants.PlayerId);
+        log.Player2Id.Should().Be("");
         log.Winner.Should().Be("player1");
         log.TotalTurns.Should().Be(8);
         log.FinalBudget.Should().NotBeNull();
@@ -125,7 +126,7 @@ public class GameLogServiceTests
         text.Should().NotBeNull();
         text.Should().Contain("=== Game test-game ===");
         text.Should().Contain("P1: player-abc");
-        text.Should().Contain("(NPC)");
+        text.Should().Contain("P2: NPC");
         text.Should().Contain("P1=1200");
         text.Should().Contain("P2=0");
     }

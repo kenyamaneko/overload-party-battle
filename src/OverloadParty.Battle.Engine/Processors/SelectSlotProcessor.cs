@@ -69,7 +69,7 @@ public static class SelectSlotProcessor
 
         switch (zone)
         {
-            case GameConstants.ZoneFrontend:
+            case Zones.Frontend:
                 if (field.Frontend[index] is not null)
                 {
                     throw new GameRuleException($"Frontend slot {index} is occupied");
@@ -77,7 +77,7 @@ public static class SelectSlotProcessor
                 field.Frontend[index] = resource;
                 break;
 
-            case GameConstants.ZoneBackend:
+            case Zones.Backend:
                 if (field.Backend[index] is not null)
                 {
                     throw new GameRuleException($"Backend slot {index} is occupied");

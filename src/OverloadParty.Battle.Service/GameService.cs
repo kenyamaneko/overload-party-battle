@@ -1,9 +1,4 @@
-using System.Collections.Concurrent;
-using System.Linq;
-using System.Text.Json;
-using Microsoft.Extensions.Logging;
 using OverloadParty.Battle.Engine;
-using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
@@ -41,12 +36,7 @@ public class GameService
     private readonly GameEngine _engine;
     private readonly IGameRepository _gameRepo;
     private readonly ICardCache _cardCache;
-    private readonly ILogger<GameService> _logger;
-
-    private INpcStrategy? _defaultNpcAI;
-    private readonly ConcurrentDictionary<string, INpcStrategy> _npcStrategies = new();
-
-    private const int MaxNPCIterations = 50;
+    private readonly NpcRunner _npcRunner;
 
     // TODO: Assembly version defaults to 1.0.0.0 locally. Ensure CI injects correct versions
     // via <Version> in .csproj, or switch to git SHA / environment variable.
@@ -59,18 +49,13 @@ public class GameService
         GameEngine engine,
         IGameRepository gameRepo,
         ICardCache cardCache,
-        ILogger<GameService> logger)
+        NpcRunner npcRunner)
     {
         _engine = engine;
         _gameRepo = gameRepo;
         _cardCache = cardCache;
-        _logger = logger;
+        _npcRunner = npcRunner;
     }
-
-    /// <summary>
-    /// Sets the default NPC AI strategy. Called once at startup.
-    /// </summary>
-    public void SetNpcAI(INpcStrategy ai) => _defaultNpcAI = ai;
 
     // ─── Game creation ──────────────────────────────────────────
 
@@ -89,12 +74,12 @@ public class GameService
 
         var gameID = await _engine.CreateNewGame(
             player1ID, player2ID, deck1, deck2, firstPlayer,
-            EngineVersion, CardDataVersion, ct);
+            engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
 
-        await PostCreateAdvance(game, ct);
+        await _engine.RunAutoAdvance(game, ct);
         return game;
     }
 
@@ -118,24 +103,15 @@ public class GameService
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
-        // Create faction-specific AI for this game
-        INpcStrategy? factionAI = _engine.EffectRegistry is not null
-            ? FactionAi.GetFactionAi(npcFaction, _cardCache, _engine.EffectRegistry)
-            : null;
-
         var gameID = await _engine.CreateNewGame(
-            playerID, NpcConstants.PlayerId, deck1, deck2, firstPlayer,
-            EngineVersion, CardDataVersion, ct);
-
-        if (factionAI is not null)
-        {
-            _npcStrategies[gameID] = factionAI;
-        }
+            playerID, "", deck1, deck2, firstPlayer,
+            npc2Model: npcFaction,
+            engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
 
-        await PostCreateAdvance(game, ct);
+        await _engine.RunAutoAdvance(game, ct);
         return game;
     }
 
@@ -148,63 +124,62 @@ public class GameService
         string gameID, string playerID, ActionType actionType, object actionData,
         CancellationToken ct = default)
     {
-        var result = await _engine.ProcessAction(gameID, playerID, actionType, actionData, ct);
+        var game = await _gameRepo.GetGame(gameID, ct)
+            ?? throw new GameRuleException($"game {gameID} not found");
+
+        var playerNum = ResolveHumanPlayerNum(game, playerID);
+
+        ActionResult result;
+        if (actionType == ActionType.Forfeit)
+        {
+            var req = actionData as ForfeitRequest;
+            var reason = ParseForfeitReason(req?.Reason);
+            result = await _engine.Forfeit(game, playerNum, reason, ct);
+        }
+        else
+        {
+            result = await _engine.ProcessAction(game, playerNum, actionType, actionData, ct);
+        }
+
         var allEvents = result.Events
             .Select(e => new ActionEventWithState { Event = e })
             .ToList();
 
-        if (result.GameOver is { } over)
+        if (result.GameOver is not null)
         {
             var state = await GetStateForPlayer(gameID, playerID, ct);
-            return new GameActionResult
-            {
-                GameOver = over,
-                State = state,
-                Events = allEvents,
-            };
+            return new GameActionResult { GameOver = result.GameOver, State = state, Events = allEvents };
         }
 
-        var (npcEvents, npcGameOver) = await RunNPCTurnIfNeeded(gameID, playerID, ct);
-        allEvents.AddRange(npcEvents);
+        if (game.Npc1Model is not null || game.Npc2Model is not null)
+        {
+            var npcResult = await _npcRunner.RunTurns(game, ct);
+            allEvents.AddRange(ConvertNpcEvents(npcResult.Events, game, playerNum));
+
+            var state = await GetStateForPlayer(gameID, playerID, ct);
+            return new GameActionResult { GameOver = npcResult.GameOver, State = state, Events = allEvents };
+        }
 
         var clientState = await GetStateForPlayer(gameID, playerID, ct);
-        return new GameActionResult { GameOver = npcGameOver, State = clientState, Events = allEvents };
+        return new GameActionResult { State = clientState, Events = allEvents };
     }
 
     // ─── State queries ──────────────────────────────────────────
 
-    public Task<ClientGameState?> GetGameStateForPlayer(
+    public Task<ClientGameState> GetGameStateForPlayer(
         string gameID, string playerID, CancellationToken ct = default)
         => GetStateForPlayer(gameID, playerID, ct);
 
     public async Task<TurnControls?> GetTurnControlsForPlayer(
         string gameID, string playerID, CancellationToken ct = default)
     {
-        var game = await _gameRepo.GetGame(gameID, ct);
-        if (game is null)
-        {
-            return null;
-        }
+        var game = await _gameRepo.GetGame(gameID, ct)
+            ?? throw new GameRuleException($"game {gameID} not found");
 
-        var state = await _gameRepo.GetGameState(gameID, ct);
-        if (state is null)
-        {
-            return null;
-        }
+        var state = await _gameRepo.GetGameState(gameID, ct)
+            ?? throw new InvalidOperationException($"game state {gameID} not found");
 
-        long playerNum;
-        if (playerID == game.Player1ID)
-        {
-            playerNum = 1;
-        }
-        else if (playerID == game.Player2ID)
-        {
-            playerNum = 2;
-        }
-        else
-        {
-            return null;
-        }
+        var playerNum = ResolveHumanPlayerNum(game, playerID);
 
         if (state.ActivePlayer != playerNum)
         {
@@ -223,251 +198,78 @@ public class GameService
     public async Task<GameActionResult> AdvanceNpcTurn(
         string gameID, string playerID, CancellationToken ct = default)
     {
-        var (npcEvents, npcGameOver) = await RunNPCTurnIfNeeded(gameID, playerID, ct);
-        if (npcEvents.Count == 0)
+        var game = await _gameRepo.GetGame(gameID, ct)
+            ?? throw new GameRuleException($"game {gameID} not found");
+
+        if (game.Npc1Model is null && game.Npc2Model is null)
         {
             return new GameActionResult();
         }
 
+        var playerNum = ResolveHumanPlayerNum(game, playerID);
+        var npcResult = await _npcRunner.RunTurns(game, ct);
+        if (npcResult.Events.Count == 0)
+        {
+            return new GameActionResult();
+        }
+
+        var allEvents = ConvertNpcEvents(npcResult.Events, game, playerNum);
         var clientState = await GetStateForPlayer(gameID, playerID, ct);
 
         return new GameActionResult
         {
-            GameOver = npcGameOver,
+            GameOver = npcResult.GameOver,
             State = clientState,
-            Events = npcEvents,
+            Events = allEvents,
         };
     }
 
     // ─── Private helpers ────────────────────────────────────────
 
-    private async Task PostCreateAdvance(Game game, CancellationToken ct)
+    private static long ResolveHumanPlayerNum(Game game, string playerID)
     {
-        await _engine.RunAutoAdvance(game.GameID, ct);
+        try
+        {
+            return game.ResolvePlayerNum(playerID);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new GameRuleException(ex.Message);
+        }
     }
 
-    private async Task<ClientGameState?> GetStateForPlayer(
+    private static WinReason ParseForfeitReason(string? reason) => reason switch
+    {
+        WinReasons.TurnTimeout => WinReason.TurnTimeout,
+        WinReasons.Disconnect => WinReason.Disconnect,
+        WinReasons.Surrender => WinReason.Surrender,
+        null => throw new GameRuleException("forfeit reason is required"),
+        _ => throw new GameRuleException($"unknown forfeit reason: {reason}"),
+    };
+
+    private async Task<ClientGameState> GetStateForPlayer(
         string gameID, string playerID, CancellationToken ct)
     {
-        var game = await _gameRepo.GetGame(gameID, ct);
-        if (game is null)
-        {
-            return null;
-        }
+        var game = await _gameRepo.GetGame(gameID, ct)
+            ?? throw new InvalidOperationException($"game {gameID} not found");
 
-        var state = await _gameRepo.GetGameState(gameID, ct);
-        if (state is null)
-        {
-            return null;
-        }
+        var state = await _gameRepo.GetGameState(gameID, ct)
+            ?? throw new InvalidOperationException($"game state {gameID} not found");
 
-        long playerNum;
-        if (playerID == game.Player1ID)
-        {
-            playerNum = 1;
-        }
-        else if (playerID == game.Player2ID)
-        {
-            playerNum = 2;
-        }
-        else
-        {
-            return null;
-        }
+        var playerNum = ResolveHumanPlayerNum(game, playerID);
 
         return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
     }
 
-    private async Task<(List<ActionEventWithState> Events, GameOverResult? GameOver)> RunNPCTurnIfNeeded(
-        string gameID, string? stateForPlayerID, CancellationToken ct)
+    private List<ActionEventWithState> ConvertNpcEvents(
+        List<NpcEventWithState> npcEvents, Game game, long viewerPlayerNum)
     {
-        var npcEvents = new List<ActionEventWithState>();
-        if (!_npcStrategies.TryGetValue(gameID, out var npcAI))
-        {
-            npcAI = _defaultNpcAI;
-        }
-        if (npcAI is null)
-        {
-            return (npcEvents, null);
-        }
-
-        for (int i = 0; i < MaxNPCIterations; i++)
-        {
-            var game = await _gameRepo.GetGame(gameID, ct);
-            if (game is null || game.Status == GameStatus.Finished)
+        return npcEvents
+            .Select(e => new ActionEventWithState
             {
-                return (npcEvents, null);
-            }
-
-            var state = await _gameRepo.GetGameState(gameID, ct);
-            if (state is null)
-            {
-                return (npcEvents, null);
-            }
-
-            // Determine NPC player number
-            long npcPlayerNum;
-            if (game.Player1ID == NpcConstants.PlayerId)
-            {
-                npcPlayerNum = 1;
-            }
-            else if (game.Player2ID == NpcConstants.PlayerId)
-            {
-                npcPlayerNum = 2;
-            }
-            else
-            {
-                return (npcEvents, null); // No NPC in this game
-            }
-
-            if (state.ActivePlayer != npcPlayerNum)
-            {
-                return (npcEvents, null);
-            }
-
-            // Compute available actions
-            var myField = state.GetField(npcPlayerNum);
-            var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
-            var hand = state.GetHand(npcPlayerNum);
-            var budget = state.GetBudget(npcPlayerNum);
-            var insightPool = state.GetInsightPool(npcPlayerNum);
-            var available = AvailableActions.GetAllAvailableActions(
-                state,
-                myField, oppField, hand, budget, insightPool,
-                _cardCache, _engine.EffectRegistry);
-
-            List<NpcAction> actions;
-            switch (state.CurrentPhase)
-            {
-                case Phase.Main:
-                    actions = npcAI.DecideMainPhaseActions(state, game, npcPlayerNum, available);
-                    break;
-                case Phase.Battle:
-                    actions = npcAI.DecideBattlePhaseActions(state, game, npcPlayerNum, available);
-                    break;
-                case Phase.End:
-                    var ids = npcAI.DecideDiscard(state, npcPlayerNum);
-                    if (!ids.Any())
-                    {
-                        _logger.LogWarning("NPC in end phase but no discard needed (game={GameID})", gameID);
-                        return (npcEvents, null);
-                    }
-                    actions =
-                    [
-                        new NpcAction
-                        {
-                            ActionType = "discard_hand",
-                            Data = new Dictionary<string, object> { ["cardInstanceIds"] = ids },
-                        }
-                    ];
-                    break;
-                default:
-                    return (npcEvents, null);
-            }
-
-            foreach (var action in actions)
-            {
-                try
-                {
-                    var actionType = EnumExtensions.ParseActionType(action.ActionType);
-                    var actionData = DeserializeNpcActionData(actionType, action.Data);
-                    var result = await _engine.ProcessAction(
-                        gameID, NpcConstants.PlayerId, actionType, actionData, ct);
-
-                    // 1つのアクションから複数イベントが生成される場合、全イベントにアクション完了後の
-                    // 同一スナップショットを付与する（中間状態は取得しない）
-                    ClientGameState? snapshot = null;
-                    if (stateForPlayerID is not null)
-                    {
-                        snapshot = await GetStateForPlayer(gameID, stateForPlayerID, ct);
-                    }
-
-                    foreach (var evt in result.Events)
-                    {
-                        npcEvents.Add(new ActionEventWithState { Event = evt, State = snapshot });
-                    }
-
-                    if (result.GameOver is not null)
-                    {
-                        _npcStrategies.TryRemove(gameID, out _);
-                        return (npcEvents, result.GameOver);
-                    }
-
-                    // エフェクトデプロイでスロット選択が必要になった場合、キューが空になるまで処理
-                    var needsSlot = result.NeedsSlotSelect;
-                    while (needsSlot)
-                    {
-                        var latestState = await _gameRepo.GetGameState(gameID, ct)
-                            ?? throw new InvalidOperationException($"Game state lost during NPC slot select (game={gameID})");
-
-                        var slotAction = npcAI.DecideSlotSelect(latestState, npcPlayerNum)
-                            ?? throw new InvalidOperationException($"NPC failed to decide slot selection (game={gameID})");
-
-                        var slotType = EnumExtensions.ParseActionType(slotAction.ActionType);
-                        var slotData = DeserializeNpcActionData(slotType, slotAction.Data);
-                        var slotResult = await _engine.ProcessAction(
-                            gameID, NpcConstants.PlayerId, slotType, slotData, ct);
-
-                        ClientGameState? slotSnapshot = null;
-                        if (stateForPlayerID is not null)
-                        {
-                            slotSnapshot = await GetStateForPlayer(gameID, stateForPlayerID, ct);
-                        }
-                        foreach (var evt in slotResult.Events)
-                        {
-                            npcEvents.Add(new ActionEventWithState { Event = evt, State = slotSnapshot });
-                        }
-
-                        if (slotResult.GameOver is not null)
-                        {
-                            _npcStrategies.TryRemove(gameID, out _);
-                            return (npcEvents, slotResult.GameOver);
-                        }
-
-                        needsSlot = slotResult.NeedsSlotSelect;
-                    }
-                }
-                catch (GameRuleException ex)
-                {
-                    // NPC chose an invalid action — expected, log and skip
-                    _logger.LogWarning(ex, "NPC action rejected (game={GameID}, action={Action})", gameID, action.ActionType);
-                }
-                catch (Exception ex)
-                {
-                    // Deserialization or infrastructure failure — this is a bug, stop the turn
-                    _logger.LogError(ex, "NPC action failed unexpectedly (game={GameID}, action={Action})", gameID, action.ActionType);
-                    break;
-                }
-            }
-        }
-
-        _logger.LogError("NPC turn exceeded {Max} iterations (game={GameID})", MaxNPCIterations, gameID);
-        return (npcEvents, null);
-    }
-
-    private static readonly JsonSerializerOptions NpcJsonOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-    };
-
-    private static object DeserializeNpcActionData(ActionType actionType, Dictionary<string, object> data)
-    {
-        var json = JsonSerializer.SerializeToElement(data, NpcJsonOpts);
-        return actionType switch
-        {
-            ActionType.PlayCard => json.Deserialize<PlayCardRequest>(NpcJsonOpts)!,
-            ActionType.Attack => json.Deserialize<AttackRequest>(NpcJsonOpts)!,
-            ActionType.ScaleUp => json.Deserialize<ScaleUpRequest>(NpcJsonOpts)!,
-            ActionType.Monetize => json.Deserialize<MonetizeRequest>(NpcJsonOpts)!,
-            ActionType.DiscardHand => json.Deserialize<DiscardHandRequest>(NpcJsonOpts)!,
-            ActionType.UseEffect => json.Deserialize<UseEffectRequest>(NpcJsonOpts)!,
-            ActionType.Migrate => json.Deserialize<MigrateRequest>(NpcJsonOpts)!,
-            ActionType.SelectSlot => json.Deserialize<SelectSlotRequest>(NpcJsonOpts)!,
-            ActionType.EndPhase => new object(),
-            ActionType.SetReactive => new object(),
-            ActionType.Forfeit => new object(),
-            _ => throw new ArgumentException($"unknown action type: {actionType}"),
-        };
+                Event = e.Event,
+                State = GameStateView.Build(e.State, game, viewerPlayerNum, _cardCache, _engine.EffectRegistry),
+            })
+            .ToList();
     }
 }

@@ -73,7 +73,7 @@ public class TurnTimerTests
 
         result.Should().NotBeNull();
         result!.WinnerNum.Should().Be(2);
-        result.Reason.Should().Be("timeout");
+        result.Reason.Should().Be("turn_timeout");
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public class TurnTimerTests
 
         result.Should().NotBeNull();
         result!.WinnerNum.Should().Be(1);
-        result.Reason.Should().Be("timeout");
+        result.Reason.Should().Be("turn_timeout");
     }
 
     [Fact]
@@ -144,7 +144,8 @@ public class TurnTimerTests
         var deck = TestFactory.MakeDeck("SH-0001");
 
         var gameID = await engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await engine.RunAutoAdvance(gameID);
+        var game = await repo.GetGame(gameID);
+        await engine.RunAutoAdvance(game!);
 
         // Simulate time running out: set TurnStartedAt far in the past
         var state = await repo.GetGameState(gameID);
@@ -156,17 +157,18 @@ public class TurnTimerTests
         var req = new PlayCardRequest
         {
             CardInstanceID = cardToPlay.InstanceID,
-            Zone = GameConstants.ZoneFrontend,
+            Zone = Zones.Frontend,
             Index = 0,
         };
 
-        var result = await engine.ProcessAction(gameID, "p1", ActionType.PlayCard, req);
+        game = await repo.GetGame(gameID);
+        var result = await engine.ProcessAction(game!, 1, ActionType.PlayCard, req);
 
         result.GameOver.Should().NotBeNull();
-        result.GameOver!.Reason.Should().Be("timeout");
+        result.GameOver!.Reason.Should().Be("turn_timeout");
         result.GameOver.WinnerNum.Should().Be(2, "opponent wins on timeout");
 
-        var game = await repo.GetGame(gameID);
+        game = await repo.GetGame(gameID);
         game!.Status.Should().Be(GameStatus.Finished);
     }
 
@@ -180,7 +182,8 @@ public class TurnTimerTests
         var deck = TestFactory.MakeDeck("SH-0001");
 
         var gameID = await engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await engine.RunAutoAdvance(gameID);
+        var game = await repo.GetGame(gameID);
+        await engine.RunAutoAdvance(game!);
 
         // Set TurnStartedAt 10 seconds ago (well within TimeBank)
         var state = await repo.GetGameState(gameID);
@@ -190,11 +193,12 @@ public class TurnTimerTests
         var req = new PlayCardRequest
         {
             CardInstanceID = cardToPlay.InstanceID,
-            Zone = GameConstants.ZoneFrontend,
+            Zone = Zones.Frontend,
             Index = 0,
         };
 
-        var result = await engine.ProcessAction(gameID, "p1", ActionType.PlayCard, req);
+        game = await repo.GetGame(gameID);
+        var result = await engine.ProcessAction(game!, 1, ActionType.PlayCard, req);
 
         result.GameOver.Should().BeNull("game should not be over");
         state.Player1TimeBank.Should().BeInRange(469, 471, "~10 seconds deducted");
@@ -214,6 +218,6 @@ public class TurnTimerTests
 
         result.Should().NotBeNull();
         result!.WinnerNum.Should().Be(2);
-        result.Reason.Should().Be("timeout");
+        result.Reason.Should().Be("turn_timeout");
     }
 }

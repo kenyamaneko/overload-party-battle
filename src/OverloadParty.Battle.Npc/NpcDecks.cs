@@ -20,7 +20,7 @@ public static class NpcDecks
     public static readonly NpcDeckDefinition SHEDeck = new()
     {
         Name = "SHE Standard",
-        Faction = GameConstants.FactionSHE,
+        Faction = Factions.SHE,
         Cards = C(
             "SH-0001", "SH-0001", "SH-0001", "SH-0002", "SH-0005", "SH-0005", "SH-0006", "SH-0006", "SH-0006", "SH-0007",
             "SH-0007", "SH-0007", "SH-0008", "SH-0008", "SH-0012", "SH-0012", "SH-0014", "SH-0016", "SH-0019", "SH-0019",
@@ -30,7 +30,7 @@ public static class NpcDecks
     public static readonly NpcDeckDefinition TenkiDeck = new()
     {
         Name = "Tenki Standard",
-        Faction = GameConstants.FactionTenki,
+        Faction = Factions.Tenki,
         Cards = C(
             "TK-0001", "TK-0001", "TK-0004", "TK-0004", "TK-0004", "TK-0005", "TK-0005", "TK-0007", "TK-0007", "TK-0007",
             "TK-0009", "TK-0010", "TK-0010", "TK-0010", "TK-0013", "TK-0013", "TK-0014", "TK-0015", "TK-0015", "TK-0015",
@@ -40,7 +40,7 @@ public static class NpcDecks
     public static readonly NpcDeckDefinition SugarDeck = new()
     {
         Name = "Sugar Standard",
-        Faction = GameConstants.FactionSugar,
+        Faction = Factions.Sugar,
         Cards = C(
             "SL-0001", "SL-0001", "SL-0001", "SL-0002", "SL-0002", "SL-0002", "SL-0003", "SL-0003", "SL-0004", "SL-0004",
             "SL-0006", "SL-0006", "SL-0007", "SL-0009", "SL-0013", "SL-0011", "SL-0011", "SL-0015", "SL-0015", "SL-0016",
@@ -50,7 +50,7 @@ public static class NpcDecks
     public static readonly NpcDeckDefinition TunersDeck = new()
     {
         Name = "Tuners Standard",
-        Faction = GameConstants.FactionTuners,
+        Faction = Factions.Tuners,
         Cards = C(
             "TN-0001", "TN-0001", "TN-0001", "TN-0002", "TN-0004", "TN-0004", "TN-0004", "TN-0006", "TN-0006", "TN-0007",
             "TN-0007", "TN-0007", "TN-0008", "TN-0009", "TN-0009", "TN-0010", "TN-0011", "TN-0013", "TN-0014", "TN-0015",
@@ -69,10 +69,10 @@ public static class NpcDecks
 
     public static readonly Dictionary<string, NpcDeckDefinition> Decks = new()
     {
-        [GameConstants.FactionSHE] = SHEDeck,
-        [GameConstants.FactionTenki] = TenkiDeck,
-        [GameConstants.FactionSugar] = SugarDeck,
-        [GameConstants.FactionTuners] = TunersDeck,
+        [Factions.SHE] = SHEDeck,
+        [Factions.Tenki] = TenkiDeck,
+        [Factions.Sugar] = SugarDeck,
+        [Factions.Tuners] = TunersDeck,
     };
 
     public static NpcDeckDefinition? GetDeck(string faction)

@@ -144,8 +144,8 @@ public class AllOwnSelector : ISelector
     {
         IEnumerable<DeployedResource> candidates = zone switch
         {
-            GameConstants.ZoneFrontend => field.Frontend,
-            GameConstants.ZoneBackend => field.Backend,
+            Zones.Frontend => field.Frontend,
+            Zones.Backend => field.Backend,
             _ => field.Frontend.Concat(field.Backend),
         };
 

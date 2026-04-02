@@ -51,10 +51,12 @@ public enum WinReason
     BudgetZero,
     SystemDown,
     RepositoryOut,
-    Timeout,
+    TurnTimeout,
+    Disconnect,
     TurnLimit,
     Draw,
-    LaunchFailure
+    LaunchFailure,
+    Surrender
 }
 
 public enum ActionType

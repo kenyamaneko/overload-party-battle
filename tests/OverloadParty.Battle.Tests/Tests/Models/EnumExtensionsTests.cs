@@ -192,10 +192,12 @@ public class EnumExtensionsTests
     [InlineData(WinReason.BudgetZero, "budget_zero")]
     [InlineData(WinReason.SystemDown, "system_down")]
     [InlineData(WinReason.RepositoryOut, "repository_out")]
-    [InlineData(WinReason.Timeout, "timeout")]
+    [InlineData(WinReason.TurnTimeout, "turn_timeout")]
+    [InlineData(WinReason.Disconnect, "disconnect")]
     [InlineData(WinReason.TurnLimit, "turn_limit")]
     [InlineData(WinReason.Draw, "draw")]
     [InlineData(WinReason.LaunchFailure, "launch_failure")]
+    [InlineData(WinReason.Surrender, "surrender")]
     public void WinReason_ToWireString_ReturnsExpected(WinReason reason, string expected)
     {
         reason.ToWireString().Should().Be(expected);
@@ -205,10 +207,12 @@ public class EnumExtensionsTests
     [InlineData("budget_zero", WinReason.BudgetZero)]
     [InlineData("system_down", WinReason.SystemDown)]
     [InlineData("repository_out", WinReason.RepositoryOut)]
-    [InlineData("timeout", WinReason.Timeout)]
+    [InlineData("turn_timeout", WinReason.TurnTimeout)]
+    [InlineData("disconnect", WinReason.Disconnect)]
     [InlineData("turn_limit", WinReason.TurnLimit)]
     [InlineData("draw", WinReason.Draw)]
     [InlineData("launch_failure", WinReason.LaunchFailure)]
+    [InlineData("surrender", WinReason.Surrender)]
     public void ParseWinReason_ValidInput_ReturnsExpected(string input, WinReason expected)
     {
         EnumExtensions.ParseWinReason(input).Should().Be(expected);
@@ -225,7 +229,7 @@ public class EnumExtensionsTests
     [Fact]
     public void ParseWinReason_InvalidInput_Throws()
     {
-        var act = () => EnumExtensions.ParseWinReason("disconnect");
+        var act = () => EnumExtensions.ParseWinReason("timeout");
         act.Should().Throw<ArgumentException>().WithMessage("*win reason*");
     }
 
@@ -233,10 +237,12 @@ public class EnumExtensionsTests
     [InlineData(WinReason.BudgetZero)]
     [InlineData(WinReason.SystemDown)]
     [InlineData(WinReason.RepositoryOut)]
-    [InlineData(WinReason.Timeout)]
+    [InlineData(WinReason.TurnTimeout)]
+    [InlineData(WinReason.Disconnect)]
     [InlineData(WinReason.TurnLimit)]
     [InlineData(WinReason.Draw)]
     [InlineData(WinReason.LaunchFailure)]
+    [InlineData(WinReason.Surrender)]
     public void WinReason_Roundtrip(WinReason reason)
     {
         EnumExtensions.ParseWinReason(reason.ToWireString()).Should().Be(reason);

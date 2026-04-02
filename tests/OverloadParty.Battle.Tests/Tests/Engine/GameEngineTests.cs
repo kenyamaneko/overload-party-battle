@@ -83,7 +83,8 @@ public class GameEngineTests
         int handBefore = state!.Player1Hand.Count;
         int repoBefore = state.Player1Repository.Count;
 
-        var result = await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        var result = await _engine.RunAutoAdvance(game!);
 
         result.Should().BeNull("no game-over expected");
 
@@ -91,14 +92,6 @@ public class GameEngineTests
         state.Player1Hand.Should().HaveCount(handBefore + 1);
         state.Player1Repository.Should().HaveCount(repoBefore - 1);
         state.CurrentPhase.Should().Be(Phase.Main);
-    }
-
-    [Fact]
-    public async Task RunAutoAdvance_NonExistentGame_Throws()
-    {
-        var act = () => _engine.RunAutoAdvance("nonexistent");
-
-        await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not found*");
     }
 
     // ─── ProcessAction: PlayCard ─────────────────────────────
@@ -110,7 +103,8 @@ public class GameEngineTests
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
         // Advance past draw phase
-        await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        await _engine.RunAutoAdvance(game!);
 
         var state = await _repo.GetGameState(gameID);
         state!.CurrentPhase.Should().Be(Phase.Main);
@@ -119,12 +113,13 @@ public class GameEngineTests
         var req = new PlayCardRequest
         {
             CardInstanceID = cardToPlay.InstanceID,
-            Zone = GameConstants.ZoneFrontend,
+            Zone = Zones.Frontend,
             Index = 0,
         };
 
+        game = await _repo.GetGame(gameID);
         var result = await _engine.ProcessAction(
-            gameID, "p1", ActionType.PlayCard, req);
+            game!, 1, ActionType.PlayCard, req);
 
         result.Should().NotBeNull();
         result.Events.Should().Contain(e => e.EventType == WireActionTypes.PlayCard);
@@ -166,8 +161,9 @@ public class GameEngineTests
             TargetInstanceID = "def_1",
         };
 
+        var game = await _repo.GetGame(gameID);
         var result = await _engine.ProcessAction(
-            gameID, "p1", ActionType.Attack, req);
+            game!, 1, ActionType.Attack, req);
 
         result.Should().NotBeNull();
         result.Events.Should().Contain(e => e.EventType == WireActionTypes.Attack);
@@ -187,59 +183,56 @@ public class GameEngineTests
     {
         var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        await _engine.RunAutoAdvance(game!);
 
         var state = await _repo.GetGameState(gameID);
         var cardToPlay = state!.Player2Hand.First();
         var req = new PlayCardRequest
         {
             CardInstanceID = cardToPlay.InstanceID,
-            Zone = GameConstants.ZoneFrontend,
+            Zone = Zones.Frontend,
             Index = 0,
         };
 
         // Player 2 tries to act on player 1's turn
+        game = await _repo.GetGame(gameID);
         var act = () => _engine.ProcessAction(
-            gameID, "p2", ActionType.PlayCard, req);
+            game!, 2, ActionType.PlayCard, req);
 
         await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not your turn*");
     }
 
     [Fact]
-    public async Task ProcessAction_InvalidPlayer_Throws()
+    public async Task ResolvePlayerNum_InvalidPlayer_Throws()
     {
         var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
 
-        var req = new PlayCardRequest
-        {
-            CardInstanceID = "any",
-            Zone = GameConstants.ZoneFrontend,
-            Index = 0,
-        };
+        var game = await _repo.GetGame(gameID);
 
-        var act = () => _engine.ProcessAction(
-            gameID, "unknown_player", ActionType.PlayCard, req);
+        var act = () => game!.ResolvePlayerNum("unknown_player");
 
-        await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in this game*");
+        act.Should().Throw<ArgumentException>().WithMessage("*not in this game*");
     }
 
     [Fact]
-    public async Task ProcessAction_Forfeit_EndsGameImmediately()
+    public async Task Forfeit_EndsGameImmediately()
     {
         var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
-        var result = await _engine.ProcessAction(
-            gameID, "p1", ActionType.Forfeit, new object());
+        var game = await _repo.GetGame(gameID);
+        var result = await _engine.Forfeit(game!, 1, WinReason.Surrender);
 
         result.GameOver.Should().NotBeNull();
         result.GameOver!.WinnerNum.Should().Be(2, "opponent wins on forfeit");
+        result.GameOver.Reason.Should().Be(WinReasons.Surrender);
 
-        var game = await _repo.GetGame(gameID);
+        game = await _repo.GetGame(gameID);
         game!.Status.Should().Be(GameStatus.Finished);
-        game.WinnerID.Should().Be("p2");
+        game.WinnerNum.Should().Be(2);
+        game.WinReason.Should().Be(WinReasons.Surrender);
     }
 
     [Fact]
@@ -249,11 +242,13 @@ public class GameEngineTests
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
 
         // Forfeit to finish the game
-        await _engine.ProcessAction(gameID, "p1", ActionType.Forfeit, new object());
+        var game = await _repo.GetGame(gameID);
+        await _engine.Forfeit(game!, 1, WinReason.Surrender);
 
         // Trying to act on a finished game should throw
+        game = await _repo.GetGame(gameID);
         var act = () => _engine.ProcessAction(
-            gameID, "p2", ActionType.EndPhase, new object());
+            game!, 2, ActionType.EndPhase, new object());
 
         await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
     }
@@ -271,7 +266,8 @@ public class GameEngineTests
         var originalBudget = initialState!.Player1Budget;
         var originalHandCount = initialState.Player1Hand.Count;
 
-        await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        await _engine.RunAutoAdvance(game!);
 
         var currentState = await _repo.GetGameState(gameID);
         currentState!.Player1Hand.Count.Should().NotBe(originalHandCount,
@@ -303,7 +299,8 @@ public class GameEngineTests
     {
         var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        await _engine.RunAutoAdvance(game!);
 
         var state = await _repo.GetGameState(gameID);
         state!.PendingSlotSelects.Add(new AwaitingSlotSelect
@@ -313,8 +310,9 @@ public class GameEngineTests
             ValidZones = ["frontend_1"],
         });
 
+        game = await _repo.GetGame(gameID);
         var act = () => _engine.ProcessAction(
-            gameID, "p1", ActionType.EndPhase, new object());
+            game!, 1, ActionType.EndPhase, new object());
 
         await act.Should().ThrowAsync<GameRuleException>().WithMessage("*slot selection*");
     }
@@ -324,7 +322,8 @@ public class GameEngineTests
     {
         var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        await _engine.RunAutoAdvance(game!);
 
         var state = await _repo.GetGameState(gameID);
         state!.PendingSlotSelects.Add(new AwaitingSlotSelect
@@ -334,9 +333,10 @@ public class GameEngineTests
             ValidZones = ["frontend_1"],
         });
 
+        game = await _repo.GetGame(gameID);
         var result = await _engine.ProcessAction(
-            gameID, "p1", ActionType.SelectSlot,
-            new SelectSlotRequest { Zone = GameConstants.ZoneFrontend, Index = 1 });
+            game!, 1, ActionType.SelectSlot,
+            new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
 
         result.Events.Should().Contain(e => e.EventType == WireActionTypes.SelectSlot);
         state.PendingSlotSelects.Should().BeEmpty();
@@ -348,7 +348,8 @@ public class GameEngineTests
     {
         var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        await _engine.RunAutoAdvance(game!);
 
         var state = await _repo.GetGameState(gameID);
         // Player 2 is awaiting slot select, but it's Player 1's turn
@@ -361,12 +362,13 @@ public class GameEngineTests
 
         // Player 1 should still be able to act
         var cardToPlay = state.Player1Hand.First();
+        game = await _repo.GetGame(gameID);
         var result = await _engine.ProcessAction(
-            gameID, "p1", ActionType.PlayCard,
+            game!, 1, ActionType.PlayCard,
             new PlayCardRequest
             {
                 CardInstanceID = cardToPlay.InstanceID,
-                Zone = GameConstants.ZoneFrontend,
+                Zone = Zones.Frontend,
                 Index = 0,
             });
 
@@ -378,17 +380,19 @@ public class GameEngineTests
     {
         var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        await _engine.RunAutoAdvance(game!);
 
         var state = await _repo.GetGameState(gameID);
         var cardToPlay = state!.Player1Hand.First();
 
+        game = await _repo.GetGame(gameID);
         await _engine.ProcessAction(
-            gameID, "p1", ActionType.PlayCard,
+            game!, 1, ActionType.PlayCard,
             new PlayCardRequest
             {
                 CardInstanceID = cardToPlay.InstanceID,
-                Zone = GameConstants.ZoneFrontend,
+                Zone = Zones.Frontend,
                 Index = 0,
             });
 
@@ -400,12 +404,13 @@ public class GameEngineTests
         });
 
         var cardToPlay2 = state.Player1Hand.First();
+        game = await _repo.GetGame(gameID);
         var act = () => _engine.ProcessAction(
-            gameID, "p1", ActionType.PlayCard,
+            game!, 1, ActionType.PlayCard,
             new PlayCardRequest
             {
                 CardInstanceID = cardToPlay2.InstanceID,
-                Zone = GameConstants.ZoneFrontend,
+                Zone = Zones.Frontend,
                 Index = 1,
             });
 
@@ -417,7 +422,8 @@ public class GameEngineTests
     {
         var deck = MakeSingleCardDeck("SH-0001");
         var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
-        await _engine.RunAutoAdvance(gameID);
+        var game = await _repo.GetGame(gameID);
+        await _engine.RunAutoAdvance(game!);
 
         var state = await _repo.GetGameState(gameID);
 
@@ -436,18 +442,20 @@ public class GameEngineTests
         });
 
         // 1件目を処理
+        game = await _repo.GetGame(gameID);
         var result = await _engine.ProcessAction(
-            gameID, "p1", ActionType.SelectSlot,
-            new SelectSlotRequest { Zone = GameConstants.ZoneFrontend, Index = 0 });
+            game!, 1, ActionType.SelectSlot,
+            new SelectSlotRequest { Zone = Zones.Frontend, Index = 0 });
 
         result.NeedsSlotSelect.Should().BeTrue();
         state.Player1Field.Frontend[0]!.InstanceID.Should().Be("pending_1");
         state.PendingSlotSelects.Should().ContainSingle();
 
         // 2件目を処理
+        game = await _repo.GetGame(gameID);
         var result2 = await _engine.ProcessAction(
-            gameID, "p1", ActionType.SelectSlot,
-            new SelectSlotRequest { Zone = GameConstants.ZoneFrontend, Index = 1 });
+            game!, 1, ActionType.SelectSlot,
+            new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
 
         result2.NeedsSlotSelect.Should().BeFalse();
         state.Player1Field.Frontend[1]!.InstanceID.Should().Be("pending_2");

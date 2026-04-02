@@ -192,7 +192,7 @@ public static class PlayCardProcessor
             ctx.State.SetHasHadActiveResource(ctx.PlayerNum, true);
         }
 
-        if (req.Zone == GameConstants.ZoneFrontend)
+        if (req.Zone == Zones.Frontend)
         {
             field.Frontend[req.Index] = resource;
         }
@@ -310,7 +310,7 @@ public static class PlayCardProcessor
 
         switch (req.Zone)
         {
-            case GameConstants.ZoneFrontend:
+            case Zones.Frontend:
                 if (!FieldHelpers.IsFrontendEligible(cardDef.CardType))
                 {
                     throw new GameRuleException($"{cardDef.CardType} cannot be placed in frontend");
@@ -321,7 +321,7 @@ public static class PlayCardProcessor
                 }
                 break;
 
-            case GameConstants.ZoneBackend:
+            case Zones.Backend:
                 if (!FieldHelpers.IsBackendEligible(cardDef.CardType))
                 {
                     throw new GameRuleException($"{cardDef.CardType} cannot be placed in backend");
@@ -332,7 +332,7 @@ public static class PlayCardProcessor
                 }
                 break;
 
-            case GameConstants.ZoneSupport:
+            case Zones.Support:
                 if (!FieldHelpers.IsSupportType(cardDef.CardType))
                 {
                     throw new GameRuleException($"{cardDef.CardType} cannot be placed in support");

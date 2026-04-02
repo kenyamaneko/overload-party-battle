@@ -2,7 +2,7 @@ using System.Text;
 using System.Text.Json;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
-using OverloadParty.Battle.Npc;
+
 
 namespace OverloadParty.Battle.Service;
 
@@ -36,19 +36,19 @@ public class GameLogService
         var state = await _gameRepo.GetGameState(gameID, ct);
         var events = await _gameRepo.GetEvents(gameID, ct);
 
-        var isNpc = NpcConstants.IsNpcPlayer(game.Player1ID) || NpcConstants.IsNpcPlayer(game.Player2ID);
         var durationSecs = game.FinishedAt.HasValue
             ? (long)(game.FinishedAt.Value - game.CreatedAt).TotalSeconds
             : (long?)null;
 
-        var winnerLabel = game.WinnerID switch
+        var winnerLabel = game.WinnerNum switch
         {
-            null or "" => null,
-            _ when game.WinnerID == game.Player1ID => "player1",
+            null => null,
+            0 => null,
+            1 => "player1",
             _ => "player2",
         };
 
-        var winReason = FindWinReason(events);
+        var winReason = game.WinReason ?? FindWinReasonFromEvents(events);
 
         var entries = events
             .Select(e => new GameLogEntry
@@ -90,20 +90,21 @@ public class GameLogService
         // Header
         sb.AppendLine($"=== Game {gameID} ===");
 
-        var p1Label = NpcConstants.IsNpcPlayer(game.Player1ID)
-            ? $"{game.Player1ID} (NPC)"
+        var p1Label = game.Npc1Model is not null
+            ? $"NPC ({game.Npc1Model})"
             : game.Player1ID;
-        var p2Label = NpcConstants.IsNpcPlayer(game.Player2ID)
-            ? $"{game.Player2ID} (NPC)"
+        var p2Label = game.Npc2Model is not null
+            ? $"NPC ({game.Npc2Model})"
             : game.Player2ID;
         sb.AppendLine($"P1: {p1Label}  vs  P2: {p2Label}");
 
         // Winner / duration
-        var winReason = FindWinReason(events);
-        var winnerTag = game.WinnerID switch
+        var winReason = game.WinReason ?? FindWinReasonFromEvents(events);
+        var winnerTag = game.WinnerNum switch
         {
-            null or "" => winReason == "draw" ? "Draw" : "N/A",
-            _ when game.WinnerID == game.Player1ID => $"P1 ({winReason})",
+            null => "N/A",
+            0 => "Draw",
+            1 => $"P1 ({winReason})",
             _ => $"P2 ({winReason})",
         };
 
@@ -275,19 +276,12 @@ public class GameLogService
 
     private string DescribeGameOver(Game game)
     {
-        var winReason = game.WinnerID switch
+        return game.WinnerNum switch
         {
-            null or "" => "Draw",
-            _ => "",
+            null or 0 => "Game over: Draw",
+            1 => "Game over: P1 wins",
+            _ => "Game over: P2 wins",
         };
-
-        if (string.IsNullOrEmpty(winReason))
-        {
-            var winner = game.WinnerID == game.Player1ID ? "P1" : "P2";
-            return $"Game over: {winner} wins";
-        }
-
-        return $"Game over: {winReason}";
     }
 
     // ─── Helpers ─────────────────────────────────────────────────
@@ -307,7 +301,7 @@ public class GameLogService
         return card?.CardName ?? $"Card#{cardId}";
     }
 
-    private static string? FindWinReason(List<GameEvent> events)
+    private static string? FindWinReasonFromEvents(List<GameEvent> events)
     {
         var gameOverEvent = events.LastOrDefault(e => e.EventType == "game_over");
         if (gameOverEvent?.EventData is not null)

@@ -74,14 +74,15 @@ public class MockGameRepository : IGameRepository
         return Task.CompletedTask;
     }
 
-    public Task FinishGame(string gameID, string winnerID, CancellationToken ct = default)
+    public Task FinishGame(string gameID, long winnerNum, string winReason, CancellationToken ct = default)
     {
         lock (_lock)
         {
             if (_games.TryGetValue(gameID, out var game))
             {
                 game.Status = GameStatus.Finished;
-                game.WinnerID = winnerID;
+                game.WinnerNum = winnerNum;
+                game.WinReason = winReason;
                 game.FinishedAt = DateTime.UtcNow;
             }
         }

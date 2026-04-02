@@ -55,7 +55,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var result = PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
 
         state.Player1Hand.Should().BeEmpty();
         state.Player1Field.Frontend[0].Should().NotBeNull();
@@ -77,7 +77,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneBackend, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Backend, 0), _cc, null);
 
         state.Player1Field.Backend[0].Should().NotBeNull();
         state.Player1Field.Backend[0]!.CardID.Should().Be("SH-0001");
@@ -92,7 +92,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0002" });
 
         PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
 
         state.Player1Field.Frontend[0]!.FaceUp.Should().BeTrue();
         state.Player1HasHadActiveResource.Should().BeTrue();
@@ -106,7 +106,7 @@ public class PlayCardProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("missing", GameConstants.ZoneFrontend, 0), _cc, null);
+            state, _game, 1, MakeReq("missing", Zones.Frontend, 0), _cc, null);
 
         act.Should().Throw<GameRuleException>();
     }
@@ -121,7 +121,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
 
         act.Should().Throw<GameRuleException>().WithMessage("*occupied*");
     }
@@ -135,7 +135,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "NT-0009" });
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
 
         act.Should().Throw<GameRuleException>();
     }
@@ -149,7 +149,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, null);
 
         act.Should().Throw<GameRuleException>();
     }
@@ -165,7 +165,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, index), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, index), _cc, null);
 
         act.Should().Throw<GameRuleException>().WithMessage("*invalid slot*");
     }
@@ -181,7 +181,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0, targetInstanceId: "target_1"), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0, targetInstanceId: "target_1"), _cc, null);
 
         target.Attachments.Should().HaveCount(1);
         target.Attachments[0].CardID.Should().Be("TEST-0300");
@@ -200,7 +200,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneFrontend, 0, targetInstanceId: "target_1"), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0, targetInstanceId: "target_1"), _cc, null);
 
         act.Should().Throw<GameRuleException>().WithMessage("*max attachments*");
     }
@@ -214,7 +214,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, null);
 
         act.Should().Throw<GameRuleException>();
     }
@@ -272,7 +272,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0502" });
 
         PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, null);
 
         state.Player1Field.Support[0].Should().NotBeNull();
         state.Player1Field.Support[0]!.FaceUp.Should().BeFalse();
@@ -287,7 +287,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0200" });
 
         PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", GameConstants.ZoneSupport, 0), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, null);
 
         state.Player1Field.Support[0].Should().NotBeNull();
         state.Player1Field.Support[0]!.FaceUp.Should().BeTrue();
