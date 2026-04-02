@@ -352,26 +352,24 @@ public class AvailableActionsTests
     }
 
     [Fact]
-    public void PlayCard_AttachmentExcludesResourcesAtMaxAttachments()
+    public void PlayCard_AttachmentUnavailableWhenSupportZoneFull()
     {
-        // 各Resource のアタッチメントスロットは2つ。上限なら装備不可
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
         cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
-        myField.Frontend[0] = res;
-        myField.Support.TryPlace(new DeployedSupport { InstanceID = "att_1", CardID = "TEST-0300", TargetInstanceID = "fe_1" });
-        myField.Support.TryPlace(new DeployedSupport { InstanceID = "att_2", CardID = "TEST-0300", TargetInstanceID = "fe_1" });
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
+        myField.Support[0] = new DeployedSupport { InstanceID = "s_0", CardID = "TEST-0300", TargetInstanceID = "fe_1" };
+        myField.Support[1] = new DeployedSupport { InstanceID = "s_1", CardID = "TEST-0300", TargetInstanceID = "fe_1" };
+        myField.Support[2] = new DeployedSupport { InstanceID = "s_2", CardID = "TEST-0300", TargetInstanceID = "fe_1" };
 
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        // No valid targets → no play action
         actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
     }
 
@@ -1556,9 +1554,8 @@ public class AvailableActionsTests
     // ─── Attachment 上限 ────────────────────────────────────────
 
     [Fact]
-    public void PlayCard_AttachmentOnlyTargetsResourcesWithRoom()
+    public void PlayCard_AttachmentTargetsAllFaceUpResources()
     {
-        // 2体いて1体がアタッチメント上限、もう1体が空きあり → 空きある方だけ
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
         cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
@@ -1566,13 +1563,13 @@ public class AvailableActionsTests
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
 
-        var fullRes = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "full");
-        myField.Frontend[0] = fullRes;
-        myField.Support.TryPlace(new DeployedSupport { InstanceID = "a1", CardID = "TEST-0300", TargetInstanceID = "full" });
-        myField.Support.TryPlace(new DeployedSupport { InstanceID = "a2", CardID = "TEST-0300", TargetInstanceID = "full" });
+        var res1 = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
+        myField.Frontend[0] = res1;
+        myField.Support.TryPlace(new DeployedSupport { InstanceID = "a1", CardID = "TEST-0300", TargetInstanceID = "fe_1" });
+        myField.Support.TryPlace(new DeployedSupport { InstanceID = "a2", CardID = "TEST-0300", TargetInstanceID = "fe_1" });
 
-        var emptyRes = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "empty");
-        myField.Frontend[1] = emptyRes;
+        var res2 = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_2");
+        myField.Frontend[1] = res2;
 
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
@@ -1580,8 +1577,8 @@ public class AvailableActionsTests
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
         var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
-        playAction.ValidTargets.Should().NotContain(t => t == "full");
-        playAction.ValidTargets.Should().Contain(t => t == "empty");
+        playAction.ValidTargets.Should().Contain(t => t == "fe_1");
+        playAction.ValidTargets.Should().Contain(t => t == "fe_2");
     }
 
     // ─── ScaleUp 追加パターン ───────────────────────────────────

@@ -10,7 +10,6 @@ public static class BattleConstants
     public const int InitialHandSize = 5;
     public const int HandLimit = 6;
     public const int InitialTimeBank = 480;
-    public const int MaxAttachments = 2;
     public const int SlotsPerZone = 3;
 
     // Game limits

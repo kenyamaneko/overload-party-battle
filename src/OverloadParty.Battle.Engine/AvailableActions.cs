@@ -158,7 +158,6 @@ public static class AvailableActions
             if (zones.Count == 0) { return null; }
 
             var targets = FieldHelpers.AllFaceUpResources(field)
-                .Where(r => field.Support.Count(a => a.TargetInstanceID == r.InstanceID) < BattleConstants.MaxAttachments)
                 .Select(r => r.InstanceID)
                 .ToList();
 

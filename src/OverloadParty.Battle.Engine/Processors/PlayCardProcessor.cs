@@ -248,10 +248,6 @@ public static class PlayCardProcessor
         var field = ctx.State.GetField(ctx.PlayerNum);
         var target = FieldHelpers.FindResourceByID(field, req.TargetInstanceID)
             ?? throw new GameRuleException($"target resource {req.TargetInstanceID} not found");
-        if (field.Support.Count(a => a.TargetInstanceID == target.InstanceID) >= BattleConstants.MaxAttachments)
-        {
-            throw new GameRuleException($"target already has max attachments ({BattleConstants.MaxAttachments})");
-        }
         if (req.Zone != Zones.Support)
         {
             throw new GameRuleException("attachment must be placed in support zone");

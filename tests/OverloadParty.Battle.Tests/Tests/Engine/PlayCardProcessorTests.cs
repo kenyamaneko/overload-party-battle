@@ -188,25 +188,7 @@ public class PlayCardProcessorTests
         state.Player1Field.Support[0]!.TargetInstanceID.Should().Be("target_1");
     }
 
-    // ─── 10. Attachment max → throws ────────────────────────
-
-    [Fact]
-    public void Process_AttachmentCard_MaxAttachments_Throws()
-    {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        var target = TestFactory.MakeResource(instanceId: "target_1");
-        state.Player1Field.Frontend[0] = target;
-        state.Player1Field.Support.TryPlace(new DeployedSupport { InstanceID = "a1", CardID = "TEST-0300", TargetInstanceID = "target_1" });
-        state.Player1Field.Support.TryPlace(new DeployedSupport { InstanceID = "a2", CardID = "TEST-0300", TargetInstanceID = "target_1" });
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
-
-        var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", Zones.Support, 2, targetInstanceId: "target_1"), _cc, null);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*max attachments*");
-    }
-
-    // ─── 11. Attachment without target ID → throws ──────────
+    // ─── 10. Attachment without target ID → throws ──────────
 
     [Fact]
     public void Process_AttachmentCard_NoTargetId_Throws()
