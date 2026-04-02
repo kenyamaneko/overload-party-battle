@@ -37,9 +37,8 @@ public class GameService
     private readonly IGameRepository _gameRepo;
     private readonly ICardCache _cardCache;
     private readonly NpcRunner _npcRunner;
+    private readonly Dictionary<string, AiConfig> _aiConfigs;
 
-    // TODO: Assembly version defaults to 1.0.0.0 locally. Ensure CI injects correct versions
-    // via <Version> in .csproj, or switch to git SHA / environment variable.
     private static readonly string EngineVersion =
         typeof(GameEngine).Assembly.GetName().Version?.ToString() ?? "unknown";
     private static readonly string CardDataVersion =
@@ -49,12 +48,14 @@ public class GameService
         GameEngine engine,
         IGameRepository gameRepo,
         ICardCache cardCache,
-        NpcRunner npcRunner)
+        NpcRunner npcRunner,
+        Dictionary<string, AiConfig> aiConfigs)
     {
         _engine = engine;
         _gameRepo = gameRepo;
         _cardCache = cardCache;
         _npcRunner = npcRunner;
+        _aiConfigs = aiConfigs;
     }
 
     // ─── Game creation ──────────────────────────────────────────
@@ -95,11 +96,18 @@ public class GameService
             throw new InvalidOperationException("deck is empty");
         }
 
-        var npcDeck = NpcDecks.GetDeck(npcFaction)
-            ?? throw new InvalidOperationException($"unknown NPC faction: {npcFaction}");
+        if (!_aiConfigs.TryGetValue(npcFaction, out var npcConfig))
+        {
+            throw new InvalidOperationException(
+                $"No AI config found for '{npcFaction}'. Available: [{string.Join(", ", _aiConfigs.Keys)}]");
+        }
+
+        var npcCards = npcConfig.Deck
+            .SelectMany(e => Enumerable.Repeat(new DeckSnapshotCard { CardId = e.CardId }, e.Copies))
+            .ToList();
 
         var deck1 = new DeckSnapshot { DeckID = deckID.ToString(), Cards = playerCards };
-        var deck2 = new DeckSnapshot { DeckID = $"npc-{npcFaction}", Cards = [.. npcDeck.Cards] };
+        var deck2 = new DeckSnapshot { DeckID = $"npc-{npcFaction}", Cards = npcCards };
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 

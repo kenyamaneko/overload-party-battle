@@ -6,7 +6,7 @@ using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 using OverloadParty.Battle.Service;
 
-namespace OverloadParty.Battle.Tests.Tests.Service;
+namespace OverloadParty.Battle.Tests.Service;
 
 public class GameServiceTests
 {
@@ -21,8 +21,15 @@ public class GameServiceTests
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
         _cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
         _engine = new GameEngine(_repo, _cc);
-        var npcRunner = new NpcRunner(_engine, _repo, _cc, NullNpcLogger.Instance);
-        _svc = new GameService(_engine, _repo, _cc, npcRunner);
+        var npcDeck = Enumerable.Range(0, GameConstants.DeckSize)
+            .Select(_ => new DeckEntry { CardId = "SH-0001", Copies = 1 })
+            .ToList();
+        var aiConfigs = new Dictionary<string, AiConfig>
+        {
+            [Factions.SHE] = new AiConfig { Model = Factions.SHE, Faction = Factions.SHE, Deck = npcDeck },
+        };
+        var npcRunner = new NpcRunner(_engine, _repo, _cc, aiConfigs, NullNpcLogger.Instance);
+        _svc = new GameService(_engine, _repo, _cc, npcRunner, aiConfigs);
     }
 
     private List<DeckSnapshotCard> MakePlayerCards(string cardId = "SH-0001")
@@ -89,7 +96,7 @@ public class GameServiceTests
     [Fact]
     public async Task StartNPCBattle_EmptyDeck_Throws()
     {
-        var act = () => _svc.StartNPCBattle("player1", 1, [], Factions.SHE);
+        var act = () => _svc.StartNPCBattle("player1", 1, [], "SHE-easy");
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*empty*");
@@ -102,7 +109,7 @@ public class GameServiceTests
         var act = () => _svc.StartNPCBattle("player1", 1, cards, "unknown_faction");
 
         await act.Should().ThrowAsync<InvalidOperationException>()
-            .WithMessage("*unknown NPC faction*");
+            .WithMessage("*No AI config found*");
     }
 
     // ─── ProcessAction ──────────────────────────────────────

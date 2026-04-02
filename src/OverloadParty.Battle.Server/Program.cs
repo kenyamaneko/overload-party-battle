@@ -82,11 +82,18 @@ builder.Services.AddSingleton(sp =>
 
 // ─── Services ───────────────────────────────────────────────
 
+var aiConfigDir = Environment.GetEnvironmentVariable("NPC_AI_CONFIG_DIR")
+    ?? Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "OverloadParty.Battle.Npc", "Data");
+var aiConfigs = Directory.Exists(aiConfigDir)
+    ? AiConfigLoader.LoadAll(aiConfigDir)
+    : new Dictionary<string, AiConfig>();
+
 builder.Services.AddSingleton<NpcRunner>(sp =>
     new NpcRunner(
         sp.GetRequiredService<GameEngine>(),
         sp.GetRequiredService<IGameRepository>(),
         sp.GetRequiredService<ICardCache>(),
+        aiConfigs,
         sp.GetRequiredService<ILogger<NpcRunner>>()));
 
 builder.Services.AddSingleton<GameService>(sp =>
@@ -94,7 +101,8 @@ builder.Services.AddSingleton<GameService>(sp =>
         sp.GetRequiredService<GameEngine>(),
         sp.GetRequiredService<IGameRepository>(),
         sp.GetRequiredService<ICardCache>(),
-        sp.GetRequiredService<NpcRunner>()));
+        sp.GetRequiredService<NpcRunner>(),
+        aiConfigs));
 
 builder.Services.AddSingleton<GameLogService>(sp =>
     new GameLogService(

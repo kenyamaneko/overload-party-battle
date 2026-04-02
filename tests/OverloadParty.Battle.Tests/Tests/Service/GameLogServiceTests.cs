@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 using OverloadParty.Battle.Service;
 
-namespace OverloadParty.Battle.Tests.Tests.Service;
+namespace OverloadParty.Battle.Tests.Service;
 
 public class GameLogServiceTests
 {

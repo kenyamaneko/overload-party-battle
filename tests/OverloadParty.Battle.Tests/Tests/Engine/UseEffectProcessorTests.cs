@@ -3,7 +3,7 @@ using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Tests.Tests.Engine;
+namespace OverloadParty.Battle.Tests.Engine;
 
 public class UseEffectProcessorTests
 {

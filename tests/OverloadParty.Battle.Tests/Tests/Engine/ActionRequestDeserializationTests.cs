@@ -1,7 +1,7 @@
 using System.Text.Json;
 using OverloadParty.Battle.Engine.Processors;
 
-namespace OverloadParty.Battle.Tests.Tests.Engine;
+namespace OverloadParty.Battle.Tests.Engine;
 
 public class ActionRequestDeserializationTests
 {

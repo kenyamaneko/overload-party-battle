@@ -381,3 +381,12 @@ public class TestEffectRegistry : IEffectRegistry
     public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
     public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
 }
+
+internal static class EffectInfoTestExtensions
+{
+    public static EffectInfo WithCategory(this EffectInfo info, EffectCategory cat)
+    {
+        info.Categories.Add(cat);
+        return info;
+    }
+}

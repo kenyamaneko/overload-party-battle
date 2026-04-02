@@ -30,6 +30,7 @@ public class NpcRunner
     private readonly IGameRepository _repo;
     private readonly ICardCache _cardCache;
     private readonly ILogger<NpcRunner> _logger;
+    private readonly Dictionary<string, AiConfig> _aiConfigs;
 
     private const int MaxIterations = 50;
 
@@ -37,11 +38,13 @@ public class NpcRunner
         GameEngine engine,
         IGameRepository repo,
         ICardCache cardCache,
+        Dictionary<string, AiConfig> aiConfigs,
         ILogger<NpcRunner> logger)
     {
         _engine = engine;
         _repo = repo;
         _cardCache = cardCache;
+        _aiConfigs = aiConfigs;
         _logger = logger;
     }
 
@@ -93,7 +96,14 @@ public class NpcRunner
         {
             throw new InvalidOperationException("EffectRegistry is not configured");
         }
-        return FactionAi.GetFactionAi(npcModel, _cardCache, _engine.EffectRegistry);
+
+        if (!_aiConfigs.TryGetValue(npcModel, out var config))
+        {
+            throw new InvalidOperationException(
+                $"No AI config found for model '{npcModel}'. Available: [{string.Join(", ", _aiConfigs.Keys)}]");
+        }
+
+        return new NpcAi(config, _cardCache, _engine.EffectRegistry);
     }
 
     private async Task<NpcRunResult> ExecuteTurn(

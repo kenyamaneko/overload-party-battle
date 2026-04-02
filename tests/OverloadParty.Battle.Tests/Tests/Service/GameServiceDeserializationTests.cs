@@ -1,7 +1,7 @@
 using System.Text.Json;
 using OverloadParty.Battle.Engine.Processors;
 
-namespace OverloadParty.Battle.Tests.Tests.Service;
+namespace OverloadParty.Battle.Tests.Service;
 
 /// <summary>
 /// Tests the NPC action data deserialization pipeline.

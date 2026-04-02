@@ -2,7 +2,7 @@ using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 
-namespace OverloadParty.Battle.Tests.Tests.Npc;
+namespace OverloadParty.Battle.Tests.Npc;
 
 public class TargetSelectorTests
 {

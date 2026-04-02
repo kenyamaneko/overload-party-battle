@@ -1,0 +1,166 @@
+model: Sugar-hard
+faction: Sugar
+
+deck:
+  - card_id: SL-0001
+    copies: 3
+  - card_id: SL-0002
+    copies: 3
+  - card_id: SL-0003
+    copies: 2
+  - card_id: SL-0004
+    copies: 2
+  - card_id: SL-0006
+    copies: 2
+  - card_id: SL-0007
+    copies: 1
+  - card_id: SL-0009
+    copies: 1
+  - card_id: SL-0013
+    copies: 1
+  - card_id: SL-0011
+    copies: 2
+  - card_id: SL-0015
+    copies: 2
+  - card_id: SL-0016
+    copies: 1
+  - card_id: SL-0017
+    copies: 2
+  - card_id: SL-0022
+    copies: 1
+  - card_id: NT-0007
+    copies: 1
+  - card_id: NT-0008
+    copies: 1
+  - card_id: NT-0009
+    copies: 1
+  - card_id: NT-0013
+    copies: 3
+  - card_id: NT-0015
+    copies: 1
+
+budget:
+  low_threshold: 1500
+  maintenance_limit_ratio: 0.8
+
+game_phases:
+  late:
+    condition:
+      turn_min: 6
+      count:
+        selector: { owner: self }
+        min: 3
+    target_selection:
+      attack: strongest_tp
+    effect_priorities:
+      single_damage: 80
+      aoe_damage: 85
+
+deploy:
+  priorities:
+    - card_type: compute
+      priority: 50
+    - card_type: data
+      priority: 40
+    - card_type: platform
+      priority: 30
+    - card_type: attachment
+      priority: 60
+
+  choices:
+    SL-0012: redis
+    SL-0004: autopilot
+
+  zone_preferences:
+    compute: [frontend, backend]
+    data: [backend]
+    object_storage: [backend, frontend]
+    platform: [support]
+    attachment: [support]
+
+immediate_cards:
+  always_use: [draw, search, deploy_free]
+  hold_until:
+    - card_type: incident
+      condition:
+        selector: { owner: opponent, zone: frontend }
+        min: 2
+
+effect_priorities:
+  budget_gain:
+    priority: 90
+    low_priority: 40
+    threshold: 1500
+  budget_penalty: 60
+  insight_gain: 50
+  insight_absorb:
+    priority: 65
+    condition:
+      selector: { owner: opponent }
+      min: 1
+  draw:
+    priority: 80
+    low_priority: 30
+    hand_threshold: 3
+  search:
+    priority: 70
+    low_priority: 25
+    hand_threshold: 3
+  aoe_damage:
+    priority: 75
+    min_targets: 2
+  single_damage: 60
+  debuff:
+    priority: 55
+    condition:
+      selector: { owner: opponent }
+      min: 1
+  buff:
+    priority: 45
+    condition:
+      selector: { owner: self }
+      min: 1
+  heal:
+    priority: 50
+    condition:
+      stat: damage
+      selector: { owner: self }
+      min: 1
+  deploy_free: 75
+  recover_card: 35
+  reveal_reactive:
+    priority: 35
+    condition:
+      selector: { owner: opponent, zone: support, face_down: true }
+      min: 1
+  destroy_platform:
+    priority: 70
+    condition:
+      selector: { owner: opponent }
+      card_type: platform
+      min: 1
+
+target_selection:
+  attack: weakest_av
+  single_damage: weakest_av
+  debuff: strongest_tp
+  buff: strongest_tp
+  heal: most_damaged
+
+scale_up:
+  instance_family: C
+  max_maintenance_ratio: 0.6
+  priority: highest_tp
+
+monetize:
+  strategy: highest_tp
+  reserve_ratio: 0.2
+
+
+reactive:
+  max_slots: 2
+  priorities:
+    NT-0015: 70
+
+slot_select:
+  strategy: left_fill
