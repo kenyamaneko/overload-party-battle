@@ -1,5 +1,6 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 
@@ -115,7 +116,7 @@ public class NpcAiTests
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
         var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
 
-        ((string)attack.Data["targetInstanceId"]).Should().Be("weak");
+        ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("weak");
     }
 
     [Fact]
@@ -148,7 +149,7 @@ public class NpcAiTests
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
         var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
 
-        ((string)attack.Data["targetInstanceId"]).Should().Be("high_tp");
+        ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
     }
 
     [Fact]
@@ -200,8 +201,8 @@ public class NpcAiTests
         var action = ai.DecideSlotSelect(state, 1);
 
         action.Should().NotBeNull();
-        action!.Data["zone"].Should().Be("frontend");
-        action.Data["index"].Should().Be(0);
+        ((SelectSlotRequest)action!.Data).Zone.Should().Be("frontend");
+        ((SelectSlotRequest)action.Data).Index.Should().Be(0);
     }
 
     [Fact]
@@ -252,7 +253,7 @@ public class NpcAiTests
         var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
 
         deploys.Should().HaveCountGreaterThanOrEqualTo(2);
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("h_sh1");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
     }
 
     [Fact]
@@ -283,7 +284,7 @@ public class NpcAiTests
 
         // SH-0001 (pri=80) should come before WEIRD-001 (pri=0)
         deploys.Should().HaveCountGreaterThanOrEqualTo(2);
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("h_sh1");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
     }
 
     [Fact]
@@ -344,7 +345,7 @@ public class NpcAiTests
 
         // TK-0005 (conditional 90) before SH-0001 (50)
         deploys.Should().HaveCountGreaterThanOrEqualTo(2);
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("hand_tk5");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_tk5");
     }
 
     [Fact]
@@ -405,7 +406,7 @@ public class NpcAiTests
 
         // SH-0001 (50) before TK-0005 (fallback 30)
         deploys.Should().HaveCountGreaterThanOrEqualTo(2);
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("hand_sh1");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_sh1");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -432,8 +433,9 @@ public class NpcAiTests
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploy = actions.First(a => a.ActionType == WireActionTypes.PlayCard);
 
-        var choiceData = (Dictionary<string, string>)deploy.Data["choiceData"];
-        choiceData["option"].Should().Be("use");
+        var req = (PlayCardRequest)deploy.Data;
+        req.ChoiceData.Should().NotBeNull();
+        req.ChoiceData!["option"].Should().Be("use");
     }
 
     [Fact]
@@ -481,9 +483,9 @@ public class NpcAiTests
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploy = actions.First(a => a.ActionType == WireActionTypes.PlayCard);
-        var pos = (SlotPosition)deploy.Data["position"];
+        var req = (PlayCardRequest)deploy.Data;
 
-        pos.Zone.Should().Be("frontend");
+        req.Zone.Should().Be("frontend");
     }
 
     [Fact]
@@ -504,9 +506,9 @@ public class NpcAiTests
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploy = actions.First(a => a.ActionType == WireActionTypes.PlayCard);
-        var pos = (SlotPosition)deploy.Data["position"];
+        var req = (PlayCardRequest)deploy.Data;
 
-        pos.Zone.Should().Be("backend");
+        req.Zone.Should().Be("backend");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -563,7 +565,7 @@ public class NpcAiTests
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var scaleUp = actions.First(a => a.ActionType == WireActionTypes.ScaleUp);
 
-        ((string)scaleUp.Data["instanceFamily"]).Should().Be("M");
+        ((ScaleUpRequest)scaleUp.Data).InstanceFamily.Should().Be("M");
     }
 
     [Fact]
@@ -614,7 +616,7 @@ public class NpcAiTests
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var scaleUp = actions.First(a => a.ActionType == WireActionTypes.ScaleUp);
 
-        ((string)scaleUp.Data["instanceFamily"]).Should().Be("R");
+        ((ScaleUpRequest)scaleUp.Data).InstanceFamily.Should().Be("R");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -662,8 +664,8 @@ public class NpcAiTests
         var monetize = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.Monetize);
 
         monetize.Should().NotBeNull();
-        var dists = (List<Dictionary<string, object>>)monetize!.Data["distributions"];
-        var total = dists.Sum(d => (long)d["amount"]);
+        var dists = ((MonetizeRequest)monetize!.Data).Distributions;
+        var total = dists.Sum(d => d.Amount);
 
         // 50% reserve of 1000 = 500 distributable
         total.Should().Be(500);
@@ -706,10 +708,10 @@ public class NpcAiTests
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var monetize = actions.First(a => a.ActionType == WireActionTypes.Monetize);
-        var dists = (List<Dictionary<string, object>>)monetize.Data["distributions"];
+        var dists = ((MonetizeRequest)monetize.Data).Distributions;
 
         // highest_tp sorts by TP desc → res_high (TP=600) first
-        dists[0]["componentInstanceId"].Should().Be("res_high");
+        dists[0].InstanceID.Should().Be("res_high");
     }
 
     [Fact]
@@ -756,8 +758,8 @@ public class NpcAiTests
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var monetize = actions.First(a => a.ActionType == WireActionTypes.Monetize);
-        var dists = (List<Dictionary<string, object>>)monetize.Data["distributions"];
-        var total = dists.Sum(d => (long)d["amount"]);
+        var dists = ((MonetizeRequest)monetize.Data).Distributions;
+        var total = dists.Sum(d => d.Amount);
 
         // 30% reserve of 1000 = 300 reserved → 700 distributable
         total.Should().BeLessThanOrEqualTo(700);
@@ -810,7 +812,7 @@ public class NpcAiTests
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var play = actions.FirstOrDefault(a =>
             a.ActionType == WireActionTypes.PlayCard
-            && (string)a.Data["cardInstanceId"] == "h_strat");
+            && ((PlayCardRequest)a.Data).CardInstanceID == "h_strat");
 
         play.Should().NotBeNull();
     }
@@ -837,7 +839,7 @@ public class NpcAiTests
 
         actions.Should().NotContain(a =>
             a.ActionType == WireActionTypes.PlayCard
-            && (string)a.Data["cardInstanceId"] == "h_noeff");
+            && ((PlayCardRequest)a.Data).CardInstanceID == "h_noeff");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -891,7 +893,7 @@ public class NpcAiTests
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
         var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
 
-        ((string)attack.Data["targetInstanceId"]).Should().Be("high_tp");
+        ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
     }
 
     [Fact]
@@ -943,7 +945,7 @@ public class NpcAiTests
         var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
 
         // weakest_av → low_tp has AV=400, high_tp has AV=2000
-        ((string)attack.Data["targetInstanceId"]).Should().Be("low_tp");
+        ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("low_tp");
     }
 
     [Fact]
@@ -999,7 +1001,7 @@ public class NpcAiTests
         var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
 
         // Still weakest_av because count condition not met
-        ((string)attack.Data["targetInstanceId"]).Should().Be("low_tp");
+        ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("low_tp");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1075,8 +1077,8 @@ public class NpcAiTests
 
         // Both deployed: compute resource first, then attachment
         deploys.Should().HaveCount(2);
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("h_sh1");
-        ((string)deploys[1].Data["cardInstanceId"]).Should().Be("h_att");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
+        ((PlayCardRequest)deploys[1].Data).CardInstanceID.Should().Be("h_att");
     }
 
     [Fact]
@@ -1133,8 +1135,8 @@ public class NpcAiTests
 
         // NT-0003 (pri=90) before SH-0022 (pri=40)
         deploys.Should().HaveCount(2);
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("h_att2");
-        ((string)deploys[1].Data["cardInstanceId"]).Should().Be("h_att1");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_att2");
+        ((PlayCardRequest)deploys[1].Data).CardInstanceID.Should().Be("h_att1");
     }
 
     [Fact]
@@ -1159,7 +1161,7 @@ public class NpcAiTests
 
         // Attachment goes through normal deploy (not separated)
         deploys.Should().HaveCount(1);
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("h_att");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_att");
     }
 
     // ═══════════════════════════════════════════════════════════════

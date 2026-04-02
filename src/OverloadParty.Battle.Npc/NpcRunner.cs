@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
@@ -182,7 +181,7 @@ public class NpcRunner
             new NpcAction
             {
                 ActionType = WireActionTypes.DiscardHand,
-                Data = new Dictionary<string, object> { ["cardInstanceIds"] = ids },
+                Data = new DiscardHandRequest { CardInstanceIDs = ids },
             }
         ];
     }
@@ -192,7 +191,7 @@ public class NpcRunner
         CancellationToken ct)
     {
         var actionType = EnumExtensions.ParseActionType(action.ActionType);
-        var actionData = DeserializeActionData(actionType, action.Data);
+        var actionData = action.Data;
 
         var game = await _repo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"game {gameID} lost during NPC action");
@@ -226,7 +225,7 @@ public class NpcRunner
                 ?? throw new InvalidOperationException($"NPC failed to decide slot selection (game={gameID})");
 
             var slotType = EnumExtensions.ParseActionType(slotAction.ActionType);
-            var slotData = DeserializeActionData(slotType, slotAction.Data);
+            var slotData = slotAction.Data;
 
             var game = await _repo.GetGame(gameID, ct)
                 ?? throw new InvalidOperationException($"game {gameID} lost during NPC slot select");
@@ -261,28 +260,4 @@ public class NpcRunner
             .ToList();
     }
 
-    private static readonly JsonSerializerOptions JsonOpts = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        PropertyNameCaseInsensitive = true,
-    };
-
-    private static object DeserializeActionData(ActionType actionType, Dictionary<string, object> data)
-    {
-        var json = JsonSerializer.SerializeToElement(data, JsonOpts);
-        return actionType switch
-        {
-            ActionType.PlayCard => json.Deserialize<PlayCardRequest>(JsonOpts)!,
-            ActionType.Attack => json.Deserialize<AttackRequest>(JsonOpts)!,
-            ActionType.ScaleUp => json.Deserialize<ScaleUpRequest>(JsonOpts)!,
-            ActionType.Monetize => json.Deserialize<MonetizeRequest>(JsonOpts)!,
-            ActionType.DiscardHand => json.Deserialize<DiscardHandRequest>(JsonOpts)!,
-            ActionType.UseEffect => json.Deserialize<UseEffectRequest>(JsonOpts)!,
-            ActionType.Migrate => json.Deserialize<MigrateRequest>(JsonOpts)!,
-            ActionType.SelectSlot => json.Deserialize<SelectSlotRequest>(JsonOpts)!,
-            ActionType.EndPhase => new object(),
-            ActionType.Forfeit => json.Deserialize<ForfeitRequest>(JsonOpts)!,
-            _ => throw new ArgumentException($"unknown action type: {actionType}"),
-        };
-    }
 }

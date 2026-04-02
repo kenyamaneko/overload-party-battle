@@ -1,5 +1,6 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 
@@ -100,7 +101,7 @@ public class NpcAiIntegrationTests
 
         // At minimum compute should be deployed; if both deployed, compute first
         deploys.Should().NotBeEmpty();
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("h_compute");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_compute");
     }
 
     [Fact]
@@ -124,14 +125,14 @@ public class NpcAiIntegrationTests
 
         var deploy = actions.FirstOrDefault(a =>
             a.ActionType == WireActionTypes.PlayCard &&
-            (string)a.Data["cardInstanceId"] == "h_0006");
+            ((PlayCardRequest)a.Data).CardInstanceID == "h_0006");
 
         deploy.Should().NotBeNull("SH-0006 should be deployed");
 
-        if (deploy!.Data.TryGetValue("choiceData", out var choice))
+        var req = (PlayCardRequest)deploy!.Data;
+        if (req.ChoiceData is not null)
         {
-            var choiceDict = (Dictionary<string, string>)choice;
-            choiceDict["option"].Should().Be("use");
+            ((string)req.ChoiceData["option"]).Should().Be("use");
         }
     }
 
@@ -158,11 +159,11 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
         var deploy = actions.FirstOrDefault(a =>
             a.ActionType == WireActionTypes.PlayCard &&
-            (string)a.Data["cardInstanceId"] == "h_compute");
+            ((PlayCardRequest)a.Data).CardInstanceID == "h_compute");
 
         deploy.Should().NotBeNull();
-        var pos = (SlotPosition)deploy!.Data["position"];
-        pos.Zone.Should().Be("frontend");
+        var req = (PlayCardRequest)deploy!.Data;
+        req.Zone.Should().Be("frontend");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -186,9 +187,13 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
         var scaleUp = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.ScaleUp);
-        if (scaleUp is not null && scaleUp.Data.ContainsKey("instanceFamily"))
+        if (scaleUp is not null)
         {
-            ((string)scaleUp.Data["instanceFamily"]).Should().Be("M");
+            var req = (ScaleUpRequest)scaleUp.Data;
+            if (req.InstanceFamily is not null)
+            {
+                req.InstanceFamily.Should().Be("M");
+            }
         }
     }
 
@@ -209,9 +214,13 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
         var scaleUp = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.ScaleUp);
-        if (scaleUp is not null && scaleUp.Data.ContainsKey("instanceFamily"))
+        if (scaleUp is not null)
         {
-            ((string)scaleUp.Data["instanceFamily"]).Should().Be("R");
+            var req = (ScaleUpRequest)scaleUp.Data;
+            if (req.InstanceFamily is not null)
+            {
+                req.InstanceFamily.Should().Be("R");
+            }
         }
     }
 
@@ -240,7 +249,7 @@ public class NpcAiIntegrationTests
 
         var attack = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.Attack);
         attack.Should().NotBeNull();
-        ((string)attack!.Data["targetInstanceId"]).Should().Be("weak");
+        ((AttackRequest)attack!.Data).TargetInstanceID.Should().Be("weak");
     }
 
     [Fact]
@@ -270,7 +279,7 @@ public class NpcAiIntegrationTests
 
         var attack = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.Attack);
         attack.Should().NotBeNull();
-        ((string)attack!.Data["targetInstanceId"]).Should().Be("high_tp");
+        ((AttackRequest)attack!.Data).TargetInstanceID.Should().Be("high_tp");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -305,7 +314,7 @@ public class NpcAiIntegrationTests
             .ToList();
 
         deploys.Should().HaveCountGreaterThanOrEqualTo(2);
-        ((string)deploys[0].Data["cardInstanceId"]).Should().Be("h_tk5");
+        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_tk5");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -407,8 +416,8 @@ public class NpcAiIntegrationTests
         var monetize = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.Monetize);
         if (monetize is not null)
         {
-            var dists = (List<Dictionary<string, object>>)monetize.Data["distributions"];
-            var totalDistributed = dists.Sum(d => (long)d["amount"]);
+            var dists = ((MonetizeRequest)monetize.Data).Distributions;
+            var totalDistributed = dists.Sum(d => d.Amount);
             // With reserve_ratio 0.2, should distribute at most 800 of 1000
             totalDistributed.Should().BeLessThanOrEqualTo(800);
         }

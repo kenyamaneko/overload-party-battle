@@ -6,5 +6,5 @@ namespace OverloadParty.Battle.Npc;
 public class NpcAction
 {
     public string ActionType { get; init; } = "";
-    public Dictionary<string, object> Data { get; init; } = new();
+    public object Data { get; init; } = new();
 }

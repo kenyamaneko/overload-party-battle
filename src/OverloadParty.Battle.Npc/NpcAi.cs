@@ -1,5 +1,6 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Npc;
@@ -73,10 +74,10 @@ public class NpcAi : INpcStrategy
             actions.Add(new NpcAction
             {
                 ActionType = WireActionTypes.Attack,
-                Data = new Dictionary<string, object>
+                Data = new AttackRequest
                 {
-                    ["attackerInstanceId"] = a.SourceInstanceID!,
-                    ["targetInstanceId"] = target,
+                    AttackerInstanceID = a.SourceInstanceID!,
+                    TargetInstanceID = target,
                 },
             });
         }
@@ -176,10 +177,10 @@ public class NpcAi : INpcStrategy
         return new NpcAction
         {
             ActionType = WireActionTypes.SelectSlot,
-            Data = new Dictionary<string, object>
+            Data = new SelectSlotRequest
             {
-                ["zone"] = zone.Zone,
-                ["index"] = zone.Index,
+                Zone = zone.Zone,
+                Index = zone.Index,
             },
         };
     }
@@ -236,17 +237,18 @@ public class NpcAi : INpcStrategy
                 continue;
             }
 
-            var payload = new Dictionary<string, object>
+            var pos = ActionFilter.ParseZoneStr(zone)!;
+            actions.Add(new NpcAction
             {
-                ["cardInstanceId"] = c.Action.HandInstanceID!,
-                ["position"] = ActionFilter.ParseZoneStr(zone)!,
-            };
-            if (c.Choice is not null)
-            {
-                payload["choiceData"] = c.Choice;
-            }
-
-            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = payload });
+                ActionType = WireActionTypes.PlayCard,
+                Data = new PlayCardRequest
+                {
+                    CardInstanceID = c.Action.HandInstanceID!,
+                    Zone = pos.Zone,
+                    Index = pos.Index,
+                    ChoiceData = c.Choice,
+                },
+            });
             usedZones.Add(zone);
         }
         return actions;
@@ -361,18 +363,20 @@ public class NpcAi : INpcStrategy
                 continue;
             }
 
-            var payload = new Dictionary<string, object>
+            var pos = ActionFilter.ParseZoneStr(zone)!;
+            var req = new PlayCardRequest
             {
-                ["cardInstanceId"] = c.Action.HandInstanceID!,
-                ["position"] = ActionFilter.ParseZoneStr(zone)!,
+                CardInstanceID = c.Action.HandInstanceID!,
+                Zone = pos.Zone,
+                Index = pos.Index,
             };
             if (c.Action.ChoiceOptions?.Count > 0)
             {
                 var choice = ResolveDeployChoice(c.Card.CardId);
-                payload["choiceData"] = new Dictionary<string, string> { ["option"] = choice };
+                req.ChoiceData = new Dictionary<string, object> { ["option"] = choice };
             }
 
-            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = payload });
+            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = req });
             deployed.Add(c.Action.HandInstanceID!);
             usedZones.Add(zone);
             addedMaintenanceCost += c.Card.MaintenanceCost;
@@ -524,13 +528,17 @@ public class NpcAi : INpcStrategy
                 continue;
             }
 
-            var payload = new Dictionary<string, object>
+            var pos = ActionFilter.ParseZoneStr(zone)!;
+            actions.Add(new NpcAction
             {
-                ["cardInstanceId"] = c.Action.HandInstanceID!,
-                ["position"] = ActionFilter.ParseZoneStr(zone)!,
-            };
-
-            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = payload });
+                ActionType = WireActionTypes.PlayCard,
+                Data = new PlayCardRequest
+                {
+                    CardInstanceID = c.Action.HandInstanceID!,
+                    Zone = pos.Zone,
+                    Index = pos.Index,
+                },
+            });
             usedZones.Add(zone);
         }
 
@@ -581,13 +589,17 @@ public class NpcAi : INpcStrategy
                 continue;
             }
 
-            var payload = new Dictionary<string, object>
+            var pos = ActionFilter.ParseZoneStr(zone)!;
+            actions.Add(new NpcAction
             {
-                ["cardInstanceId"] = c.Action.HandInstanceID!,
-                ["position"] = ActionFilter.ParseZoneStr(zone)!,
-            };
-
-            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = payload });
+                ActionType = WireActionTypes.PlayCard,
+                Data = new PlayCardRequest
+                {
+                    CardInstanceID = c.Action.HandInstanceID!,
+                    Zone = pos.Zone,
+                    Index = pos.Index,
+                },
+            });
             usedZones.Add(zone);
             usedReactiveSlots++;
         }
@@ -604,7 +616,7 @@ public class NpcAi : INpcStrategy
     {
         var activateActions = ActionFilter.FilterByType(available, WireActionTypes.UseEffect);
 
-        var candidates = new List<(AvailableAction Action, int Priority, Dictionary<string, object>? Choice)>();
+        var candidates = new List<(AvailableAction Action, int Priority, string? TargetId)>();
         foreach (var a in activateActions)
         {
             var cardId = ActionFilter.ResolveCardIdForInstance(a.SourceInstanceID!, ctx.Field);
@@ -613,45 +625,46 @@ public class NpcAi : INpcStrategy
                 continue;
             }
 
-            var (pri, use, choice) = PriorityResolver.Evaluate(
+            var (pri, use, choiceData) = PriorityResolver.Evaluate(
                 cardId, TriggerType.Activate, ctx, activeConfig, _effects, _cc);
             if (!use)
             {
                 continue;
             }
 
-            // If effect needs target but evaluator didn't provide one, select from ValidTargets
-            if (a.EffectTargetType == "Choice" && choice is null)
+            string? targetId = choiceData is not null && choiceData.TryGetValue("instanceId", out var id)
+                ? id.ToString()
+                : null;
+
+            if (a.EffectTargetType == "Choice" && targetId is null)
             {
                 if (!(a.ValidTargets?.Count > 0))
                 {
                     continue;
                 }
-                var target = SelectTargetFromValid(cardId, a.ValidTargets, ctx, activeConfig);
-                if (target is null)
+                targetId = SelectTargetFromValid(cardId, a.ValidTargets, ctx, activeConfig);
+                if (targetId is null)
                 {
                     continue;
                 }
-                choice = new Dictionary<string, object> { ["instanceId"] = target };
             }
 
-            candidates.Add((a, pri, choice));
+            candidates.Add((a, pri, targetId));
         }
         candidates.Sort((a, b) => b.Priority.CompareTo(a.Priority));
 
         var actions = new List<NpcAction>();
         foreach (var c in candidates)
         {
-            var payload = new Dictionary<string, object>
+            actions.Add(new NpcAction
             {
-                ["instanceId"] = c.Action.SourceInstanceID!,
-            };
-            if (c.Choice is not null)
-            {
-                payload["choiceData"] = c.Choice;
-            }
-
-            actions.Add(new NpcAction { ActionType = WireActionTypes.UseEffect, Data = payload });
+                ActionType = WireActionTypes.UseEffect,
+                Data = new UseEffectRequest
+                {
+                    InstanceID = c.Action.SourceInstanceID!,
+                    TargetInstanceID = c.TargetId,
+                },
+            });
         }
         return actions;
     }
@@ -707,17 +720,16 @@ public class NpcAi : INpcStrategy
                 continue;
             }
 
-            var payload = new Dictionary<string, object>
+            actions.Add(new NpcAction
             {
-                ["componentInstanceId"] = a.SourceInstanceID!,
-                ["targetRank"] = a.TargetRank!,
-            };
-            if (a.NeedsFamily)
-            {
-                payload["instanceFamily"] = family;
-            }
-
-            actions.Add(new NpcAction { ActionType = WireActionTypes.ScaleUp, Data = payload });
+                ActionType = WireActionTypes.ScaleUp,
+                Data = new ScaleUpRequest
+                {
+                    InstanceID = a.SourceInstanceID!,
+                    TargetRank = a.TargetRank!,
+                    InstanceFamily = a.NeedsFamily ? family : null,
+                },
+            });
             addedMaintenanceCost += estimatedCostIncrease;
         }
         return actions;
@@ -763,7 +775,7 @@ public class NpcAi : INpcStrategy
         var reserve = (long)(insightPool * _config.Monetize.ReserveRatio);
         var distributable = insightPool - reserve;
 
-        var dists = new List<Dictionary<string, object>>();
+        var dists = new List<MonetizeDistribution>();
         var remaining = distributable;
 
         foreach (var a in sorted)
@@ -775,10 +787,10 @@ public class NpcAi : INpcStrategy
             var amount = Math.Min(a.RemainingCapacity, remaining);
             if (amount > 0)
             {
-                dists.Add(new Dictionary<string, object>
+                dists.Add(new MonetizeDistribution
                 {
-                    ["componentInstanceId"] = a.SourceInstanceID!,
-                    ["amount"] = amount,
+                    InstanceID = a.SourceInstanceID!,
+                    Amount = amount,
                 });
                 remaining -= amount;
             }
@@ -794,7 +806,7 @@ public class NpcAi : INpcStrategy
             new NpcAction
             {
                 ActionType = WireActionTypes.Monetize,
-                Data = new Dictionary<string, object> { ["distributions"] = dists },
+                Data = new MonetizeRequest { Distributions = dists },
             }
         ];
     }
@@ -883,7 +895,7 @@ public class NpcAi : INpcStrategy
     // ═══════════════════════════════════════════════════════════════
 
     private static NpcAction MakeEndPhaseAction() =>
-        new() { ActionType = WireActionTypes.EndPhase, Data = new Dictionary<string, object>() };
+        new() { ActionType = WireActionTypes.EndPhase };
 
     private static bool MatchesCardType(CardDefinition card, string typeKey)
     {
