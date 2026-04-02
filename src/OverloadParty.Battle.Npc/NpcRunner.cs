@@ -163,7 +163,15 @@ public class NpcRunner
     private static List<NpcAction> BuildDiscardActions(
         INpcStrategy npcAI, GameState state, long npcPlayerNum, string gameID)
     {
-        var ids = npcAI.DecideDiscard(state, npcPlayerNum);
+        var hand = state.GetHand(npcPlayerNum);
+        var discardCount = hand.Count - BattleConstants.HandLimit;
+        if (discardCount <= 0)
+        {
+            throw new InvalidOperationException(
+                $"NPC in end phase but no discard needed (game={gameID})");
+        }
+
+        var ids = npcAI.DecideDiscard(state, npcPlayerNum, discardCount);
         if (ids.Count == 0)
         {
             throw new InvalidOperationException(

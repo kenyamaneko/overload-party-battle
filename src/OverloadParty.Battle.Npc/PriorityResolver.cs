@@ -185,7 +185,12 @@ public static class PriorityResolver
     private static int CountFactionOnField(Field field, string faction, ICardCache cc)
     {
         return FieldHelpers.AllFaceUpResources(field)
-            .Count(r => cc.Get(r.CardID)?.Faction == faction);
+            .Count(r =>
+            {
+                var card = cc.Get(r.CardID)
+                    ?? throw new InvalidOperationException($"Card '{r.CardID}' not found in card cache");
+                return card.Faction == faction;
+            });
     }
 
     /// <summary>

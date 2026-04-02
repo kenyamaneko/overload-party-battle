@@ -94,15 +94,9 @@ public class NpcAi : INpcStrategy
     //  Discard
     // ═══════════════════════════════════════════════════════════════
 
-    public List<string> DecideDiscard(GameState state, long npcPlayerNum)
+    public List<string> DecideDiscard(GameState state, long npcPlayerNum, int discardCount)
     {
         var hand = state.GetHand(npcPlayerNum);
-        var discardCount = hand.Count - BattleConstants.HandLimit;
-        if (discardCount <= 0)
-        {
-            return [];
-        }
-
         var field = state.GetField(npcPlayerNum);
         var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
         var budget = state.GetBudget(npcPlayerNum);
@@ -111,56 +105,61 @@ public class NpcAi : INpcStrategy
             CurrentTurn = state.CurrentTurn,
         };
 
-        var sorted = hand
+        return hand
             .OrderBy(h => EvaluateCardKeepPriority(h, ctx))
+            .Take(discardCount)
+            .Select(h => h.InstanceID)
             .ToList();
-
-        return sorted.Take(discardCount).Select(h => h.InstanceID).ToList();
     }
 
     /// <summary>
-    /// 手札のカードを「残したい度」で評価。低いほど先に捨てる。
-    /// 既存の config 優先度（deploy / effect / attachment）をそのまま使う。
+    /// 手札のカードを「残したい度」で評価。(TypeRank, Priority) のタプルが低いほど先に捨てる。
+    ///
+    /// 捨てる順:
+    ///   アタッチメント → プラットフォーム → リアクティブ → リソース → インシデント → ストラテジー
+    /// 同タイプ内は config の優先度が低いものから捨てる。
+    ///
+    /// アタッチメント/プラットフォーム/リアクティブが手札に残っている
+    /// = フィールドが埋まっていてすぐに出せない可能性が高いので先に捨てる。
+    /// インシデント/ストラテジーはいつでも使えるカードなので、
+    /// 手札に残しているのはタイミングを狙っている可能性が高く、最後まで残す。
     /// </summary>
-    private int EvaluateCardKeepPriority(UndeployedCard handCard, DecisionContext ctx)
+    private (int TypeRank, int Priority) EvaluateCardKeepPriority(UndeployedCard handCard, DecisionContext ctx)
     {
-        var card = _cc.Get(handCard.CardID);
-        if (card is null)
-        {
-            return 0;
-        }
+        var card = ResolveCard(handCard.CardID);
 
-        // リソースカード → deploy priority
-        if (!FieldHelpers.IsImmediateType(card.CardType) &&
-            card.CardType != CardTypes.Attachment &&
-            card.CardType != CardTypes.Reactive)
+        return card.CardType switch
         {
-            return ResolveDeployPriority(card, ctx);
-        }
+            CardTypes.Attachment => (0, GetAttachmentPriority(card)),
+            CardTypes.Platform => (1, ResolveDeployPriority(card, ctx)),
+            CardTypes.Reactive => (2, GetReactivePriority(card)),
+            CardTypes.Incident => (4, 0),
+            CardTypes.Strategy => (5, 0),
+            // リソース（Compute, Database, ObjectStorage 等）
+            _ when !FieldHelpers.IsImmediateType(card.CardType) => (3, ResolveDeployPriority(card, ctx)),
+            _ => throw new InvalidOperationException(
+                $"Unexpected card type '{card.CardType}' for card '{card.CardId}' in discard evaluation"),
+        };
+    }
 
-        // ストラテジー/インシデント → エフェクト優先度
-        if (FieldHelpers.IsImmediateType(card.CardType))
+    private int GetAttachmentPriority(CardDefinition card)
+    {
+        if (_config.Attachments is null || !_config.Attachments.TryGetValue(card.CardId, out var entry))
         {
-            var (pri, use, _) = PriorityResolver.Evaluate(
-                card.CardId, TriggerType.Activate, ctx, _config, _effects, _cc);
-            return use ? pri : 0;
+            throw new InvalidOperationException(
+                $"No attachment config for card '{card.CardId}' in model '{_config.Model}'");
         }
+        return entry.Priority;
+    }
 
-        // アタッチメント → attachments config の priority
-        if (card.CardType == CardTypes.Attachment && _config.Attachments is not null)
+    private int GetReactivePriority(CardDefinition card)
+    {
+        if (_config.Reactive is null || !_config.Reactive.Priorities.TryGetValue(card.CardId, out var pri))
         {
-            return _config.Attachments.TryGetValue(card.CardId, out var entry)
-                ? entry.Priority
-                : 0;
+            throw new InvalidOperationException(
+                $"No reactive config for card '{card.CardId}' in model '{_config.Model}'");
         }
-
-        // リアクティブ → reactive config の priority
-        if (card.CardType == CardTypes.Reactive && _config.Reactive is not null)
-        {
-            return _config.Reactive.Priorities.GetValueOrDefault(card.CardId, 0);
-        }
-
-        return 0;
+        return pri;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -205,8 +204,8 @@ public class NpcAi : INpcStrategy
         var candidates = new List<(AvailableAction Action, int Priority, Dictionary<string, object>? Choice)>();
         foreach (var a in playActions)
         {
-            var card = _cc.Get(a.CardID);
-            if (card is null || !FieldHelpers.IsImmediateType(card.CardType))
+            var card = ResolveCard(a.CardID);
+            if (!FieldHelpers.IsImmediateType(card.CardType))
             {
                 continue;
             }
@@ -324,8 +323,8 @@ public class NpcAi : INpcStrategy
         var candidates = new List<(AvailableAction Action, CardDefinition Card, int Priority)>();
         foreach (var a in playActions)
         {
-            var card = _cc.Get(a.CardID);
-            if (card is null || FieldHelpers.IsImmediateType(card.CardType))
+            var card = ResolveCard(a.CardID);
+            if (FieldHelpers.IsImmediateType(card.CardType))
             {
                 continue;
             }
@@ -507,8 +506,8 @@ public class NpcAi : INpcStrategy
 
         foreach (var a in playActions)
         {
-            var card = _cc.Get(a.CardID);
-            if (card is null || card.CardType != CardTypes.Attachment)
+            var card = ResolveCard(a.CardID);
+            if (card.CardType != CardTypes.Attachment)
             {
                 continue;
             }
@@ -559,8 +558,8 @@ public class NpcAi : INpcStrategy
         var candidates = new List<(AvailableAction Action, int Priority)>();
         foreach (var a in playActions)
         {
-            var card = _cc.Get(a.CardID);
-            if (card is null || card.CardType != CardTypes.Reactive)
+            var card = ResolveCard(a.CardID);
+            if (card.CardType != CardTypes.Reactive)
             {
                 continue;
             }
@@ -705,9 +704,10 @@ public class NpcAi : INpcStrategy
 
         foreach (var a in sorted)
         {
-            // スケールアップ後の維持費増加を見積もって上限チェック
-            var card = _cc.Get(a.CardID);
-            var estimatedCostIncrease = card?.MaintenanceCost ?? 0;
+            var cardId = ActionFilter.ResolveCardIdForInstance(a.SourceInstanceID!, ctx.Field);
+            var estimatedCostIncrease = cardId != ""
+                ? ResolveCard(cardId).MaintenanceCost
+                : 0L;
             if (estimatedCostIncrease > 0 &&
                 WouldExceedMaintenanceLimit(ctx, addedMaintenanceCost + estimatedCostIncrease))
             {
@@ -904,6 +904,12 @@ public class NpcAi : INpcStrategy
         };
     }
 
+    private CardDefinition ResolveCard(string cardId)
+    {
+        return _cc.Get(cardId)
+            ?? throw new InvalidOperationException($"Card '{cardId}' not found in card cache");
+    }
+
     private long ResolveResourceValue(string instanceId, Field field)
     {
         var resource = FieldHelpers.AllResources(field)
@@ -918,7 +924,7 @@ public class NpcAi : INpcStrategy
     private long TotalFieldMaintenanceCost(Field field)
     {
         return FieldHelpers.AllResources(field)
-            .Sum(r => _cc.Get(r.CardID)?.MaintenanceCost ?? 0);
+            .Sum(r => ResolveCard(r.CardID).MaintenanceCost);
     }
 
     private bool WouldExceedMaintenanceLimit(DecisionContext ctx, long additionalCost)

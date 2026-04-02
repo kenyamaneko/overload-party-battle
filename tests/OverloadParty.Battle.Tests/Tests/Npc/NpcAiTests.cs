@@ -86,35 +86,13 @@ public class NpcAiTests
         }
         state.Player1Hand = hand;
 
-        var discards = ai.DecideDiscard(state, 1);
+        var discards = ai.DecideDiscard(state, 1, 2);
 
         discards.Should().HaveCount(2);
         foreach (var id in discards)
         {
             hand.First(h => h.InstanceID == id).CardID.Should().Be("NT-0009");
         }
-    }
-
-    [Fact]
-    public void DecideDiscard_UnderLimit_ReturnsEmpty()
-    {
-        var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.End);
-        state.Player1Hand = [new() { InstanceID = "h_1", CardID = "SH-0001" }];
-
-        ai.DecideDiscard(state, 1).Should().BeEmpty();
-    }
-
-    [Fact]
-    public void DecideDiscard_ExactlyAtLimit_ReturnsEmpty()
-    {
-        var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.End);
-        state.Player1Hand = Enumerable.Range(0, BattleConstants.HandLimit)
-            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" })
-            .ToList();
-
-        ai.DecideDiscard(state, 1).Should().BeEmpty();
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -121,16 +121,16 @@ public static class GuardChecker
 
         if (sel.Faction is not null)
         {
-            resources = resources.Where(r => cc.Get(r.CardID)?.Faction == sel.Faction);
+            resources = resources.Where(r =>
+                (cc.Get(r.CardID) ?? throw new InvalidOperationException(
+                    $"Card '{r.CardID}' not found in card cache")).Faction == sel.Faction);
         }
 
         if (sel.CardType is not null)
         {
             resources = resources.Where(r =>
-            {
-                var card = cc.Get(r.CardID);
-                return card?.CardType == sel.CardType;
-            });
+                (cc.Get(r.CardID) ?? throw new InvalidOperationException(
+                    $"Card '{r.CardID}' not found in card cache")).CardType == sel.CardType);
         }
 
         if (sel.CardId is not null)

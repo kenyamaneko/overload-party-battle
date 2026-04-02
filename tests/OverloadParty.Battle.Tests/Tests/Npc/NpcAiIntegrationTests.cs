@@ -328,7 +328,7 @@ public class NpcAiIntegrationTests
         hand.Add(new UndeployedCard { InstanceID = "extra", CardID = "SH-0001" });
         state.Player1Hand = hand;
 
-        var discards = ai.DecideDiscard(state, 1);
+        var discards = ai.DecideDiscard(state, 1, 1);
 
         discards.Should().HaveCount(1);
         // Discards lowest keep-priority card

@@ -271,7 +271,7 @@ public class TargetSelectorTests
     public void HasPlatform_NoPlatform_ReturnsFalse()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new DeployedSupport { InstanceID = "sup1", CardID = "TEST-0999", FaceUp = true };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup1", CardID = "SH-0001", FaceUp = true };
 
         TargetSelector.HasPlatform(field, _cc).Should().BeFalse();
     }
@@ -330,13 +330,4 @@ public class TargetSelectorTests
         value.Should().Be(600);
     }
 
-    [Fact]
-    public void ResourceValue_UnknownCard_ReturnsZero()
-    {
-        var res = TestFactory.MakeResource(cardId: "TEST-0999", currentTP: null, currentYield: null);
-
-        var value = TargetSelector.ResourceValue(res, _cc);
-
-        value.Should().Be(0);
-    }
 }

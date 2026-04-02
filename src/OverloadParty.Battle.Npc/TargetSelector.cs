@@ -62,13 +62,17 @@ public static class TargetSelector
     public static bool HasPlatform(Field field, ICardCache cc)
     {
         return field.Support
-            .Any(sup => cc.Get(sup.CardID)?.CardType == CardTypes.Platform);
+            .Any(sup => (cc.Get(sup.CardID)
+                ?? throw new InvalidOperationException($"Card '{sup.CardID}' not found in card cache"))
+                .CardType == CardTypes.Platform);
     }
 
     public static string? FirstPlatformId(Field field, ICardCache cc)
     {
         return field.Support
-            .FirstOrDefault(sup => cc.Get(sup.CardID)?.CardType == CardTypes.Platform)
+            .FirstOrDefault(sup => (cc.Get(sup.CardID)
+                ?? throw new InvalidOperationException($"Card '{sup.CardID}' not found in card cache"))
+                .CardType == CardTypes.Platform)
             ?.InstanceID;
     }
 
@@ -82,11 +86,8 @@ public static class TargetSelector
         {
             return r.CurrentYield.Value;
         }
-        var card = cc.Get(r.CardID);
-        if (card is null)
-        {
-            return 0;
-        }
+        var card = cc.Get(r.CardID)
+            ?? throw new InvalidOperationException($"Card '{r.CardID}' not found in card cache");
         return card.IsComputeType ? card.BaseThroughput : card.IsDataType ? card.BaseYield : 0;
     }
 
