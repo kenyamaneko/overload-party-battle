@@ -68,6 +68,76 @@ public class NpcAiTests
             """);
     }
 
+    private static AiConfig MakeConditionalPriorityConfig()
+    {
+        return AiConfigLoader.LoadFromString("""
+            model: test
+            faction: Tenki
+            budget:
+              low_threshold: 1500
+              maintenance_limit_ratio: 0.8
+            deploy:
+              priorities:
+                - card_type: compute
+                  priority: 50
+              conditional_priorities:
+                - card_id: TK-0005
+                  priority: 90
+                  condition:
+                    selector: { owner: self }
+                    card_id: [TK-0010]
+                    min: 1
+                  fallback_priority: 30
+            effect_priorities: {}
+            target_selection:
+              attack: weakest_av
+              single_damage: weakest_av
+              debuff: strongest_tp
+              buff: strongest_tp
+              heal: most_damaged
+            scale_up:
+              instance_family: R
+              max_maintenance_ratio: 0.6
+              priority: highest_tp
+            monetize:
+              strategy: highest_tp
+              reserve_ratio: 0.0
+            """);
+    }
+
+    private static AiConfig MakeConditionalFamilyConfig()
+    {
+        return AiConfigLoader.LoadFromString("""
+            model: test
+            faction: Tenki
+            budget:
+              low_threshold: 1500
+              maintenance_limit_ratio: 0.8
+            deploy:
+              priorities: []
+            effect_priorities: {}
+            target_selection:
+              attack: weakest_av
+              single_damage: weakest_av
+              debuff: strongest_tp
+              buff: strongest_tp
+              heal: most_damaged
+            scale_up:
+              instance_family: R
+              conditional_family:
+                - family: M
+                  condition:
+                    selector: { owner: self, zone: backend }
+                    card_type: data
+                    min: 2
+              max_maintenance_ratio: 0.6
+              priority: highest_tp
+            monetize:
+              strategy: highest_tp
+              reserve_ratio: 0.0
+            """);
+    }
+
     // ═══════════════════════════════════════════════════════════════
     //  Discard
     // ═══════════════════════════════════════════════════════════════
@@ -78,22 +148,16 @@ public class NpcAiTests
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.End);
-        var handSize = BattleConstants.HandLimit + 2;
-        var hand = new List<UndeployedCard>();
-        for (int i = 0; i < handSize; i++)
-        {
-            var cardId = i % 2 == 0 ? "NT-0009" : "SH-0001";
-            hand.Add(new UndeployedCard { InstanceID = $"h_{i}", CardID = cardId });
-        }
-        state.Player1Hand = hand;
+        state.Player1Hand =
+        [
+            new() { InstanceID = "h_sh1", CardID = "SH-0001" },  // card_id pri 80 → kept
+            new() { InstanceID = "h_tk5", CardID = "TK-0005" },  // compute pri 50 → discarded
+            new() { InstanceID = "h_nt9", CardID = "NT-0009" },  // data pri 40 → discarded
+        ];
 
         var discards = ai.DecideDiscard(state, 1, 2);
 
-        discards.Should().HaveCount(2);
-        foreach (var id in discards)
-        {
-            hand.First(h => h.InstanceID == id).CardID.Should().Be("NT-0009");
-        }
+        discards.Should().Equal("h_nt9", "h_tk5");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -252,7 +316,7 @@ public class NpcAiTests
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
 
-        deploys.Should().HaveCountGreaterThanOrEqualTo(2);
+        deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
     }
 
@@ -283,48 +347,14 @@ public class NpcAiTests
         var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
 
         // SH-0001 (pri=80) should come before WEIRD-001 (pri=0)
-        deploys.Should().HaveCountGreaterThanOrEqualTo(2);
+        deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
     }
 
     [Fact]
     public void Deploy_ConditionalPriority_ConditionMet_UsesPrimary()
     {
-        var yaml = """
-            model: test
-            faction: Tenki
-            budget:
-              low_threshold: 1500
-              maintenance_limit_ratio: 0.8
-            deploy:
-              priorities:
-                - card_type: compute
-                  priority: 50
-              conditional_priorities:
-                - card_id: TK-0005
-                  priority: 90
-                  condition:
-                    selector: { owner: self }
-                    card_id: [TK-0010]
-                    min: 1
-                  fallback_priority: 30
-            effect_priorities: {}
-            target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
-            scale_up:
-              instance_family: R
-              max_maintenance_ratio: 0.6
-              priority: highest_tp
-            monetize:
-              strategy: highest_tp
-              reserve_ratio: 0.0
-            """;
-        var config = AiConfigLoader.LoadFromString(yaml);
-        var ai = new NpcAi(config, _cc, _effects);
+        var ai = new NpcAi(MakeConditionalPriorityConfig(), _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TK-0010", instanceId: "cosmo_1");
@@ -344,48 +374,14 @@ public class NpcAiTests
         var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
 
         // TK-0005 (conditional 90) before SH-0001 (50)
-        deploys.Should().HaveCountGreaterThanOrEqualTo(2);
+        deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_tk5");
     }
 
     [Fact]
     public void Deploy_ConditionalPriority_ConditionNotMet_UsesFallback()
     {
-        var yaml = """
-            model: test
-            faction: Tenki
-            budget:
-              low_threshold: 1500
-              maintenance_limit_ratio: 0.8
-            deploy:
-              priorities:
-                - card_type: compute
-                  priority: 50
-              conditional_priorities:
-                - card_id: TK-0005
-                  priority: 90
-                  condition:
-                    selector: { owner: self }
-                    card_id: [TK-0010]
-                    min: 1
-                  fallback_priority: 30
-            effect_priorities: {}
-            target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
-            scale_up:
-              instance_family: R
-              max_maintenance_ratio: 0.6
-              priority: highest_tp
-            monetize:
-              strategy: highest_tp
-              reserve_ratio: 0.0
-            """;
-        var config = AiConfigLoader.LoadFromString(yaml);
-        var ai = new NpcAi(config, _cc, _effects);
+        var ai = new NpcAi(MakeConditionalPriorityConfig(), _cc, _effects);
 
         // NO TK-0010 on field → fallback_priority=30
         var state = TestFactory.MakeGameState(phase: Phase.Main);
@@ -405,7 +401,7 @@ public class NpcAiTests
         var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
 
         // SH-0001 (50) before TK-0005 (fallback 30)
-        deploys.Should().HaveCountGreaterThanOrEqualTo(2);
+        deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_sh1");
     }
 
@@ -518,37 +514,7 @@ public class NpcAiTests
     [Fact]
     public void ScaleUp_ConditionalFamily_ConditionMet_UsesOverride()
     {
-        var yaml = """
-            model: test
-            faction: Tenki
-            budget:
-              low_threshold: 1500
-              maintenance_limit_ratio: 0.8
-            deploy:
-              priorities: []
-            effect_priorities: {}
-            target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
-            scale_up:
-              instance_family: R
-              conditional_family:
-                - family: M
-                  condition:
-                    selector: { owner: self, zone: backend }
-                    card_type: data
-                    min: 2
-              max_maintenance_ratio: 0.6
-              priority: highest_tp
-            monetize:
-              strategy: highest_tp
-              reserve_ratio: 0.0
-            """;
-        var config = AiConfigLoader.LoadFromString(yaml);
-        var ai = new NpcAi(config, _cc, _effects);
+        var ai = new NpcAi(MakeConditionalFamilyConfig(), _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         // 2 data cards in backend → condition met
@@ -571,37 +537,7 @@ public class NpcAiTests
     [Fact]
     public void ScaleUp_ConditionalFamily_ConditionNotMet_UsesDefault()
     {
-        var yaml = """
-            model: test
-            faction: Tenki
-            budget:
-              low_threshold: 1500
-              maintenance_limit_ratio: 0.8
-            deploy:
-              priorities: []
-            effect_priorities: {}
-            target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
-            scale_up:
-              instance_family: R
-              conditional_family:
-                - family: M
-                  condition:
-                    selector: { owner: self, zone: backend }
-                    card_type: data
-                    min: 2
-              max_maintenance_ratio: 0.6
-              priority: highest_tp
-            monetize:
-              strategy: highest_tp
-              reserve_ratio: 0.0
-            """;
-        var config = AiConfigLoader.LoadFromString(yaml);
-        var ai = new NpcAi(config, _cc, _effects);
+        var ai = new NpcAi(MakeConditionalFamilyConfig(), _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         // Only 1 data card → condition NOT met
@@ -761,8 +697,8 @@ public class NpcAiTests
         var dists = ((MonetizeRequest)monetize.Data).Distributions;
         var total = dists.Sum(d => d.Amount);
 
-        // 30% reserve of 1000 = 300 reserved → 700 distributable
-        total.Should().BeLessThanOrEqualTo(700);
+        // 30% reserve of 1000 = 300 reserved → 700 distributable (capacity 合計 900 > 700)
+        total.Should().Be(700);
     }
 
     [Fact]
