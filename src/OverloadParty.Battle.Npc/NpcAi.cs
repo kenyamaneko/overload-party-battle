@@ -70,11 +70,6 @@ public class NpcAi : INpcStrategy
         foreach (var a in attackActions)
         {
             var target = ResolveAttackTarget(a.ValidTargets, oppField);
-            if (target is null)
-            {
-                continue;
-            }
-
             actions.Add(new NpcAction
             {
                 ActionType = WireActionTypes.Attack,
@@ -174,11 +169,9 @@ public class NpcAi : INpcStrategy
             return null;
         }
 
-        var zone = ActionFilter.ParseZoneStr(pending.ValidZones[0]);
-        if (zone is null)
-        {
-            return null;
-        }
+        var zone = ActionFilter.ParseZoneStr(pending.ValidZones[0])
+            ?? throw new InvalidOperationException(
+                $"Failed to parse zone '{pending.ValidZones[0]}' for slot select");
 
         return new NpcAction
         {
@@ -810,20 +803,20 @@ public class NpcAi : INpcStrategy
     //  Attack target selection
     // ═══════════════════════════════════════════════════════════════
 
-    private string? ResolveAttackTarget(List<string>? validTargets, Field oppField)
+    private string ResolveAttackTarget(List<string>? validTargets, Field oppField)
     {
         if (!(validTargets?.Count > 0))
         {
-            return null;
+            throw new InvalidOperationException("Attack action has no valid targets");
         }
 
-        return _config.TargetSelection.Attack switch
+        return (_config.TargetSelection.Attack switch
         {
             "weakest_av" => ActionFilter.FindBestTargetFromValid(validTargets, oppField),
             "strongest_tp" => FindStrongestTarget(validTargets, oppField),
             var s => throw new InvalidOperationException(
                 $"Unknown attack target strategy '{s}' in model '{_config.Model}'"),
-        };
+        }) ?? throw new InvalidOperationException("No valid attack target found on opponent field");
     }
 
     private string? FindStrongestTarget(List<string> validTargets, Field oppField)
@@ -913,11 +906,9 @@ public class NpcAi : INpcStrategy
     private long ResolveResourceValue(string instanceId, Field field)
     {
         var resource = FieldHelpers.AllResources(field)
-            .FirstOrDefault(r => r.InstanceID == instanceId);
-        if (resource is null)
-        {
-            return 0;
-        }
+            .FirstOrDefault(r => r.InstanceID == instanceId)
+            ?? throw new InvalidOperationException(
+                $"Resource '{instanceId}' not found on field");
         return TargetSelector.ResourceValue(resource, _cc);
     }
 

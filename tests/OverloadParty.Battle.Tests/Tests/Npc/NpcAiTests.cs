@@ -743,6 +743,10 @@ public class NpcAiTests
 
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         state.Player1InsightPool = 1000;
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+            cardId: "SH-0001", instanceId: "res_a", currentTP: 600);
+        state.Player1Field.Frontend[1] = TestFactory.MakeResource(
+            cardId: "SH-0001", instanceId: "res_b", currentTP: 400);
 
         var available = new List<AvailableAction>
         {
