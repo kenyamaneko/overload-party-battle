@@ -263,7 +263,6 @@ public class NpcRunner
             ActionType.Migrate => json.Deserialize<MigrateRequest>(JsonOpts)!,
             ActionType.SelectSlot => json.Deserialize<SelectSlotRequest>(JsonOpts)!,
             ActionType.EndPhase => new object(),
-            ActionType.SetReactive => new object(),
             ActionType.Forfeit => json.Deserialize<ForfeitRequest>(JsonOpts)!,
             _ => throw new ArgumentException($"unknown action type: {actionType}"),
         };

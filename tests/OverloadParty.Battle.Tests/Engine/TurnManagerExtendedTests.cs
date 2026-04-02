@@ -20,7 +20,6 @@ public class TurnManagerExtendedTests
     [InlineData(ActionType.Migrate, true)]
     [InlineData(ActionType.EndPhase, true)]
     [InlineData(ActionType.Attack, false)]
-    [InlineData(ActionType.SetReactive, false)]
     [InlineData(ActionType.DiscardHand, false)]
     [InlineData(ActionType.Forfeit, false)]
     public void IsActionAllowedInPhase_Main(ActionType action, bool expected)
@@ -33,7 +32,6 @@ public class TurnManagerExtendedTests
     [Theory]
     [InlineData(ActionType.Attack, true)]
     [InlineData(ActionType.UseEffect, true)]
-    [InlineData(ActionType.SetReactive, true)]
     [InlineData(ActionType.EndPhase, true)]
     [InlineData(ActionType.PlayCard, false)]
     [InlineData(ActionType.ScaleUp, false)]

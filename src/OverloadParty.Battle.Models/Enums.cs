@@ -67,7 +67,6 @@ public enum ActionType
     Monetize,
     DiscardHand,
     UseEffect,
-    SetReactive,
     Migrate,
     EndPhase,
     Forfeit,

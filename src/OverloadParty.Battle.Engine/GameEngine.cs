@@ -124,7 +124,7 @@ public class GameEngine
 
         await _repo.UpdateGameState(game.GameID, state =>
         {
-            if (actionType != ActionType.SetReactive && state.ActivePlayer != playerNum)
+            if (state.ActivePlayer != playerNum)
             {
                 throw new GameRuleException("not your turn");
             }

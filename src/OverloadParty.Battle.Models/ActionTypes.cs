@@ -13,7 +13,6 @@ public static class WireActionTypes
     public const string Monetize = "monetize";
     public const string UseEffect = "use_effect";
     public const string Migrate = "migrate";
-    public const string SetReactive = "set_reactive";
     public const string EndPhase = "end_phase";
     public const string Forfeit = "forfeit";
     public const string Reactive = "reactive";
