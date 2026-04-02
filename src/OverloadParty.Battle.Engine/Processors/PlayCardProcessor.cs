@@ -252,20 +252,29 @@ public static class PlayCardProcessor
         {
             throw new GameRuleException($"target already has max attachments ({BattleConstants.MaxAttachments})");
         }
-        if (field.Support.FindEmptySlot() < 0)
+        if (req.Zone != Zones.Support)
         {
-            throw new GameRuleException("no empty attachment slot");
+            throw new GameRuleException("attachment must be placed in support zone");
+        }
+        if (req.Index < 0 || req.Index >= field.Support.Capacity)
+        {
+            throw new GameRuleException($"invalid support slot index {req.Index}");
+        }
+        if (field.Support[req.Index] is not null)
+        {
+            throw new GameRuleException($"support slot {req.Index} is occupied");
         }
 
         var attachInstanceID = ctx.State.NextInstanceID();
-        field.Support.TryPlace(new DeployedSupport
+        field.Support[req.Index] = new DeployedSupport
         {
             InstanceID = attachInstanceID,
             CardID = cardDef.CardId,
             ArtNo = handCard.ArtNo,
             TargetInstanceID = target.InstanceID,
             DeployOrder = ctx.State.NextDeployOrder(),
-        });
+            FaceUp = true,
+        };
 
         hand.RemoveAt(handIdx);
 

@@ -181,12 +181,11 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0, targetInstanceId: "target_1"), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Support, 0, targetInstanceId: "target_1"), _cc, null);
 
-        var attachment = state.Player1Field.Support.FirstOrDefault(s => _cc.Get(s.CardID)?.CardType == CardTypes.Attachment);
-        attachment.Should().NotBeNull();
-        attachment!.CardID.Should().Be("TEST-0300");
-        attachment.TargetInstanceID.Should().Be("target_1");
+        state.Player1Field.Support[0].Should().NotBeNull();
+        state.Player1Field.Support[0]!.CardID.Should().Be("TEST-0300");
+        state.Player1Field.Support[0]!.TargetInstanceID.Should().Be("target_1");
     }
 
     // ─── 10. Attachment max → throws ────────────────────────
@@ -202,7 +201,7 @@ public class PlayCardProcessorTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
 
         var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0, targetInstanceId: "target_1"), _cc, null);
+            state, _game, 1, MakeReq("h_1", Zones.Support, 2, targetInstanceId: "target_1"), _cc, null);
 
         act.Should().Throw<GameRuleException>().WithMessage("*max attachments*");
     }

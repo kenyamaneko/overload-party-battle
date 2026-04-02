@@ -152,20 +152,23 @@ public static class AvailableActions
     {
         if (card.CardType == CardTypes.Attachment)
         {
-            if (field.Support.FindEmptySlot() < 0) { return null; }
+            var zones = field.Support.EmptySlotIndices()
+                .Select(i => $"{Zones.Support}_{i}")
+                .ToList();
+            if (zones.Count == 0) { return null; }
 
             var targets = FieldHelpers.AllFaceUpResources(field)
                 .Where(r => field.Support.Count(a => a.TargetInstanceID == r.InstanceID) < BattleConstants.MaxAttachments)
                 .Select(r => r.InstanceID)
                 .ToList();
 
-            // ToList() 済みなので Any() ではなく Count で判定
             return targets.Count > 0
                 ? new AvailableAction
                 {
                     Type = WireActionTypes.PlayCard,
                     HandInstanceID = handCard.InstanceID,
                     CardID = handCard.CardID,
+                    ValidZones = zones,
                     ValidTargets = targets,
                 }
                 : null;

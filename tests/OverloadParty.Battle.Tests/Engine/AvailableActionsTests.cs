@@ -347,7 +347,8 @@ public class AvailableActionsTests
 
         var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
         playAction.ValidTargets.Should().Contain(t => t == "fe_1");
-        playAction.ValidZones.Should().BeNull();
+        playAction.ValidZones.Should().NotBeEmpty();
+        playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
     }
 
     [Fact]
