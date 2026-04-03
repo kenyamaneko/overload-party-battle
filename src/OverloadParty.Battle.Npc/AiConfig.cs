@@ -14,6 +14,9 @@ public class AiConfig
     [YamlMember(Alias = "faction")]
     public string Faction { get; set; } = "";
 
+    [YamlMember(Alias = "display_name")]
+    public string? DisplayName { get; set; }
+
     [YamlMember(Alias = "deck")]
     public List<DeckEntry> Deck { get; set; } = [];
 

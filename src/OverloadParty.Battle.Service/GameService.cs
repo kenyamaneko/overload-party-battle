@@ -88,7 +88,7 @@ public class GameService
     /// Creates a new NPC game with fully initialized state.
     /// </summary>
     public async Task<Game> StartNPCBattle(
-        string playerID, long deckID, List<DeckSnapshotCard> playerCards, string npcFaction,
+        string playerID, long deckID, List<DeckSnapshotCard> playerCards, string npcModel,
         CancellationToken ct = default)
     {
         if (!playerCards.Any())
@@ -96,10 +96,10 @@ public class GameService
             throw new InvalidOperationException("deck is empty");
         }
 
-        if (!_aiConfigs.TryGetValue(npcFaction, out var npcConfig))
+        if (!_aiConfigs.TryGetValue(npcModel, out var npcConfig))
         {
-            throw new InvalidOperationException(
-                $"No AI config found for '{npcFaction}'. Available: [{string.Join(", ", _aiConfigs.Keys)}]");
+            throw new GameRuleException(
+                $"No AI config found for '{npcModel}'. Available: [{string.Join(", ", _aiConfigs.Keys)}]");
         }
 
         var npcCards = npcConfig.Deck
@@ -107,13 +107,13 @@ public class GameService
             .ToList();
 
         var deck1 = new DeckSnapshot { DeckID = deckID.ToString(), Cards = playerCards };
-        var deck2 = new DeckSnapshot { DeckID = $"npc-{npcFaction}", Cards = npcCards };
+        var deck2 = new DeckSnapshot { DeckID = $"npc-{npcModel}", Cards = npcCards };
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
         var gameID = await _engine.CreateNewGame(
             playerID, "", deck1, deck2, firstPlayer,
-            npc2Model: npcFaction,
+            npc2Model: npcModel,
             engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)

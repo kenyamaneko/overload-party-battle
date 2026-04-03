@@ -108,7 +108,7 @@ public class GameServiceTests
         var cards = MakePlayerCards();
         var act = () => _svc.StartNPCBattle("player1", 1, cards, "unknown_faction");
 
-        await act.Should().ThrowAsync<InvalidOperationException>()
+        await act.Should().ThrowAsync<GameRuleException>()
             .WithMessage("*No AI config found*");
     }
 

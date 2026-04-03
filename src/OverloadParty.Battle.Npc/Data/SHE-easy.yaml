@@ -1,5 +1,6 @@
 model: SHE-easy
 faction: SHE
+display_name: 研修中配達員
 
 deck:
   - card_id: SH-0001

@@ -1,5 +1,6 @@
 model: Sugar-hard
 faction: Sugar
+display_name: 主席研究員
 
 deck:
   - card_id: SL-0001

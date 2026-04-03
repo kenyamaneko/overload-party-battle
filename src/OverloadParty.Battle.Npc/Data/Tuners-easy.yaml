@@ -1,5 +1,6 @@
 model: Tuners-easy
 faction: Tuners
+display_name: 初心者チューナー
 
 deck:
   - card_id: TN-0001

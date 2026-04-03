@@ -172,13 +172,26 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 var api = app.MapGroup("/api/v1");
 
+// NPC Models
+api.MapGet("/npc/models", () =>
+{
+    var models = aiConfigs.Values.Select(c => new
+    {
+        model = c.Model,
+        faction = c.Faction,
+        difficulty = c.Model[(c.Faction.Length + 1)..],
+        display_name = c.DisplayName,
+    });
+    return Results.Ok(new { models });
+});
+
 // NPC Game Creation
 api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
 {
     try
     {
         var cards = req.Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
-        var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, cards, req.NpcFaction);
+        var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, cards, req.NpcModel);
         return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID, npc1_model = game.Npc1Model, npc2_model = game.Npc2Model });
     }
     catch (GameRuleException ex)
@@ -352,7 +365,7 @@ static object ProjectActionResult(GameActionResult result) => new
 };
 
 public record DeckCard(string CardId, long ArtNo);
-public record NpcBattleRequest(string PlayerID, long DeckID, List<DeckCard> Cards, string NpcFaction);
+public record NpcBattleRequest(string PlayerID, long DeckID, List<DeckCard> Cards, string NpcModel);
 public record PvpBattleRequest(string Player1ID, long Player1DeckID, List<DeckCard> Player1Cards, string Player2ID, long Player2DeckID, List<DeckCard> Player2Cards);
 public record GameActionRequest(string PlayerID, string ActionType, JsonElement Data);
 public record NpcAdvanceRequest(string PlayerID);

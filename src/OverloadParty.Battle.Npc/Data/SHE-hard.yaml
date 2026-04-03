@@ -1,5 +1,6 @@
 model: SHE-hard
 faction: SHE
+display_name: エース配達員
 
 deck:
   - card_id: SH-0001

@@ -1,5 +1,6 @@
 model: Tuners-hard
 faction: Tuners
+display_name: 熟練チューナー
 
 deck:
   - card_id: TN-0001
