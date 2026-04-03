@@ -35,7 +35,7 @@ public class CardDefinition
     /// <summary>
     /// Returns whether this card type falls under the Compute category.
     /// </summary>
-    public bool IsComputeType => CardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl;
+    public bool IsComputeType => CardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML;
 
     /// <summary>
     /// Returns whether this card type falls under the Data category.

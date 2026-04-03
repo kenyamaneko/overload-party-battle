@@ -67,28 +67,9 @@ public enum ActionType
     Monetize,
     DiscardHand,
     UseEffect,
-    Migrate,
     EndPhase,
     Forfeit,
     SelectSlot
-}
-
-public enum EventType
-{
-    PlayCard,
-    AttachCard,
-    Attack,
-    ScaleUp,
-    Monetize,
-    DiscardHand,
-    UseEffect,
-    ReactiveRevealed,
-    Migrate,
-    MigrationComplete,
-    PhaseChange,
-    PhaseEnd,
-    TurnEnd,
-    GameOver
 }
 
 public enum TriggerType

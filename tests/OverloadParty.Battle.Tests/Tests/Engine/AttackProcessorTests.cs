@@ -69,7 +69,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0].Should().BeNull();
 
         // SLA penalty event data
-        var attackEvent = result.Events.First(e => e.EventType == WireActionTypes.Attack);
+        var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
         attackEvent.EventData.Should().ContainKey("slaPenalty");
 
         // Budget decreased by SLA penalty
@@ -222,7 +222,7 @@ public class AttackProcessorTests
             state, _game, 1, MakeReq("atk_1", "back_1"), _cc, null);
 
         backRes.Damage.Should().Be(600);
-        result.Events.Should().Contain(e => e.EventType == WireActionTypes.Attack);
+        result.Events.Should().Contain(e => e.EventType == ActionTypes.Attack);
     }
 
     // ─── 10. Elastic defender gains bonus ──────────────────
@@ -266,7 +266,7 @@ public class AttackProcessorTests
         var result = AttackProcessor.Process(
             state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
 
-        var attackEvent = result.Events.First(e => e.EventType == WireActionTypes.Attack);
+        var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
         attackEvent.EventData!["attackerId"].Should().Be("atk_1");
         attackEvent.EventData!["targetId"].Should().Be("def_1");
         attackEvent.EventData!["damage"].Should().Be(600L);
@@ -391,7 +391,7 @@ public class AttackProcessorTests
         // Attacker still marked as attacked
         attacker.HasAttacked.Should().BeTrue();
         // Attack event should show cancelled=true
-        var attackEvent = result.Events.First(e => e.EventType == WireActionTypes.Attack);
+        var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
         attackEvent.EventData!["cancelled"].Should().Be(true);
         attackEvent.EventData!["damage"].Should().Be(0L);
         // Reactive should be removed from support zone and sent to trash
@@ -510,7 +510,7 @@ public class AttackProcessorTests
         var result = AttackProcessor.Process(
             state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
 
-        var attackEvent = result.Events.First(e => e.EventType == WireActionTypes.Attack);
+        var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
         attackEvent.EventData!["slaPenalty"].Should().Be(0L);
     }
 
@@ -558,7 +558,7 @@ public class AttackProcessorTests
 
         defender.Damage.Should().Be(600);
         attacker.HasAttacked.Should().BeTrue();
-        result.Events.First(e => e.EventType == WireActionTypes.Attack)
+        result.Events.First(e => e.EventType == ActionTypes.Attack)
             .PlayerID.Should().Be("player2");
     }
 }

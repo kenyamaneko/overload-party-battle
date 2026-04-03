@@ -48,7 +48,7 @@ public static class AttackProcessor
             events.Add(new GameEvent
             {
                 GameID = game.GameID,
-                EventType = WireActionTypes.Attack,
+                EventType = ActionTypes.Attack,
                 PlayerID = playerId,
                 EventData = new AttackEventData
                 {
@@ -120,7 +120,7 @@ public static class AttackProcessor
         events.Add(new GameEvent
         {
             GameID = game.GameID,
-            EventType = WireActionTypes.Attack,
+            EventType = ActionTypes.Attack,
             PlayerID = playerId,
             EventData = new AttackEventData
             {

@@ -32,7 +32,7 @@ public static class EndPhaseProcessor
         events.Add(new GameEvent
         {
             GameID = game.GameID,
-            EventType = WireActionTypes.PhaseChange,
+            EventType = EventTypes.PhaseChange,
             PlayerID = playerId,
             EventData = new PhaseChangeEventData
             {
@@ -56,7 +56,7 @@ public static class EndPhaseProcessor
             events.Add(new GameEvent
             {
                 GameID = game.GameID,
-                EventType = WireActionTypes.PhaseEnd,
+                EventType = EventTypes.PhaseEnd,
                 PlayerID = playerId,
                 EventData = new PhaseEndEventData
                 {
@@ -130,7 +130,6 @@ public static class EndPhaseProcessor
     static void CollectMaintenanceCost(GameState state, long playerNum, Field field, ICardCache cc)
     {
         long totalMC = FieldHelpers.AllFaceUpResources(field)
-            .Where(r => r.MigratingFrom is null)
             .Sum(r => CalculateMaintenanceCost(r, cc.MustGet(r.CardID)));
 
         state.SetBudget(playerNum, state.GetBudget(playerNum) - totalMC);
@@ -142,7 +141,7 @@ public static class EndPhaseProcessor
 
         foreach (var res in field.Backend)
         {
-            if (!res.FaceUp || res.MigratingFrom is not null)
+            if (!res.FaceUp)
             {
                 continue;
             }
@@ -265,7 +264,7 @@ public static class EndPhaseProcessor
         return new GameEvent
         {
             GameID = gameID,
-            EventType = WireActionTypes.TurnEnd,
+            EventType = EventTypes.TurnEnd,
             PlayerID = playerId,
             EventData = new TurnEndEventData
             {
@@ -282,7 +281,7 @@ public static class EndPhaseProcessor
         return new GameEvent
         {
             GameID = gameID,
-            EventType = WireActionTypes.TurnStart,
+            EventType = EventTypes.TurnStart,
             PlayerID = "",
             EventData = new TurnStartEventData
             {

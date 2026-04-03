@@ -174,11 +174,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["strong", "weak"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["strong", "weak"] },
         };
 
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
+        var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("weak");
     }
@@ -207,11 +207,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
         };
 
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
+        var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
     }
@@ -225,7 +225,7 @@ public class NpcAiTests
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, []);
 
         actions.Should().HaveCount(1);
-        actions[0].ActionType.Should().Be(WireActionTypes.EndPhase);
+        actions[0].ActionType.Should().Be(ActionTypes.EndPhase);
     }
 
     [Fact]
@@ -237,12 +237,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["target"] },
-            new() { Type = WireActionTypes.Attack, SourceInstanceID = "atk2", ValidTargets = ["target"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["target"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk2", ValidTargets = ["target"] },
         };
 
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var attacks = actions.Where(a => a.ActionType == WireActionTypes.Attack).ToList();
+        var attacks = actions.Where(a => a.ActionType == ActionTypes.Attack).ToList();
 
         attacks.Should().HaveCount(2);
     }
@@ -309,12 +309,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_tk5", CardID = "TK-0005", ValidZones = ["frontend_1"] },
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_tk5", CardID = "TK-0005", ValidZones = ["frontend_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
+        var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
@@ -339,12 +339,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_weird", CardID = "WEIRD-001", ValidZones = ["frontend_1"] },
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_weird", CardID = "WEIRD-001", ValidZones = ["frontend_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
+        var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         // SH-0001 (pri=80) should come before WEIRD-001 (pri=0)
         deploys.Should().HaveCount(2);
@@ -366,12 +366,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "SH-0001", ValidZones = ["frontend_1"] },
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TK-0005", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "SH-0001", ValidZones = ["frontend_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TK-0005", ValidZones = ["frontend_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
+        var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         // TK-0005 (conditional 90) before SH-0001 (50)
         deploys.Should().HaveCount(2);
@@ -393,12 +393,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TK-0005", ValidZones = ["frontend_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TK-0005", ValidZones = ["frontend_1"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
+        var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         // SH-0001 (50) before TK-0005 (fallback 30)
         deploys.Should().HaveCount(2);
@@ -421,13 +421,13 @@ public class NpcAiTests
         {
             new()
             {
-                Type = WireActionTypes.PlayCard, HandInstanceID = "h_0006", CardID = "SH-0006",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_0006", CardID = "SH-0006",
                 ValidZones = ["frontend_0"], ChoiceOptions = ["use", "reserve"],
             },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploy = actions.First(a => a.ActionType == WireActionTypes.PlayCard);
+        var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
 
         var req = (PlayCardRequest)deploy.Data;
         req.ChoiceData.Should().NotBeNull();
@@ -446,7 +446,7 @@ public class NpcAiTests
         {
             new()
             {
-                Type = WireActionTypes.PlayCard, HandInstanceID = "h_unk", CardID = "UNKNOWN-C",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_unk", CardID = "UNKNOWN-C",
                 ValidZones = ["frontend_0"], ChoiceOptions = ["optionA", "optionB"],
             },
         };
@@ -472,13 +472,13 @@ public class NpcAiTests
         {
             new()
             {
-                Type = WireActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001",
                 ValidZones = ["backend_0", "frontend_0"],
             },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploy = actions.First(a => a.ActionType == WireActionTypes.PlayCard);
+        var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
         var req = (PlayCardRequest)deploy.Data;
 
         req.Zone.Should().Be("frontend");
@@ -495,13 +495,13 @@ public class NpcAiTests
         {
             new()
             {
-                Type = WireActionTypes.PlayCard, HandInstanceID = "h_db", CardID = "NT-0009",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_db", CardID = "NT-0009",
                 ValidZones = ["frontend_0", "backend_0"],
             },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploy = actions.First(a => a.ActionType == WireActionTypes.PlayCard);
+        var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
         var req = (PlayCardRequest)deploy.Data;
 
         req.Zone.Should().Be("backend");
@@ -525,11 +525,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.ScaleUp, SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
+            new() { Type = ActionTypes.ScaleUp, SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var scaleUp = actions.First(a => a.ActionType == WireActionTypes.ScaleUp);
+        var scaleUp = actions.First(a => a.ActionType == ActionTypes.ScaleUp);
 
         ((ScaleUpRequest)scaleUp.Data).InstanceFamily.Should().Be("M");
     }
@@ -546,11 +546,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.ScaleUp, SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
+            new() { Type = ActionTypes.ScaleUp, SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var scaleUp = actions.First(a => a.ActionType == WireActionTypes.ScaleUp);
+        var scaleUp = actions.First(a => a.ActionType == ActionTypes.ScaleUp);
 
         ((ScaleUpRequest)scaleUp.Data).InstanceFamily.Should().Be("R");
     }
@@ -593,11 +593,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Monetize, SourceInstanceID = "res1", RemainingCapacity = 800 },
+            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res1", RemainingCapacity = 800 },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var monetize = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.Monetize);
+        var monetize = actions.FirstOrDefault(a => a.ActionType == ActionTypes.Monetize);
 
         monetize.Should().NotBeNull();
         var dists = ((MonetizeRequest)monetize!.Data).Distributions;
@@ -616,12 +616,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Monetize, SourceInstanceID = "res1", RemainingCapacity = 500 },
+            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res1", RemainingCapacity = 500 },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
 
-        actions.Should().NotContain(a => a.ActionType == WireActionTypes.Monetize);
+        actions.Should().NotContain(a => a.ActionType == ActionTypes.Monetize);
     }
 
     [Fact]
@@ -638,12 +638,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Monetize, SourceInstanceID = "res_low", RemainingCapacity = 500 },
-            new() { Type = WireActionTypes.Monetize, SourceInstanceID = "res_high", RemainingCapacity = 500 },
+            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_low", RemainingCapacity = 500 },
+            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_high", RemainingCapacity = 500 },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var monetize = actions.First(a => a.ActionType == WireActionTypes.Monetize);
+        var monetize = actions.First(a => a.ActionType == ActionTypes.Monetize);
         var dists = ((MonetizeRequest)monetize.Data).Distributions;
 
         // highest_tp sorts by TP desc → res_high (TP=600) first
@@ -688,12 +688,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Monetize, SourceInstanceID = "res_a", RemainingCapacity = 500 },
-            new() { Type = WireActionTypes.Monetize, SourceInstanceID = "res_b", RemainingCapacity = 400 },
+            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_a", RemainingCapacity = 500 },
+            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_b", RemainingCapacity = 400 },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var monetize = actions.First(a => a.ActionType == WireActionTypes.Monetize);
+        var monetize = actions.First(a => a.ActionType == ActionTypes.Monetize);
         var dists = ((MonetizeRequest)monetize.Data).Distributions;
         var total = dists.Sum(d => d.Amount);
 
@@ -711,12 +711,12 @@ public class NpcAiTests
         // No monetize actions in available
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
 
-        actions.Should().NotContain(a => a.ActionType == WireActionTypes.Monetize);
+        actions.Should().NotContain(a => a.ActionType == ActionTypes.Monetize);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -740,14 +740,14 @@ public class NpcAiTests
         {
             new()
             {
-                Type = WireActionTypes.PlayCard, HandInstanceID = "h_strat", CardID = "TST-STRAT",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_strat", CardID = "TST-STRAT",
                 ValidZones = ["support_0"],
             },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var play = actions.FirstOrDefault(a =>
-            a.ActionType == WireActionTypes.PlayCard
+            a.ActionType == ActionTypes.PlayCard
             && ((PlayCardRequest)a.Data).CardInstanceID == "h_strat");
 
         play.Should().NotBeNull();
@@ -766,7 +766,7 @@ public class NpcAiTests
         {
             new()
             {
-                Type = WireActionTypes.PlayCard, HandInstanceID = "h_noeff", CardID = "TST-NOEFF",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_noeff", CardID = "TST-NOEFF",
                 ValidZones = ["support_0"],
             },
         };
@@ -774,7 +774,7 @@ public class NpcAiTests
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
 
         actions.Should().NotContain(a =>
-            a.ActionType == WireActionTypes.PlayCard
+            a.ActionType == ActionTypes.PlayCard
             && ((PlayCardRequest)a.Data).CardInstanceID == "h_noeff");
     }
 
@@ -823,11 +823,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
         };
 
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
+        var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
     }
@@ -874,11 +874,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
         };
 
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
+        var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
         // weakest_av → low_tp has AV=400, high_tp has AV=2000
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("low_tp");
@@ -930,11 +930,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Attack, SourceInstanceID = "own1", ValidTargets = ["low_tp", "high_tp"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "own1", ValidTargets = ["low_tp", "high_tp"] },
         };
 
         var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var attack = actions.First(a => a.ActionType == WireActionTypes.Attack);
+        var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
         // Still weakest_av because count condition not met
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("low_tp");
@@ -953,7 +953,7 @@ public class NpcAiTests
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, []);
 
         actions.Should().HaveCount(1);
-        actions[0].ActionType.Should().Be(WireActionTypes.EndPhase);
+        actions[0].ActionType.Should().Be(ActionTypes.EndPhase);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1004,12 +1004,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "SH-0022", ValidZones = ["support_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "SH-0022", ValidZones = ["support_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
+        var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         // Both deployed: compute resource first, then attachment
         deploys.Should().HaveCount(2);
@@ -1062,12 +1062,12 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_att1", CardID = "SH-0022", ValidZones = ["support_0"] },
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_att2", CardID = "NT-0003", ValidZones = ["support_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att1", CardID = "SH-0022", ValidZones = ["support_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att2", CardID = "NT-0003", ValidZones = ["support_1"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
+        var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         // NT-0003 (pri=90) before SH-0022 (pri=40)
         deploys.Should().HaveCount(2);
@@ -1089,11 +1089,11 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "SH-0022", ValidZones = ["support_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "SH-0022", ValidZones = ["support_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
-        var deploys = actions.Where(a => a.ActionType == WireActionTypes.PlayCard).ToList();
+        var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         // Attachment goes through normal deploy (not separated)
         deploys.Should().HaveCount(1);

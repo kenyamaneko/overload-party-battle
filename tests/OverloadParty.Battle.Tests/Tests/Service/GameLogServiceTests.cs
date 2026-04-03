@@ -32,7 +32,7 @@ public class GameLogServiceTests
         {
             GameID = "test-game",
             SequenceNumber = 1,
-            EventType = WireActionTypes.PlayCard,
+            EventType = ActionTypes.PlayCard,
             PlayerID = "player-abc",
             EventData = new PlayCardEventData { CardId = "SH-0001", Zone = "frontend", Index = 0 }.ToDictionary(),
         });
@@ -40,7 +40,7 @@ public class GameLogServiceTests
         {
             GameID = "test-game",
             SequenceNumber = 2,
-            EventType = WireActionTypes.Attack,
+            EventType = ActionTypes.Attack,
             PlayerID = "player-abc",
             EventData = new AttackEventData
             {
@@ -52,7 +52,7 @@ public class GameLogServiceTests
         {
             GameID = "test-game",
             SequenceNumber = 3,
-            EventType = WireActionTypes.TurnEnd,
+            EventType = EventTypes.TurnEnd,
             EventData = new TurnEndEventData
             {
                 Phase = "battle", NextTurn = 2, ActivePlayer = 2, CurrentPhase = "draw",
@@ -146,10 +146,10 @@ public class GameLogServiceTests
     // ─── Event descriptions ──────────────────────────────────────
 
     [Theory]
-    [InlineData(WireActionTypes.ScaleUp, "scaled up")]
-    [InlineData(WireActionTypes.Monetize, "distributed")]
-    [InlineData(WireActionTypes.DiscardHand, "discarded")]
-    [InlineData(WireActionTypes.PhaseChange, "ended")]
+    [InlineData(ActionTypes.ScaleUp, "scaled up")]
+    [InlineData(ActionTypes.Monetize, "distributed")]
+    [InlineData(ActionTypes.DiscardHand, "discarded")]
+    [InlineData(EventTypes.PhaseChange, "ended")]
     public async Task GetGameLog_VariousEventTypes_ProduceDescriptions(string eventType, string expectedSubstring)
     {
         var game = TestFactory.MakeGame();
@@ -158,16 +158,16 @@ public class GameLogServiceTests
 
         var eventData = eventType switch
         {
-            WireActionTypes.ScaleUp => new ScaleUpEventData
+            ActionTypes.ScaleUp => new ScaleUpEventData
             {
                 InstanceId = "inst_1", TargetRank = "medium",
             }.ToDictionary(),
-            WireActionTypes.Monetize => new MonetizeEventData { TotalAmount = 300 }.ToDictionary(),
-            WireActionTypes.DiscardHand => new DiscardHandEventData
+            ActionTypes.Monetize => new MonetizeEventData { TotalAmount = 300 }.ToDictionary(),
+            ActionTypes.DiscardHand => new DiscardHandEventData
             {
                 DiscardedCount = 2, DiscardedIds = ["i1", "i2"],
             }.ToDictionary(),
-            WireActionTypes.PhaseChange => new PhaseChangeEventData
+            EventTypes.PhaseChange => new PhaseChangeEventData
             {
                 PreviousPhase = "main", CurrentPhase = "battle",
             }.ToDictionary(),
@@ -202,29 +202,4 @@ public class GameLogServiceTests
         json.Should().Contain("\"entries\"");
     }
 
-    // ─── Migrate event ───────────────────────────────────────────
-
-    [Fact]
-    public async Task GetGameLog_MigrateEvent_ShowsCardNames()
-    {
-        var game = TestFactory.MakeGame();
-        var state = TestFactory.MakeGameState();
-        await _repo.CreateGame(game, state);
-
-        await _repo.AppendEvent(new GameEvent
-        {
-            GameID = "test-game",
-            SequenceNumber = 1,
-            EventType = WireActionTypes.Migrate,
-            PlayerID = "player1",
-            EventData = new MigrateEventData
-            {
-                SourceInstanceId = "inst_new", TargetInstanceId = "inst_old",
-                SourceCardId = "SH-0001", TargetCardId = "NT-0009",
-            }.ToDictionary(),
-        });
-
-        var log = await _svc.GetGameLog("test-game");
-        log!.Entries[0].Description.Should().Contain("えくぼ").And.Contain("TestDB");
-    }
 }

@@ -108,7 +108,6 @@ public static class AvailableActions
                 actions.AddRange(EnumerateScaleUpActions(myField, cc));
                 actions.AddRange(EnumerateMonetizeActions(state, myField, insightPool, cc));
                 actions.AddRange(EnumerateUseEffectActions(myField, oppField, budget, cc, effects));
-                actions.AddRange(EnumerateMigrateActions(myField, cc));
                 break;
 
             case Phase.Battle:
@@ -152,7 +151,7 @@ public static class AvailableActions
     {
         if (card.CardType == CardTypes.Attachment)
         {
-            var zones = field.Support.EmptySlotIndices()
+            var zones = Enumerable.Range(0, field.Support.Capacity)
                 .Select(i => $"{Zones.Support}_{i}")
                 .ToList();
             if (zones.Count == 0) { return null; }
@@ -164,7 +163,7 @@ public static class AvailableActions
             return targets.Count > 0
                 ? new AvailableAction
                 {
-                    Type = WireActionTypes.PlayCard,
+                    Type = ActionTypes.PlayCard,
                     HandInstanceID = handCard.InstanceID,
                     CardID = handCard.CardID,
                     ValidZones = zones,
@@ -189,7 +188,7 @@ public static class AvailableActions
             }
             return new AvailableAction
             {
-                Type = WireActionTypes.PlayCard,
+                Type = ActionTypes.PlayCard,
                 HandInstanceID = handCard.InstanceID,
                 CardID = handCard.CardID,
             };
@@ -201,12 +200,11 @@ public static class AvailableActions
     private static AvailableAction? BuildSupportSlotAction(Field field, UndeployedCard handCard)
     {
         // ワイヤーフォーマット: "{zone}_{slotIndex}" — クライアント/NPC 側で _ 分割してパース
-        var zones = field.Support.EmptySlotIndices().Select(i => $"support_{i}").ToList();
-        // ToList() 済みなので Any() ではなく Count で判定
+        var zones = Enumerable.Range(0, field.Support.Capacity).Select(i => $"support_{i}").ToList();
         return zones.Count > 0
             ? new AvailableAction
             {
-                Type = WireActionTypes.PlayCard,
+                Type = ActionTypes.PlayCard,
                 HandInstanceID = handCard.InstanceID,
                 CardID = handCard.CardID,
                 ValidZones = zones,
@@ -222,7 +220,7 @@ public static class AvailableActions
         return validZones.Count > 0
             ? new AvailableAction
             {
-                Type = WireActionTypes.PlayCard,
+                Type = ActionTypes.PlayCard,
                 HandInstanceID = handCard.InstanceID,
                 CardID = handCard.CardID,
                 ValidZones = validZones,
@@ -253,12 +251,10 @@ public static class AvailableActions
             if (attackerCard is null || !attackerCard.IsComputeType) { continue; }
             if (attacker.HasAttacked) { continue; }
             if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate)) { continue; }
-            if (attacker.MigratingFrom is not null
-                || attacker.MigrationTarget is not null) { continue; }
 
             yield return new AvailableAction
             {
-                Type = WireActionTypes.Attack,
+                Type = ActionTypes.Attack,
                 SourceInstanceID = attacker.InstanceID,
                 ValidTargets = validTargets,
             };
@@ -290,7 +286,7 @@ public static class AvailableActions
                     {
                         yield return new AvailableAction
                         {
-                            Type = WireActionTypes.ScaleUp,
+                            Type = ActionTypes.ScaleUp,
                             SourceInstanceID = resource.InstanceID,
                             TargetRank = targetRank.ToWireString(),
                             InstanceFamily = family.ToWireString(),
@@ -301,7 +297,7 @@ public static class AvailableActions
                 {
                     yield return new AvailableAction
                     {
-                        Type = WireActionTypes.ScaleUp,
+                        Type = ActionTypes.ScaleUp,
                         SourceInstanceID = resource.InstanceID,
                         TargetRank = targetRank.ToWireString(),
                         InstanceFamily = resource.InstanceFamily!.Value.ToWireString(),
@@ -319,8 +315,6 @@ public static class AvailableActions
 
         foreach (var res in field.Backend.Where(r => r.FaceUp))
         {
-            if (res.MigratingFrom is not null) { continue; }
-
             var card = cc.Get(res.CardID);
             if (card is null || !card.IsComputeType) { continue; }
 
@@ -330,7 +324,7 @@ public static class AvailableActions
 
             yield return new AvailableAction
             {
-                Type = WireActionTypes.Monetize,
+                Type = ActionTypes.Monetize,
                 SourceInstanceID = res.InstanceID,
                 RemainingCapacity = remaining,
             };
@@ -347,8 +341,6 @@ public static class AvailableActions
         {
             if (resource.EffectUsedThisTurn) { continue; }
             if (FieldHelpers.HasTemporaryEffect(resource, EffectTypes.CannotOperate)) { continue; }
-            if (resource.MigratingFrom is not null
-                || resource.MigrationTarget is not null) { continue; }
 
             var card = cc.Get(resource.CardID);
             if (card is null) { continue; }
@@ -360,7 +352,7 @@ public static class AvailableActions
 
             yield return new AvailableAction
             {
-                Type = WireActionTypes.UseEffect,
+                Type = ActionTypes.UseEffect,
                 SourceInstanceID = resource.InstanceID,
                 CardID = card.CardId,
             };
@@ -382,49 +374,10 @@ public static class AvailableActions
 
             yield return new AvailableAction
             {
-                Type = WireActionTypes.UseEffect,
+                Type = ActionTypes.UseEffect,
                 SourceInstanceID = support.InstanceID,
                 CardID = card.CardId,
             };
-        }
-    }
-
-    private static IEnumerable<AvailableAction> EnumerateMigrateActions(Field field, ICardCache cc)
-    {
-        var sources = new List<(DeployedResource Res, CardDefinition Card)>();
-        var targets = new List<(DeployedResource Res, CardDefinition Card)>();
-
-        foreach (var resource in FieldHelpers.AllFaceUpResources(field))
-        {
-            if (resource.MigratingFrom is not null
-                || resource.MigrationTarget is not null) { continue; }
-
-            var card = cc.Get(resource.CardID);
-            if (card is null) { continue; }
-
-            sources.Add((resource, card));
-            targets.Add((resource, card));
-        }
-
-        foreach (var (source, sourceCard) in sources)
-        {
-            var validTargets = new List<string>();
-            foreach (var (target, targetCard) in targets)
-            {
-                if (target.InstanceID == source.InstanceID) { continue; }
-                if (targetCard.DeployTurns < sourceCard.DeployTurns) { continue; }
-                validTargets.Add(target.InstanceID);
-            }
-
-            if (validTargets.Count > 0)
-            {
-                yield return new AvailableAction
-                {
-                    Type = WireActionTypes.Migrate,
-                    SourceInstanceID = source.InstanceID,
-                    ValidTargets = validTargets,
-                };
-            }
         }
     }
 }

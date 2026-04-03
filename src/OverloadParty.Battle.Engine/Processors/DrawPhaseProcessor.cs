@@ -5,17 +5,12 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes the draw phase including deploy countdowns, migration completion, and card draw.
+/// Processes the draw phase including deploy countdowns and card draw.
 /// </summary>
-/// <remarks>
-/// TODO: ドローフェーズの前に「スタートフェーズ」を設けることを検討する。
-/// 現在はマイグレーション完了やデプロイカウントダウンがドローフェーズで処理されているが、
-/// これらはドローとは独立したターン開始処理であり、別フェーズに分離すべき可能性がある。
-/// </remarks>
 public static class DrawPhaseProcessor
 {
     /// <summary>
-    /// Executes draw phase logic: counts down deploy timers, completes migrations, draws a card, and checks win conditions.
+    /// Executes draw phase logic: counts down deploy timers, draws a card, and checks win conditions.
     /// </summary>
     /// <param name="state">The current game state.</param>
     /// <param name="game">The game metadata.</param>
@@ -26,7 +21,6 @@ public static class DrawPhaseProcessor
         if (state.CurrentPhase != Phase.Draw) { return null; }
 
         ProcessDeployCountdown(state, game, cc, effects);
-        ProcessMigrationCompletion(state);
 
         if (!CanDraw(state))
         {
@@ -82,31 +76,6 @@ public static class DrawPhaseProcessor
                     });
                 }
             }
-        }
-    }
-
-    static void ProcessMigrationCompletion(GameState state)
-    {
-        var playerNum = state.ActivePlayer;
-        var field = state.GetField(playerNum);
-
-        var completedMigrations = FieldHelpers.AllResources(field)
-            .Where(r => r.MigratingFrom is not null
-                && state.CurrentTurn - r.MigratingOnTurn >= 2)
-            .ToList();
-
-        foreach (var resource in completedMigrations)
-        {
-            var sourceID = resource.MigratingFrom!;
-            var src = FieldHelpers.FindResourceByID(field, sourceID);
-            if (src is not null)
-            {
-                FieldHelpers.RemoveResourceFromField(field, sourceID);
-                CardMoveHelpers.AddToTrash(state, playerNum, src.CardID, sourceID, src.ArtNo);
-            }
-
-            resource.MigratingFrom = null;
-            resource.MigratingOnTurn = 0;
         }
     }
 }

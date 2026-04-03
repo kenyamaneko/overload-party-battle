@@ -40,7 +40,7 @@ public static class SelectSlotProcessor
             new()
             {
                 GameID = game.GameID,
-                EventType = WireActionTypes.SelectSlot,
+                EventType = ActionTypes.SelectSlot,
                 PlayerID = playerId,
                 EventData = new Dictionary<string, object>
                 {

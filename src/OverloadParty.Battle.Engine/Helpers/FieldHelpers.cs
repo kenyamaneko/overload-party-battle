@@ -116,7 +116,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsFrontendEligible(string cardType)
     {
-        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl or CardTypes.ObjectStorage;
+        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML or CardTypes.ObjectStorage;
     }
 
     /// <summary>
@@ -124,7 +124,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsBackendEligible(string cardType)
     {
-        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl
+        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML
             or CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
     }
 
@@ -149,7 +149,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsComputeType(string cardType)
     {
-        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl;
+        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML;
     }
 
     /// <summary>
@@ -204,18 +204,4 @@ public static class FieldHelpers
         }
     }
 
-    /// <summary>
-    /// Clear migration links when a migration source is destroyed.
-    /// </summary>
-    public static void ClearMigrationOnSourceDestroyed(Field field, DeployedResource destroyed)
-    {
-        if (destroyed.MigrationTarget is null) { return; }
-
-        var target = FindResourceByID(field, destroyed.MigrationTarget);
-        if (target is not null)
-        {
-            target.MigratingFrom = null;
-            target.MigratingOnTurn = 0;
-        }
-    }
 }

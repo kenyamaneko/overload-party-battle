@@ -17,7 +17,6 @@ public class TurnManagerExtendedTests
     [InlineData(ActionType.ScaleUp, true)]
     [InlineData(ActionType.Monetize, true)]
     [InlineData(ActionType.UseEffect, true)]
-    [InlineData(ActionType.Migrate, true)]
     [InlineData(ActionType.EndPhase, true)]
     [InlineData(ActionType.Attack, false)]
     [InlineData(ActionType.DiscardHand, false)]
@@ -36,7 +35,6 @@ public class TurnManagerExtendedTests
     [InlineData(ActionType.PlayCard, false)]
     [InlineData(ActionType.ScaleUp, false)]
     [InlineData(ActionType.Monetize, false)]
-    [InlineData(ActionType.Migrate, false)]
     [InlineData(ActionType.DiscardHand, false)]
     public void IsActionAllowedInPhase_Battle(ActionType action, bool expected)
     {

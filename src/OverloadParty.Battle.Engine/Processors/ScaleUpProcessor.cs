@@ -67,7 +67,7 @@ public static class ScaleUpProcessor
         var evt = new GameEvent
         {
             GameID = game.GameID,
-            EventType = WireActionTypes.ScaleUp,
+            EventType = ActionTypes.ScaleUp,
             PlayerID = playerId,
             EventData = new ScaleUpEventData
             {

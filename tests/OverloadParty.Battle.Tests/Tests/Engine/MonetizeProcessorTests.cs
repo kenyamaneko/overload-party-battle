@@ -173,6 +173,6 @@ public class MonetizeProcessorTests
         res2.MonetizedAmount.Should().Be(200);
         state.GetInsightPool(1).Should().Be(300);
         state.GetBudget(1).Should().Be(5500);
-        result.Events.Should().Contain(e => e.EventType == WireActionTypes.Monetize);
+        result.Events.Should().Contain(e => e.EventType == ActionTypes.Monetize);
     }
 }

@@ -191,27 +191,4 @@ public class ActionRequestDeserializationTests
         req.CardInstanceIDs.Should().Equal("c1", "c2", "c3");
     }
 
-    // ─── MigrateRequest ─────────────────────────────────────
-
-    [Fact]
-    public void MigrateRequest_DeserializesCorrectly()
-    {
-        var json = """{ "sourceInstanceId": "s1", "targetInstanceId": "t1" }""";
-
-        var req = JsonSerializer.Deserialize<MigrateRequest>(json, JsonOpts)!;
-
-        req.SourceInstanceID.Should().Be("s1");
-        req.TargetInstanceID.Should().Be("t1");
-    }
-
-    [Fact]
-    public void MigrateRequest_ViaJsonElement()
-    {
-        var json = """{ "sourceInstanceId": "s1", "targetInstanceId": "t1" }""";
-
-        var req = JsonDocument.Parse(json).RootElement.Deserialize<MigrateRequest>(JsonOpts)!;
-
-        req.SourceInstanceID.Should().Be("s1");
-        req.TargetInstanceID.Should().Be("t1");
-    }
 }

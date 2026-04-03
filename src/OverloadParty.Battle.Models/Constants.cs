@@ -17,11 +17,6 @@ public static class BattleConstants
     public const int MaxChainLevel = 3;
     public const int LaunchFailureTurn = 3;
 
-    // Stat types (not in shared constants.json)
-    public const string StatTP = "tp";
-    public const string StatYield = "yield";
-    public const string StatAV = "av";
-
     // Rank multipliers
     public static long RankMultiplier(Rank? rank) => rank switch
     {

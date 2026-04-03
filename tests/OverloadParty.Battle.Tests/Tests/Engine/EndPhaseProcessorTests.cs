@@ -47,7 +47,7 @@ public class EndPhaseProcessorTests
         var result = EndPhaseProcessor.Process(state, _game, 1, _cc);
 
         result.Events.Should().ContainSingle();
-        result.Events[0].EventType.Should().Be(WireActionTypes.PhaseChange);
+        result.Events[0].EventType.Should().Be(EventTypes.PhaseChange);
         var data = result.Events[0].EventData!;
         data["previousPhase"].Should().Be("main");
         data["currentPhase"].Should().Be("battle");
@@ -169,23 +169,6 @@ public class EndPhaseProcessorTests
 
         // Budget should be reduced by maintenance cost (150)
         state.Player1Budget.Should().Be(5000 - 150);
-    }
-
-    [Fact]
-    public void Process_EndPhase_MigratingResource_NoMaintenanceCost()
-    {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
-        AddRepoCards(state, 2);
-
-        // Place a migrating resource (should not incur MC)
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1", faceUp: true);
-        resource.MigratingFrom = "old_res";
-        state.Player1Field.Frontend[0] = resource;
-
-        EndPhaseProcessor.Process(state, _game, 1, _cc);
-
-        // Budget should not be reduced (migrating resources skip MC)
-        state.Player1Budget.Should().Be(5000);
     }
 
     // ─── Elastic maintenance cost ─────────────────────────────
@@ -380,7 +363,7 @@ public class EndPhaseProcessorTests
 
         var result = EndPhaseProcessor.Process(state, _game, 1, _cc);
 
-        result.Events.Should().Contain(e => e.EventType == WireActionTypes.TurnEnd);
+        result.Events.Should().Contain(e => e.EventType == EventTypes.TurnEnd);
     }
 
     // ─── Repository empty → game over ───────────────────────

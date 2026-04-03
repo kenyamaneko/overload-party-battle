@@ -107,7 +107,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         }
 
         var targetCard = octx.CardCache.Get(target.CardID);
-        if (targetCard is null || (!targetCard.IsComputeType && targetCard.CardType != CardTypes.AiMl))
+        if (targetCard is null || (!targetCard.IsComputeType && targetCard.CardType != CardTypes.AIML))
         {
             return;
         }

@@ -100,6 +100,6 @@ public static class EffectHelpers
     /// <param name="cardType">Card type string to check.</param>
     /// <returns>True if the type is a resource type.</returns>
     public static bool IsResourceType(string cardType)
-        => cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl
+        => cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML
            or CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
 }

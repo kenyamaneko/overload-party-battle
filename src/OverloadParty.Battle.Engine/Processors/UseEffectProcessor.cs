@@ -83,7 +83,7 @@ public static class UseEffectProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = WireActionTypes.UseEffect,
+            EventType = ActionTypes.UseEffect,
             PlayerID = playerId,
             EventData = new UseEffectEventData
             {
@@ -127,7 +127,7 @@ public static class UseEffectProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = WireActionTypes.UseEffect,
+            EventType = ActionTypes.UseEffect,
             PlayerID = playerId,
             EventData = new UseEffectEventData
             {

@@ -14,7 +14,7 @@ public static class EffectYamlLoader
     private static readonly List<string> DataCardTypes = [CardTypes.Database, CardTypes.CacheDB, CardTypes.ObjectStorage];
 
     // "compute" category expands to these card types
-    private static readonly List<string> ComputeCardTypes = [CardTypes.Compute, CardTypes.Container, CardTypes.Orchestrator, CardTypes.Serverless, CardTypes.AiMl];
+    private static readonly List<string> ComputeCardTypes = [CardTypes.Compute, CardTypes.Container, CardTypes.Orchestrator, CardTypes.Serverless, CardTypes.AIML];
 
     /// <summary>
     /// Loads effects from card definitions and registers them into the registry.

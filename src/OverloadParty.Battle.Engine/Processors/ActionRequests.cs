@@ -157,18 +157,6 @@ public class SelectSlotRequest
 }
 
 /// <summary>
-/// Request to migrate a resource from one instance to another.
-/// </summary>
-public class MigrateRequest
-{
-    /// <summary>The instance ID of the source resource being migrated away from.</summary>
-    public string SourceInstanceID { get; set; } = "";
-
-    /// <summary>The instance ID of the target resource being migrated to.</summary>
-    public string TargetInstanceID { get; set; } = "";
-}
-
-/// <summary>
 /// Request to forfeit a game, with an optional reason indicating why.
 /// </summary>
 public class ForfeitRequest

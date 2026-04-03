@@ -52,7 +52,7 @@ public class UseEffectProcessorTests
         var req = new UseEffectRequest { InstanceID = "r_1" };
         var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-        result.Events.Should().ContainSingle(e => e.EventType == WireActionTypes.UseEffect);
+        result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseEffect);
     }
 
     [Fact]
@@ -250,6 +250,6 @@ public class UseEffectProcessorTests
         var req = new UseEffectRequest { InstanceID = "sup_1" };
         var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-        result.Events.Should().ContainSingle(e => e.EventType == WireActionTypes.UseEffect);
+        result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseEffect);
     }
 }

@@ -145,9 +145,6 @@ public static class ResourceHelpers
         long budget = state.GetBudget(ownerNum);
         state.SetBudget(ownerNum, budget - penalty);
 
-        // マイグレーションリンクをクリア
-        FieldHelpers.ClearMigrationOnSourceDestroyed(field, resource);
-
         // while_on_field バフを除去（リソース本体 + アタッチメント）
         FieldHelpers.RemoveWhileOnFieldBuffs(field, resource.InstanceID);
         var attachments = field.Support.Where(a => a.TargetInstanceID == resource.InstanceID).ToList();

@@ -112,31 +112,29 @@ public static class EnumExtensions
 
     public static string ToWireString(this ActionType action) => action switch
     {
-        ActionType.PlayCard => WireActionTypes.PlayCard,
-        ActionType.Attack => WireActionTypes.Attack,
-        ActionType.ScaleUp => WireActionTypes.ScaleUp,
-        ActionType.Monetize => WireActionTypes.Monetize,
-        ActionType.DiscardHand => WireActionTypes.DiscardHand,
-        ActionType.UseEffect => WireActionTypes.UseEffect,
-        ActionType.Migrate => WireActionTypes.Migrate,
-        ActionType.EndPhase => WireActionTypes.EndPhase,
-        ActionType.Forfeit => WireActionTypes.Forfeit,
-        ActionType.SelectSlot => WireActionTypes.SelectSlot,
+        ActionType.PlayCard => ActionTypes.PlayCard,
+        ActionType.Attack => ActionTypes.Attack,
+        ActionType.ScaleUp => ActionTypes.ScaleUp,
+        ActionType.Monetize => ActionTypes.Monetize,
+        ActionType.DiscardHand => ActionTypes.DiscardHand,
+        ActionType.UseEffect => ActionTypes.UseEffect,
+        ActionType.EndPhase => ActionTypes.EndPhase,
+        ActionType.Forfeit => ActionTypes.Forfeit,
+        ActionType.SelectSlot => ActionTypes.SelectSlot,
         _ => throw new ArgumentOutOfRangeException(nameof(action))
     };
 
     public static ActionType ParseActionType(string s) => s switch
     {
-        WireActionTypes.PlayCard => ActionType.PlayCard,
-        WireActionTypes.Attack => ActionType.Attack,
-        WireActionTypes.ScaleUp => ActionType.ScaleUp,
-        WireActionTypes.Monetize => ActionType.Monetize,
-        WireActionTypes.DiscardHand => ActionType.DiscardHand,
-        WireActionTypes.UseEffect => ActionType.UseEffect,
-        WireActionTypes.Migrate => ActionType.Migrate,
-        WireActionTypes.EndPhase => ActionType.EndPhase,
-        WireActionTypes.Forfeit => ActionType.Forfeit,
-        WireActionTypes.SelectSlot => ActionType.SelectSlot,
+        ActionTypes.PlayCard => ActionType.PlayCard,
+        ActionTypes.Attack => ActionType.Attack,
+        ActionTypes.ScaleUp => ActionType.ScaleUp,
+        ActionTypes.Monetize => ActionType.Monetize,
+        ActionTypes.DiscardHand => ActionType.DiscardHand,
+        ActionTypes.UseEffect => ActionType.UseEffect,
+        ActionTypes.EndPhase => ActionType.EndPhase,
+        ActionTypes.Forfeit => ActionType.Forfeit,
+        ActionTypes.SelectSlot => ActionType.SelectSlot,
         _ => throw new ArgumentException($"Unknown action type: {s}")
     };
 
@@ -162,7 +160,7 @@ public static class EnumExtensions
 
     public static CardTypeCategory GetCategory(string cardType) => cardType switch
     {
-        CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AiMl => CardTypeCategory.Compute,
+        CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML => CardTypeCategory.Compute,
         CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB => CardTypeCategory.Data,
         CardTypes.Platform or CardTypes.Attachment or CardTypes.Strategy or CardTypes.Reactive or CardTypes.Incident => CardTypeCategory.Support,
         _ => throw new ArgumentException($"Unknown card type: {cardType}")

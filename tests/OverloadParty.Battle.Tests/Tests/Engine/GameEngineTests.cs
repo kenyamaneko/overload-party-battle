@@ -122,7 +122,7 @@ public class GameEngineTests
             game!, 1, ActionType.PlayCard, req);
 
         result.Should().NotBeNull();
-        result.Events.Should().Contain(e => e.EventType == WireActionTypes.PlayCard);
+        result.Events.Should().Contain(e => e.EventType == ActionTypes.PlayCard);
 
         // Card removed from hand
         state.Player1Hand.Should().NotContain(h => h.InstanceID == cardToPlay.InstanceID);
@@ -166,14 +166,14 @@ public class GameEngineTests
             game!, 1, ActionType.Attack, req);
 
         result.Should().NotBeNull();
-        result.Events.Should().Contain(e => e.EventType == WireActionTypes.Attack);
+        result.Events.Should().Contain(e => e.EventType == ActionTypes.Attack);
 
         defender.Damage.Should().Be(600);
         attacker.HasAttacked.Should().BeTrue();
 
         // Events should be persisted
         var events = await _repo.GetEvents(gameID);
-        events.Should().Contain(e => e.EventType == WireActionTypes.Attack);
+        events.Should().Contain(e => e.EventType == ActionTypes.Attack);
     }
 
     // ─── ProcessAction: validation ───────────────────────────
@@ -338,7 +338,7 @@ public class GameEngineTests
             game!, 1, ActionType.SelectSlot,
             new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
 
-        result.Events.Should().Contain(e => e.EventType == WireActionTypes.SelectSlot);
+        result.Events.Should().Contain(e => e.EventType == ActionTypes.SelectSlot);
         state.PendingSlotSelects.Should().BeEmpty();
         state.Player1Field.Frontend[1].Should().NotBeNull();
     }
@@ -372,7 +372,7 @@ public class GameEngineTests
                 Index = 0,
             });
 
-        result.Events.Should().Contain(e => e.EventType == WireActionTypes.PlayCard);
+        result.Events.Should().Contain(e => e.EventType == ActionTypes.PlayCard);
     }
 
     [Fact]

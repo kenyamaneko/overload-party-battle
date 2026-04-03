@@ -19,11 +19,11 @@ public static class ChainResolver
         }
 
         // Reactive cannot chain on top of unresolved reactive
-        if (entry.ActionType == WireActionTypes.Reactive)
+        if (entry.ActionType == ActionTypes.Reactive)
         {
             foreach (var existing in state.ChainStack)
             {
-                if (existing.ActionType == WireActionTypes.Reactive && !existing.Resolved)
+                if (existing.ActionType == ActionTypes.Reactive && !existing.Resolved)
                 {
                     throw new GameRuleException("cannot chain reactive on unresolved reactive");
                 }
@@ -36,8 +36,8 @@ public static class ChainResolver
 
     public static TriggerType ChainActionToTrigger(string actionType) => actionType switch
     {
-        WireActionTypes.Reactive => TriggerType.Reactive,
-        WireActionTypes.Attack => TriggerType.OnAttack,
+        ActionTypes.Reactive => TriggerType.Reactive,
+        ActionTypes.Attack => TriggerType.OnAttack,
         _ => TriggerType.Activate
     };
 
@@ -51,7 +51,7 @@ public static class ChainResolver
 
         // Last entry must not be reactive
         var last = state.ChainStack.Last();
-        return last.ActionType != WireActionTypes.Reactive;
+        return last.ActionType != ActionTypes.Reactive;
     }
 
     /// <summary>

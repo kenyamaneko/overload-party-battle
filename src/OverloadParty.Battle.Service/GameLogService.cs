@@ -147,20 +147,18 @@ public class GameLogService
 
         return evt.EventType switch
         {
-            WireActionTypes.PlayCard => DescribePlayCard(playerTag, data),
-            WireActionTypes.AttachCard => DescribeAttachCard(playerTag, data),
-            WireActionTypes.Attack => DescribeAttack(playerTag, data),
-            WireActionTypes.ScaleUp => DescribeScaleUp(playerTag, data),
-            WireActionTypes.Monetize => DescribeMonetize(playerTag, data),
-            WireActionTypes.DiscardHand => DescribeDiscardHand(playerTag, data),
-            WireActionTypes.UseEffect => DescribeUseEffect(playerTag, data),
-            "reactive_revealed" => $"{playerTag} reactive revealed",
-            WireActionTypes.Migrate => DescribeMigrate(playerTag, data),
-            "migration_complete" => "Migration complete",
-            WireActionTypes.PhaseChange => DescribePhaseChange(playerTag, data),
-            WireActionTypes.PhaseEnd => DescribePhaseEnd(data),
-            WireActionTypes.TurnEnd => DescribeTurnEnd(data),
-            "game_over" => DescribeGameOver(game),
+            ActionTypes.PlayCard => DescribePlayCard(playerTag, data),
+            EventTypes.AttachCard => DescribeAttachCard(playerTag, data),
+            ActionTypes.Attack => DescribeAttack(playerTag, data),
+            ActionTypes.ScaleUp => DescribeScaleUp(playerTag, data),
+            ActionTypes.Monetize => DescribeMonetize(playerTag, data),
+            ActionTypes.DiscardHand => DescribeDiscardHand(playerTag, data),
+            ActionTypes.UseEffect => DescribeUseEffect(playerTag, data),
+            EventTypes.ReactiveRevealed => $"{playerTag} reactive revealed",
+            EventTypes.PhaseChange => DescribePhaseChange(playerTag, data),
+            EventTypes.PhaseEnd => DescribePhaseEnd(data),
+            EventTypes.TurnEnd => DescribeTurnEnd(data),
+            EventTypes.GameOver => DescribeGameOver(game),
             _ => $"{playerTag} {evt.EventType}",
         };
     }
@@ -239,17 +237,6 @@ public class GameLogService
         var cardId = GetString(data, "cardId");
         var cardName = ResolveCardName(cardId);
         return $"{player} activated effect: {cardName}";
-    }
-
-    private string DescribeMigrate(string player, Dictionary<string, object>? data)
-    {
-        if (data is null) return $"{player} migrated";
-
-        var srcCardId = GetString(data, "sourceCardId");
-        var tgtCardId = GetString(data, "targetCardId");
-        var srcName = ResolveCardName(srcCardId);
-        var tgtName = ResolveCardName(tgtCardId);
-        return $"{player} migrated \"{srcName}\" → \"{tgtName}\"";
     }
 
     private static string DescribePhaseChange(string player, Dictionary<string, object>? data)

@@ -64,7 +64,7 @@ public class SelectSlotProcessorTests
 
         result.Events.Should().ContainSingle();
         var evt = result.Events[0];
-        evt.EventType.Should().Be(WireActionTypes.SelectSlot);
+        evt.EventType.Should().Be(ActionTypes.SelectSlot);
         evt.EventData!["zone"].Should().Be("frontend");
         evt.EventData["index"].Should().Be(2);
     }

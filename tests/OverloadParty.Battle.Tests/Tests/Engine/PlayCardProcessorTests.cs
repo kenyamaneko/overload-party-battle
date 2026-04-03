@@ -61,7 +61,7 @@ public class PlayCardProcessorTests
         state.Player1Field.Frontend[0].Should().NotBeNull();
         state.Player1Field.Frontend[0]!.CardID.Should().Be("SH-0001");
 
-        result.Events.Should().ContainSingle(e => e.EventType == WireActionTypes.PlayCard);
+        result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.PlayCard);
 
         // deployTurns=1 → face-down
         state.Player1Field.Frontend[0]!.FaceUp.Should().BeFalse();
@@ -275,5 +275,58 @@ public class PlayCardProcessorTests
         state.Player1Field.Support[0].Should().NotBeNull();
         state.Player1Field.Support[0]!.FaceUp.Should().BeTrue();
         state.Player1Field.Support[0]!.DeployingTurnsLeft.Should().Be(2);
+    }
+
+    // ─── Support replacement (張り替え) ─────────────────────
+
+    [Fact]
+    public void Process_SupportReplacement_OldSupportTrashed()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Field.Support[0] = new DeployedSupport
+        {
+            InstanceID = "old_sup", CardID = "TEST-0200", ArtNo = 0, FaceUp = true,
+        };
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0200" });
+
+        PlayCardProcessor.Process(
+            state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, null);
+
+        state.Player1Field.Support[0].Should().NotBeNull();
+        state.Player1Field.Support[0]!.InstanceID.Should().NotBe("old_sup");
+        state.Player1Trash.Should().Contain(c => c.InstanceID == "old_sup");
+    }
+
+    [Fact]
+    public void Process_AttachmentReplacement_OldSupportTrashed()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1");
+        state.Player1Field.Support[0] = new DeployedSupport
+        {
+            InstanceID = "old_att", CardID = "TEST-0300", ArtNo = 0, FaceUp = true,
+            TargetInstanceID = "res_1",
+        };
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
+
+        PlayCardProcessor.Process(
+            state, _game, 1, MakeReq("h_1", Zones.Support, 0, "res_1"), _cc, null);
+
+        state.Player1Field.Support[0].Should().NotBeNull();
+        state.Player1Field.Support[0]!.InstanceID.Should().NotBe("old_att");
+        state.Player1Trash.Should().Contain(c => c.InstanceID == "old_att");
+    }
+
+    [Fact]
+    public void Process_ResourceOccupiedSlot_StillThrows()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource();
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
+
+        var act = () => PlayCardProcessor.Process(
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
+
+        act.Should().Throw<GameRuleException>().WithMessage("*occupied*");
     }
 }

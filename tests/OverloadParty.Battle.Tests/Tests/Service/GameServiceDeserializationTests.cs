@@ -189,20 +189,4 @@ public class GameServiceDeserializationTests
         result.CardInstanceIDs.Should().ContainSingle().Which.Should().Be("c_only");
     }
 
-    // ─── migrate ─────────────────────────────────────────────
-
-    [Fact]
-    public void Migrate_DeserializesToMigrateRequest()
-    {
-        var data = new Dictionary<string, object>
-        {
-            ["sourceInstanceId"] = "src_1",
-            ["targetInstanceId"] = "tgt_1",
-        };
-
-        var result = SerializeAndDeserialize<MigrateRequest>(data);
-
-        result.SourceInstanceID.Should().Be("src_1");
-        result.TargetInstanceID.Should().Be("tgt_1");
-    }
 }

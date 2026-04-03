@@ -51,9 +51,9 @@ public static class StatCalculator
             elasticBonus = EffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
         }
 
-        long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatTP, cc);
+        long platformBonus = CalculatePlatformBonus(instance, field, StatTypes.Tp, cc);
         long passiveBonus = CalculatePassiveTPBonus(instance, field, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, field, BattleConstants.StatTP, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, field, StatTypes.Tp, cc);
 
         long tempBonus = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.BuffTP).Sum(e => e.Value);
@@ -91,9 +91,9 @@ public static class StatCalculator
             elasticBonus = EffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
         }
 
-        long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatYield, cc);
+        long platformBonus = CalculatePlatformBonus(instance, field, StatTypes.Yield, cc);
         long passiveBonus = CalculatePassiveYieldBonus(instance, field, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, field, BattleConstants.StatYield, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, field, StatTypes.Yield, cc);
 
         long tempBonus = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.BuffYield).Sum(e => e.Value);
@@ -122,8 +122,8 @@ public static class StatCalculator
 
         long baseValue = Truncate(baseAV * rankMult * avMult);
 
-        long platformBonus = CalculatePlatformBonus(instance, field, BattleConstants.StatAV, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, field, BattleConstants.StatAV, cc);
+        long platformBonus = CalculatePlatformBonus(instance, field, StatTypes.Av, cc);
+        long attachmentBonus = CalculateAttachmentBonus(instance, field, StatTypes.Av, cc);
 
         long total = baseValue + platformBonus + attachmentBonus;
         return Math.Max(0, total);
@@ -187,28 +187,28 @@ public static class StatCalculator
     static long CalculatePassiveTPBonus(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
-        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, BattleConstants.StatTP));
+        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, StatTypes.Tp));
     }
 
     static long CalculatePassiveYieldBonus(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
-        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, BattleConstants.StatYield));
+        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, StatTypes.Yield));
     }
 
     private static long ApplyPassiveEffect(PassiveEffect pe, DeployedResource instance, Field field, ICardCache cc, string statType)
     {
         return pe.Type switch
         {
-            PassiveEffectTypes.TPPerBackendDB when statType == BattleConstants.StatTP
+            PassiveEffectTypes.TPPerBackendDB when statType == StatTypes.Tp
                 => CalculateTPPerBackendDB(instance, field, pe.Params, cc),
-            PassiveEffectTypes.TPPerBackendData when statType == BattleConstants.StatTP
+            PassiveEffectTypes.TPPerBackendData when statType == StatTypes.Tp
                 => CalculateTPPerBackendData(instance, field, pe.Params, cc),
-            PassiveEffectTypes.TPIfCardTypeOnField when statType == BattleConstants.StatTP
+            PassiveEffectTypes.TPIfCardTypeOnField when statType == StatTypes.Tp
                 => CalculateTPIfCardTypeOnField(field, pe.Params, cc),
-            PassiveEffectTypes.YieldPerOtherDB when statType == BattleConstants.StatYield
+            PassiveEffectTypes.YieldPerOtherDB when statType == StatTypes.Yield
                 => CalculateYieldPerOtherDB(instance, field, pe.Params, cc),
-            PassiveEffectTypes.YieldIfCardOnField when statType == BattleConstants.StatYield
+            PassiveEffectTypes.YieldIfCardOnField when statType == StatTypes.Yield
                 => CalculateYieldIfCardOnField(field, pe.Params, cc),
             _ => 0
         };
@@ -317,9 +317,9 @@ public static class StatCalculator
     {
         string expectedStatType = pe.Type switch
         {
-            PlatformEffectTypes.TPBonus => BattleConstants.StatTP,
-            PlatformEffectTypes.YieldBonus => BattleConstants.StatYield,
-            PlatformEffectTypes.AVBonus => BattleConstants.StatAV,
+            PlatformEffectTypes.TPBonus => StatTypes.Tp,
+            PlatformEffectTypes.YieldBonus => StatTypes.Yield,
+            PlatformEffectTypes.AVBonus => StatTypes.Av,
             _ => ""
         };
         if (expectedStatType != statType) { return 0; }

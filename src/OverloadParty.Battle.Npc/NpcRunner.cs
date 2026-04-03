@@ -180,7 +180,7 @@ public class NpcRunner
         [
             new NpcAction
             {
-                ActionType = WireActionTypes.DiscardHand,
+                ActionType = ActionTypes.DiscardHand,
                 Data = new DiscardHandRequest { CardInstanceIDs = ids },
             }
         ];

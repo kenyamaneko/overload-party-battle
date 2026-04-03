@@ -36,9 +36,6 @@ public class DeployedResource
     public bool EffectUsedThisGame { get; set; }
     public long DeployedOnTurn { get; set; }
     public long DeployOrder { get; set; }
-    public string? MigratingFrom { get; set; }
-    public string? MigrationTarget { get; set; }
-    public long MigratingOnTurn { get; set; }
     public long ElasticBonus { get; set; }
     public long LastAttackTurn { get; set; }
 

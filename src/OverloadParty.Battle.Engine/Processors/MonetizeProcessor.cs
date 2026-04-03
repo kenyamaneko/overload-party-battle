@@ -69,7 +69,7 @@ public static class MonetizeProcessor
                 new GameEvent
                 {
                     GameID = game.GameID,
-                    EventType = WireActionTypes.Monetize,
+                    EventType = ActionTypes.Monetize,
                     PlayerID = playerId,
                     EventData = new MonetizeEventData
                     {

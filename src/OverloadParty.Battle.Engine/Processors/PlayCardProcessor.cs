@@ -76,7 +76,7 @@ public static class PlayCardProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = WireActionTypes.PlayCard,
+            EventType = ActionTypes.PlayCard,
             PlayerID = playerId,
             EventData = new PlayCardEventData
             {
@@ -130,7 +130,7 @@ public static class PlayCardProcessor
         events.Insert(0, new GameEvent
         {
             GameID = ctx.Game.GameID,
-            EventType = WireActionTypes.PlayCard,
+            EventType = ActionTypes.PlayCard,
             PlayerID = playerId,
             EventData = new PlayCardEventData
             {
@@ -148,6 +148,11 @@ public static class PlayCardProcessor
         CardDefinition cardDef, UndeployedCard handCard, PlayCardRequest req,
         long deployOrder, List<GameEvent> events)
     {
+        if (field.Support[req.Index] is not null)
+        {
+            FieldHelpers.DestroySupport(ctx.State, ctx.PlayerNum, field, field.Support[req.Index]!.InstanceID);
+        }
+
         var support = new DeployedSupport
         {
             InstanceID = ctx.State.NextInstanceID(),
@@ -258,7 +263,7 @@ public static class PlayCardProcessor
         }
         if (field.Support[req.Index] is not null)
         {
-            throw new GameRuleException($"support slot {req.Index} is occupied");
+            FieldHelpers.DestroySupport(ctx.State, ctx.PlayerNum, field, field.Support[req.Index]!.InstanceID);
         }
 
         var attachInstanceID = ctx.State.NextInstanceID();
@@ -300,7 +305,7 @@ public static class PlayCardProcessor
         events.Insert(0, new GameEvent
         {
             GameID = ctx.Game.GameID,
-            EventType = WireActionTypes.AttachCard,
+            EventType = EventTypes.AttachCard,
             PlayerID = playerId,
             EventData = new AttachCardEventData
             {
@@ -347,10 +352,6 @@ public static class PlayCardProcessor
                 if (!FieldHelpers.IsSupportType(cardDef.CardType))
                 {
                     throw new GameRuleException($"{cardDef.CardType} cannot be placed in support");
-                }
-                if (field.Support[req.Index] is not null)
-                {
-                    throw new GameRuleException($"support slot {req.Index} is occupied");
                 }
                 break;
 

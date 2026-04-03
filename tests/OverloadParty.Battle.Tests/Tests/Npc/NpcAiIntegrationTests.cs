@@ -96,7 +96,7 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
         var deploys = actions
-            .Where(a => a.ActionType == WireActionTypes.PlayCard)
+            .Where(a => a.ActionType == ActionTypes.PlayCard)
             .ToList();
 
         // At minimum compute should be deployed; if both deployed, compute first
@@ -124,7 +124,7 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
         var deploy = actions.FirstOrDefault(a =>
-            a.ActionType == WireActionTypes.PlayCard &&
+            a.ActionType == ActionTypes.PlayCard &&
             ((PlayCardRequest)a.Data).CardInstanceID == "h_0006");
 
         deploy.Should().NotBeNull("SH-0006 should be deployed");
@@ -158,7 +158,7 @@ public class NpcAiIntegrationTests
 
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
         var deploy = actions.FirstOrDefault(a =>
-            a.ActionType == WireActionTypes.PlayCard &&
+            a.ActionType == ActionTypes.PlayCard &&
             ((PlayCardRequest)a.Data).CardInstanceID == "h_compute");
 
         deploy.Should().NotBeNull();
@@ -186,7 +186,7 @@ public class NpcAiIntegrationTests
 
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
-        var scaleUp = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.ScaleUp);
+        var scaleUp = actions.FirstOrDefault(a => a.ActionType == ActionTypes.ScaleUp);
         if (scaleUp is not null)
         {
             var req = (ScaleUpRequest)scaleUp.Data;
@@ -213,7 +213,7 @@ public class NpcAiIntegrationTests
 
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
-        var scaleUp = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.ScaleUp);
+        var scaleUp = actions.FirstOrDefault(a => a.ActionType == ActionTypes.ScaleUp);
         if (scaleUp is not null)
         {
             var req = (ScaleUpRequest)scaleUp.Data;
@@ -247,7 +247,7 @@ public class NpcAiIntegrationTests
 
         var actions = ai.DecideBattlePhaseActions(state, game, 1, available);
 
-        var attack = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.Attack);
+        var attack = actions.FirstOrDefault(a => a.ActionType == ActionTypes.Attack);
         attack.Should().NotBeNull();
         ((AttackRequest)attack!.Data).TargetInstanceID.Should().Be("weak");
     }
@@ -277,7 +277,7 @@ public class NpcAiIntegrationTests
 
         var actions = ai.DecideBattlePhaseActions(state, game, 1, available);
 
-        var attack = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.Attack);
+        var attack = actions.FirstOrDefault(a => a.ActionType == ActionTypes.Attack);
         attack.Should().NotBeNull();
         ((AttackRequest)attack!.Data).TargetInstanceID.Should().Be("high_tp");
     }
@@ -310,7 +310,7 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
         var deploys = actions
-            .Where(a => a.ActionType == WireActionTypes.PlayCard)
+            .Where(a => a.ActionType == ActionTypes.PlayCard)
             .ToList();
 
         deploys.Should().HaveCountGreaterThanOrEqualTo(2);
@@ -367,7 +367,7 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
         actions.Should().NotBeEmpty();
-        actions.Last().ActionType.Should().Be(WireActionTypes.EndPhase);
+        actions.Last().ActionType.Should().Be(ActionTypes.EndPhase);
     }
 
     [Theory]
@@ -387,7 +387,7 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideBattlePhaseActions(state, game, 1, available);
 
         actions.Should().NotBeEmpty();
-        actions.Last().ActionType.Should().Be(WireActionTypes.EndPhase);
+        actions.Last().ActionType.Should().Be(ActionTypes.EndPhase);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -413,7 +413,7 @@ public class NpcAiIntegrationTests
 
         var actions = ai.DecideMainPhaseActions(state, game, 1, available);
 
-        var monetize = actions.FirstOrDefault(a => a.ActionType == WireActionTypes.Monetize);
+        var monetize = actions.FirstOrDefault(a => a.ActionType == ActionTypes.Monetize);
         if (monetize is not null)
         {
             var dists = ((MonetizeRequest)monetize.Data).Distributions;

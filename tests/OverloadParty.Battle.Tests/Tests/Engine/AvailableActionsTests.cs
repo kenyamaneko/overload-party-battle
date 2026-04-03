@@ -13,7 +13,7 @@ public class AvailableActionsTests
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void MainPhase_ReturnsPlayScaleDistributeActivateMigrateActions()
+    public void MainPhase_ReturnsPlayScaleDistributeActivateActions()
     {
         var cc = new TestCardCache();
         var compute = TestFactory.ComputeCard(cardId: "SH-0001");
@@ -31,13 +31,10 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 100, cc, null);
 
-        // Main phase should include play_card, scale_up, monetize, migrate
-        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard);
-        actions.Should().Contain(a => a.Type == WireActionTypes.ScaleUp);
-        actions.Should().Contain(a => a.Type == WireActionTypes.Monetize);
-        actions.Should().Contain(a => a.Type == WireActionTypes.Migrate);
-        // Main phase should NOT include attack
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+        actions.Should().Contain(a => a.Type == ActionTypes.PlayCard);
+        actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp);
+        actions.Should().Contain(a => a.Type == ActionTypes.Monetize);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
     }
 
     [Fact]
@@ -57,12 +54,10 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.Attack);
-        // Battle phase should NOT include play_card, scale_up, monetize, migrate
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard);
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate);
+        actions.Should().Contain(a => a.Type == ActionTypes.Attack);
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
+        actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -81,7 +76,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
         playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -99,7 +94,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_db");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_db");
         playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -116,7 +111,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_cache");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_cache");
         playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -134,7 +129,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_os");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_os");
         playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -144,7 +139,7 @@ public class AvailableActionsTests
     {
         // AI/ML は Frontend / Backend 両方
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0004", cardType: CardTypes.AiMl, deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0004", cardType: CardTypes.AIML, deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_ai", CardID = "SH-0004" } };
@@ -152,7 +147,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_ai");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_ai");
         playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -169,7 +164,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_s");
         playAction.ValidZones.Should().BeNullOrEmpty();
     }
 
@@ -185,7 +180,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_r");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_r");
         playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
     }
 
@@ -201,7 +196,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_p");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_p");
         playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
     }
 
@@ -229,7 +224,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
     }
 
     [Fact]
@@ -249,7 +244,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
+        actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_s");
     }
 
     [Fact]
@@ -268,7 +263,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
         playAction.ValidZones.Should().NotContain(z => z == "frontend_0");
         playAction.ValidZones.Should().Contain(z => z == "frontend_1");
         playAction.ValidZones.Should().Contain(z => z == "frontend_2");
@@ -289,7 +284,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_i");
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_i");
     }
 
     [Fact]
@@ -304,7 +299,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_i");
+        actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_i");
     }
 
     [Fact]
@@ -323,7 +318,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_i");
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_i");
     }
 
     // ─── PlayCard: Attachment ───────────────────────────────────
@@ -345,15 +340,16 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
         playAction.ValidTargets.Should().Contain(t => t == "fe_1");
         playAction.ValidZones.Should().NotBeEmpty();
         playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
     }
 
     [Fact]
-    public void PlayCard_AttachmentUnavailableWhenSupportZoneFull()
+    public void PlayCard_AttachmentAvailableWhenSupportZoneFull()
     {
+        // サポートゾーンが満杯でも張り替えで配置可能
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
         cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
@@ -370,7 +366,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
+        actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
     }
 
     [Fact]
@@ -389,7 +385,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
     }
 
     [Fact]
@@ -401,7 +397,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard);
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -421,7 +417,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
+        var scaleActions = actions.Where(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
         // Small → Medium×3 families + Small → Large×3 families = 6 options
         scaleActions.Should().HaveCount(6);
         scaleActions.Should().Contain(a => a.TargetRank == "medium" && a.InstanceFamily == "M");
@@ -446,7 +442,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
+        var scaleActions = actions.Where(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
         // Medium(M) can only scale up to Large with same family = 1 option
         scaleActions.Should().HaveCount(1);
         scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
@@ -466,7 +462,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        var scaleActions = actions.Where(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
+        var scaleActions = actions.Where(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
         // Large is max rank — no scale up options
         scaleActions.Should().BeEmpty();
     }
@@ -485,7 +481,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
+        actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
     }
 
     [Fact]
@@ -502,7 +498,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
+        actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
     }
 
     [Fact]
@@ -519,7 +515,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.ScaleUp);
+        actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -542,7 +538,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        var attack = actions.Single(a => a.Type == WireActionTypes.Attack);
+        var attack = actions.Single(a => a.Type == ActionTypes.Attack);
         attack.SourceInstanceID.Should().Be("my_1");
         attack.ValidTargets.Should().Contain(t => t == "opp_1");
     }
@@ -564,7 +560,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
     }
 
     [Fact]
@@ -586,7 +582,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack && a.SourceInstanceID == "os_1");
+        actions.Should().NotContain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "os_1");
     }
 
     [Fact]
@@ -608,7 +604,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
     }
 
     [Fact]
@@ -629,7 +625,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
     }
 
     [Fact]
@@ -650,7 +646,7 @@ public class AvailableActionsTests
             state, myField, oppField, [], 5000, 0, cc, null);
 
         // No face-up targets → no attack actions
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
     }
 
     [Fact]
@@ -672,7 +668,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        var attack = actions.Single(a => a.Type == WireActionTypes.Attack);
+        var attack = actions.Single(a => a.Type == ActionTypes.Attack);
         attack.ValidTargets.Should().Contain(t => t == "opp_be");
         attack.ValidTargets.Should().NotContain(t => t == "opp_fe");
     }
@@ -695,30 +691,9 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        var attack = actions.Single(a => a.Type == WireActionTypes.Attack);
+        var attack = actions.Single(a => a.Type == ActionTypes.Attack);
         attack.ValidTargets.Should().Contain(t => t == "opp_fe");
         attack.ValidTargets.Should().NotContain(t => t == "opp_be");
-    }
-
-    [Fact]
-    public void Attack_MigratingResourceCannotAttack()
-    {
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
-        var myField = TestFactory.MakeField();
-        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "my_1");
-        attacker.MigrationTarget = "some_target";
-        myField.Frontend[0] = attacker;
-
-        var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "opp_1");
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, oppField, [], 5000, 0, cc, null);
-
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
     }
 
     [Fact]
@@ -738,7 +713,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -758,7 +733,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.Monetize && a.SourceInstanceID == "be_1");
+        actions.Should().Contain(a => a.Type == ActionTypes.Monetize && a.SourceInstanceID == "be_1");
     }
 
     [Fact]
@@ -775,7 +750,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
     }
 
     [Fact]
@@ -793,7 +768,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
     }
 
     [Fact]
@@ -810,7 +785,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
     }
 
     [Fact]
@@ -827,7 +802,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
     }
 
     [Fact]
@@ -846,7 +821,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
 
-        var yieldAction = actions.Single(a => a.Type == WireActionTypes.Monetize);
+        var yieldAction = actions.Single(a => a.Type == ActionTypes.Monetize);
         yieldAction.RemainingCapacity.Should().Be(400); // 600 - 200 = 400
     }
 
@@ -865,26 +840,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
-    }
-
-    [Fact]
-    public void Monetize_MigratingResourceExcluded()
-    {
-        // マイグレーション中のリソースはロック状態（収益化不可）
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1");
-        res.MigratingFrom = "some_source";
-        myField.Backend[0] = res;
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
-
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -908,7 +864,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_10");
+        actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_10");
     }
 
     [Fact]
@@ -927,7 +883,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
     }
 
     [Fact]
@@ -949,7 +905,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
     }
 
     [Fact]
@@ -971,29 +927,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
-    }
-
-    [Fact]
-    public void UseEffect_MigratingResourceExcluded()
-    {
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
-
-        var registry = new EffectRegistry();
-        registry.RegisterComposed("SH-0009", TriggerType.Activate,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "SH-0009", instanceId: "res_10");
-        res.MigrationTarget = "some_target";
-        myField.Frontend[0] = res;
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
-
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
     }
 
     [Fact]
@@ -1016,7 +950,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "sup_1");
+        actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "sup_1");
     }
 
     [Fact]
@@ -1040,7 +974,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
     }
 
     [Fact]
@@ -1063,7 +997,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
     }
 
     [Fact]
@@ -1084,7 +1018,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_10");
+        actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_10");
     }
 
     // ─── UseEffect: budget filtering (既存テスト) ───────────
@@ -1107,7 +1041,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 300, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_10");
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_10");
     }
 
     [Fact]
@@ -1128,7 +1062,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 500, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_10");
+        actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_10");
     }
 
     [Fact]
@@ -1149,7 +1083,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 1500, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_120");
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_120");
     }
 
     [Fact]
@@ -1170,7 +1104,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 800, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_120");
+        actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_120");
     }
 
     [Fact]
@@ -1190,7 +1124,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 0, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.UseEffect && a.SourceInstanceID == "res_30");
+        actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_30");
     }
 
     // ─── PlayCard: budget filtering for Strategy/Incident ───────
@@ -1212,7 +1146,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 200, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "hand_50");
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_50");
     }
 
     [Fact]
@@ -1232,7 +1166,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 600, 0, cc, registry);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "hand_50");
+        actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_50");
     }
 
     [Fact]
@@ -1252,133 +1186,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 100, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "hand_60");
-    }
-
-    // ═══════════════════════════════════════════════════════════════
-    //  Migrate — マイグレーションルール
-    // ═══════════════════════════════════════════════════════════════
-
-    [Fact]
-    public void Migrate_FaceUpResourcesCanMigrate()
-    {
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 1));
-        cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", deployTurns: 1, name: "Compute2"));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1");
-        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "res_2");
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
-
-        actions.Should().Contain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_1");
-        actions.Should().Contain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_2");
-    }
-
-    [Fact]
-    public void Migrate_TargetDeployTurnsMustBeGreaterOrEqual()
-    {
-        // 新リソースのデプロイターン >= 旧リソースのデプロイターン
-        var cc = new TestCardCache();
-        var orchestrator = TestFactory.ComputeCard(cardId: "SH-0003", cardType: CardTypes.Orchestrator, deployTurns: 2);
-        var serverless = TestFactory.ServerlessCard(cardId: "SH-0002"); // deployTurns: 0
-        cc.Add(orchestrator);
-        cc.Add(serverless);
-
-        var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0003", instanceId: "orch_1");
-        myField.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "sless_1");
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
-
-        // Orchestrator (DT=2) can migrate to Orchestrator (DT=2) — equal is OK, but can't migrate to itself
-        // Serverless (DT=0) → Orchestrator (DT=2): OK (target >= source)
-        var serverlessMigrate = actions.FirstOrDefault(
-            a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "sless_1");
-        serverlessMigrate.Should().NotBeNull();
-        serverlessMigrate!.ValidTargets.Should().Contain(t => t == "orch_1");
-
-        // Orchestrator (DT=2) → Serverless (DT=0): NG (target < source)
-        var orchMigrate = actions.FirstOrDefault(
-            a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "orch_1");
-        if (orchMigrate is not null)
-        {
-            orchMigrate.ValidTargets.Should().NotContain(t => t == "sless_1");
-        }
-    }
-
-    [Fact]
-    public void Migrate_FaceDownResourcesExcluded()
-    {
-        // 表向き（稼働中）であること
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 1));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1", faceUp: false);
-        myField.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_2");
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
-
-        // Face-down resource is not a source
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_1");
-        // Face-down resource is not a valid target
-        var migrate = actions.FirstOrDefault(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_2");
-        if (migrate is not null)
-        {
-            migrate.ValidTargets.Should().NotContain(t => t == "res_1");
-        }
-    }
-
-    [Fact]
-    public void Migrate_AlreadyMigratingExcluded()
-    {
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 1));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        var res1 = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1");
-        res1.MigrationTarget = "res_2";
-        myField.Frontend[0] = res1;
-
-        var res2 = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_2");
-        res2.MigratingFrom = "res_1";
-        myField.Frontend[1] = res2;
-
-        myField.Frontend[2] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_3");
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
-
-        // Neither res_1 nor res_2 should appear as migrate sources
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_1");
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "res_2");
-    }
-
-    [Fact]
-    public void Migrate_SingleResourceCannotMigrate()
-    {
-        // マイグレーションにはソースとターゲットの2体が必要
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 1));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1");
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
-
-        // Cannot migrate to self → no migrate actions
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Migrate);
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_60");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -1450,7 +1258,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
         playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -1473,7 +1281,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_db");
+        actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_db");
     }
 
     [Fact]
@@ -1495,7 +1303,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_1");
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
     }
 
     // ─── リソースタイプ別配置パターン ────────────────────────────
@@ -1512,7 +1320,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_c");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_c");
         playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -1529,7 +1337,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_s");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_s");
         playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -1546,7 +1354,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_o");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_o");
         playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
         playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
     }
@@ -1576,7 +1384,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
 
-        var playAction = actions.Single(a => a.Type == WireActionTypes.PlayCard && a.HandInstanceID == "h_att");
+        var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
         playAction.ValidTargets.Should().Contain(t => t == "fe_1");
         playAction.ValidTargets.Should().Contain(t => t == "fe_2");
     }
@@ -1597,7 +1405,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "orch_1");
+        actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "orch_1");
     }
 
     [Fact]
@@ -1615,7 +1423,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
 
-        actions.Should().Contain(a => a.Type == WireActionTypes.ScaleUp && a.SourceInstanceID == "db_1");
+        actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "db_1");
     }
 
     // ─── Attack 追加パターン ────────────────────────────────────
@@ -1637,56 +1445,9 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
 
-        actions.Count(a => a.Type == WireActionTypes.Attack).Should().Be(2);
-        actions.Should().Contain(a => a.Type == WireActionTypes.Attack && a.SourceInstanceID == "my_1");
-        actions.Should().Contain(a => a.Type == WireActionTypes.Attack && a.SourceInstanceID == "my_2");
-    }
-
-    [Fact]
-    public void Attack_MigratingFromResourceCannotAttack()
-    {
-        // MigratingFrom が設定されているリソース（マイグレーション先）も攻撃不可
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
-        var myField = TestFactory.MakeField();
-        var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "my_1");
-        attacker.MigratingFrom = "some_source";
-        myField.Frontend[0] = attacker;
-
-        var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "opp_1");
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, oppField, [], 5000, 0, cc, null);
-
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Attack);
-    }
-
-    // ─── Migrate 追加パターン ───────────────────────────────────
-
-    [Fact]
-    public void Migrate_CrossZoneBetweenFrontendAndBackend()
-    {
-        // フロントエンドとバックエンドをまたいでマイグレーション可能
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 1));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1");
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1");
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
-
-        // Frontend → Backend and Backend → Frontend should both be possible
-        var feMigrate = actions.Single(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "fe_1");
-        feMigrate.ValidTargets.Should().Contain(t => t == "be_1");
-
-        var beMigrate = actions.Single(a => a.Type == WireActionTypes.Migrate && a.SourceInstanceID == "be_1");
-        beMigrate.ValidTargets.Should().Contain(t => t == "fe_1");
+        actions.Count(a => a.Type == ActionTypes.Attack).Should().Be(2);
+        actions.Should().Contain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "my_1");
+        actions.Should().Contain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "my_2");
     }
 
     // ─── Monetize 追加パターン ───────────────────────────
@@ -1705,7 +1466,7 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.Monetize);
+        actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
     }
 
     [Fact]
@@ -1724,9 +1485,9 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, null);
 
-        actions.Count(a => a.Type == WireActionTypes.Monetize).Should().Be(2);
-        var a1 = actions.Single(a => a.Type == WireActionTypes.Monetize && a.SourceInstanceID == "be_1");
-        var a2 = actions.Single(a => a.Type == WireActionTypes.Monetize && a.SourceInstanceID == "be_2");
+        actions.Count(a => a.Type == ActionTypes.Monetize).Should().Be(2);
+        var a1 = actions.Single(a => a.Type == ActionTypes.Monetize && a.SourceInstanceID == "be_1");
+        var a2 = actions.Single(a => a.Type == ActionTypes.Monetize && a.SourceInstanceID == "be_2");
         a1.RemainingCapacity.Should().Be(600);
         a2.RemainingCapacity.Should().Be(500);
     }
@@ -1750,6 +1511,6 @@ public class AvailableActionsTests
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-        actions.Should().NotContain(a => a.Type == WireActionTypes.UseEffect);
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
     }
 }

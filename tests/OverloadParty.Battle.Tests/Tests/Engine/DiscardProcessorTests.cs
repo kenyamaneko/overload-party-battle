@@ -54,7 +54,7 @@ public class DiscardProcessorTests
         // After discard, hand should have 6 cards
         // (Note: SwitchActivePlayer + DrawPhaseProcessor runs after, so hand count may change for P2)
         // We verify the discard event was emitted with correct count
-        var discardEvent = result.Events.First(e => e.EventType == WireActionTypes.DiscardHand);
+        var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
         discardEvent.EventData!["discardedCount"].Should().Be(2L);
     }
 
@@ -114,7 +114,7 @@ public class DiscardProcessorTests
         var result = DiscardProcessor.Process(
             state, _game, 1, MakeReq("h_6"), _cc);
 
-        var discardEvent = result.Events.First(e => e.EventType == WireActionTypes.DiscardHand);
+        var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
         discardEvent.EventData.Should().ContainKey("discardedCount");
         discardEvent.EventData["discardedCount"].Should().Be(1L);
     }

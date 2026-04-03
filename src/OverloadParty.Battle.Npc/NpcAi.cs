@@ -65,7 +65,7 @@ public class NpcAi : INpcStrategy
         GameState state, Game game, long npcPlayerNum, List<AvailableAction> available)
     {
         var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
-        var attackActions = ActionFilter.FilterByType(available, WireActionTypes.Attack);
+        var attackActions = ActionFilter.FilterByType(available, ActionTypes.Attack);
         var actions = new List<NpcAction>();
 
         foreach (var a in attackActions)
@@ -73,7 +73,7 @@ public class NpcAi : INpcStrategy
             var target = ResolveAttackTarget(a.ValidTargets, oppField);
             actions.Add(new NpcAction
             {
-                ActionType = WireActionTypes.Attack,
+                ActionType = ActionTypes.Attack,
                 Data = new AttackRequest
                 {
                     AttackerInstanceID = a.SourceInstanceID!,
@@ -176,7 +176,7 @@ public class NpcAi : INpcStrategy
 
         return new NpcAction
         {
-            ActionType = WireActionTypes.SelectSlot,
+            ActionType = ActionTypes.SelectSlot,
             Data = new SelectSlotRequest
             {
                 Zone = zone.Zone,
@@ -193,7 +193,7 @@ public class NpcAi : INpcStrategy
         DecisionContext ctx, List<AvailableAction> available,
         HashSet<string> usedZones, AiConfig activeConfig)
     {
-        var playActions = ActionFilter.FilterByType(available, WireActionTypes.PlayCard);
+        var playActions = ActionFilter.FilterByType(available, ActionTypes.PlayCard);
 
         var candidates = new List<(AvailableAction Action, int Priority, Dictionary<string, object>? Choice)>();
         foreach (var a in playActions)
@@ -240,7 +240,7 @@ public class NpcAi : INpcStrategy
             var pos = ActionFilter.ParseZoneStr(zone)!;
             actions.Add(new NpcAction
             {
-                ActionType = WireActionTypes.PlayCard,
+                ActionType = ActionTypes.PlayCard,
                 Data = new PlayCardRequest
                 {
                     CardInstanceID = c.Action.HandInstanceID!,
@@ -313,7 +313,7 @@ public class NpcAi : INpcStrategy
     private List<NpcAction> DoDeployActions(
         DecisionContext ctx, List<AvailableAction> available, HashSet<string> usedZones)
     {
-        var playActions = ActionFilter.FilterByType(available, WireActionTypes.PlayCard);
+        var playActions = ActionFilter.FilterByType(available, ActionTypes.PlayCard);
 
         var candidates = new List<(AvailableAction Action, CardDefinition Card, int Priority)>();
         foreach (var a in playActions)
@@ -376,7 +376,7 @@ public class NpcAi : INpcStrategy
                 req.ChoiceData = new Dictionary<string, object> { ["option"] = choice };
             }
 
-            actions.Add(new NpcAction { ActionType = WireActionTypes.PlayCard, Data = req });
+            actions.Add(new NpcAction { ActionType = ActionTypes.PlayCard, Data = req });
             deployed.Add(c.Action.HandInstanceID!);
             usedZones.Add(zone);
             addedMaintenanceCost += c.Card.MaintenanceCost;
@@ -531,7 +531,7 @@ public class NpcAi : INpcStrategy
             var pos = ActionFilter.ParseZoneStr(zone)!;
             actions.Add(new NpcAction
             {
-                ActionType = WireActionTypes.PlayCard,
+                ActionType = ActionTypes.PlayCard,
                 Data = new PlayCardRequest
                 {
                     CardInstanceID = c.Action.HandInstanceID!,
@@ -592,7 +592,7 @@ public class NpcAi : INpcStrategy
             var pos = ActionFilter.ParseZoneStr(zone)!;
             actions.Add(new NpcAction
             {
-                ActionType = WireActionTypes.PlayCard,
+                ActionType = ActionTypes.PlayCard,
                 Data = new PlayCardRequest
                 {
                     CardInstanceID = c.Action.HandInstanceID!,
@@ -614,7 +614,7 @@ public class NpcAi : INpcStrategy
     private List<NpcAction> DoActivateEffects(
         DecisionContext ctx, List<AvailableAction> available, AiConfig activeConfig)
     {
-        var activateActions = ActionFilter.FilterByType(available, WireActionTypes.UseEffect);
+        var activateActions = ActionFilter.FilterByType(available, ActionTypes.UseEffect);
 
         var candidates = new List<(AvailableAction Action, int Priority, string? TargetId)>();
         foreach (var a in activateActions)
@@ -658,7 +658,7 @@ public class NpcAi : INpcStrategy
         {
             actions.Add(new NpcAction
             {
-                ActionType = WireActionTypes.UseEffect,
+                ActionType = ActionTypes.UseEffect,
                 Data = new UseEffectRequest
                 {
                     InstanceID = c.Action.SourceInstanceID!,
@@ -692,7 +692,7 @@ public class NpcAi : INpcStrategy
 
     private List<NpcAction> DoScaleUpActions(DecisionContext ctx, List<AvailableAction> available)
     {
-        var scaleActions = ActionFilter.FilterByType(available, WireActionTypes.ScaleUp);
+        var scaleActions = ActionFilter.FilterByType(available, ActionTypes.ScaleUp);
         var family = ResolveInstanceFamily(ctx);
 
         // Sort by config priority
@@ -722,7 +722,7 @@ public class NpcAi : INpcStrategy
 
             actions.Add(new NpcAction
             {
-                ActionType = WireActionTypes.ScaleUp,
+                ActionType = ActionTypes.ScaleUp,
                 Data = new ScaleUpRequest
                 {
                     InstanceID = a.SourceInstanceID!,
@@ -757,7 +757,7 @@ public class NpcAi : INpcStrategy
     private List<NpcAction> DoMonetizeActions(
         DecisionContext ctx, List<AvailableAction> available, long insightPool)
     {
-        var yieldActions = ActionFilter.FilterByType(available, WireActionTypes.Monetize);
+        var yieldActions = ActionFilter.FilterByType(available, ActionTypes.Monetize);
         if (!yieldActions.Any())
         {
             return [];
@@ -805,7 +805,7 @@ public class NpcAi : INpcStrategy
         [
             new NpcAction
             {
-                ActionType = WireActionTypes.Monetize,
+                ActionType = ActionTypes.Monetize,
                 Data = new MonetizeRequest { Distributions = dists },
             }
         ];
@@ -895,7 +895,7 @@ public class NpcAi : INpcStrategy
     // ═══════════════════════════════════════════════════════════════
 
     private static NpcAction MakeEndPhaseAction() =>
-        new() { ActionType = WireActionTypes.EndPhase };
+        new() { ActionType = ActionTypes.EndPhase };
 
     private static bool MatchesCardType(CardDefinition card, string typeKey)
     {

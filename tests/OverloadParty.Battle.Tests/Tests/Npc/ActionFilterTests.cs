@@ -51,13 +51,13 @@ public class ActionFilterTests
     {
         var actions = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h1" },
-            new() { Type = WireActionTypes.Attack, SourceInstanceID = "a1" },
-            new() { Type = WireActionTypes.PlayCard, HandInstanceID = "h2" },
-            new() { Type = WireActionTypes.ScaleUp, SourceInstanceID = "s1" },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h1" },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "a1" },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h2" },
+            new() { Type = ActionTypes.ScaleUp, SourceInstanceID = "s1" },
         };
 
-        var result = ActionFilter.FilterByType(actions, WireActionTypes.PlayCard);
+        var result = ActionFilter.FilterByType(actions, ActionTypes.PlayCard);
 
         result.Should().HaveCount(2);
         result.Select(a => a.HandInstanceID).Should().Equal("h1", "h2");
@@ -68,10 +68,10 @@ public class ActionFilterTests
     {
         var actions = new List<AvailableAction>
         {
-            new() { Type = WireActionTypes.Attack },
+            new() { Type = ActionTypes.Attack },
         };
 
-        ActionFilter.FilterByType(actions, WireActionTypes.PlayCard).Should().BeEmpty();
+        ActionFilter.FilterByType(actions, ActionTypes.PlayCard).Should().BeEmpty();
     }
 
     // ─── PickBestZone ────────────────────────────────────────
