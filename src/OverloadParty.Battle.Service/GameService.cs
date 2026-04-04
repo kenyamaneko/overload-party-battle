@@ -178,7 +178,7 @@ public class GameService
         string gameID, string playerID, CancellationToken ct = default)
         => GetStateForPlayer(gameID, playerID, ct);
 
-    public async Task<TurnControls?> GetTurnControlsForPlayer(
+    public async Task<TurnControlsMessage?> GetTurnControlsForPlayer(
         string gameID, string playerID, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct)

@@ -10,6 +10,13 @@ make test    # テスト実行
 make run     # ローカル開発サーバー起動
 ```
 
+## NuGet パッケージ（OverloadParty.GameData）
+
+- common リポの `data/models.yaml` から C# 型を自動生成し NuGet publish
+- ゲームステート View 型（ClientGameState, PlayerView, OpponentView 等）は GameData パッケージの生成型を使用
+- `GameStateView.Build()` がエンジン内部型（Models）→ API 契約型（GameData）のマッピング境界
+- エンジン内部型（Field, DeployedResource, UndeployedCard 等）は Models に残る（可変性が必要なため）
+
 ## 設計原則
 
 ### ワークアラウンドではなく根本解決する

@@ -50,18 +50,6 @@ public class AvailableAction
 }
 
 /// <summary>
-/// Turn control information for the UI.
-/// </summary>
-public class TurnControls
-{
-    /// <summary>Whether the player can end the current phase.</summary>
-    public bool CanEndPhase { get; set; }
-
-    /// <summary>Number of cards that must be discarded (0 if no discard needed).</summary>
-    public int DiscardRequired { get; set; }
-}
-
-/// <summary>
 /// Computes available actions based on game state and phase.
 /// </summary>
 public static class AvailableActions
@@ -70,9 +58,9 @@ public static class AvailableActions
     /// <param name="state">The current game state.</param>
     /// <param name="hand">The active player's hand.</param>
     /// <returns>Turn control information for the UI.</returns>
-    public static TurnControls ComputeTurnControls(GameState state, List<UndeployedCard> hand)
+    public static TurnControlsMessage ComputeTurnControls(GameState state, List<UndeployedCard> hand)
     {
-        return new TurnControls
+        return new TurnControlsMessage
         {
             CanEndPhase = state.CurrentPhase is Phase.Main or Phase.Battle,
             DiscardRequired = state.CurrentPhase == Phase.End
@@ -290,6 +278,7 @@ public static class AvailableActions
                             SourceInstanceID = resource.InstanceID,
                             TargetRank = targetRank.ToWireString(),
                             InstanceFamily = family.ToWireString(),
+                            NeedsFamily = true,
                         };
                     }
                 }

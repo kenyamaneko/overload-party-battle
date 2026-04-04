@@ -350,7 +350,7 @@ public static class TestEffectSetup
         while (dir is not null)
         {
             var candidate = Path.Combine(dir.FullName, "overload-party-common",
-                "packages", "dotnet", "cache", "cards_gen.json");
+                "packages", "gamedata-dotnet", "cache", "cards_gen.json");
             if (File.Exists(candidate))
             {
                 return candidate;

@@ -245,7 +245,7 @@ public class GameEngine
     /// <summary>
     /// Computes turn control information (whether the player can end the phase, discard count).
     /// </summary>
-    public TurnControls ComputeTurnControls(GameState state, List<UndeployedCard> hand)
+    public TurnControlsMessage ComputeTurnControls(GameState state, List<UndeployedCard> hand)
     {
         return AvailableActions.ComputeTurnControls(state, hand);
     }

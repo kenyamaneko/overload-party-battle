@@ -3,83 +3,17 @@ using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
 
+using GD = OverloadParty.GameData;
+
 namespace OverloadParty.Battle.Service;
 
 /// <summary>
-/// Info-hidden game state for a specific player.
-/// </summary>
-public class ClientGameState
-{
-    public string GameID { get; init; } = "";
-    public long CurrentTurn { get; init; }
-    public string CurrentPhase { get; init; } = "";
-    public long ActivePlayer { get; init; }
-    public bool IsMyTurn { get; init; }
-    public DateTime TurnStartedAt { get; init; }
-    public required PlayerView MyView { get; init; }
-    public required OpponentView OppView { get; init; }
-}
-
-/// <summary>
-/// Player's own full state (no hiding).
-/// </summary>
-public class PlayerView
-{
-    public long PlayerNum { get; init; }
-    public long Budget { get; init; }
-    public long InsightPool { get; init; }
-    public long TimeBank { get; init; }
-    public required Field Field { get; init; }
-    public required List<UndeployedCard> Hand { get; init; }
-    public int RepoCount { get; init; }
-    public int TrashCount { get; init; }
-    public required List<UndeployedCard> Trash { get; init; }
-    public List<AvailableAction>? AvailableActions { get; set; }
-}
-
-/// <summary>
-/// Opponent's state with info hiding applied.
-/// </summary>
-public class OpponentView
-{
-    public long PlayerNum { get; init; }
-    public long Budget { get; init; }
-    public long InsightPool { get; init; }
-    public long TimeBank { get; init; }
-    public required OpponentField Field { get; init; }
-    public int HandCount { get; init; }
-    public int RepoCount { get; init; }
-    public int TrashCount { get; init; }
-    public required List<UndeployedCard> Trash { get; init; }
-}
-
-/// <summary>
-/// Opponent's field with reactive cards hidden.
-/// </summary>
-public class OpponentField
-{
-    public DeployedResource?[] Frontend { get; init; } = new DeployedResource?[BattleConstants.SlotsPerZone];
-    public DeployedResource?[] Backend { get; init; } = new DeployedResource?[BattleConstants.SlotsPerZone];
-    public HiddenDeployedSupport?[] Support { get; init; } = new HiddenDeployedSupport?[BattleConstants.SlotsPerZone];
-}
-
-/// <summary>
-/// Support instance with face-down card details hidden.
-/// </summary>
-public class HiddenDeployedSupport
-{
-    public string InstanceID { get; init; } = "";
-    public string? CardID { get; init; }
-    public bool FaceDown { get; init; }
-    public bool Peeked { get; init; }
-}
-
-/// <summary>
 /// Builds info-hidden game state for a specific player.
+/// Maps engine-internal types (Models) to API-contract types (GameData).
 /// </summary>
 public static class GameStateView
 {
-    public static ClientGameState Build(
+    public static GD.ClientGameState Build(
         GameState state, Game game, long playerNum,
         ICardCache cc, IEffectRegistry? effects)
     {
@@ -93,26 +27,37 @@ public static class GameStateView
         var budget = state.GetBudget(playerNum);
         var insightPool = state.GetInsightPool(playerNum);
 
-        var myView = new PlayerView
-        {
-            PlayerNum = playerNum,
-            Budget = budget,
-            InsightPool = insightPool,
-            TimeBank = state.GetTimeBank(playerNum),
-            Field = myField,
-            Hand = myHand,
-            RepoCount = myRepo.Count,
-            TrashCount = myTrash.Count,
-            Trash = myTrash,
-        };
-
-        // Opponent view (hidden)
+        // Opponent data
         var oppField = state.GetField(oppNum);
         var oppHand = state.GetHand(oppNum);
         var oppRepo = state.GetRepository(oppNum);
         var oppTrash = state.GetTrash(oppNum);
 
-        var oppView = new OpponentView
+        // Compute available actions BEFORE constructing PlayerView (init-only)
+        GD.AvailableAction[]? availableActions = null;
+        if (state.ActivePlayer == playerNum && game.Status == GameStatus.Playing)
+        {
+            availableActions = AvailableActions.GetAllAvailableActions(
+                state, myField, oppField, myHand, budget, insightPool, cc, effects)
+                .Select(MapAvailableAction)
+                .ToArray();
+        }
+
+        var myView = new GD.PlayerView
+        {
+            PlayerNum = playerNum,
+            Budget = budget,
+            InsightPool = insightPool,
+            TimeBank = state.GetTimeBank(playerNum),
+            Field = MapField(myField),
+            Hand = myHand.Select(MapUndeployedCard).ToArray(),
+            RepoCount = myRepo.Count,
+            TrashCount = myTrash.Count,
+            Trash = myTrash.Select(MapUndeployedCard).ToArray(),
+            AvailableActions = availableActions,
+        };
+
+        var oppView = new GD.OpponentView
         {
             PlayerNum = oppNum,
             Budget = state.GetBudget(oppNum),
@@ -122,10 +67,10 @@ public static class GameStateView
             HandCount = oppHand.Count,
             RepoCount = oppRepo.Count,
             TrashCount = oppTrash.Count,
-            Trash = oppTrash,
+            Trash = oppTrash.Select(MapUndeployedCard).ToArray(),
         };
 
-        var cgs = new ClientGameState
+        return new GD.ClientGameState
         {
             GameID = game.GameID,
             CurrentTurn = state.CurrentTurn,
@@ -136,22 +81,112 @@ public static class GameStateView
             MyView = myView,
             OppView = oppView,
         };
-
-        // Compute available actions for the active player only
-        if (state.ActivePlayer == playerNum && game.Status == GameStatus.Playing)
-        {
-            myView.AvailableActions = AvailableActions.GetAllAvailableActions(
-                state,
-                myField, oppField, myHand, budget, insightPool,
-                cc, effects);
-        }
-
-        return cgs;
     }
 
-    private static OpponentField BuildOpponentField(Field field, long viewerPlayerNum)
+    // ─── Mapping helpers (Models → GameData) ────────────────
+
+    private static GD.Field MapField(Field field)
     {
-        return new OpponentField
+        return new GD.Field
+        {
+            Frontend = field.Frontend.ToArray().Select(r => r is null ? null : MapResource(r)).ToArray(),
+            Backend = field.Backend.ToArray().Select(r => r is null ? null : MapResource(r)).ToArray(),
+            Support = field.Support.ToArray().Select(s => s is null ? null : MapSupport(s)).ToArray(),
+        };
+    }
+
+    private static GD.DeployedResource MapResource(DeployedResource r)
+    {
+        return new GD.DeployedResource
+        {
+            InstanceID = r.InstanceID,
+            CardID = r.CardID,
+            ArtNo = r.ArtNo,
+            Rank = r.Rank?.ToWireString(),
+            InstanceFamily = r.InstanceFamily?.ToWireString(),
+            FaceUp = r.FaceUp,
+            DeployingTurnsLeft = r.DeployingTurnsLeft,
+            CurrentAV = r.CurrentAV,
+            MaxAV = r.MaxAV,
+            CurrentTP = r.CurrentTP,
+            MaxTP = r.MaxTP,
+            CurrentYield = r.CurrentYield,
+            MaxYield = r.MaxYield,
+            Damage = r.Damage,
+            TemporaryEffects = r.TemporaryEffects.Select(MapTemporaryEffect).ToArray(),
+            MonetizedAmount = r.MonetizedAmount,
+            HasAttacked = r.HasAttacked,
+            EffectUsedThisTurn = r.EffectUsedThisTurn,
+            EffectUsedThisGame = r.EffectUsedThisGame,
+            DeployedOnTurn = r.DeployedOnTurn,
+            DeployOrder = r.DeployOrder,
+            ElasticBonus = r.ElasticBonus,
+            LastAttackTurn = r.LastAttackTurn,
+        };
+    }
+
+    private static GD.DeployedSupport MapSupport(DeployedSupport s)
+    {
+        return new GD.DeployedSupport
+        {
+            InstanceID = s.InstanceID,
+            CardID = s.CardID,
+            ArtNo = s.ArtNo,
+            FaceUp = s.FaceUp,
+            DeployingTurnsLeft = s.DeployingTurnsLeft,
+            DeployOrder = s.DeployOrder,
+            EffectUsedThisTurn = s.EffectUsedThisTurn,
+            EffectUsedThisGame = s.EffectUsedThisGame,
+            TargetInstanceID = s.TargetInstanceID,
+        };
+    }
+
+    private static GD.UndeployedCard MapUndeployedCard(UndeployedCard c)
+    {
+        return new GD.UndeployedCard
+        {
+            InstanceID = c.InstanceID,
+            CardID = c.CardID,
+            ArtNo = c.ArtNo,
+        };
+    }
+
+    private static GD.TemporaryEffect MapTemporaryEffect(TemporaryEffect e)
+    {
+        return new GD.TemporaryEffect
+        {
+            EffectType = e.EffectType,
+            Value = e.Value,
+            Duration = e.Duration,
+            SourceID = e.SourceID,
+        };
+    }
+
+    private static GD.AvailableAction MapAvailableAction(AvailableAction a)
+    {
+        return new GD.AvailableAction
+        {
+            Type = a.Type,
+            HandInstanceID = a.HandInstanceID,
+            CardID = a.CardID,
+            ValidZones = a.ValidZones,
+            ValidTargets = a.ValidTargets,
+            ChoiceOptions = a.ChoiceOptions,
+            SourceInstanceID = a.SourceInstanceID,
+            TargetRank = a.TargetRank,
+            InstanceFamily = a.InstanceFamily,
+            NeedsFamily = a.NeedsFamily,
+            RemainingCapacity = a.RemainingCapacity,
+            EffectTargetType = a.EffectTargetType,
+            RequiredCount = a.RequiredCount,
+        };
+    }
+
+    // ─── Opponent field with info hiding ────────────────────
+
+    private static GD.OpponentField BuildOpponentField(Field field, long viewerPlayerNum)
+    {
+        return new GD.OpponentField
         {
             Frontend = field.Frontend.ToArray().Select(HideResourceIfFaceDown).ToArray(),
             Backend = field.Backend.ToArray().Select(HideResourceIfFaceDown).ToArray(),
@@ -160,30 +195,25 @@ public static class GameStateView
                 if (sup is null) { return null; }
 
                 bool peeked = !sup.FaceUp && sup.PeekedBy.Contains(viewerPlayerNum);
-                return new HiddenDeployedSupport
+                return new GD.HiddenDeployedSupport
                 {
                     InstanceID = sup.InstanceID,
                     FaceDown = !sup.FaceUp,
                     CardID = sup.FaceUp || peeked ? sup.CardID : null,
+                    ArtNo = sup.FaceUp || peeked ? sup.ArtNo : 0,
                     Peeked = peeked,
                 };
             }).ToArray(),
         };
     }
 
-    private static DeployedResource? HideResourceIfFaceDown(DeployedResource? res)
+    private static GD.DeployedResource? HideResourceIfFaceDown(DeployedResource? res)
     {
-        if (res is null)
-        {
-            return null;
-        }
-        if (res.FaceUp)
-        {
-            return res;
-        }
+        if (res is null) { return null; }
+        if (res.FaceUp) { return MapResource(res); }
 
         // Hide all stats for face-down (still deploying) resources
-        return new DeployedResource
+        return new GD.DeployedResource
         {
             InstanceID = res.InstanceID,
             FaceUp = false,

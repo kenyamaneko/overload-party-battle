@@ -289,8 +289,7 @@ api.MapGet("/games/{gameId}/controls/{playerId}", async (GameService gameSvc, st
     try
     {
         var controls = await gameSvc.GetTurnControlsForPlayer(gameId, playerId);
-        if (controls == null) { return Results.Ok(null); }
-        return Results.Ok(new { can_end_phase = controls.CanEndPhase, discard_required = controls.DiscardRequired });
+        return Results.Ok(controls);
     }
     catch (GameRuleException ex)
     {

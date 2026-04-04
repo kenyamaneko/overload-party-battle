@@ -40,7 +40,8 @@ public class GameStateViewTests
         result.MyView.PlayerNum.Should().Be(1);
         result.MyView.Budget.Should().Be(4000);
         result.MyView.InsightPool.Should().Be(200);
-        result.MyView.Field.Frontend[0].Should().BeSameAs(res);
+        result.MyView.Field.Frontend[0]!.InstanceID.Should().Be(res.InstanceID);
+        result.MyView.Field.Frontend[0]!.FaceUp.Should().BeTrue();
         result.MyView.Hand.Should().HaveCount(1);
         result.MyView.Hand[0].InstanceID.Should().Be("h_1");
         result.MyView.Hand[0].CardID.Should().Be("SH-0001");
@@ -105,13 +106,14 @@ public class GameStateViewTests
     }
 
     [Fact]
-    public void Build_OpponentView_KeepsCardIDForFaceDownSupport()
+    public void Build_OpponentView_HidesCardIDForFaceDownSupport()
     {
         var state = TestFactory.MakeGameState();
         state.Player2Field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1",
             CardID = "TEST-0200",
+            ArtNo = 3,
             FaceUp = false,
         };
 
@@ -122,6 +124,7 @@ public class GameStateViewTests
         oppSup!.InstanceID.Should().Be("sup_1");
         oppSup.FaceDown.Should().BeTrue();
         oppSup.CardID.Should().BeNull("face-down support should hide CardID");
+        oppSup.ArtNo.Should().Be(0, "face-down support should hide ArtNo");
     }
 
     [Fact]
@@ -132,6 +135,7 @@ public class GameStateViewTests
         {
             InstanceID = "sup_peek",
             CardID = "TEST-0200",
+            ArtNo = 2,
             FaceUp = false,
             PeekedBy = [1],
         };
@@ -143,6 +147,7 @@ public class GameStateViewTests
         oppSup!.FaceDown.Should().BeTrue("card should stay face-down");
         oppSup.Peeked.Should().BeTrue("player 1 has peeked at this card");
         oppSup.CardID.Should().Be("TEST-0200", "peeked card reveals CardID to the peeking player");
+        oppSup.ArtNo.Should().Be(2, "peeked card reveals ArtNo to the peeking player");
     }
 
     [Fact]
@@ -153,6 +158,7 @@ public class GameStateViewTests
         {
             InstanceID = "sup_2",
             CardID = "TEST-0200",
+            ArtNo = 5,
             FaceUp = true,
         };
 
@@ -162,6 +168,7 @@ public class GameStateViewTests
         oppSup.Should().NotBeNull();
         oppSup!.FaceDown.Should().BeFalse();
         oppSup.CardID.Should().Be("TEST-0200");
+        oppSup.ArtNo.Should().Be(5);
     }
 
     // ─── IsMyTurn ─────────────────────────────────────────────

@@ -2,3 +2,8 @@ global using OverloadParty.GameData;
 global using OverloadParty.Battle.Engine.Helpers;
 global using CardTypes = OverloadParty.GameData.CardTypes;
 global using GameStatus = OverloadParty.Battle.Models.GameStatus;
+global using Field = OverloadParty.Battle.Models.Field;
+global using DeployedResource = OverloadParty.Battle.Models.DeployedResource;
+global using DeployedSupport = OverloadParty.Battle.Models.DeployedSupport;
+global using UndeployedCard = OverloadParty.Battle.Models.UndeployedCard;
+global using TemporaryEffect = OverloadParty.Battle.Models.TemporaryEffect;
