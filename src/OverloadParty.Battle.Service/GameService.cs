@@ -39,6 +39,8 @@ public class GameService
     private readonly NpcRunner _npcRunner;
     private readonly Dictionary<string, AiConfig> _aiConfigs;
 
+    private const int MaxNpcIterations = 50;
+
     private static readonly string EngineVersion =
         typeof(GameEngine).Assembly.GetName().Version?.ToString() ?? "unknown";
     private static readonly string CardDataVersion =
@@ -165,11 +167,11 @@ public class GameService
 
         if (game.Npc1Model is not null || game.Npc2Model is not null)
         {
-            var npcResult = await _npcRunner.RunTurns(game, ct);
-            allEvents.AddRange(ConvertNpcEvents(npcResult.Events, game, playerNum));
+            var (npcEvents, npcGameOver) = await RunNpcLoop(game, playerNum, gameID, playerID, ct);
+            allEvents.AddRange(npcEvents);
 
             var state = await GetStateForPlayer(gameID, playerID, ct);
-            return new GameActionResult { GameOver = npcResult.GameOver, State = state, Events = allEvents };
+            return new GameActionResult { GameOver = npcGameOver, State = state, Events = allEvents };
         }
 
         var clientState = await GetStateForPlayer(gameID, playerID, ct);
@@ -219,24 +221,62 @@ public class GameService
         }
 
         var playerNum = ResolveHumanPlayerNum(game, playerID);
-        var npcResult = await _npcRunner.RunTurns(game, ct);
-        if (npcResult.Events.Count == 0)
+        var (npcEvents, npcGameOver) = await RunNpcLoop(game, playerNum, gameID, playerID, ct);
+
+        if (npcEvents.Count == 0)
         {
             return new GameActionResult();
         }
 
-        var allEvents = ConvertNpcEvents(npcResult.Events, game, playerNum);
         var clientState = await GetStateForPlayer(gameID, playerID, ct);
 
         return new GameActionResult
         {
-            GameOver = npcResult.GameOver,
+            GameOver = npcGameOver,
             State = clientState,
-            Events = allEvents,
+            Events = npcEvents,
         };
     }
 
     // ─── Private helpers ────────────────────────────────────────
+
+    /// <summary>
+    /// Runs NPC actions one at a time, building a ClientGameState snapshot after each action.
+    /// ClientGameState is an independent object created by GameStateView.Build, so it is
+    /// not affected by subsequent mutations to the underlying GameState.
+    /// </summary>
+    private async Task<(List<ActionEventWithState> Events, GameOverResult? GameOver)> RunNpcLoop(
+        Game game, long viewerPlayerNum, string gameID, string playerID,
+        CancellationToken ct)
+    {
+        var events = new List<ActionEventWithState>();
+
+        for (int i = 0; i < MaxNpcIterations; i++)
+        {
+            game = await _gameRepo.GetGame(gameID, ct)
+                ?? throw new InvalidOperationException($"game {gameID} lost during NPC loop");
+
+            var npcResult = await _npcRunner.AdvanceOneAction(game, ct);
+            if (npcResult.Events.Count == 0) break;
+
+            var state = await GetStateForPlayer(gameID, playerID, ct);
+
+            foreach (var evt in npcResult.Events)
+            {
+                evt.EventData = MapEventData(evt, viewerPlayerNum);
+                events.Add(new ActionEventWithState { Event = evt, State = state });
+            }
+
+            if (npcResult.GameOver is not null)
+            {
+                return (events, npcResult.GameOver);
+            }
+
+            if (!npcResult.NpcPending) break;
+        }
+
+        return (events, null);
+    }
 
     private static long ResolveHumanPlayerNum(Game game, string playerID)
     {
@@ -271,22 +311,6 @@ public class GameService
         var playerNum = ResolveHumanPlayerNum(game, playerID);
 
         return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
-    }
-
-    private List<ActionEventWithState> ConvertNpcEvents(
-        List<NpcEventWithState> npcEvents, Game game, long viewerPlayerNum)
-    {
-        return npcEvents
-            .Select(e =>
-            {
-                e.Event.EventData = MapEventData(e.Event, viewerPlayerNum);
-                return new ActionEventWithState
-                {
-                    Event = e.Event,
-                    State = GameStateView.Build(e.State, game, viewerPlayerNum, _cardCache, _engine.EffectRegistry),
-                };
-            })
-            .ToList();
     }
 
     /// <summary>

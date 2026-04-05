@@ -7,21 +7,20 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
-/// A game event paired with the post-action game state snapshot (raw, not info-hidden).
-/// The caller is responsible for converting this to a player-specific view.
+/// Result of a single NPC action advancement.
 /// </summary>
-public record NpcEventWithState(GameEvent Event, GameState State);
-
-/// <summary>
-/// Result of NPC turn execution.
-/// </summary>
-public record NpcRunResult(List<NpcEventWithState> Events, GameOverResult? GameOver)
+public record NpcAdvanceResult(
+    List<GameEvent> Events,
+    GameOverResult? GameOver,
+    bool NpcPending)
 {
-    public bool IsGameOver => GameOver is not null;
+    public static NpcAdvanceResult Done() => new([], null, false);
 }
 
 /// <summary>
 /// Orchestrates NPC turns: resolves AI strategies, decides actions, and executes them via GameEngine.
+/// Each call to AdvanceOneAction processes exactly one NPC action, matching PvP's one-action-per-call flow.
+/// The gateway loops until NpcPending is false.
 /// </summary>
 public class NpcRunner
 {
@@ -30,8 +29,6 @@ public class NpcRunner
     private readonly ICardCache _cardCache;
     private readonly ILogger<NpcRunner> _logger;
     private readonly Dictionary<string, AiConfig> _aiConfigs;
-
-    private const int MaxIterations = 50;
 
     public NpcRunner(
         GameEngine engine,
@@ -48,43 +45,74 @@ public class NpcRunner
     }
 
     /// <summary>
-    /// Advances NPC turns until a human player becomes active or the game ends.
+    /// Processes exactly one NPC action and returns.
+    /// Returns NpcPending=true if the active player is still an NPC after the action.
+    /// The gateway calls this in a loop until NpcPending is false or GameOver is set.
     /// </summary>
-    public async Task<NpcRunResult> RunTurns(Game game, CancellationToken ct = default)
+    public async Task<NpcAdvanceResult> AdvanceOneAction(Game game, CancellationToken ct = default)
     {
-        var npc1AI = game.Npc1Model is not null ? ResolveAI(game.Npc1Model) : null;
-        var npc2AI = game.Npc2Model is not null ? ResolveAI(game.Npc2Model) : null;
-
-        var allEvents = new List<NpcEventWithState>();
         var gameID = game.GameID;
+        var state = await _repo.GetGameState(gameID, ct)
+            ?? throw new InvalidOperationException($"game state {gameID} lost");
 
-        for (int i = 0; i < MaxIterations; i++)
+        var npcAI = ResolveNpcAIForPlayer(game, state.ActivePlayer);
+        if (npcAI is null)
         {
-            game = await _repo.GetGame(gameID, ct)
-                ?? throw new InvalidOperationException($"game {gameID} lost during NPC turn");
-            if (game.Status == GameStatus.Finished)
+            return NpcAdvanceResult.Done();
+        }
+
+        var npcPlayerNum = state.ActivePlayer;
+
+        // Pending slot select takes priority
+        if (state.PendingSlotSelects.Count > 0
+            && state.PendingSlotSelects[0].PlayerNum == npcPlayerNum)
+        {
+            return await ProcessOneSlotSelect(game, state, npcPlayerNum, npcAI, ct);
+        }
+
+        // Decide actions for current phase
+        List<NpcAction> actions;
+        try
+        {
+            actions = DecideActions(npcAI, state, game, npcPlayerNum);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "NPC action decision failed (game={GameID})", gameID);
+            return NpcAdvanceResult.Done();
+        }
+
+        if (actions.Count == 0)
+        {
+            return NpcAdvanceResult.Done();
+        }
+
+        // Try each action until one succeeds (skip rejected ones)
+        foreach (var action in actions)
+        {
+            var actionType = EnumExtensions.ParseActionType(action.ActionType);
+            try
             {
-                return new NpcRunResult(allEvents, null);
+                game = await _repo.GetGame(gameID, ct)
+                    ?? throw new InvalidOperationException($"game {gameID} lost during NPC action");
+
+                var result = await _engine.ProcessAction(game, npcPlayerNum, actionType, action.Data, ct);
+                var pending = await IsNpcPending(game, result, ct);
+                return new NpcAdvanceResult(result.Events, result.GameOver, pending);
             }
-
-            var state = await _repo.GetGameState(gameID, ct)
-                ?? throw new InvalidOperationException($"game state {gameID} lost during NPC turn");
-
-            var npcAI = state.ActivePlayer == 1 ? npc1AI : npc2AI;
-            if (npcAI is null)
+            catch (GameRuleException ex)
             {
-                return new NpcRunResult(allEvents, null);
+                _logger.LogWarning(ex, "NPC action rejected (game={GameID}, action={Action})", gameID, action.ActionType);
             }
-
-            var outcome = await ExecuteTurn(npcAI, state, game, ct);
-            allEvents.AddRange(outcome.Events);
-            if (outcome.IsGameOver)
+            catch (Exception ex)
             {
-                return new NpcRunResult(allEvents, outcome.GameOver);
+                _logger.LogError(ex, "NPC action failed unexpectedly (game={GameID}, action={Action})", gameID, action.ActionType);
+                return NpcAdvanceResult.Done();
             }
         }
 
-        throw new InvalidOperationException($"NPC turn exceeded {MaxIterations} iterations (game={gameID})");
+        _logger.LogWarning("All NPC actions rejected (game={GameID})", gameID);
+        return NpcAdvanceResult.Done();
     }
 
     // ─── Private ────────────────────────────────────────────────
@@ -105,36 +133,28 @@ public class NpcRunner
         return new NpcAi(config, _cardCache, _engine.EffectRegistry);
     }
 
-    private async Task<NpcRunResult> ExecuteTurn(
-        INpcStrategy npcAI, GameState state, Game game, CancellationToken ct)
+    private INpcStrategy? ResolveNpcAIForPlayer(Game game, long playerNum)
     {
-        var npcPlayerNum = state.ActivePlayer;
-        var actions = DecideActions(npcAI, state, game, npcPlayerNum);
-        var turnEvents = new List<NpcEventWithState>();
+        var npcModel = game.GetNpcModel(playerNum);
+        return npcModel is not null ? ResolveAI(npcModel) : null;
+    }
 
-        foreach (var action in actions)
-        {
-            try
-            {
-                var outcome = await ExecuteAction(action, game.GameID, npcPlayerNum, npcAI, ct);
-                turnEvents.AddRange(outcome.Events);
-                if (outcome.IsGameOver)
-                {
-                    return new NpcRunResult(turnEvents, outcome.GameOver);
-                }
-            }
-            catch (GameRuleException ex)
-            {
-                _logger.LogWarning(ex, "NPC action rejected (game={GameID}, action={Action})", game.GameID, action.ActionType);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "NPC action failed unexpectedly (game={GameID}, action={Action})", game.GameID, action.ActionType);
-                break;
-            }
-        }
+    private async Task<NpcAdvanceResult> ProcessOneSlotSelect(
+        Game game, GameState state, long npcPlayerNum, INpcStrategy npcAI,
+        CancellationToken ct)
+    {
+        var gameID = game.GameID;
+        var slotAction = npcAI.DecideSlotSelect(state, npcPlayerNum)
+            ?? throw new InvalidOperationException($"NPC failed to decide slot selection (game={gameID})");
 
-        return new NpcRunResult(turnEvents, null);
+        var slotType = EnumExtensions.ParseActionType(slotAction.ActionType);
+
+        game = await _repo.GetGame(gameID, ct)
+            ?? throw new InvalidOperationException($"game {gameID} lost during NPC slot select");
+
+        var result = await _engine.ProcessAction(game, npcPlayerNum, slotType, slotAction.Data, ct);
+        var pending = await IsNpcPending(game, result, ct);
+        return new NpcAdvanceResult(result.Events, result.GameOver, pending);
     }
 
     private List<NpcAction> DecideActions(
@@ -186,78 +206,14 @@ public class NpcRunner
         ];
     }
 
-    private async Task<NpcRunResult> ExecuteAction(
-        NpcAction action, string gameID, long npcPlayerNum, INpcStrategy npcAI,
-        CancellationToken ct)
+    private async Task<bool> IsNpcPending(Game game, ActionResult result, CancellationToken ct)
     {
-        var actionType = EnumExtensions.ParseActionType(action.ActionType);
-        var actionData = action.Data;
+        if (result.GameOver is not null) return false;
+        if (result.NeedsSlotSelect) return true;
 
-        var game = await _repo.GetGame(gameID, ct)
-            ?? throw new InvalidOperationException($"game {gameID} lost during NPC action");
+        var state = await _repo.GetGameState(game.GameID, ct);
+        if (state is null) return false;
 
-        var result = await _engine.ProcessAction(game, npcPlayerNum, actionType, actionData, ct);
-        var events = await SnapshotEvents(result, gameID, ct);
-
-        if (result.GameOver is not null)
-        {
-            return new NpcRunResult(events, result.GameOver);
-        }
-
-        if (result.NeedsSlotSelect)
-        {
-            return await ProcessPendingSlotSelects(gameID, npcPlayerNum, npcAI, events, ct);
-        }
-
-        return new NpcRunResult(events, null);
+        return ResolveNpcAIForPlayer(game, state.ActivePlayer) is not null;
     }
-
-    private async Task<NpcRunResult> ProcessPendingSlotSelects(
-        string gameID, long npcPlayerNum, INpcStrategy npcAI,
-        List<NpcEventWithState> events, CancellationToken ct)
-    {
-        while (true)
-        {
-            var state = await _repo.GetGameState(gameID, ct)
-                ?? throw new InvalidOperationException($"Game state lost during NPC slot select (game={gameID})");
-
-            var slotAction = npcAI.DecideSlotSelect(state, npcPlayerNum)
-                ?? throw new InvalidOperationException($"NPC failed to decide slot selection (game={gameID})");
-
-            var slotType = EnumExtensions.ParseActionType(slotAction.ActionType);
-            var slotData = slotAction.Data;
-
-            var game = await _repo.GetGame(gameID, ct)
-                ?? throw new InvalidOperationException($"game {gameID} lost during NPC slot select");
-
-            var slotResult = await _engine.ProcessAction(game, npcPlayerNum, slotType, slotData, ct);
-            events.AddRange(await SnapshotEvents(slotResult, gameID, ct));
-
-            if (slotResult.GameOver is not null)
-            {
-                return new NpcRunResult(events, slotResult.GameOver);
-            }
-
-            if (!slotResult.NeedsSlotSelect)
-            {
-                return new NpcRunResult(events, null);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Pairs each event with the post-action game state snapshot.
-    /// All events from a single action share the same snapshot (the final state after the action).
-    /// </summary>
-    private async Task<List<NpcEventWithState>> SnapshotEvents(
-        ActionResult result, string gameID, CancellationToken ct)
-    {
-        var state = await _repo.GetGameState(gameID, ct)
-            ?? throw new InvalidOperationException($"game state {gameID} lost during snapshot");
-
-        return result.Events
-            .Select(evt => new NpcEventWithState(evt, state))
-            .ToList();
-    }
-
 }
