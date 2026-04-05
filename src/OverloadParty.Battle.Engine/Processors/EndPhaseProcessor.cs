@@ -280,6 +280,7 @@ public static class EndPhaseProcessor
             GameID = gameID,
             EventType = EventTypes.TurnStart,
             PlayerID = "",
+            IsSystemEvent = true,
             EventData = new Dictionary<string, object>
             {
                 ["turn"] = state.CurrentTurn,

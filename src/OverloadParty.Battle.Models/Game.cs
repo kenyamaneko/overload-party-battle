@@ -278,4 +278,9 @@ public class GameEvent
     public string? PlayerID { get; set; }
     public Dictionary<string, object>? EventData { get; set; }
     public DateTime CreatedAt { get; set; }
+    /// <summary>
+    /// true の場合、このイベントはゲームエンジンが生成した system event
+    /// （特定プレイヤーのアクション由来ではない）。Gateway 側でのルーティング判定に使う。
+    /// </summary>
+    public bool IsSystemEvent { get; set; }
 }

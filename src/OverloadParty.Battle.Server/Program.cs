@@ -358,6 +358,7 @@ static object ProjectActionResult(GameActionResult result) => new
         sequence = e.Event.SequenceNumber,
         event_type = e.Event.EventType,
         player_id = e.Event.PlayerID,
+        is_system = e.Event.IsSystemEvent,
         event_data = e.Event.EventData,
         state = e.State,
     }),
