@@ -283,11 +283,11 @@ public static class EndPhaseProcessor
             GameID = gameID,
             EventType = EventTypes.TurnStart,
             PlayerID = "",
-            EventData = new TurnStartEventData
+            EventData = new Dictionary<string, object>
             {
-                Turn = state.CurrentTurn,
-                ActivePlayer = state.ActivePlayer,
-            }.ToDictionary(),
+                ["turn"] = state.CurrentTurn,
+                ["active_player"] = state.ActivePlayer,
+            },
         };
     }
 }

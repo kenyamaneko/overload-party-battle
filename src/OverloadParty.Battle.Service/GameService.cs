@@ -150,7 +150,11 @@ public class GameService
         }
 
         var allEvents = result.Events
-            .Select(e => new ActionEventWithState { Event = e })
+            .Select(e =>
+            {
+                e.EventData = MapEventData(e, playerNum);
+                return new ActionEventWithState { Event = e };
+            })
             .ToList();
 
         if (result.GameOver is not null)
@@ -273,11 +277,31 @@ public class GameService
         List<NpcEventWithState> npcEvents, Game game, long viewerPlayerNum)
     {
         return npcEvents
-            .Select(e => new ActionEventWithState
+            .Select(e =>
             {
-                Event = e.Event,
-                State = GameStateView.Build(e.State, game, viewerPlayerNum, _cardCache, _engine.EffectRegistry),
+                e.Event.EventData = MapEventData(e.Event, viewerPlayerNum);
+                return new ActionEventWithState
+                {
+                    Event = e.Event,
+                    State = GameStateView.Build(e.State, game, viewerPlayerNum, _cardCache, _engine.EffectRegistry),
+                };
             })
             .ToList();
+    }
+
+    /// <summary>
+    /// Maps view-dependent event data fields for a specific player.
+    /// TurnStart: replaces internal active_player with player-relative is_my_turn.
+    /// </summary>
+    private static Dictionary<string, object>? MapEventData(GameEvent evt, long viewerPlayerNum)
+    {
+        if (evt.EventData is null) { return null; }
+        if (evt.EventType != EventTypes.TurnStart) { return evt.EventData; }
+
+        return new Dictionary<string, object>
+        {
+            ["turn"] = evt.EventData["turn"],
+            ["is_my_turn"] = Convert.ToInt64(evt.EventData["active_player"]) == viewerPlayerNum,
+        };
     }
 }

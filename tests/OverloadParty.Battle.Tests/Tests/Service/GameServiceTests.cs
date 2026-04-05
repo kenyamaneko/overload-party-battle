@@ -171,6 +171,25 @@ public class GameServiceTests
         result.GameOver.Should().BeNull();
     }
 
+    [Fact]
+    public async Task ProcessAction_TurnStartEvent_ContainsIsMyTurn()
+    {
+        var cards = MakePlayerCards();
+        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+
+        var state = await _repo.GetGameState(game.GameID);
+        string activePlayerID = state!.ActivePlayer == 1 ? "alice" : "bob";
+
+        // Turn 1 Main → end_phase skips Battle (first turn), switches turn directly
+        var result = await _svc.ProcessAction(game.GameID, activePlayerID, ActionType.EndPhase, new object());
+
+        var turnStartEvent = result.Events
+            .FirstOrDefault(e => e.Event.EventType == EventTypes.TurnStart);
+        turnStartEvent.Should().NotBeNull("turn switch should emit a turn_start event");
+        turnStartEvent!.Event.EventData!["is_my_turn"].Should().Be(false,
+            "active player switched, so the requesting player's turn is over");
+    }
+
     // ─── GetGameStateForPlayer ──────────────────────────────
 
     [Fact]

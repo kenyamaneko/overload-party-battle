@@ -384,6 +384,21 @@ public class EndPhaseProcessorTests
         result.GameOver!.WinnerNum.Should().Be(1);
     }
 
+    // ─── TurnStart event data (internal format) ───────────────
+
+    [Fact]
+    public void MakeTurnStartEvent_ContainsActivePlayerForViewMapping()
+    {
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, activePlayer: 2);
+
+        var evt = EndPhaseProcessor.MakeTurnStartEvent("test-game", state);
+
+        evt.EventType.Should().Be(EventTypes.TurnStart);
+        evt.PlayerID.Should().BeEmpty();
+        evt.EventData!["turn"].Should().Be(3L);
+        evt.EventData["active_player"].Should().Be(2L);
+    }
+
     // ─── helpers ─────────────────────────────────────────────
 
     private static void AddRepoCards(GameState state, long playerNum)
