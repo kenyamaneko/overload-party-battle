@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.AspNetCore.Diagnostics;
 using Npgsql;
 using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Data.Json;
@@ -11,6 +12,10 @@ using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 using OverloadParty.Battle.Service;
+using OverloadParty.GameData;
+// Disambiguate: ActionResult exists in both OverloadParty.Battle.Engine (internal engine result)
+// and OverloadParty.GameData (wire envelope returned to the gateway).
+using ActionResult = OverloadParty.GameData.ActionResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -164,11 +169,46 @@ if (isLocalDev)
     });
 }
 
+// 例外を {"error": "..."} 形式のボディに統一してステータスコードを割り当てる。
+// GameRuleException はルール違反として 400、それ以外は 500。
+// Battle Server は Gateway からのみ呼ばれる内部サービスのため、500 時も ex.Message を透過する。
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var ex = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+        var (status, message) = ex switch
+        {
+            GameRuleException e => (StatusCodes.Status400BadRequest, e.Message),
+            _ => (StatusCodes.Status500InternalServerError, ex?.Message ?? "internal error"),
+        };
+        if (status == StatusCodes.Status500InternalServerError)
+        {
+            app.Logger.LogError(ex, "Unexpected error");
+        }
+        context.Response.StatusCode = status;
+        await context.Response.WriteAsJsonAsync(new { error = message });
+    });
+});
+
 // ─── Routes ─────────────────────────────────────────────────
 
 app.MapGet("/health", () => Results.Ok(new { status = "ok" }));
 
 // ─── REST API Endpoints ─────────────────────────────────────
+
+// JSON options used to convert engine-native payloads (Dictionary<string, object>, ClientGameState)
+// into JsonElement for the generated ActionEvent envelope. Must mirror the HTTP serializer options
+// (JsonStringEnumConverter + ZoneJsonConverterFactory) so the wire format is byte-identical to the
+// previous anonymous-type projection.
+var envelopeJsonOptions = new JsonSerializerOptions
+{
+    Converters =
+    {
+        new JsonStringEnumConverter(JsonNamingPolicy.SnakeCaseLower),
+        new ZoneJsonConverterFactory(),
+    },
+};
 
 var api = app.MapGroup("/api/v1");
 
@@ -188,63 +228,27 @@ api.MapGet("/npc/models", () =>
 // NPC Game Creation
 api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
 {
-    try
-    {
-        var cards = req.Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
-        var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, cards, req.NpcModel);
-        return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID, npc1_model = game.Npc1Model, npc2_model = game.Npc2Model });
-    }
-    catch (GameRuleException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unexpected error");
-        return Results.StatusCode(500);
-    }
+    var cards = req.Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
+    var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, cards, req.NpcModel);
+    return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID, npc1_model = game.Npc1Model, npc2_model = game.Npc2Model });
 });
 
 // PvP Game Creation (called by Gateway after matchmaking)
 api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
 {
-    try
-    {
-        var p1Cards = req.Player1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
-        var p2Cards = req.Player2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
-        var game = await gameSvc.CreateGameFromMatch(req.Player1ID, req.Player1DeckID, p1Cards, req.Player2ID, req.Player2DeckID, p2Cards);
-        return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
-    }
-    catch (GameRuleException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unexpected error");
-        return Results.StatusCode(500);
-    }
+    var p1Cards = req.Player1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
+    var p2Cards = req.Player2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
+    var game = await gameSvc.CreateGameFromMatch(req.Player1ID, req.Player1DeckID, p1Cards, req.Player2ID, req.Player2DeckID, p2Cards);
+    return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
 });
 
 // Game Action
 api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId, GameActionRequest req) =>
 {
-    try
-    {
-        var actionType = EnumExtensions.ParseActionType(req.ActionType);
-        var actionData = ActionDataDeserializer.Deserialize(actionType, req.Data);
-        var result = await gameSvc.ProcessAction(gameId, req.PlayerID, actionType, actionData);
-        return Results.Ok(ProjectActionResult(result));
-    }
-    catch (GameRuleException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unexpected error");
-        return Results.StatusCode(500);
-    }
+    var actionType = EnumExtensions.ParseActionType(req.ActionType);
+    var actionData = ActionDataDeserializer.Deserialize(actionType, req.Data);
+    var result = await gameSvc.ProcessAction(gameId, req.PlayerID, actionType, actionData);
+    return Results.Ok(ProjectActionResult(result));
 });
 
 // Advance NPC Turn
@@ -252,85 +256,37 @@ api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId
 // so that action events can be delivered via WebSocket.
 api.MapPost("/games/{gameId}/advance-npc", async (GameService gameSvc, string gameId, NpcAdvanceRequest req) =>
 {
-    try
-    {
-        var result = await gameSvc.AdvanceNpcTurn(gameId, req.PlayerID);
-        return Results.Ok(ProjectActionResult(result));
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unexpected error");
-        return Results.StatusCode(500);
-    }
+    var result = await gameSvc.AdvanceNpcTurn(gameId, req.PlayerID);
+    return Results.Ok(ProjectActionResult(result));
 });
 
 // Game State Retrieval
 api.MapGet("/games/{gameId}/state/{playerId}", async (GameService gameSvc, string gameId, string playerId) =>
 {
-    try
-    {
-        var state = await gameSvc.GetGameStateForPlayer(gameId, playerId);
-        return Results.Ok(state);
-    }
-    catch (GameRuleException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unexpected error");
-        return Results.StatusCode(500);
-    }
+    var state = await gameSvc.GetGameStateForPlayer(gameId, playerId);
+    return Results.Ok(state);
 });
 
 // Turn Controls Retrieval
 api.MapGet("/games/{gameId}/controls/{playerId}", async (GameService gameSvc, string gameId, string playerId) =>
 {
-    try
-    {
-        var controls = await gameSvc.GetTurnControlsForPlayer(gameId, playerId);
-        return Results.Ok(controls);
-    }
-    catch (GameRuleException ex)
-    {
-        return Results.BadRequest(new { error = ex.Message });
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unexpected error");
-        return Results.StatusCode(500);
-    }
+    var controls = await gameSvc.GetTurnControlsForPlayer(gameId, playerId);
+    return Results.Ok(controls);
 });
 
 // Game Log (Replay)
 api.MapGet("/games/{gameId}/log", async (GameLogService logSvc, string gameId) =>
 {
-    try
-    {
-        var log = await logSvc.GetGameLog(gameId);
-        if (log is null) return Results.NotFound(new { error = "game not found" });
-        return Results.Bytes(logSvc.SerializeToJson(log), "application/json");
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unexpected error");
-        return Results.StatusCode(500);
-    }
+    var log = await logSvc.GetGameLog(gameId);
+    if (log is null) return Results.NotFound(new { error = "game not found" });
+    return Results.Bytes(logSvc.SerializeToJson(log), "application/json");
 });
 
 api.MapGet("/games/{gameId}/log/text", async (GameLogService logSvc, string gameId) =>
 {
-    try
-    {
-        var text = await logSvc.GetGameLogText(gameId);
-        if (text is null) return Results.NotFound(new { error = "game not found" });
-        return Results.Text(text, "text/plain");
-    }
-    catch (Exception ex)
-    {
-        app.Logger.LogError(ex, "Unexpected error");
-        return Results.StatusCode(500);
-    }
+    var text = await logSvc.GetGameLogText(gameId);
+    if (text is null) return Results.NotFound(new { error = "game not found" });
+    return Results.Text(text, "text/plain");
 });
 
 // Dev REST API endpoints (local mode only)
@@ -348,28 +304,22 @@ app.Logger.LogInformation("Battle server starting on port {Port} (mode={Mode})",
 
 app.Run();
 
-static object ProjectActionResult(GameActionResult result) => new
+ActionResult ProjectActionResult(GameActionResult result) => new()
 {
-    game_over = result.GameOver is not null,
-    winner_num = result.GameOver?.WinnerNum ?? 0,
-    win_reason = result.GameOver?.Reason,
-    npc_pending = result.NpcPending,
-    events = result.Events.Select(e => new
+    GameOver = result.GameOver is not null,
+    WinnerNum = result.GameOver?.WinnerNum ?? 0,
+    WinReason = result.GameOver?.Reason ?? "",
+    NpcPending = result.NpcPending,
+    Events = result.Events.Select(e => new ActionEvent
     {
-        sequence = e.Event.SequenceNumber,
-        event_type = e.Event.EventType,
-        player_id = e.Event.PlayerID,
-        is_system = e.Event.IsSystemEvent,
-        event_data = e.Event.EventData,
-        state = e.State,
-    }),
+        Sequence = e.Event.SequenceNumber,
+        EventType = e.Event.EventType,
+        PlayerID = e.Event.PlayerID ?? "",
+        IsSystem = e.Event.IsSystemEvent,
+        EventData = JsonSerializer.SerializeToElement(e.Event.EventData, envelopeJsonOptions),
+        State = JsonSerializer.SerializeToElement(e.State, envelopeJsonOptions),
+    }).ToList(),
 };
-
-public record DeckCard(string CardId, long ArtNo);
-public record NpcBattleRequest(string PlayerID, long DeckID, List<DeckCard> Cards, string NpcModel);
-public record PvpBattleRequest(string Player1ID, long Player1DeckID, List<DeckCard> Player1Cards, string Player2ID, long Player2DeckID, List<DeckCard> Player2Cards);
-public record GameActionRequest(string PlayerID, string ActionType, JsonElement Data);
-public record NpcAdvanceRequest(string PlayerID);
 
 public static class ActionDataDeserializer
 {

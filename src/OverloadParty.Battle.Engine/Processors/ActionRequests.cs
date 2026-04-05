@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
@@ -7,18 +9,22 @@ namespace OverloadParty.Battle.Engine.Processors;
 public class PlayCardRequest
 {
     /// <summary>The instance ID of the card in hand to play.</summary>
+    [JsonPropertyName("cardInstanceId")]
     public string CardInstanceID { get; set; } = "";
 
     /// <summary>The target zone (frontend, backend, or support) to place the card.</summary>
+    [JsonPropertyName("zone")]
     public string Zone { get; set; } = "";
 
     /// <summary>The slot index within the target zone.</summary>
+    [JsonPropertyName("index")]
     public int Index { get; set; }
 
     /// <summary>
     /// Nested position format sent by the client and NPC AI.
     /// When set, populates Zone and Index from the nested object.
     /// </summary>
+    [JsonPropertyName("position")]
     public PlayCardPosition? Position
     {
         get => null;
@@ -33,9 +39,11 @@ public class PlayCardRequest
     }
 
     /// <summary>The instance ID of the target resource, required for attachment cards.</summary>
+    [JsonPropertyName("targetInstanceId")]
     public string? TargetInstanceID { get; set; }
 
     /// <summary>Optional choice data for cards with deploy effects that require player input.</summary>
+    [JsonPropertyName("choiceData")]
     public Dictionary<string, object>? ChoiceData { get; set; }
 }
 
@@ -44,7 +52,10 @@ public class PlayCardRequest
 /// </summary>
 public class PlayCardPosition
 {
+    [JsonPropertyName("zone")]
     public string Zone { get; set; } = "";
+
+    [JsonPropertyName("index")]
     public int Index { get; set; }
 }
 
@@ -54,9 +65,11 @@ public class PlayCardPosition
 public class AttackRequest
 {
     /// <summary>The instance ID of the attacking resource.</summary>
+    [JsonPropertyName("attackerInstanceId")]
     public string AttackerInstanceID { get; set; } = "";
 
     /// <summary>The instance ID of the target resource on the opponent's field.</summary>
+    [JsonPropertyName("targetInstanceId")]
     public string TargetInstanceID { get; set; } = "";
 }
 
@@ -66,11 +79,13 @@ public class AttackRequest
 public class ScaleUpRequest
 {
     /// <summary>The instance ID of the resource to scale.</summary>
+    [JsonPropertyName("instanceId")]
     public string InstanceID { get; set; } = "";
 
     /// <summary>
     /// Alias for InstanceID sent by the client and NPC AI as "componentInstanceId".
     /// </summary>
+    [JsonPropertyName("componentInstanceId")]
     public string? ComponentInstanceID
     {
         get => null;
@@ -81,9 +96,11 @@ public class ScaleUpRequest
     }
 
     /// <summary>The target rank to scale to (e.g., small, medium, large).</summary>
+    [JsonPropertyName("targetRank")]
     public string TargetRank { get; set; } = "";
 
     /// <summary>The optional instance family to assign when scaling to medium or large.</summary>
+    [JsonPropertyName("instanceFamily")]
     public string? InstanceFamily { get; set; }
 }
 
@@ -93,6 +110,7 @@ public class ScaleUpRequest
 public class MonetizeRequest
 {
     /// <summary>The list of distributions specifying which resources contribute and how much.</summary>
+    [JsonPropertyName("distributions")]
     public List<MonetizeDistribution> Distributions { get; set; } = [];
 }
 
@@ -102,11 +120,13 @@ public class MonetizeRequest
 public class MonetizeDistribution
 {
     /// <summary>The instance ID of the backend compute resource.</summary>
+    [JsonPropertyName("instanceId")]
     public string InstanceID { get; set; } = "";
 
     /// <summary>
     /// Alias for InstanceID sent by the client and NPC AI as "componentInstanceId".
     /// </summary>
+    [JsonPropertyName("componentInstanceId")]
     public string? ComponentInstanceID
     {
         get => null;
@@ -117,6 +137,7 @@ public class MonetizeDistribution
     }
 
     /// <summary>The amount of insight to distribute from this resource.</summary>
+    [JsonPropertyName("amount")]
     public long Amount { get; set; }
 }
 
@@ -126,6 +147,7 @@ public class MonetizeDistribution
 public class DiscardHandRequest
 {
     /// <summary>The instance IDs of the cards to discard.</summary>
+    [JsonPropertyName("cardInstanceIds")]
     public List<string> CardInstanceIDs { get; set; } = [];
 }
 
@@ -135,12 +157,15 @@ public class DiscardHandRequest
 public class UseEffectRequest
 {
     /// <summary>The instance ID of the resource or support card whose effect to activate.</summary>
+    [JsonPropertyName("instanceId")]
     public string InstanceID { get; set; } = "";
 
     /// <summary>The optional instance ID of the target for the effect.</summary>
+    [JsonPropertyName("targetInstanceId")]
     public string? TargetInstanceID { get; set; }
 
     /// <summary>Optional choice data for effects that require player input.</summary>
+    [JsonPropertyName("choiceData")]
     public Dictionary<string, object>? ChoiceData { get; set; }
 }
 
@@ -150,9 +175,11 @@ public class UseEffectRequest
 public class SelectSlotRequest
 {
     /// <summary>The target zone (frontend or backend).</summary>
+    [JsonPropertyName("zone")]
     public string Zone { get; set; } = "";
 
     /// <summary>The slot index within the target zone.</summary>
+    [JsonPropertyName("index")]
     public int Index { get; set; }
 }
 
@@ -165,5 +192,6 @@ public class ForfeitRequest
     /// The reason for the forfeit (e.g. "turn_timeout", "disconnect", "surrender").
     /// Defaults to TurnTimeout if not specified.
     /// </summary>
+    [JsonPropertyName("reason")]
     public string? Reason { get; set; }
 }

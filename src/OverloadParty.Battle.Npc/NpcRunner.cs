@@ -206,7 +206,7 @@ public class NpcRunner
         ];
     }
 
-    private async Task<bool> IsNpcPending(Game game, ActionResult result, CancellationToken ct)
+    private async Task<bool> IsNpcPending(Game game, OverloadParty.Battle.Engine.ActionResult result, CancellationToken ct)
     {
         if (result.GameOver is not null) return false;
         if (result.NeedsSlotSelect) return true;
