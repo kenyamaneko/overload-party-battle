@@ -16,7 +16,10 @@ build:  ## Build the solution
 	dotnet build $(SLN)
 
 # ─── Run ─────────────────────────────────────────────────
+PORT ?= 9002
+
 run:  ## Run local dev server (port 9002, in-memory mock repos)
+	@lsof -ti :$(PORT) | xargs kill -9 2>/dev/null || true
 	ASPNETCORE_ENVIRONMENT=Development BATTLE_MODE=local \
 	CARDS_JSON_PATH=$(COMMON_DIR)/packages/gamedata-dotnet/cache/cards_gen.json \
 		dotnet run --project $(SERVER)
