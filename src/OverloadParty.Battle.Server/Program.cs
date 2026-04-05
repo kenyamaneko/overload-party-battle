@@ -353,6 +353,7 @@ static object ProjectActionResult(GameActionResult result) => new
     game_over = result.GameOver is not null,
     winner_num = result.GameOver?.WinnerNum ?? 0,
     win_reason = result.GameOver?.Reason,
+    npc_pending = result.NpcPending,
     events = result.Events.Select(e => new
     {
         sequence = e.Event.SequenceNumber,

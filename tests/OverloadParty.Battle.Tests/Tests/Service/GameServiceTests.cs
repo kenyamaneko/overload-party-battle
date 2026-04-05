@@ -172,6 +172,21 @@ public class GameServiceTests
     }
 
     [Fact]
+    public async Task ProcessAction_PvpGame_NpcPendingAlwaysFalse()
+    {
+        var cards = MakePlayerCards();
+        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+
+        var state = await _repo.GetGameState(game.GameID);
+        string activePlayerID = state!.ActivePlayer == 1 ? "alice" : "bob";
+
+        var result = await _svc.ProcessAction(
+            game.GameID, activePlayerID, ActionType.EndPhase, new object());
+
+        result.NpcPending.Should().BeFalse("PvP games never have NPC pending");
+    }
+
+    [Fact]
     public async Task ProcessAction_TurnStartEvent_ContainsIsMyTurn()
     {
         var cards = MakePlayerCards();

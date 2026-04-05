@@ -26,6 +26,12 @@ public class GameActionResult
     public GameOverResult? GameOver { get; init; }
     public ClientGameState? State { get; init; }
     public List<ActionEventWithState> Events { get; init; } = [];
+    /// <summary>
+    /// true when the next actor is an NPC. Gateway calls AdvanceNpcTurn
+    /// repeatedly until this becomes false so each NPC action is delivered
+    /// individually (system events remain attached to the correct snapshot).
+    /// </summary>
+    public bool NpcPending { get; init; }
 }
 
 /// <summary>
@@ -38,8 +44,6 @@ public class GameService
     private readonly ICardCache _cardCache;
     private readonly NpcRunner _npcRunner;
     private readonly Dictionary<string, AiConfig> _aiConfigs;
-
-    private const int MaxNpcIterations = 50;
 
     private static readonly string EngineVersion =
         typeof(GameEngine).Assembly.GetName().Version?.ToString() ?? "unknown";
@@ -128,7 +132,8 @@ public class GameService
     // ─── Actions ────────────────────────────────────────────────
 
     /// <summary>
-    /// Processes a player action, then runs NPC turns if applicable.
+    /// Processes a single player action. If the resulting active player is an NPC,
+    /// returns NpcPending=true so the gateway can loop AdvanceNpcTurn.
     /// </summary>
     public async Task<GameActionResult> ProcessAction(
         string gameID, string playerID, ActionType actionType, object actionData,
@@ -139,7 +144,7 @@ public class GameService
 
         var playerNum = ResolveHumanPlayerNum(game, playerID);
 
-        ActionResult result;
+        OverloadParty.Battle.Engine.ActionResult result;
         if (actionType == ActionType.Forfeit)
         {
             var req = actionData as ForfeitRequest;
@@ -154,28 +159,31 @@ public class GameService
         var allEvents = result.Events
             .Select(e =>
             {
-                e.EventData = MapEventData(e, playerNum);
+                e.EventData = MapEventData(e, game, playerNum);
                 return new ActionEventWithState { Event = e };
             })
             .ToList();
 
+        var clientState = await GetStateForPlayer(gameID, playerID, ct);
+
         if (result.GameOver is not null)
         {
-            var state = await GetStateForPlayer(gameID, playerID, ct);
-            return new GameActionResult { GameOver = result.GameOver, State = state, Events = allEvents };
+            return new GameActionResult
+            {
+                GameOver = result.GameOver,
+                State = clientState,
+                Events = allEvents,
+                NpcPending = false,
+            };
         }
 
-        if (game.Npc1Model is not null || game.Npc2Model is not null)
+        var npcPending = await IsActivePlayerNpc(gameID, game, ct);
+        return new GameActionResult
         {
-            var (npcEvents, npcGameOver) = await RunNpcLoop(game, playerNum, gameID, playerID, ct);
-            allEvents.AddRange(npcEvents);
-
-            var state = await GetStateForPlayer(gameID, playerID, ct);
-            return new GameActionResult { GameOver = npcGameOver, State = state, Events = allEvents };
-        }
-
-        var clientState = await GetStateForPlayer(gameID, playerID, ct);
-        return new GameActionResult { State = clientState, Events = allEvents };
+            State = clientState,
+            Events = allEvents,
+            NpcPending = npcPending,
+        };
     }
 
     // ─── State queries ──────────────────────────────────────────
@@ -205,9 +213,8 @@ public class GameService
     }
 
     /// <summary>
-    /// Runs the NPC turn if the active player is an NPC.
-    /// Called by the gateway after the human player enters the game,
-    /// so that NPC action events can be delivered via WebSocket.
+    /// Processes exactly one NPC action and returns. The gateway loops on NpcPending
+    /// so every NPC action is delivered with its own post-action state snapshot.
     /// </summary>
     public async Task<GameActionResult> AdvanceNpcTurn(
         string gameID, string playerID, CancellationToken ct = default)
@@ -221,61 +228,42 @@ public class GameService
         }
 
         var playerNum = ResolveHumanPlayerNum(game, playerID);
-        var (npcEvents, npcGameOver) = await RunNpcLoop(game, playerNum, gameID, playerID, ct);
+        var npcResult = await _npcRunner.AdvanceOneAction(game, ct);
 
-        if (npcEvents.Count == 0)
+        if (npcResult.Events.Count == 0)
         {
             return new GameActionResult();
         }
 
         var clientState = await GetStateForPlayer(gameID, playerID, ct);
 
+        var events = npcResult.Events
+            .Select(evt =>
+            {
+                evt.EventData = MapEventData(evt, game, playerNum);
+                return new ActionEventWithState { Event = evt, State = clientState };
+            })
+            .ToList();
+
         return new GameActionResult
         {
-            GameOver = npcGameOver,
+            GameOver = npcResult.GameOver,
             State = clientState,
-            Events = npcEvents,
+            Events = events,
+            NpcPending = npcResult.NpcPending,
         };
     }
 
     // ─── Private helpers ────────────────────────────────────────
 
-    /// <summary>
-    /// Runs NPC actions one at a time, building a ClientGameState snapshot after each action.
-    /// ClientGameState is an independent object created by GameStateView.Build, so it is
-    /// not affected by subsequent mutations to the underlying GameState.
-    /// </summary>
-    private async Task<(List<ActionEventWithState> Events, GameOverResult? GameOver)> RunNpcLoop(
-        Game game, long viewerPlayerNum, string gameID, string playerID,
-        CancellationToken ct)
+    private async Task<bool> IsActivePlayerNpc(string gameID, Game game, CancellationToken ct)
     {
-        var events = new List<ActionEventWithState>();
+        if (game.Npc1Model is null && game.Npc2Model is null) return false;
 
-        for (int i = 0; i < MaxNpcIterations; i++)
-        {
-            game = await _gameRepo.GetGame(gameID, ct)
-                ?? throw new InvalidOperationException($"game {gameID} lost during NPC loop");
+        var state = await _gameRepo.GetGameState(gameID, ct);
+        if (state is null) return false;
 
-            var npcResult = await _npcRunner.AdvanceOneAction(game, ct);
-            if (npcResult.Events.Count == 0) break;
-
-            var state = await GetStateForPlayer(gameID, playerID, ct);
-
-            foreach (var evt in npcResult.Events)
-            {
-                evt.EventData = MapEventData(evt, viewerPlayerNum);
-                events.Add(new ActionEventWithState { Event = evt, State = state });
-            }
-
-            if (npcResult.GameOver is not null)
-            {
-                return (events, npcResult.GameOver);
-            }
-
-            if (!npcResult.NpcPending) break;
-        }
-
-        return (events, null);
+        return game.GetNpcModel(state.ActivePlayer) is not null;
     }
 
     private static long ResolveHumanPlayerNum(Game game, string playerID)
@@ -316,16 +304,46 @@ public class GameService
     /// <summary>
     /// Maps view-dependent event data fields for a specific player.
     /// TurnStart: replaces internal active_player with player-relative is_my_turn.
+    /// PlayCard: redacts cardId when the actor is the opponent and the card lands face-down.
     /// </summary>
-    private static Dictionary<string, object>? MapEventData(GameEvent evt, long viewerPlayerNum)
+    private Dictionary<string, object>? MapEventData(GameEvent evt, Game game, long viewerPlayerNum)
     {
         if (evt.EventData is null) { return null; }
-        if (evt.EventType != EventTypes.TurnStart) { return evt.EventData; }
 
-        return new Dictionary<string, object>
+        return evt.EventType switch
         {
-            ["turn"] = evt.EventData["turn"],
-            ["is_my_turn"] = Convert.ToInt64(evt.EventData["active_player"]) == viewerPlayerNum,
+            EventTypes.TurnStart => MapTurnStart(evt.EventData, viewerPlayerNum),
+            EventTypes.PlayCard => RedactPlayCardIfFaceDown(evt, game, viewerPlayerNum),
+            _ => evt.EventData,
         };
+    }
+
+    private static Dictionary<string, object> MapTurnStart(
+        Dictionary<string, object> data, long viewerPlayerNum) => new()
+    {
+        ["turn"] = data["turn"],
+        ["is_my_turn"] = Convert.ToInt64(data["active_player"]) == viewerPlayerNum,
+    };
+
+    private Dictionary<string, object>? RedactPlayCardIfFaceDown(
+        GameEvent evt, Game game, long viewerPlayerNum)
+    {
+        var data = evt.EventData!;
+
+        if (evt.PlayerID == game.GetPlayerID(viewerPlayerNum)) { return data; }
+
+        if (!data.TryGetValue("cardId", out var cardIdObj) || cardIdObj is not string cardId
+            || string.IsNullOrEmpty(cardId))
+        {
+            return data;
+        }
+
+        var cardDef = _cardCache.Get(cardId);
+        if (cardDef is null) { return data; }
+
+        var faceDown = cardDef.CardType == CardTypes.Reactive || cardDef.DeployTurns > 0;
+        if (!faceDown) { return data; }
+
+        return new Dictionary<string, object>(data) { ["cardId"] = "" };
     }
 }
