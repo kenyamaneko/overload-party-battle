@@ -7,9 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- TEMP: local ref until common 0.1.29 is published -->
-    <ProjectReference Include="/Users/kenyamamoto/Documents/key_and_notes/overload-party-common/packages/gamedata-dotnet/OverloadParty.GameData.csproj" />
-    <!-- <PackageReference Include="OverloadParty.GameData" Version="0.1.28" /> -->
+    <PackageReference Include="OverloadParty.GameData" Version="0.1.29" />
   </ItemGroup>
 
 </Project>
