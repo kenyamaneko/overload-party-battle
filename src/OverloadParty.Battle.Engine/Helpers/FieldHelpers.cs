@@ -198,12 +198,12 @@ public static class FieldHelpers
     public static long ApplyReduction(List<TemporaryEffect> effects, string effectType, long baseValue)
     {
         long flatSum = effects
-            .Where(e => e.EffectType == effectType && e.Mode is not "percent")
+            .Where(e => e.EffectType == effectType && e.Mode is not BuffModes.Percent)
             .Sum(e => e.Value);
         long afterFlat = Math.Max(0, baseValue - flatSum);
 
         long percentSum = effects
-            .Where(e => e.EffectType == effectType && e.Mode is "percent")
+            .Where(e => e.EffectType == effectType && e.Mode is BuffModes.Percent)
             .Sum(e => e.Value);
         long clamped = Math.Clamp(percentSum, 0, 100);
 

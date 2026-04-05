@@ -159,6 +159,7 @@ public static class GameStateView
             Value = e.Value,
             Duration = e.Duration,
             SourceID = e.SourceID,
+            Mode = e.Mode,
         };
     }
 
