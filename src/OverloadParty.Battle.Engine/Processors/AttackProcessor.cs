@@ -63,10 +63,8 @@ public static class AttackProcessor
         }
 
         // Apply damage (reduced by attack_damage_reduction buffs on defender)
-        long damageReduction = defender.TemporaryEffects
-            .Where(e => e.EffectType == "attack_damage_reduction")
-            .Sum(e => e.Value);
-        defender.Damage += Math.Max(0, damage - damageReduction);
+        defender.Damage += FieldHelpers.ApplyReduction(
+            defender.TemporaryEffects, BuffTypes.AttackDamageReduction, damage);
         attacker.HasAttacked = true;
         attacker.LastAttackTurn = state.CurrentTurn;
 

@@ -5,7 +5,7 @@ namespace OverloadParty.Battle.Engine.Effects.Ops;
 /// <summary>
 /// Applies a temporary effect (buff or debuff) to selected resources.
 /// </summary>
-public class ApplyBuffOp(ISelector sel, string effectType, IAmountResolver value, string duration, string? sourceId = null) : IEffectOp
+public class ApplyBuffOp(ISelector sel, string effectType, IAmountResolver value, string duration, string? sourceId = null, string mode = "") : IEffectOp
 {
     /// <summary>The selector used to pick target resources.</summary>
     public ISelector Selector => sel;
@@ -25,6 +25,7 @@ public class ApplyBuffOp(ISelector sel, string effectType, IAmountResolver value
                 Value = amount,
                 Duration = duration,
                 SourceID = source,
+                Mode = mode,
             });
         }
     }

@@ -39,20 +39,13 @@ public class IncidentDamageOp(ISelector sel, IAmountResolver value, IAmountResol
 
         foreach (var target in targets)
         {
-            if (FieldHelpers.HasTemporaryEffect(target, "incident_immune"))
+            if (FieldHelpers.HasTemporaryEffect(target, BuffTypes.IncidentImmune))
             {
                 continue;
             }
 
-            long reduction = target.TemporaryEffects
-                .Where(e => e.EffectType == "incident_reduction")
-                .Sum(e => e.Value);
-            long effectiveDamage = Math.Max(0, damage - reduction);
-
-            if (FieldHelpers.HasTemporaryEffect(target, "incident_halve"))
-            {
-                effectiveDamage /= 2;
-            }
+            long effectiveDamage = FieldHelpers.ApplyReduction(
+                target.TemporaryEffects, BuffTypes.IncidentReduction, damage);
 
             target.Damage += effectiveDamage;
         }

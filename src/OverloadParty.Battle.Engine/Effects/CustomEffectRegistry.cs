@@ -13,19 +13,18 @@ public class CustomEffectRegistry : ICustomEffectRegistry
     private readonly Dictionary<string, Func<Dictionary<string, JsonElement>?, Action<OpContext>?>> _factories = new()
     {
         // Phase 2-2: existing customs (migrated from EffectInit)
-        ["chain_attack_bonus"] = _ => ChainAttackBonus,
-        ["deploy_same_type_from_hand"] = _ => DeploySameTypeFromHand,
-        ["disable_high_tp_deploy"] = _ => DisableHighTpDeploy,
-        ["cancel_nth_deploy"] = _ => CancelNthDeploy,
-        ["redirect_attack"] = _ => RedirectAttack,
+        [CustomEffects.ChainAttackBonus] = _ => ChainAttackBonus,
+        [CustomEffects.DeploySameTypeFromHand] = _ => DeploySameTypeFromHand,
+        [CustomEffects.DisableHighTpDeploy] = _ => DisableHighTpDeploy,
+        [CustomEffects.CancelNthDeploy] = _ => CancelNthDeploy,
+        [CustomEffects.RedirectAttack] = _ => RedirectAttack,
 
         // Phase 2-3: new customs
-        ["cloud_shift"] = BuildCloudShift,
-        ["halve_incident_damage"] = _ => HalveIncidentDamage,
-        ["spot_expiry"] = BuildSpotExpiry,
-        ["reattach"] = _ => Reattach,
+        [CustomEffects.CloudShift] = BuildCloudShift,
+        [CustomEffects.SpotExpiry] = BuildSpotExpiry,
+        [CustomEffects.Reattach] = _ => Reattach,
 
-        ["scale_to_zero"] = _ => ScaleToZero,
+        [CustomEffects.ScaleToZero] = _ => ScaleToZero,
     };
 
     /// <inheritdoc />
@@ -120,7 +119,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         {
             EffectType = EffectTypes.CannotOperate,
             Value = 1,
-            Duration = "this_turn",
+            Duration = EffectDurations.ThisTurn,
             SourceID = "rate_limiter",
         });
 
@@ -236,25 +235,6 @@ public class CustomEffectRegistry : ICustomEffectRegistry
     }
 
     /// <summary>
-    /// Halve incident damage by applying an incident_halve buff to all own face-up resources.
-    /// IncidentDamageOp checks for this buff and halves the effective damage.
-    /// </summary>
-    public static void HalveIncidentDamage(OpContext octx)
-    {
-        var field = octx.MyField;
-        foreach (var r in FieldHelpers.AllFaceUpResources(field))
-        {
-            r.TemporaryEffects.Add(new TemporaryEffect
-            {
-                EffectType = "incident_halve",
-                Value = 1,
-                Duration = "this_turn",
-                SourceID = "halve_incident",
-            });
-        }
-    }
-
-    /// <summary>
     /// Self-destruct after N turns since deploy.
     /// meta: { turns }
     /// </summary>
@@ -347,9 +327,9 @@ public class CustomEffectRegistry : ICustomEffectRegistry
 
         octx.Source.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = "maintenance_reduction",
+            EffectType = BuffTypes.MaintenanceReduction,
             Value = maintenanceCost,
-            Duration = "this_turn",
+            Duration = EffectDurations.ThisTurn,
             SourceID = "scale_to_zero",
         });
     }

@@ -138,10 +138,8 @@ public static class ResourceHelpers
         var card = cc.MustGet(resource.CardID);
 
         // SLAペナルティを所有者のバジェットから差し引く（sla_penalty_reduction で軽減）
-        long penaltyReduction = resource.TemporaryEffects
-            .Where(e => e.EffectType == "sla_penalty_reduction")
-            .Sum(e => e.Value);
-        long penalty = Math.Max(0, card.SLAPenalty - penaltyReduction);
+        long penalty = FieldHelpers.ApplyReduction(
+            resource.TemporaryEffects, BuffTypes.SlaPenaltyReduction, card.SLAPenalty);
         long budget = state.GetBudget(ownerNum);
         state.SetBudget(ownerNum, budget - penalty);
 

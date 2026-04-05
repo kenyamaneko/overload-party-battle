@@ -320,8 +320,9 @@ public static class EffectYamlLoader
         var amount = BuildAmount(p.GetProperty("amount"));
         string duration = p.TryGetProperty("duration", out var durEl) ? durEl.GetString()! : "permanent";
         string? sourceId = p.TryGetProperty("source_id", out var sid) ? sid.GetString() : null;
+        string mode = p.TryGetProperty("mode", out var modeEl) ? modeEl.GetString()! : "";
 
-        return new ApplyBuffOp(selector, buff, amount, duration, sourceId);
+        return new ApplyBuffOp(selector, buff, amount, duration, sourceId, mode);
     }
 
     private static IEffectOp BuildSearchRepo(JsonElement p)

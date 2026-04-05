@@ -185,10 +185,29 @@ public static class FieldHelpers
     {
         bool hasShieldAttachment = field.Support
             .Where(a => a.TargetInstanceID == resource.InstanceID)
-            .Any(a => cc.Get(a.CardID)?.Effects?.Any(e => e.Custom == "target_shield") == true);
+            .Any(a => cc.Get(a.CardID)?.Effects?.Any(e => e.Custom == CustomEffects.TargetShield) == true);
         if (!hasShieldAttachment) { return false; }
 
         return field.Frontend.Any(r => r.InstanceID != resource.InstanceID && r.FaceUp);
+    }
+
+    /// <summary>
+    /// Applies reduction from temporary effects with the given type, supporting both flat and percent modes.
+    /// Flat values are subtracted first, then percent values reduce the remainder.
+    /// </summary>
+    public static long ApplyReduction(List<TemporaryEffect> effects, string effectType, long baseValue)
+    {
+        long flatSum = effects
+            .Where(e => e.EffectType == effectType && e.Mode is not "percent")
+            .Sum(e => e.Value);
+        long afterFlat = Math.Max(0, baseValue - flatSum);
+
+        long percentSum = effects
+            .Where(e => e.EffectType == effectType && e.Mode is "percent")
+            .Sum(e => e.Value);
+        long clamped = Math.Clamp(percentSum, 0, 100);
+
+        return afterFlat * (100 - clamped) / 100;
     }
 
     /// <summary>
@@ -200,7 +219,7 @@ public static class FieldHelpers
         foreach (var resource in AllResources(field))
         {
             resource.TemporaryEffects.RemoveAll(e =>
-                e.Duration == "while_on_field" && e.SourceID == sourceInstanceID);
+                e.Duration == EffectDurations.WhileOnField && e.SourceID == sourceInstanceID);
         }
     }
 

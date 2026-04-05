@@ -102,16 +102,18 @@ public class BuffTypeTests
         resource.Damage.Should().Be(0, "reduction exceeds damage so effective damage is clamped to 0");
     }
 
-    // ─── incident_halve ──────────────────────────────────────────────
+    // ─── incident_reduction (percent mode) ─────────────────────────────
 
     [Fact]
-    public void IncidentDamageOp_HalvesDamage_WithIncidentHalve()
+    public void IncidentDamageOp_HalvesDamage_WithPercentReduction()
     {
         var state = TestFactory.MakeGameState();
         var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
         resource.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = "incident_halve",
+            EffectType = "incident_reduction",
+            Value = 50,
+            Mode = "percent",
             Duration = "until_end_of_turn",
         });
         state.Player1Field.Frontend[0] = resource;
@@ -122,11 +124,11 @@ public class BuffTypeTests
 
         op.Execute(opCtx);
 
-        resource.Damage.Should().Be(250, "500 / 2 = 250");
+        resource.Damage.Should().Be(250, "500 * (100 - 50) / 100 = 250");
     }
 
     [Fact]
-    public void IncidentDamageOp_ReductionThenHalve_AppliedInOrder()
+    public void IncidentDamageOp_FlatThenPercent_AppliedInOrder()
     {
         var state = TestFactory.MakeGameState();
         var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
@@ -138,7 +140,9 @@ public class BuffTypeTests
         });
         resource.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = "incident_halve",
+            EffectType = "incident_reduction",
+            Value = 50,
+            Mode = "percent",
             Duration = "until_end_of_turn",
         });
         state.Player1Field.Frontend[0] = resource;
@@ -149,7 +153,7 @@ public class BuffTypeTests
 
         op.Execute(opCtx);
 
-        resource.Damage.Should().Be(200, "(500 - 100) / 2 = 200");
+        resource.Damage.Should().Be(200, "(500 - 100) * (100 - 50) / 100 = 200");
     }
 
     // ─── attack_damage_reduction ─────────────────────────────────────

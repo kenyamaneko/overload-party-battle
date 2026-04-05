@@ -120,11 +120,8 @@ public static class EndPhaseProcessor
             baseCost = card.MaintenanceCost * BattleConstants.RankMultiplier(resource.Rank);
         }
 
-        long reduction = resource.TemporaryEffects
-            .Where(e => e.EffectType == "maintenance_reduction")
-            .Sum(e => e.Value);
-
-        return Math.Max(0, baseCost - reduction);
+        return FieldHelpers.ApplyReduction(
+            resource.TemporaryEffects, BuffTypes.MaintenanceReduction, baseCost);
     }
 
     static void CollectMaintenanceCost(GameState state, long playerNum, Field field, ICardCache cc)
@@ -168,7 +165,7 @@ public static class EndPhaseProcessor
         foreach (var resource in FieldHelpers.AllResources(field))
         {
             resource.TemporaryEffects.RemoveAll(e =>
-                e.Duration is "this_turn" or "until_next_own_turn_end");
+                e.Duration is EffectDurations.ThisTurn or EffectDurations.UntilNextOwnTurnEnd);
         }
     }
 

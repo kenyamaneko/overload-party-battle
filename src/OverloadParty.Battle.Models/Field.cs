@@ -54,6 +54,7 @@ public class TemporaryEffect
     public long Value { get; set; }
     public string Duration { get; set; } = "";
     public string SourceID { get; set; } = "";
+    public string Mode { get; set; } = "";
 }
 
 /// <summary>
