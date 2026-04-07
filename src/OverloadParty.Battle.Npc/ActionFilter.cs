@@ -107,32 +107,6 @@ public static class ActionFilter
         return "";
     }
 
-    /// <summary>
-    /// Picks the target with lowest effective AV from validTargets.
-    /// </summary>
-    public static string? FindBestTargetFromValid(List<string>? validTargets, Field oppField)
-    {
-        if (!(validTargets?.Count > 0))
-        {
-            return null;
-        }
-
-        var resMap = FieldHelpers.AllResources(oppField)
-            .ToDictionary(r => r.InstanceID);
-
-        string? bestId = null;
-        long bestAV = long.MaxValue;
-        foreach (var id in validTargets)
-        {
-            if (!resMap.TryGetValue(id, out var r))
-            {
-                continue;
-            }
-            if (r.EffectiveAV < bestAV) { bestAV = r.EffectiveAV; bestId = id; }
-        }
-        return bestId;
-    }
-
     private static List<string> FilterZones(List<string> validZones, HashSet<string> usedZones)
     {
         return validZones.Where(z => !usedZones.Contains(z)).ToList();

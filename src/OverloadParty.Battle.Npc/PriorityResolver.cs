@@ -194,30 +194,28 @@ public static class PriorityResolver
     }
 
     /// <summary>
-    /// Target selection based on config strategy names.
+    /// Target selection based on config TargetSpec definitions.
     /// </summary>
     public static string? SelectTarget(EffectInfo info, DecisionContext ctx, TargetSelectionConfig targets, ICardCache cc)
     {
-        var zone = info.TargetZone;
-
-        if (info.HasCategory(EffectCategory.SingleDamage))
+        if (info.HasCategory(EffectCategory.SingleDamage) && targets.SingleDamage is not null)
         {
-            return ResolveTarget(targets.SingleDamage, ctx.OppField, zone, cc);
+            return TargetSelector.Resolve(targets.SingleDamage, ctx.Field, ctx.OppField, cc);
         }
 
-        if (info.HasCategory(EffectCategory.Debuff))
+        if (info.HasCategory(EffectCategory.Debuff) && targets.Debuff is not null)
         {
-            return ResolveTarget(targets.Debuff, ctx.OppField, zone, cc);
+            return TargetSelector.Resolve(targets.Debuff, ctx.Field, ctx.OppField, cc);
         }
 
-        if (info.HasCategory(EffectCategory.Heal))
+        if (info.HasCategory(EffectCategory.Heal) && targets.Heal is not null)
         {
-            return TargetSelector.MostDamagedOwn(ctx.Field);
+            return TargetSelector.Resolve(targets.Heal, ctx.Field, ctx.OppField, cc);
         }
 
-        if (info.HasCategory(EffectCategory.Buff))
+        if (info.HasCategory(EffectCategory.Buff) && targets.Buff is not null)
         {
-            return ResolveTarget(targets.Buff, ctx.Field, zone, cc);
+            return TargetSelector.Resolve(targets.Buff, ctx.Field, ctx.OppField, cc);
         }
 
         if (info.HasCategory(EffectCategory.DestroyPlatform))
@@ -225,17 +223,8 @@ public static class PriorityResolver
             return TargetSelector.FirstPlatformId(ctx.OppField, cc);
         }
 
-        return ResolveTarget("weakest_av", ctx.OppField, zone, cc);
-    }
-
-    private static string? ResolveTarget(string strategy, Field field, string? zone, ICardCache cc)
-    {
-        return strategy switch
-        {
-            "weakest_av" => TargetSelector.WeakestInZone(field, zone),
-            "strongest_tp" => TargetSelector.StrongestInZone(field, zone, cc),
-            "most_damaged" => TargetSelector.MostDamagedOwn(field),
-            _ => throw new InvalidOperationException($"Unknown target strategy: '{strategy}'"),
-        };
+        return targets.Attack is not null
+            ? TargetSelector.Resolve(targets.Attack, ctx.Field, ctx.OppField, cc)
+            : null;
     }
 }

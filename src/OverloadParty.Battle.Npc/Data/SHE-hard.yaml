@@ -52,7 +52,9 @@ game_phases:
         selector: { owner: self }
         min: 3
     target_selection:
-      attack: strongest_tp
+      attack:
+        selector: { owner: opponent }
+        order_by: tp_desc
     effect_priorities:
       single_damage: 80
       aoe_damage: 85
@@ -72,7 +74,6 @@ deploy:
 
   choices:
     SH-0006: use
-    SH-0010: redis
 
   zone_preferences:
     compute: [frontend, backend]
@@ -144,34 +145,47 @@ effect_priorities:
       min: 1
 
 target_selection:
-  attack: weakest_av
-  single_damage: weakest_av
-  debuff: strongest_tp
-  buff: strongest_tp
-  heal: most_damaged
+  attack:
+    selector: { owner: opponent }
+    order_by: av_asc
+  single_damage:
+    selector: { owner: opponent }
+    order_by: av_asc
+  debuff:
+    selector: { owner: opponent }
+    order_by: tp_desc
+  buff:
+    selector: { owner: self }
+    order_by: tp_desc
+  heal:
+    selector: { owner: self }
+    order_by: damage_desc
 
 scale_up:
   instance_family: M
   max_maintenance_ratio: 0.6
-  priority: highest_tp
+  order_by: tp_desc
 
 monetize:
-  strategy: highest_tp
+  order_by: tp_desc
   reserve_ratio: 0.2
 
-
 attachments:
-  SH-0022:
+  SH-0016:
     priority: 80
-    prefer_target_card: SH-0001
-  NT-0003:
+    target:
+      selector: { owner: self, card_id: [SH-0001] }
+      order_by: tp_desc
+  NT-0025:
     priority: 70
-    prefer_target: strongest_tp
+    target:
+      selector: { owner: self }
+      order_by: tp_desc
 
 reactive:
   max_slots: 2
   priorities:
-    NT-0025: 90
+    NT-0023: 90
 
 slot_select:
   strategy: left_fill

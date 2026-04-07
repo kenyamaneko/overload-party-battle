@@ -185,46 +185,6 @@ public class ActionFilterTests
         ActionFilter.PickSupportZone(zones, []).Should().BeNull();
     }
 
-    // ─── FindBestTargetFromValid ─────────────────────────────
-
-    [Fact]
-    public void FindBestTargetFromValid_NullTargets_ReturnsNull()
-    {
-        var field = TestFactory.MakeField();
-        ActionFilter.FindBestTargetFromValid(null, field).Should().BeNull();
-    }
-
-    [Fact]
-    public void FindBestTargetFromValid_EmptyTargets_ReturnsNull()
-    {
-        var field = TestFactory.MakeField();
-        ActionFilter.FindBestTargetFromValid([], field).Should().BeNull();
-    }
-
-    [Fact]
-    public void FindBestTargetFromValid_SelectsLowestEffectiveAV()
-    {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(instanceId: "r1", maxAV: 1400, damage: 0);    // effectiveAV = 1400
-        field.Frontend[1] = TestFactory.MakeResource(instanceId: "r2", maxAV: 800, damage: 200);    // effectiveAV = 600
-        field.Backend[0] = TestFactory.MakeResource(instanceId: "r3", maxAV: 1000, damage: 0);      // effectiveAV = 1000
-
-        var validTargets = new List<string> { "r1", "r2", "r3" };
-
-        ActionFilter.FindBestTargetFromValid(validTargets, field).Should().Be("r2");
-    }
-
-    [Fact]
-    public void FindBestTargetFromValid_IgnoresUnknownIds()
-    {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(instanceId: "r1", maxAV: 500);
-
-        var validTargets = new List<string> { "unknown", "r1" };
-
-        ActionFilter.FindBestTargetFromValid(validTargets, field).Should().Be("r1");
-    }
-
     // ─── ResolveCardIdForInstance ─────────────────────────────
 
     [Fact]

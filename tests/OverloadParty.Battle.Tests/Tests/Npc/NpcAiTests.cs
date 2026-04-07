@@ -53,17 +53,27 @@ public class NpcAiTests
               single_damage: 60
               deploy_free: 75
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             scale_up:
               instance_family: M
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             """);
     }
@@ -90,17 +100,27 @@ public class NpcAiTests
                   fallback_priority: 30
             effect_priorities: {}
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             scale_up:
               instance_family: R
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             """);
     }
@@ -117,11 +137,21 @@ public class NpcAiTests
               priorities: []
             effect_priorities: {}
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             scale_up:
               instance_family: R
               conditional_family:
@@ -131,9 +161,9 @@ public class NpcAiTests
                     card_type: data
                     min: 2
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             """);
     }
@@ -190,11 +220,13 @@ public class NpcAiTests
             model: test
             faction: SHE
             target_selection:
-              attack: strongest_tp
+              attack:
+                selector: { owner: opponent }
+                order_by: tp_desc
             scale_up:
               instance_family: M
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             """);
         var ai = new NpcAi(config, _cc, _effects);
@@ -572,17 +604,27 @@ public class NpcAiTests
               priorities: []
             effect_priorities: {}
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             scale_up:
               instance_family: M
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.5
             """;
         var config = AiConfigLoader.LoadFromString(yaml);
@@ -663,17 +705,27 @@ public class NpcAiTests
               priorities: []
             effect_priorities: {}
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             scale_up:
               instance_family: M
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.3
             """;
         var config = AiConfigLoader.LoadFromString(yaml);
@@ -796,20 +848,32 @@ public class NpcAiTests
                 condition:
                   turn_min: 6
                 target_selection:
-                  attack: strongest_tp
+                  attack:
+                    selector: { owner: opponent }
+                    order_by: tp_desc
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             effect_priorities: {}
             scale_up:
               instance_family: M
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             """;
         var config = AiConfigLoader.LoadFromString(yaml);
@@ -846,20 +910,32 @@ public class NpcAiTests
                 condition:
                   turn_min: 6
                 target_selection:
-                  attack: strongest_tp
+                  attack:
+                    selector: { owner: opponent }
+                    order_by: tp_desc
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             effect_priorities: {}
             scale_up:
               instance_family: M
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             """;
         var config = AiConfigLoader.LoadFromString(yaml);
@@ -901,20 +977,32 @@ public class NpcAiTests
                     selector: { owner: self }
                     min: 3
                 target_selection:
-                  attack: strongest_tp
+                  attack:
+                    selector: { owner: opponent }
+                    order_by: tp_desc
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             effect_priorities: {}
             scale_up:
               instance_family: M
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             """;
         var config = AiConfigLoader.LoadFromString(yaml);
@@ -975,22 +1063,34 @@ public class NpcAiTests
                   priority: 50
             effect_priorities: {}
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             scale_up:
               instance_family: M
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             attachments:
               SH-0022:
                 priority: 80
-                prefer_target: strongest_tp
+                target:
+                  selector: { owner: self }
+                  order_by: tp_desc
             """;
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
@@ -1005,16 +1105,19 @@ public class NpcAiTests
         var available = new List<AvailableAction>
         {
             new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "SH-0001", ValidZones = ["frontend_0"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "SH-0022", ValidZones = ["support_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "SH-0022",
+                    ValidZones = ["support_0"], ValidTargets = ["res1"] },
         };
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res1");
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // Both deployed: compute resource first, then attachment
+        // Both deployed: compute resource first, then attachment with target
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
         ((PlayCardRequest)deploys[1].Data).CardInstanceID.Should().Be("h_att");
+        ((PlayCardRequest)deploys[1].Data).TargetInstanceID.Should().Be("res1");
     }
 
     [Fact]
@@ -1032,17 +1135,27 @@ public class NpcAiTests
               priorities: []
             effect_priorities: {}
             target_selection:
-              attack: weakest_av
-              single_damage: weakest_av
-              debuff: strongest_tp
-              buff: strongest_tp
-              heal: most_damaged
+              attack:
+                selector: { owner: opponent }
+                order_by: av_asc
+              single_damage:
+                selector: { owner: opponent }
+                order_by: av_asc
+              debuff:
+                selector: { owner: opponent }
+                order_by: tp_desc
+              buff:
+                selector: { owner: self }
+                order_by: tp_desc
+              heal:
+                selector: { owner: self }
+                order_by: damage_desc
             scale_up:
               instance_family: M
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             monetize:
-              strategy: highest_tp
+              order_by: tp_desc
               reserve_ratio: 0.0
             attachments:
               SH-0022:
@@ -1054,6 +1167,7 @@ public class NpcAiTests
         var ai = new NpcAi(config, _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.Main);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res1");
         state.Player1Hand =
         [
             new() { InstanceID = "h_att1", CardID = "SH-0022" },
@@ -1062,8 +1176,10 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att1", CardID = "SH-0022", ValidZones = ["support_0"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att2", CardID = "NT-0003", ValidZones = ["support_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att1", CardID = "SH-0022",
+                    ValidZones = ["support_0"], ValidTargets = ["res1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att2", CardID = "NT-0003",
+                    ValidZones = ["support_1"], ValidTargets = ["res1"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
@@ -1076,9 +1192,9 @@ public class NpcAiTests
     }
 
     [Fact]
-    public void Deploy_NoAttachmentsConfig_AttachmentDeployedNormally()
+    public void Deploy_NoAttachmentsConfig_AttachmentSkipped()
     {
-        // MakeConfig() has no attachments section
+        // MakeConfig() has no attachments section → attachment always skipped
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.Main);
@@ -1089,15 +1205,14 @@ public class NpcAiTests
 
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "SH-0022", ValidZones = ["support_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "SH-0022",
+                    ValidZones = ["support_0"], ValidTargets = ["res1"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // Attachment goes through normal deploy (not separated)
-        deploys.Should().HaveCount(1);
-        ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_att");
+        deploys.Should().BeEmpty();
     }
 
     // ═══════════════════════════════════════════════════════════════

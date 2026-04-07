@@ -64,13 +64,14 @@ public class NpcAi : INpcStrategy
     public List<NpcAction> DecideBattlePhaseActions(
         GameState state, Game game, long npcPlayerNum, List<AvailableAction> available)
     {
+        var selfField = state.GetField(npcPlayerNum);
         var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
         var attackActions = ActionFilter.FilterByType(available, ActionTypes.Attack);
         var actions = new List<NpcAction>();
 
         foreach (var a in attackActions)
         {
-            var target = ResolveAttackTarget(a.ValidTargets, oppField);
+            var target = ResolveAttackTarget(a.ValidTargets, selfField, oppField);
             actions.Add(new NpcAction
             {
                 ActionType = ActionTypes.Attack,
@@ -323,7 +324,7 @@ public class NpcAi : INpcStrategy
             {
                 continue;
             }
-            if (card.CardType == CardTypes.Attachment && _config.Attachments is not null)
+            if (card.CardType == CardTypes.Attachment)
             {
                 continue;
             }
@@ -522,6 +523,28 @@ public class NpcAi : INpcStrategy
 
         foreach (var c in attachCandidates)
         {
+            if (!(c.Action.ValidTargets?.Count > 0))
+            {
+                continue;
+            }
+
+            // config のターゲット指定でリソースを選ぶ。該当なしなら見送り
+            string? targetId = null;
+            if (_config.Attachments!.TryGetValue(c.Card.CardId, out var cfg) && cfg.Target is not null)
+            {
+                targetId = TargetSelector.ResolveFromValid(
+                    cfg.Target, c.Action.ValidTargets, ctx.Field, ctx.OppField, _cc);
+            }
+            else
+            {
+                targetId = c.Action.ValidTargets.FirstOrDefault();
+            }
+
+            if (targetId is null)
+            {
+                continue;
+            }
+
             var zone = ActionFilter.PickSupportZone(c.Action.ValidZones, usedZones);
             if (zone is null)
             {
@@ -537,6 +560,7 @@ public class NpcAi : INpcStrategy
                     CardInstanceID = c.Action.HandInstanceID!,
                     Zone = pos.Zone,
                     Index = pos.Index,
+                    TargetInstanceID = targetId,
                 },
             });
             usedZones.Add(zone);
@@ -695,15 +719,7 @@ public class NpcAi : INpcStrategy
         var scaleActions = ActionFilter.FilterByType(available, ActionTypes.ScaleUp);
         var family = ResolveInstanceFamily(ctx);
 
-        // Sort by config priority
-        var sorted = _config.ScaleUp.Priority switch
-        {
-            "highest_tp" => scaleActions
-                .OrderByDescending(a => ResolveResourceValue(a.SourceInstanceID!, ctx.Field))
-                .ToList(),
-            var s => throw new InvalidOperationException(
-                $"Unknown scale_up priority '{s}' in model '{_config.Model}'"),
-        };
+        var sorted = TargetSelector.OrderActions(scaleActions, _config.ScaleUp.OrderBy, ctx.Field, _cc);
 
         var actions = new List<NpcAction>();
         var addedMaintenanceCost = 0L;
@@ -763,13 +779,7 @@ public class NpcAi : INpcStrategy
             return [];
         }
 
-        var sorted = _config.Monetize.Strategy switch
-        {
-            "highest_tp" => yieldActions.OrderByDescending(a =>
-                ResolveResourceValue(a.SourceInstanceID!, ctx.Field)).ToList(),
-            var s => throw new InvalidOperationException(
-                $"Unknown monetize strategy '{s}' in model '{_config.Model}'"),
-        };
+        var sorted = TargetSelector.OrderActions(yieldActions, _config.Monetize.OrderBy, ctx.Field, _cc);
 
         // Reserve a portion of insight pool
         var reserve = (long)(insightPool * _config.Monetize.ReserveRatio);
@@ -815,29 +825,20 @@ public class NpcAi : INpcStrategy
     //  Attack target selection
     // ═══════════════════════════════════════════════════════════════
 
-    private string ResolveAttackTarget(List<string>? validTargets, Field oppField)
+    private string ResolveAttackTarget(
+        List<string>? validTargets, Field selfField, Field oppField)
     {
         if (!(validTargets?.Count > 0))
         {
             throw new InvalidOperationException("Attack action has no valid targets");
         }
 
-        return (_config.TargetSelection.Attack switch
-        {
-            "weakest_av" => ActionFilter.FindBestTargetFromValid(validTargets, oppField),
-            "strongest_tp" => FindStrongestTarget(validTargets, oppField),
-            var s => throw new InvalidOperationException(
-                $"Unknown attack target strategy '{s}' in model '{_config.Model}'"),
-        }) ?? throw new InvalidOperationException("No valid attack target found on opponent field");
-    }
+        var spec = _config.TargetSelection.Attack
+            ?? throw new InvalidOperationException(
+                $"No attack target selection configured in model '{_config.Model}'");
 
-    private string? FindStrongestTarget(List<string> validTargets, Field oppField)
-    {
-        var resMap = FieldHelpers.AllResources(oppField).ToDictionary(r => r.InstanceID);
-        return validTargets
-            .Where(id => resMap.ContainsKey(id))
-            .OrderByDescending(id => TargetSelector.ResourceValue(resMap[id], _cc))
-            .FirstOrDefault();
+        return TargetSelector.ResolveFromValid(spec, validTargets, selfField, oppField, _cc)
+            ?? throw new InvalidOperationException("No valid attack target found on opponent field");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -864,12 +865,29 @@ public class NpcAi : INpcStrategy
             ImmediateCards = _config.ImmediateCards,
             EffectPriorities = MergeEffectPriorities(
                 _config.EffectPriorities, late.EffectPriorities),
-            TargetSelection = late.TargetSelection ?? _config.TargetSelection,
+            TargetSelection = MergeTargetSelection(_config.TargetSelection, late.TargetSelection),
             ScaleUp = _config.ScaleUp,
             Monetize = _config.Monetize,
             Attachments = _config.Attachments,
             Reactive = _config.Reactive,
             SlotSelect = _config.SlotSelect,
+        };
+    }
+
+    private static TargetSelectionConfig MergeTargetSelection(
+        TargetSelectionConfig baseConfig, TargetSelectionConfig? overlay)
+    {
+        if (overlay is null)
+        {
+            return baseConfig;
+        }
+        return new TargetSelectionConfig
+        {
+            Attack = overlay.Attack ?? baseConfig.Attack,
+            SingleDamage = overlay.SingleDamage ?? baseConfig.SingleDamage,
+            Debuff = overlay.Debuff ?? baseConfig.Debuff,
+            Buff = overlay.Buff ?? baseConfig.Buff,
+            Heal = overlay.Heal ?? baseConfig.Heal,
         };
     }
 
@@ -913,15 +931,6 @@ public class NpcAi : INpcStrategy
     {
         return _cc.Get(cardId)
             ?? throw new InvalidOperationException($"Card '{cardId}' not found in card cache");
-    }
-
-    private long ResolveResourceValue(string instanceId, Field field)
-    {
-        var resource = FieldHelpers.AllResources(field)
-            .FirstOrDefault(r => r.InstanceID == instanceId)
-            ?? throw new InvalidOperationException(
-                $"Resource '{instanceId}' not found on field");
-        return TargetSelector.ResourceValue(resource, _cc);
     }
 
     private long TotalFieldMaintenanceCost(Field field)

@@ -172,7 +172,9 @@ public class AiConfigLoaderTests
                     selector: { owner: self }
                     min: 3
                 target_selection:
-                  attack: strongest_tp
+                  attack:
+                    selector: { owner: opponent }
+                    order_by: tp_desc
                 effect_priorities:
                   single_damage: 80
             """;
@@ -183,7 +185,8 @@ public class AiConfigLoaderTests
         late.Condition.TurnMin.Should().Be(6);
         late.Condition.Count!.Selector!.Owner.Should().Be("self");
         late.Condition.Count.Min.Should().Be(3);
-        late.TargetSelection!.Attack.Should().Be("strongest_tp");
+        late.TargetSelection!.Attack.Should().NotBeNull();
+        late.TargetSelection!.Attack!.OrderBy.Should().Be("tp_desc");
         late.EffectPriorities!["single_damage"].Priority.Should().Be(80);
     }
 
@@ -201,7 +204,7 @@ public class AiConfigLoaderTests
                     selector: { owner: self, card_type: data, zone: backend }
                     min: 2
               max_maintenance_ratio: 0.6
-              priority: highest_tp
+              order_by: tp_desc
             """;
 
         var config = AiConfigLoader.LoadFromString(yaml);

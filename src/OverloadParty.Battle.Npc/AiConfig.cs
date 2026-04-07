@@ -193,22 +193,31 @@ public class EffectPriorityEntry
 
 // ── Target Selection ────────────────────────────────────────
 
+public class TargetSpec
+{
+    [YamlMember(Alias = "selector")]
+    public SelectorDef Selector { get; set; } = new();
+
+    [YamlMember(Alias = "order_by")]
+    public string? OrderBy { get; set; }
+}
+
 public class TargetSelectionConfig
 {
     [YamlMember(Alias = "attack")]
-    public string Attack { get; set; } = "";
+    public TargetSpec? Attack { get; set; }
 
     [YamlMember(Alias = "single_damage")]
-    public string SingleDamage { get; set; } = "";
+    public TargetSpec? SingleDamage { get; set; }
 
     [YamlMember(Alias = "debuff")]
-    public string Debuff { get; set; } = "";
+    public TargetSpec? Debuff { get; set; }
 
     [YamlMember(Alias = "buff")]
-    public string Buff { get; set; } = "";
+    public TargetSpec? Buff { get; set; }
 
     [YamlMember(Alias = "heal")]
-    public string Heal { get; set; } = "";
+    public TargetSpec? Heal { get; set; }
 }
 
 // ── Scale Up ────────────────────────────────────────────────
@@ -224,8 +233,8 @@ public class ScaleUpConfig
     [YamlMember(Alias = "max_maintenance_ratio")]
     public double MaxMaintenanceRatio { get; set; }
 
-    [YamlMember(Alias = "priority")]
-    public string Priority { get; set; } = "";
+    [YamlMember(Alias = "order_by")]
+    public string OrderBy { get; set; } = "";
 }
 
 public class ConditionalFamilyEntry
@@ -241,8 +250,8 @@ public class ConditionalFamilyEntry
 
 public class MonetizeConfig
 {
-    [YamlMember(Alias = "strategy")]
-    public string Strategy { get; set; } = "";
+    [YamlMember(Alias = "order_by")]
+    public string OrderBy { get; set; } = "";
 
     [YamlMember(Alias = "reserve_ratio")]
     public double ReserveRatio { get; set; }
@@ -255,11 +264,8 @@ public class AttachmentEntry
     [YamlMember(Alias = "priority")]
     public int Priority { get; set; }
 
-    [YamlMember(Alias = "prefer_target")]
-    public string? PreferTarget { get; set; }
-
-    [YamlMember(Alias = "prefer_target_card")]
-    public string? PreferTargetCard { get; set; }
+    [YamlMember(Alias = "target")]
+    public TargetSpec? Target { get; set; }
 }
 
 // ── Reactive ────────────────────────────────────────────────

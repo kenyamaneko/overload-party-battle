@@ -50,7 +50,9 @@ game_phases:
         selector: { owner: self }
         min: 3
     target_selection:
-      attack: strongest_tp
+      attack:
+        selector: { owner: opponent }
+        order_by: tp_desc
     effect_priorities:
       single_damage: 80
       aoe_damage: 85
@@ -76,13 +78,6 @@ deploy:
         card_id: [TK-0010]
         min: 1
       fallback_priority: 70
-    - card_id: TK-0008
-      priority: 85
-      condition:
-        selector: { owner: self, zone: backend }
-        card_type: data
-        min: 2
-      fallback_priority: 60
 
   zone_preferences:
     compute: [frontend, backend]
@@ -154,11 +149,21 @@ effect_priorities:
       min: 1
 
 target_selection:
-  attack: weakest_av
-  single_damage: weakest_av
-  debuff: strongest_tp
-  buff: strongest_tp
-  heal: most_damaged
+  attack:
+    selector: { owner: opponent }
+    order_by: av_asc
+  single_damage:
+    selector: { owner: opponent }
+    order_by: av_asc
+  debuff:
+    selector: { owner: opponent }
+    order_by: tp_desc
+  buff:
+    selector: { owner: self }
+    order_by: tp_desc
+  heal:
+    selector: { owner: self }
+    order_by: damage_desc
 
 scale_up:
   instance_family: R
@@ -168,16 +173,33 @@ scale_up:
         selector: { owner: self, card_type: data, zone: backend }
         min: 2
   max_maintenance_ratio: 0.6
-  priority: highest_tp
+  order_by: tp_desc
 
 monetize:
-  strategy: highest_tp
+  order_by: tp_desc
   reserve_ratio: 0.2
 
+attachments:
+  TK-0015:
+    priority: 80
+    target:
+      selector: { owner: self }
+      order_by: tp_desc
+  TK-0018:
+    priority: 70
+    target:
+      selector: { owner: self }
+      order_by: tp_desc
+  NT-0004:
+    priority: 60
+    target:
+      selector: { owner: self }
+      order_by: tp_desc
 
 reactive:
   max_slots: 2
   priorities:
+    TK-0024: 80
     NT-0024: 70
 
 slot_select:

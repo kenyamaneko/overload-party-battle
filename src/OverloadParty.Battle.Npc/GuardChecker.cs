@@ -104,48 +104,13 @@ public static class GuardChecker
             var o => throw new InvalidOperationException($"Unknown selector owner: '{o}'"),
         };
 
-        IEnumerable<DeployedResource> resources = sel.FaceDown == true
-            ? FieldHelpers.AllResources(field).Where(r => !r.FaceUp)
-            : FieldHelpers.AllFaceUpResources(field);
-
-        if (sel.Zone is not null)
-        {
-            resources = sel.Zone switch
-            {
-                "frontend" => field.Frontend.Where(r => sel.FaceDown == true || r.FaceUp),
-                "backend" => field.Backend.Where(r => sel.FaceDown == true || r.FaceUp),
-                "support" => Enumerable.Empty<DeployedResource>(),
-                var z => throw new InvalidOperationException($"Unknown selector zone: '{z}'"),
-            };
-        }
-
-        if (sel.Faction is not null)
-        {
-            resources = resources.Where(r =>
-                (cc.Get(r.CardID) ?? throw new InvalidOperationException(
-                    $"Card '{r.CardID}' not found in card cache")).Faction == sel.Faction);
-        }
-
-        if (sel.CardType is not null)
-        {
-            resources = resources.Where(r =>
-                (cc.Get(r.CardID) ?? throw new InvalidOperationException(
-                    $"Card '{r.CardID}' not found in card cache")).CardType == sel.CardType);
-        }
-
-        if (sel.CardId is not null)
-        {
-            var cardIds = new HashSet<string>(sel.CardId);
-            resources = resources.Where(r => cardIds.Contains(r.CardID));
-        }
-
         // Support zone face-down counting (for reactive detection)
         if (sel.Owner == "opponent" && sel.FaceDown == true && sel.Zone == "support")
         {
             return field.Support.Count(s => !s.FaceUp);
         }
 
-        return resources.Count();
+        return TargetSelector.FilterResources(field, sel, cc).Count();
     }
 
     private static long AggregateDamage(DecisionContext ctx)

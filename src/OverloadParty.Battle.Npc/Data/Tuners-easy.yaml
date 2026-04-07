@@ -116,21 +116,47 @@ effect_priorities:
       min: 1
 
 target_selection:
-  attack: weakest_av
-  single_damage: weakest_av
-  debuff: strongest_tp
-  buff: strongest_tp
-  heal: most_damaged
+  attack:
+    selector: { owner: opponent }
+    order_by: av_asc
+  single_damage:
+    selector: { owner: opponent }
+    order_by: av_asc
+  debuff:
+    selector: { owner: opponent }
+    order_by: tp_desc
+  buff:
+    selector: { owner: self }
+    order_by: tp_desc
+  heal:
+    selector: { owner: self }
+    order_by: damage_desc
 
 scale_up:
   instance_family: M
   max_maintenance_ratio: 0.6
-  priority: highest_tp
+  order_by: tp_desc
 
 monetize:
-  strategy: highest_tp
+  order_by: tp_desc
   reserve_ratio: 0.0
 
+attachments:
+  TN-0014:
+    priority: 60
+    target:
+      selector: { owner: self }
+      order_by: tp_desc
+  TN-0015:
+    priority: 50
+    target:
+      selector: { owner: self }
+      order_by: tp_desc
+
+reactive:
+  max_slots: 2
+  priorities:
+    TN-0018: 70
 
 slot_select:
   strategy: left_fill

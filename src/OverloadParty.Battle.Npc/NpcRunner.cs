@@ -42,6 +42,11 @@ public class NpcRunner
         _cardCache = cardCache;
         _aiConfigs = aiConfigs;
         _logger = logger;
+
+        foreach (var (model, config) in aiConfigs)
+        {
+            AiConfigValidator.Validate(config, cardCache);
+        }
     }
 
     /// <summary>
