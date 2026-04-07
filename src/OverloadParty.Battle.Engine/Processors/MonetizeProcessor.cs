@@ -61,7 +61,6 @@ public static class MonetizeProcessor
         state.SetInsightPool(playerNum, insightPool - totalDistributed);
         state.SetBudget(playerNum, budget + totalDistributed);
 
-        var playerId = game.GetPlayerID(playerNum);
         return new ActionResult
         {
             Events =
@@ -70,7 +69,7 @@ public static class MonetizeProcessor
                 {
                     GameID = game.GameID,
                     EventType = ActionTypes.Monetize,
-                    PlayerID = playerId,
+                    PlayerNum = playerNum,
                     EventData = new MonetizeEventData
                     {
                         TotalAmount = totalDistributed,

@@ -39,8 +39,11 @@ public class NpcEventStateTests
     {
         var result = await RunNpcTurn();
 
+        // Immediate カード（Incident/Strategy: zone=""）やキャンセルされたデプロイは
+        // フィールドにカードを残さないため除外する
         var playCardEvents = result.Events
-            .Where(e => e.Event.EventType == ActionTypes.PlayCard && e.State is not null)
+            .Where(e => e.Event.EventType == ActionTypes.PlayCard && e.State is not null
+                && IsFieldDeploy(e.Event.EventData))
             .ToList();
 
         playCardEvents.Should().HaveCountGreaterThanOrEqualTo(2,
@@ -77,9 +80,9 @@ public class NpcEventStateTests
     [Fact]
     public async Task ProcessAction_PlayerEndPhase_DoesNotBatchNpcEvents()
     {
-        var (game, playerID) = await StartGameWithNpcNext();
+        var (game, playerNum) = await StartGameWithNpcNext();
 
-        var result = await EndPlayerTurn(game.GameID, playerID);
+        var result = await EndPlayerTurn(game.GameID, playerNum);
 
         result.Events.Should().NotContain(
             e => e.Event.EventType == ActionTypes.PlayCard,
@@ -91,15 +94,14 @@ public class NpcEventStateTests
     [Fact]
     public async Task AdvanceNpcTurn_ReturnsOneActionAtATime_ThenPlayerRegainsTurn()
     {
-        var (game, playerID) = await StartGameWithNpcNext();
-        var playerNum = game.ResolvePlayerNum(playerID);
-        await EndPlayerTurn(game.GameID, playerID);
+        var (game, playerNum) = await StartGameWithNpcNext();
+        await EndPlayerTurn(game.GameID, playerNum);
 
         int steps = 0;
         GameActionResult current;
         do
         {
-            current = await _svc.AdvanceNpcTurn(game.GameID, playerID);
+            current = await _svc.AdvanceNpcTurn(game.GameID);
             // Each AdvanceNpcTurn call corresponds to one engine action,
             // which can emit at most one play_card event.
             current.Events.Count(e => e.Event.EventType == ActionTypes.PlayCard)
@@ -123,16 +125,15 @@ public class NpcEventStateTests
     [Fact]
     public async Task ProcessAction_WhenNextActorIsPlayer_NpcPendingIsFalse()
     {
-        var (game, playerID) = await StartGameWithPlayerActive();
+        var (game, playerNum) = await StartGameWithPlayerActive();
 
         // player plays a card; since player is still active for remaining actions
         // in Main (or until end_phase), NpcPending should be false.
-        var hand = (await _repo.GetGameState(game.GameID))!.GetHand(
-            game.ResolvePlayerNum(playerID));
+        var hand = (await _repo.GetGameState(game.GameID))!.GetHand(playerNum);
         var first = hand[0];
 
         var result = await _svc.ProcessAction(
-            game.GameID, playerID,
+            game.GameID, playerNum,
             ActionType.PlayCard,
             new PlayCardRequest
             {
@@ -182,14 +183,13 @@ public class NpcEventStateTests
     [Fact]
     public async Task ProcessAction_PlayerOwnPlayCard_DoesNotRedact()
     {
-        var (game, playerID) = await StartGameWithPlayerActive();
+        var (game, playerNum) = await StartGameWithPlayerActive();
 
-        var hand = (await _repo.GetGameState(game.GameID))!.GetHand(
-            game.ResolvePlayerNum(playerID));
+        var hand = (await _repo.GetGameState(game.GameID))!.GetHand(playerNum);
         var first = hand[0];
 
         var result = await _svc.ProcessAction(
-            game.GameID, playerID,
+            game.GameID, playerNum,
             ActionType.PlayCard,
             new PlayCardRequest
             {
@@ -210,16 +210,16 @@ public class NpcEventStateTests
     /// Repeatedly creates NPC battles until one where the player is the first
     /// active player. This guarantees the NPC has not yet taken its first turn.
     /// </summary>
-    private async Task<(Game Game, string PlayerID)> StartGameWithPlayerFirst()
+    private async Task<(Game Game, long PlayerNum)> StartGameWithPlayerFirst()
     {
         for (int i = 0; i < 20; i++)
         {
             var cards = MakePlayerCards("SH-0001");
-            var game = await _svc.StartNPCBattle("player1", 1, cards, "SHE-easy");
+            var game = await _svc.StartNPCBattle(cards, "SHE-easy");
             var state = await _repo.GetGameState(game.GameID);
             if (state!.ActivePlayer == 1)
             {
-                return (game, "player1");
+                return (game, 1);
             }
         }
         throw new InvalidOperationException(
@@ -227,21 +227,19 @@ public class NpcEventStateTests
     }
 
     /// <summary>Alias for readability at call sites.</summary>
-    private Task<(Game Game, string PlayerID)> StartGameWithNpcNext() => StartGameWithPlayerFirst();
-    private Task<(Game Game, string PlayerID)> StartGameWithPlayerActive() => StartGameWithPlayerFirst();
+    private Task<(Game Game, long PlayerNum)> StartGameWithNpcNext() => StartGameWithPlayerFirst();
+    private Task<(Game Game, long PlayerNum)> StartGameWithPlayerActive() => StartGameWithPlayerFirst();
 
     /// <summary>
     /// Issues end_phase calls until the active player changes. On turn 2+ the
     /// player goes Main→Battle→End before the turn switches.
     /// </summary>
-    private async Task<GameActionResult> EndPlayerTurn(string gameID, string playerID)
+    private async Task<GameActionResult> EndPlayerTurn(string gameID, long playerNum)
     {
-        var game = await _repo.GetGame(gameID);
-        var playerNum = game!.ResolvePlayerNum(playerID);
         GameActionResult result = new();
         for (int i = 0; i < 5; i++)
         {
-            result = await _svc.ProcessAction(gameID, playerID, ActionType.EndPhase, new object());
+            result = await _svc.ProcessAction(gameID, playerNum, ActionType.EndPhase, new object());
             var state = await _repo.GetGameState(gameID);
             if (state!.ActivePlayer != playerNum || result.GameOver is not null)
             {
@@ -260,19 +258,19 @@ public class NpcEventStateTests
     private async Task<GameActionResult> RunNpcTurn()
     {
         var cards = MakePlayerCards("SH-0001");
-        var game = await _svc.StartNPCBattle("player1", 1, cards, "SHE-easy");
+        var game = await _svc.StartNPCBattle(cards, "SHE-easy");
 
         var state = await _repo.GetGameState(game.GameID);
 
         var initial = state!.ActivePlayer == 1
-            ? await _svc.ProcessAction(game.GameID, "player1", ActionType.EndPhase, new object())
-            : await _svc.AdvanceNpcTurn(game.GameID, "player1");
+            ? await _svc.ProcessAction(game.GameID, 1, ActionType.EndPhase, new object())
+            : await _svc.AdvanceNpcTurn(game.GameID);
 
         var events = new List<ActionEventWithState>(initial.Events);
         var current = initial;
         while (current.NpcPending && current.GameOver is null)
         {
-            current = await _svc.AdvanceNpcTurn(game.GameID, "player1");
+            current = await _svc.AdvanceNpcTurn(game.GameID);
             events.AddRange(current.Events);
         }
 
@@ -283,6 +281,20 @@ public class NpcEventStateTests
             Events = events,
             NpcPending = current.NpcPending,
         };
+    }
+
+    /// <summary>
+    /// フィールドにカードを追加する play_card イベントかどうか。
+    /// Immediate カード (zone="") やキャンセルはフィールドに残らない。
+    /// </summary>
+    private static bool IsFieldDeploy(Dictionary<string, object>? data)
+    {
+        if (data is null) return false;
+        if (data.TryGetValue("cancelled", out var c) && c is true or System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.True })
+            return false;
+        if (!data.TryGetValue("zone", out var z)) return false;
+        var zone = z switch { string s => s, System.Text.Json.JsonElement je => je.GetString(), _ => z?.ToString() };
+        return !string.IsNullOrEmpty(zone);
     }
 
     private static int CountOppFieldCards(GD.ClientGameState state)

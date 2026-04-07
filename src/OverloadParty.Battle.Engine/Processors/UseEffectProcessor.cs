@@ -78,13 +78,12 @@ public static class UseEffectProcessor
         var result = handler(ctx);
         source.EffectUsedThisTurn = true;
 
-        var playerId = game.GetPlayerID(playerNum);
         var events = new List<GameEvent>(result.Events);
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
             EventType = ActionTypes.UseEffect,
-            PlayerID = playerId,
+            PlayerNum = playerNum,
             EventData = new UseEffectEventData
             {
                 CardId = card.CardId,
@@ -122,13 +121,12 @@ public static class UseEffectProcessor
         var result = handler(ctx);
         support.EffectUsedThisTurn = true;
 
-        var playerId = game.GetPlayerID(playerNum);
         var events = new List<GameEvent>(result.Events);
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
             EventType = ActionTypes.UseEffect,
-            PlayerID = playerId,
+            PlayerNum = playerNum,
             EventData = new UseEffectEventData
             {
                 CardId = card.CardId,

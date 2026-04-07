@@ -70,17 +70,17 @@ public class GameService
     /// Creates a new PvP game from matchmaking parameters (called by Gateway).
     /// </summary>
     public async Task<Game> CreateGameFromMatch(
-        string player1ID, long player1Deck, List<DeckSnapshotCard> player1Cards,
-        string player2ID, long player2Deck, List<DeckSnapshotCard> player2Cards,
+        List<DeckSnapshotCard> player1Cards,
+        List<DeckSnapshotCard> player2Cards,
         CancellationToken ct = default)
     {
-        var deck1 = new DeckSnapshot { DeckID = player1Deck.ToString(), Cards = player1Cards };
-        var deck2 = new DeckSnapshot { DeckID = player2Deck.ToString(), Cards = player2Cards };
+        var deck1 = new DeckSnapshot { Cards = player1Cards };
+        var deck2 = new DeckSnapshot { Cards = player2Cards };
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
         var gameID = await _engine.CreateNewGame(
-            player1ID, player2ID, deck1, deck2, firstPlayer,
+            deck1, deck2, firstPlayer,
             engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
@@ -94,7 +94,7 @@ public class GameService
     /// Creates a new NPC game with fully initialized state.
     /// </summary>
     public async Task<Game> StartNPCBattle(
-        string playerID, long deckID, List<DeckSnapshotCard> playerCards, string npcModel,
+        List<DeckSnapshotCard> playerCards, string npcModel,
         CancellationToken ct = default)
     {
         if (!playerCards.Any())
@@ -112,13 +112,13 @@ public class GameService
             .SelectMany(e => Enumerable.Repeat(new DeckSnapshotCard { CardId = e.CardId }, e.Copies))
             .ToList();
 
-        var deck1 = new DeckSnapshot { DeckID = deckID.ToString(), Cards = playerCards };
+        var deck1 = new DeckSnapshot { Cards = playerCards };
         var deck2 = new DeckSnapshot { DeckID = $"npc-{npcModel}", Cards = npcCards };
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
         var gameID = await _engine.CreateNewGame(
-            playerID, "", deck1, deck2, firstPlayer,
+            deck1, deck2, firstPlayer,
             npc2Model: npcModel,
             engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
 
@@ -136,13 +136,11 @@ public class GameService
     /// returns NpcPending=true so the gateway can loop AdvanceNpcTurn.
     /// </summary>
     public async Task<GameActionResult> ProcessAction(
-        string gameID, string playerID, ActionType actionType, object actionData,
+        string gameID, long playerNum, ActionType actionType, object actionData,
         CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new GameRuleException($"game {gameID} not found");
-
-        var playerNum = ResolveHumanPlayerNum(game, playerID);
 
         OverloadParty.Battle.Engine.ActionResult result;
         if (actionType == ActionType.Forfeit)
@@ -159,12 +157,12 @@ public class GameService
         var allEvents = result.Events
             .Select(e =>
             {
-                e.EventData = MapEventData(e, game, playerNum);
+                e.EventData = MapEventData(e, playerNum);
                 return new ActionEventWithState { Event = e };
             })
             .ToList();
 
-        var clientState = await GetStateForPlayer(gameID, playerID, ct);
+        var clientState = await GetStateForPlayer(gameID, playerNum, ct);
 
         if (result.GameOver is not null)
         {
@@ -189,19 +187,14 @@ public class GameService
     // ─── State queries ──────────────────────────────────────────
 
     public Task<ClientGameState> GetGameStateForPlayer(
-        string gameID, string playerID, CancellationToken ct = default)
-        => GetStateForPlayer(gameID, playerID, ct);
+        string gameID, long playerNum, CancellationToken ct = default)
+        => GetStateForPlayer(gameID, playerNum, ct);
 
     public async Task<TurnControlsMessage?> GetTurnControlsForPlayer(
-        string gameID, string playerID, CancellationToken ct = default)
+        string gameID, long playerNum, CancellationToken ct = default)
     {
-        var game = await _gameRepo.GetGame(gameID, ct)
-            ?? throw new GameRuleException($"game {gameID} not found");
-
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found");
-
-        var playerNum = ResolveHumanPlayerNum(game, playerID);
 
         if (state.ActivePlayer != playerNum)
         {
@@ -217,7 +210,7 @@ public class GameService
     /// so every NPC action is delivered with its own post-action state snapshot.
     /// </summary>
     public async Task<GameActionResult> AdvanceNpcTurn(
-        string gameID, string playerID, CancellationToken ct = default)
+        string gameID, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new GameRuleException($"game {gameID} not found");
@@ -227,7 +220,7 @@ public class GameService
             return new GameActionResult();
         }
 
-        var playerNum = ResolveHumanPlayerNum(game, playerID);
+        var humanPlayerNum = ResolveHumanPlayerNum(game);
         var npcResult = await _npcRunner.AdvanceOneAction(game, ct);
 
         if (npcResult.Events.Count == 0)
@@ -235,12 +228,12 @@ public class GameService
             return new GameActionResult();
         }
 
-        var clientState = await GetStateForPlayer(gameID, playerID, ct);
+        var clientState = await GetStateForPlayer(gameID, humanPlayerNum, ct);
 
         var events = npcResult.Events
             .Select(evt =>
             {
-                evt.EventData = MapEventData(evt, game, playerNum);
+                evt.EventData = MapEventData(evt, humanPlayerNum);
                 return new ActionEventWithState { Event = evt, State = clientState };
             })
             .ToList();
@@ -266,16 +259,12 @@ public class GameService
         return game.GetNpcModel(state.ActivePlayer) is not null;
     }
 
-    private static long ResolveHumanPlayerNum(Game game, string playerID)
+    /// <summary>NPC でない側のプレイヤー番号を返す。</summary>
+    private static long ResolveHumanPlayerNum(Game game)
     {
-        try
-        {
-            return game.ResolvePlayerNum(playerID);
-        }
-        catch (ArgumentException ex)
-        {
-            throw new GameRuleException(ex.Message);
-        }
+        if (game.Npc1Model is null) return 1;
+        if (game.Npc2Model is null) return 2;
+        throw new InvalidOperationException("both players are NPC");
     }
 
     private static WinReason ParseForfeitReason(string? reason) => reason switch
@@ -288,15 +277,13 @@ public class GameService
     };
 
     private async Task<ClientGameState> GetStateForPlayer(
-        string gameID, string playerID, CancellationToken ct)
+        string gameID, long playerNum, CancellationToken ct)
     {
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"game {gameID} not found");
 
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found");
-
-        var playerNum = ResolveHumanPlayerNum(game, playerID);
 
         return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
     }
@@ -306,14 +293,14 @@ public class GameService
     /// TurnStart: replaces internal active_player with player-relative is_my_turn.
     /// PlayCard: redacts cardId when the actor is the opponent and the card lands face-down.
     /// </summary>
-    private Dictionary<string, object>? MapEventData(GameEvent evt, Game game, long viewerPlayerNum)
+    private Dictionary<string, object>? MapEventData(GameEvent evt, long viewerPlayerNum)
     {
         if (evt.EventData is null) { return null; }
 
         return evt.EventType switch
         {
             EventTypes.TurnStart => MapTurnStart(evt.EventData, viewerPlayerNum),
-            EventTypes.PlayCard => RedactPlayCardIfFaceDown(evt, game, viewerPlayerNum),
+            EventTypes.PlayCard => RedactPlayCardIfFaceDown(evt, viewerPlayerNum),
             _ => evt.EventData,
         };
     }
@@ -326,11 +313,11 @@ public class GameService
     };
 
     private Dictionary<string, object>? RedactPlayCardIfFaceDown(
-        GameEvent evt, Game game, long viewerPlayerNum)
+        GameEvent evt, long viewerPlayerNum)
     {
         var data = evt.EventData!;
 
-        if (evt.PlayerID == game.GetPlayerID(viewerPlayerNum)) { return data; }
+        if (evt.PlayerNum == viewerPlayerNum) { return data; }
 
         if (!data.TryGetValue("cardId", out var cardIdObj) || cardIdObj is not string cardId
             || string.IsNullOrEmpty(cardId))

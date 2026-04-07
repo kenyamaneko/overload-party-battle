@@ -281,13 +281,12 @@ public static class TestFactory
     /// <summary>
     /// Create a minimal Game for testing.
     /// </summary>
-    public static Game MakeGame(string p1 = "player1", string p2 = "player2")
+    public static Game MakeGame()
     {
         return new Game
         {
             GameID = "test-game",
-            Player1ID = p1,
-            Player2ID = p2,
+            FirstPlayer = 1,
             Status = GameStatus.Playing,
         };
     }

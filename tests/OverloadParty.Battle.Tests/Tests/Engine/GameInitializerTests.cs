@@ -29,7 +29,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         state.Player1Budget.Should().Be(BattleConstants.InitialBudget);
         state.Player2Budget.Should().Be(BattleConstants.InitialBudget);
@@ -42,7 +42,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         state.Player1InsightPool.Should().Be(0);
         state.Player2InsightPool.Should().Be(0);
@@ -57,7 +57,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         state.Player1Hand.Should().HaveCount(BattleConstants.InitialHandSize);
         state.Player1Hand.Should().HaveCount(5);
@@ -73,7 +73,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         state.Player1Repository.Should().HaveCount(25);
         state.Player2Repository.Should().HaveCount(25);
@@ -85,7 +85,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         int total1 = state.Player1Hand.Count + state.Player1Repository.Count;
         int total2 = state.Player2Hand.Count + state.Player2Repository.Count;
@@ -100,7 +100,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         state.CurrentTurn.Should().Be(1);
         state.CurrentPhase.Should().Be(Phase.Draw);
@@ -112,10 +112,10 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state1) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state1) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
         state1.ActivePlayer.Should().Be(1);
 
-        var (_, state2) = GameInitializer.CreateNewGame("g2", "p1", "p2", deck, deck, 2, cc);
+        var (_, state2) = GameInitializer.CreateNewGame("g2", deck, deck, 2, cc);
         state2.ActivePlayer.Should().Be(2);
     }
 
@@ -125,21 +125,20 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (game, _) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (game, _) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         game.Status.Should().Be(GameStatus.Playing);
     }
 
     [Fact]
-    public void CreateNewGame_PlayerIDs_AreSet()
+    public void CreateNewGame_FirstPlayer_IsSet()
     {
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (game, _) = GameInitializer.CreateNewGame("g1", "alice", "bob", deck, deck, 1, cc);
+        var (game, _) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
-        game.Player1ID.Should().Be("alice");
-        game.Player2ID.Should().Be("bob");
+        game.FirstPlayer.Should().Be(1);
     }
 
     /// <summary>
@@ -159,7 +158,7 @@ public class GameInitializerTests
         }
         var deck = new DeckSnapshot { DeckID = "d1", Cards = deckCards };
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         var allP1CardIds = state.Player1Hand.Select(h => h.CardID)
             .Concat(state.Player1Repository.Select(r => r.CardID))
@@ -176,7 +175,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         var allIds = state.Player1Hand.Select(h => h.InstanceID)
             .Concat(state.Player1Repository.Select(r => r.InstanceID))
@@ -193,7 +192,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         state.Player1TimeBank.Should().Be(BattleConstants.InitialTimeBank);
         state.Player2TimeBank.Should().Be(BattleConstants.InitialTimeBank);
@@ -206,7 +205,7 @@ public class GameInitializerTests
         var cc = SetupCardCache();
         var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         state.Player1Field.Frontend.Should().AllSatisfy(slot => slot.Should().BeNull());
         state.Player1Field.Backend.Should().AllSatisfy(slot => slot.Should().BeNull());

@@ -40,7 +40,7 @@ public class GameLogService
             ? (long)(game.FinishedAt.Value - game.CreatedAt).TotalSeconds
             : (long?)null;
 
-        var winnerLabel = game.WinnerNum switch
+        var winnerLabel = game.WinningPlayerNum switch
         {
             null => null,
             0 => null,
@@ -62,8 +62,6 @@ public class GameLogService
         return new GameLogResponse
         {
             GameId = gameID,
-            Player1Id = game.Player1ID,
-            Player2Id = game.Player2ID,
             Winner = winnerLabel,
             WinReason = winReason,
             TotalTurns = state?.CurrentTurn ?? 0,
@@ -92,15 +90,15 @@ public class GameLogService
 
         var p1Label = game.Npc1Model is not null
             ? $"NPC ({game.Npc1Model})"
-            : game.Player1ID;
+            : "P1";
         var p2Label = game.Npc2Model is not null
             ? $"NPC ({game.Npc2Model})"
-            : game.Player2ID;
+            : "P2";
         sb.AppendLine($"P1: {p1Label}  vs  P2: {p2Label}");
 
         // Winner / duration
         var winReason = game.WinReason ?? FindWinReasonFromEvents(events);
-        var winnerTag = game.WinnerNum switch
+        var winnerTag = game.WinningPlayerNum switch
         {
             null => "N/A",
             0 => "Draw",
@@ -142,7 +140,7 @@ public class GameLogService
 
     private string EventToDescription(GameEvent evt, Game game)
     {
-        var playerTag = PlayerTag(evt.PlayerID, game);
+        var playerTag = PlayerTag(evt);
         var data = evt.EventData;
 
         return evt.EventType switch
@@ -263,7 +261,7 @@ public class GameLogService
 
     private string DescribeGameOver(Game game)
     {
-        return game.WinnerNum switch
+        return game.WinningPlayerNum switch
         {
             null or 0 => "Game over: Draw",
             1 => "Game over: P1 wins",
@@ -273,13 +271,13 @@ public class GameLogService
 
     // ─── Helpers ─────────────────────────────────────────────────
 
-    private static string PlayerTag(string? playerID, Game game)
+    private static string PlayerTag(GameEvent evt) => evt.PlayerNum switch
     {
-        if (string.IsNullOrEmpty(playerID)) return "System";
-        if (playerID == game.Player1ID) return "P1";
-        if (playerID == game.Player2ID) return "P2";
-        return "??";
-    }
+        null => "System",
+        1 => "P1",
+        2 => "P2",
+        _ => "??",
+    };
 
     private string ResolveCardName(string? cardId)
     {
@@ -359,8 +357,6 @@ public class GameLogService
 public class GameLogResponse
 {
     public string GameId { get; init; } = "";
-    public string Player1Id { get; init; } = "";
-    public string Player2Id { get; init; } = "";
     public string? Winner { get; init; }
     public string? WinReason { get; init; }
     public long TotalTurns { get; init; }

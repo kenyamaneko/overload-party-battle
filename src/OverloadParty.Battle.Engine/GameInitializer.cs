@@ -13,8 +13,6 @@ public static class GameInitializer
     /// </summary>
     public static (Game Game, GameState State) CreateNewGame(
         string gameID,
-        string player1ID,
-        string player2ID,
         DeckSnapshot deck1,
         DeckSnapshot deck2,
         long firstPlayer,
@@ -23,11 +21,8 @@ public static class GameInitializer
         var game = new Game
         {
             GameID = gameID,
-            Player1ID = player1ID,
-            Player2ID = player2ID,
-            Player1DeckSnapshot = deck1,
-            Player2DeckSnapshot = deck2,
             Status = GameStatus.Playing,
+            FirstPlayer = (int)firstPlayer,
             CreatedAt = DateTime.UtcNow,
             UpdatedAt = DateTime.UtcNow,
         };

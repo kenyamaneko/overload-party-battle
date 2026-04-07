@@ -81,7 +81,7 @@ public class MockGameRepository : IGameRepository
             if (_games.TryGetValue(gameID, out var game))
             {
                 game.Status = GameStatus.Finished;
-                game.WinnerNum = winnerNum;
+                game.WinningPlayerNum = (int)winnerNum;
                 game.WinReason = winReason;
                 game.FinishedAt = DateTime.UtcNow;
             }

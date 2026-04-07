@@ -24,18 +24,7 @@ public class PgGameRepositoryTests
         var game = new Game
         {
             GameID = id,
-            Player1ID = Guid.NewGuid().ToString(),
-            Player2ID = Guid.NewGuid().ToString(),
-            Player1DeckSnapshot = new DeckSnapshot
-            {
-                DeckID = "deck-1",
-                Cards = [new DeckSnapshotCard { CardId = "SH-0001" }, new DeckSnapshotCard { CardId = "TEST-0002" }],
-            },
-            Player2DeckSnapshot = new DeckSnapshot
-            {
-                DeckID = "deck-2",
-                Cards = [new DeckSnapshotCard { CardId = "SH-0002" }],
-            },
+            FirstPlayer = 1,
             Status = GameStatus.Playing,
             CreatedAt = now,
             UpdatedAt = now,
@@ -84,13 +73,9 @@ public class PgGameRepositoryTests
         var got = await repo.GetGame(game.GameID);
         got.Should().NotBeNull();
         got!.GameID.Should().Be(game.GameID);
-        got.Player1ID.Should().Be(game.Player1ID);
-        got.Player2ID.Should().Be(game.Player2ID);
+        got.FirstPlayer.Should().Be(game.FirstPlayer);
         got.Status.Should().Be(GameStatus.Playing);
-        got.Player1DeckSnapshot.Should().NotBeNull();
-        got.Player1DeckSnapshot!.Cards.Should().HaveCount(2);
-        got.Player2DeckSnapshot!.Cards.Should().HaveCount(1);
-        got.WinnerNum.Should().BeNull();
+        got.WinningPlayerNum.Should().BeNull();
         got.FinishedAt.Should().BeNull();
     }
 
@@ -193,7 +178,7 @@ public class PgGameRepositoryTests
             GameID = game.GameID,
             SequenceNumber = 1,
             EventType = "play_card",
-            PlayerID = game.Player1ID,
+            PlayerNum = 1,
             EventData = new Dictionary<string, object> { ["cardId"] = "SH-0001" },
             CreatedAt = DateTime.UtcNow,
         };
@@ -202,7 +187,7 @@ public class PgGameRepositoryTests
             GameID = game.GameID,
             SequenceNumber = 2,
             EventType = "end_turn",
-            PlayerID = null,
+            PlayerNum = null,
             EventData = new Dictionary<string, object> { ["turn"] = 1 },
             CreatedAt = DateTime.UtcNow,
         };
@@ -214,10 +199,10 @@ public class PgGameRepositoryTests
         events.Should().HaveCount(2);
         events[0].SequenceNumber.Should().Be(1);
         events[0].EventType.Should().Be("play_card");
-        events[0].PlayerID.Should().Be(game.Player1ID);
+        events[0].PlayerNum.Should().Be(1);
         events[1].SequenceNumber.Should().Be(2);
         events[1].EventType.Should().Be("end_turn");
-        events[1].PlayerID.Should().BeNull();
+        events[1].PlayerNum.Should().Be(0);
     }
 
     [Fact]
@@ -256,7 +241,7 @@ public class PgGameRepositoryTests
 
         var got = await repo.GetGame(game.GameID);
         got!.Status.Should().Be(GameStatus.Finished);
-        got.WinnerNum.Should().Be(1);
+        got.WinningPlayerNum.Should().Be(1);
         got.WinReason.Should().Be(WinReasons.BudgetZero);
         got.FinishedAt.Should().NotBeNull();
     }

@@ -6,34 +6,17 @@ namespace OverloadParty.Battle.Models;
 public class Game
 {
     public string GameID { get; set; } = "";
-    public string Player1ID { get; set; } = "";
-    public string Player2ID { get; set; } = "";
-    public DeckSnapshot? Player1DeckSnapshot { get; set; }
-    public DeckSnapshot? Player2DeckSnapshot { get; set; }
     public GameStatus Status { get; set; } = GameStatus.Playing;
+    public int FirstPlayer { get; set; }
     public string? Npc1Model { get; set; }
     public string? Npc2Model { get; set; }
-    public long? WinnerNum { get; set; }
+    public int? WinningPlayerNum { get; set; }
     public string? WinReason { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
     public DateTime? FinishedAt { get; set; }
     public string EngineVersion { get; set; } = "";
     public string CardDataVersion { get; set; } = "";
-
-    public string GetPlayerID(long playerNum) => playerNum switch
-    {
-        1 => Player1ID,
-        2 => Player2ID,
-        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
-    };
-
-    public long ResolvePlayerNum(string playerID)
-    {
-        if (playerID == Player1ID && Npc1Model is null) return 1;
-        if (playerID == Player2ID && Npc2Model is null) return 2;
-        throw new ArgumentException($"player {playerID} is not in this game");
-    }
 
     public string? GetNpcModel(long playerNum) => playerNum switch
     {
@@ -275,12 +258,8 @@ public class GameEvent
     public string GameID { get; set; } = "";
     public long SequenceNumber { get; set; }
     public string EventType { get; set; } = "";
-    public string? PlayerID { get; set; }
+    /// <summary>null = system event (turn_start)、1 or 2 = player event。</summary>
+    public long? PlayerNum { get; set; }
     public Dictionary<string, object>? EventData { get; set; }
     public DateTime CreatedAt { get; set; }
-    /// <summary>
-    /// true の場合、このイベントはゲームエンジンが生成した system event
-    /// （特定プレイヤーのアクション由来ではない）。Gateway 側でのルーティング判定に使う。
-    /// </summary>
-    public bool IsSystemEvent { get; set; }
 }

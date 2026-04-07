@@ -5,7 +5,7 @@ namespace OverloadParty.Battle.Engine;
 /// <summary>
 /// Action data to be atomically appended within an UpdateGameState transaction.
 /// </summary>
-public record PendingAction(string PlayerID, string ActionType, object ActionData);
+public record PendingAction(long PlayerNum, string ActionType, object ActionData);
 
 /// <summary>
 /// Data access contract for the game engine.

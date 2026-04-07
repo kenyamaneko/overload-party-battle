@@ -394,7 +394,7 @@ public class EndPhaseProcessorTests
         var evt = EndPhaseProcessor.MakeTurnStartEvent("test-game", state);
 
         evt.EventType.Should().Be(EventTypes.TurnStart);
-        evt.PlayerID.Should().BeEmpty();
+        evt.PlayerNum.Should().BeNull();
         evt.EventData!["turn"].Should().Be(3L);
         evt.EventData["active_player"].Should().Be(2L);
     }

@@ -42,14 +42,12 @@ public class GameServiceTests
     // ─── CreateGameFromMatch ─────────────────────────────────
 
     [Fact]
-    public async Task CreateGameFromMatch_CreatesGame_WithCorrectPlayers()
+    public async Task CreateGameFromMatch_CreatesGame_WithCorrectStatus()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         game.Should().NotBeNull();
-        game.Player1ID.Should().Be("alice");
-        game.Player2ID.Should().Be("bob");
         game.Status.Should().Be(GameStatus.Playing);
         game.GameID.Should().NotBeNullOrEmpty();
     }
@@ -58,7 +56,7 @@ public class GameServiceTests
     public async Task CreateGameFromMatch_InitializesState_InMainPhase()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
         state.Should().NotBeNull();
@@ -71,7 +69,7 @@ public class GameServiceTests
     public async Task CreateGameFromMatch_PlayersHaveInitialBudget()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
         state!.Player1Budget.Should().Be(BattleConstants.InitialBudget);
@@ -84,11 +82,9 @@ public class GameServiceTests
     public async Task StartNPCBattle_CreatesGame_WithNpcPlayer()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.StartNPCBattle("player1", 1, cards, Factions.SHE);
+        var game = await _svc.StartNPCBattle(cards, Factions.SHE);
 
         game.Should().NotBeNull();
-        game.Player1ID.Should().Be("player1");
-        game.Player2ID.Should().Be("");
         game.Npc2Model.Should().NotBeNull();
         game.Status.Should().Be(GameStatus.Playing);
     }
@@ -96,7 +92,7 @@ public class GameServiceTests
     [Fact]
     public async Task StartNPCBattle_EmptyDeck_Throws()
     {
-        var act = () => _svc.StartNPCBattle("player1", 1, [], "SHE-easy");
+        var act = () => _svc.StartNPCBattle([], "SHE-easy");
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*empty*");
@@ -106,7 +102,7 @@ public class GameServiceTests
     public async Task StartNPCBattle_UnknownFaction_Throws()
     {
         var cards = MakePlayerCards();
-        var act = () => _svc.StartNPCBattle("player1", 1, cards, "unknown_faction");
+        var act = () => _svc.StartNPCBattle(cards, "unknown_faction");
 
         await act.Should().ThrowAsync<GameRuleException>()
             .WithMessage("*No AI config found*");
@@ -118,11 +114,10 @@ public class GameServiceTests
     public async Task ProcessAction_PlayCard_ReturnsStateWithResult()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
         var cardToPlay = state!.GetHand(state.ActivePlayer).First();
-        string activePlayerID = state.ActivePlayer == 1 ? "alice" : "bob";
 
         var req = new PlayCardRequest
         {
@@ -131,7 +126,7 @@ public class GameServiceTests
             Index = 0,
         };
 
-        var result = await _svc.ProcessAction(game.GameID, activePlayerID, ActionType.PlayCard, req);
+        var result = await _svc.ProcessAction(game.GameID, state.ActivePlayer, ActionType.PlayCard, req);
 
         result.Should().NotBeNull();
         result.State.Should().NotBeNull();
@@ -142,12 +137,11 @@ public class GameServiceTests
     public async Task ProcessAction_Forfeit_ReturnsGameOver()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
-        string activePlayerID = state!.ActivePlayer == 1 ? "alice" : "bob";
 
-        var result = await _svc.ProcessAction(game.GameID, activePlayerID, ActionType.Forfeit, new ForfeitRequest { Reason = WinReasons.Surrender });
+        var result = await _svc.ProcessAction(game.GameID, state!.ActivePlayer, ActionType.Forfeit, new ForfeitRequest { Reason = WinReasons.Surrender });
 
         result.Should().NotBeNull();
         result.GameOver.Should().NotBeNull();
@@ -158,13 +152,12 @@ public class GameServiceTests
     public async Task ProcessAction_EndPhase_ReturnsValidState()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
         state!.CurrentPhase.Should().Be(Phase.Main);
-        string activePlayerID = state.ActivePlayer == 1 ? "alice" : "bob";
 
-        var result = await _svc.ProcessAction(game.GameID, activePlayerID, ActionType.EndPhase, new object());
+        var result = await _svc.ProcessAction(game.GameID, state.ActivePlayer, ActionType.EndPhase, new object());
 
         result.Should().NotBeNull();
         result.State.Should().NotBeNull();
@@ -175,13 +168,12 @@ public class GameServiceTests
     public async Task ProcessAction_PvpGame_NpcPendingAlwaysFalse()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
-        string activePlayerID = state!.ActivePlayer == 1 ? "alice" : "bob";
 
         var result = await _svc.ProcessAction(
-            game.GameID, activePlayerID, ActionType.EndPhase, new object());
+            game.GameID, state!.ActivePlayer, ActionType.EndPhase, new object());
 
         result.NpcPending.Should().BeFalse("PvP games never have NPC pending");
     }
@@ -190,13 +182,12 @@ public class GameServiceTests
     public async Task ProcessAction_TurnStartEvent_ContainsIsMyTurn()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
-        string activePlayerID = state!.ActivePlayer == 1 ? "alice" : "bob";
 
         // Turn 1 Main → end_phase skips Battle (first turn), switches turn directly
-        var result = await _svc.ProcessAction(game.GameID, activePlayerID, ActionType.EndPhase, new object());
+        var result = await _svc.ProcessAction(game.GameID, state!.ActivePlayer, ActionType.EndPhase, new object());
 
         var turnStartEvent = result.Events
             .FirstOrDefault(e => e.Event.EventType == EventTypes.TurnStart);
@@ -211,9 +202,9 @@ public class GameServiceTests
     public async Task GetGameStateForPlayer_ReturnsClientState()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
-        var clientState = await _svc.GetGameStateForPlayer(game.GameID, "alice");
+        var clientState = await _svc.GetGameStateForPlayer(game.GameID, 1);
 
         clientState.Should().NotBeNull();
         clientState!.GameID.Should().Be(game.GameID);
@@ -222,20 +213,9 @@ public class GameServiceTests
     }
 
     [Fact]
-    public async Task GetGameStateForPlayer_UnknownPlayer_Throws()
-    {
-        var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
-
-        var act = () => _svc.GetGameStateForPlayer(game.GameID, "charlie");
-
-        await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in this game*");
-    }
-
-    [Fact]
     public async Task GetGameStateForPlayer_UnknownGame_Throws()
     {
-        var act = () => _svc.GetGameStateForPlayer("nonexistent", "alice");
+        var act = () => _svc.GetGameStateForPlayer("nonexistent", 1);
 
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
@@ -246,12 +226,11 @@ public class GameServiceTests
     public async Task GetTurnControlsForPlayer_ActivePlayer_ReturnsControls()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
-        string activePlayerID = state!.ActivePlayer == 1 ? "alice" : "bob";
 
-        var controls = await _svc.GetTurnControlsForPlayer(game.GameID, activePlayerID);
+        var controls = await _svc.GetTurnControlsForPlayer(game.GameID, state!.ActivePlayer);
 
         controls.Should().NotBeNull();
         controls!.CanEndPhase.Should().BeTrue("main phase allows ending");
@@ -261,33 +240,22 @@ public class GameServiceTests
     public async Task GetTurnControlsForPlayer_InactivePlayer_ReturnsNull()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards);
 
         var state = await _repo.GetGameState(game.GameID);
-        string inactivePlayerID = state!.ActivePlayer == 1 ? "bob" : "alice";
+        long inactivePlayerNum = state!.ActivePlayer == 1 ? 2 : 1;
 
-        var controls = await _svc.GetTurnControlsForPlayer(game.GameID, inactivePlayerID);
+        var controls = await _svc.GetTurnControlsForPlayer(game.GameID, inactivePlayerNum);
 
         controls.Should().BeNull();
     }
 
     [Fact]
-    public async Task GetTurnControlsForPlayer_UnknownPlayer_Throws()
-    {
-        var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch("alice", 1, cards, "bob", 1, cards);
-
-        var act = () => _svc.GetTurnControlsForPlayer(game.GameID, "charlie");
-
-        await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in this game*");
-    }
-
-    [Fact]
     public async Task GetTurnControlsForPlayer_UnknownGame_Throws()
     {
-        var act = () => _svc.GetTurnControlsForPlayer("nonexistent", "alice");
+        var act = () => _svc.GetTurnControlsForPlayer("nonexistent", 1);
 
-        await act.Should().ThrowAsync<GameRuleException>();
+        await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
     // ─── NullLogger stub ────────────────────────────────────

@@ -480,27 +480,29 @@ public class GameStateTests
         gs.NextDeployOrderSeq.Should().Be(3);
     }
 
-    // ─── Game.GetPlayerID ──────────────────────────────────────
+    // ─── Game.GetNpcModel ──────────────────────────────────────
 
     [Fact]
-    public void Game_GetPlayerID_Player1_ReturnsPlayer1ID()
-    {
-        var game = TestFactory.MakeGame("alice", "bob");
-        game.GetPlayerID(1).Should().Be("alice");
-    }
-
-    [Fact]
-    public void Game_GetPlayerID_Player2_ReturnsPlayer2ID()
-    {
-        var game = TestFactory.MakeGame("alice", "bob");
-        game.GetPlayerID(2).Should().Be("bob");
-    }
-
-    [Fact]
-    public void Game_GetPlayerID_InvalidPlayer_Throws()
+    public void Game_GetNpcModel_Player1_ReturnsNpc1Model()
     {
         var game = TestFactory.MakeGame();
-        var act = () => game.GetPlayerID(0);
+        game.Npc1Model = "SHE";
+        game.GetNpcModel(1).Should().Be("SHE");
+    }
+
+    [Fact]
+    public void Game_GetNpcModel_Player2_ReturnsNpc2Model()
+    {
+        var game = TestFactory.MakeGame();
+        game.Npc2Model = "NTT";
+        game.GetNpcModel(2).Should().Be("NTT");
+    }
+
+    [Fact]
+    public void Game_GetNpcModel_InvalidPlayer_Throws()
+    {
+        var game = TestFactory.MakeGame();
+        var act = () => game.GetNpcModel(0);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 }

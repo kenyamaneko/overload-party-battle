@@ -34,14 +34,13 @@ public static class SelectSlotProcessor
 
         state.PendingSlotSelects.RemoveAt(0);
 
-        string playerId = game.GetPlayerID(playerNum);
         var events = new List<GameEvent>
         {
             new()
             {
                 GameID = game.GameID,
                 EventType = ActionTypes.SelectSlot,
-                PlayerID = playerId,
+                PlayerNum = playerNum,
                 EventData = new Dictionary<string, object>
                 {
                     ["cardId"] = pending.Resource.CardID,

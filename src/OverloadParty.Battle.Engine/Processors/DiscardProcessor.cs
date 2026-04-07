@@ -37,13 +37,12 @@ public static class DiscardProcessor
         var discardedCount = CardMoveHelpers.DiscardCards(state, playerNum, req.CardInstanceIDs);
 
         var events = new List<GameEvent>();
-        var playerId = game.GetPlayerID(playerNum);
 
         events.Add(new GameEvent
         {
             GameID = game.GameID,
             EventType = ActionTypes.DiscardHand,
-            PlayerID = playerId,
+            PlayerNum = playerNum,
             EventData = new DiscardHandEventData
             {
                 DiscardedCount = discardedCount,

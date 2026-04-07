@@ -39,8 +39,6 @@ public static class AttackProcessor
             state, game, opponentNum, oppField, attacker, defender, cc, effects);
         events.AddRange(reactiveEvents);
 
-        var playerId = game.GetPlayerID(playerNum);
-
         if (cancelled)
         {
             // Attack cancelled by reactive, but attacker still used their attack
@@ -49,7 +47,7 @@ public static class AttackProcessor
             {
                 GameID = game.GameID,
                 EventType = ActionTypes.Attack,
-                PlayerID = playerId,
+                PlayerNum = playerNum,
                 EventData = new AttackEventData
                 {
                     AttackerId = req.AttackerInstanceID,
@@ -119,7 +117,7 @@ public static class AttackProcessor
         {
             GameID = game.GameID,
             EventType = ActionTypes.Attack,
-            PlayerID = playerId,
+            PlayerNum = playerNum,
             EventData = new AttackEventData
             {
                 AttackerId = req.AttackerInstanceID,

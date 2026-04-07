@@ -125,7 +125,7 @@ public class TurnTimerTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
         var deck = TestFactory.MakeDeck("SH-0001");
 
-        var (_, state) = GameInitializer.CreateNewGame("g1", "p1", "p2", deck, deck, 1, cc);
+        var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
         state.TurnStartedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
         state.Player1TimeBank.Should().Be(BattleConstants.InitialTimeBank);
@@ -143,7 +143,7 @@ public class TurnTimerTests
         var engine = new GameEngine(repo, cc);
         var deck = TestFactory.MakeDeck("SH-0001");
 
-        var gameID = await engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await engine.CreateNewGame(deck, deck, 1);
         var game = await repo.GetGame(gameID);
         await engine.RunAutoAdvance(game!);
 
@@ -181,7 +181,7 @@ public class TurnTimerTests
         var engine = new GameEngine(repo, cc);
         var deck = TestFactory.MakeDeck("SH-0001");
 
-        var gameID = await engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await engine.CreateNewGame(deck, deck, 1);
         var game = await repo.GetGame(gameID);
         await engine.RunAutoAdvance(game!);
 

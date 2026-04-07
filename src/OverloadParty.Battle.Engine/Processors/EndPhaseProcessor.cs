@@ -22,18 +22,17 @@ public static class EndPhaseProcessor
         var previousPhase = TurnManager.AdvancePhase(state);
 
         var events = new List<GameEvent>();
-        var playerId = game.GetPlayerID(playerNum);
 
         if (state.CurrentPhase == Phase.End)
         {
-            return ProcessEndPhaseTransition(state, game, playerNum, cc, effects, events, playerId);
+            return ProcessEndPhaseTransition(state, game, playerNum, cc, effects, events);
         }
 
         events.Add(new GameEvent
         {
             GameID = game.GameID,
             EventType = EventTypes.PhaseChange,
-            PlayerID = playerId,
+            PlayerNum = playerNum,
             EventData = new PhaseChangeEventData
             {
                 PreviousPhase = previousPhase.ToWireString(),
@@ -45,7 +44,7 @@ public static class EndPhaseProcessor
 
     private static ActionResult ProcessEndPhaseTransition(
         GameState state, Game game, long playerNum, ICardCache cc,
-        IEffectRegistry? effects, List<GameEvent> events, string playerId)
+        IEffectRegistry? effects, List<GameEvent> events)
     {
         bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects);
         var result = new ActionResult { Events = events, StateUpdated = true };
@@ -57,7 +56,7 @@ public static class EndPhaseProcessor
             {
                 GameID = game.GameID,
                 EventType = EventTypes.PhaseEnd,
-                PlayerID = playerId,
+                PlayerNum = playerNum,
                 EventData = new PhaseEndEventData
                 {
                     Phase = Phases.End,
@@ -72,14 +71,14 @@ public static class EndPhaseProcessor
             result.GameOver = new GameOverResult(
                 state.OpponentOf(playerNum),
                 WinReason.LaunchFailure.ToWireString());
-            events.Add(MakeTurnEndEvent(game.GameID, playerId, state));
+            events.Add(MakeTurnEndEvent(game.GameID, playerNum, state));
             return result;
         }
 
         TurnManager.SwitchActivePlayer(state);
         var gameOverResult = DrawPhaseProcessor.Process(state, game, cc, effects);
 
-        events.Add(MakeTurnEndEvent(game.GameID, playerId, state));
+        events.Add(MakeTurnEndEvent(game.GameID, playerNum, state));
         events.Add(MakeTurnStartEvent(game.GameID, state));
 
         if (gameOverResult is not null)
@@ -256,13 +255,13 @@ public static class EndPhaseProcessor
             ?? effects.Get(cardId, TriggerType.Passive);
     }
 
-    private static GameEvent MakeTurnEndEvent(string gameID, string playerId, GameState state)
+    private static GameEvent MakeTurnEndEvent(string gameID, long playerNum, GameState state)
     {
         return new GameEvent
         {
             GameID = gameID,
             EventType = EventTypes.TurnEnd,
-            PlayerID = playerId,
+            PlayerNum = playerNum,
             EventData = new TurnEndEventData
             {
                 Phase = Phases.End,
@@ -279,8 +278,7 @@ public static class EndPhaseProcessor
         {
             GameID = gameID,
             EventType = EventTypes.TurnStart,
-            PlayerID = "",
-            IsSystemEvent = true,
+            PlayerNum = null,
             EventData = new Dictionary<string, object>
             {
                 ["turn"] = state.CurrentTurn,

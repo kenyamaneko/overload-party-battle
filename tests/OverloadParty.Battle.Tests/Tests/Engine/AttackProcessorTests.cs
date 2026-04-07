@@ -559,6 +559,6 @@ public class AttackProcessorTests
         defender.Damage.Should().Be(600);
         attacker.HasAttacked.Should().BeTrue();
         result.Events.First(e => e.EventType == ActionTypes.Attack)
-            .PlayerID.Should().Be("player2");
+            .PlayerNum.Should().Be(2);
     }
 }

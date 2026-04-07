@@ -20,7 +20,7 @@ public class GameLogServiceTests
 
     private async Task<string> SeedFinishedGame()
     {
-        var game = TestFactory.MakeGame("player-abc", "");
+        var game = TestFactory.MakeGame();
         game.Npc2Model = "SHE";
         game.CreatedAt = new DateTime(2026, 3, 1, 10, 0, 0, DateTimeKind.Utc);
         var state = TestFactory.MakeGameState(turn: 8, p1Budget: 1200, p2Budget: 0);
@@ -33,7 +33,7 @@ public class GameLogServiceTests
             GameID = "test-game",
             SequenceNumber = 1,
             EventType = ActionTypes.PlayCard,
-            PlayerID = "player-abc",
+            PlayerNum = 1,
             EventData = new PlayCardEventData { CardId = "SH-0001", Zone = "frontend", Index = 0 }.ToDictionary(),
         });
         await _repo.AppendEvent(new GameEvent
@@ -41,7 +41,7 @@ public class GameLogServiceTests
             GameID = "test-game",
             SequenceNumber = 2,
             EventType = ActionTypes.Attack,
-            PlayerID = "player-abc",
+            PlayerNum = 1,
             EventData = new AttackEventData
             {
                 AttackerId = "atk_1", TargetId = "def_1",
@@ -53,6 +53,7 @@ public class GameLogServiceTests
             GameID = "test-game",
             SequenceNumber = 3,
             EventType = EventTypes.TurnEnd,
+            PlayerNum = null,
             EventData = new TurnEndEventData
             {
                 Phase = "battle", NextTurn = 2, ActivePlayer = 2, CurrentPhase = "draw",
@@ -63,6 +64,7 @@ public class GameLogServiceTests
             GameID = "test-game",
             SequenceNumber = 4,
             EventType = "game_over",
+            PlayerNum = null,
         });
 
         await _repo.FinishGame("test-game", 1, WinReasons.BudgetZero);
@@ -86,8 +88,6 @@ public class GameLogServiceTests
 
         log.Should().NotBeNull();
         log!.GameId.Should().Be(gameId);
-        log.Player1Id.Should().Be("player-abc");
-        log.Player2Id.Should().Be("");
         log.Winner.Should().Be("player1");
         log.TotalTurns.Should().Be(8);
         log.FinalBudget.Should().NotBeNull();
@@ -125,7 +125,7 @@ public class GameLogServiceTests
 
         text.Should().NotBeNull();
         text.Should().Contain("=== Game test-game ===");
-        text.Should().Contain("P1: player-abc");
+        text.Should().Contain("P1: P1");
         text.Should().Contain("P2: NPC");
         text.Should().Contain("P1=1200");
         text.Should().Contain("P2=0");
@@ -179,7 +179,7 @@ public class GameLogServiceTests
             GameID = "test-game",
             SequenceNumber = 1,
             EventType = eventType,
-            PlayerID = "player1",
+            PlayerNum = 1,
             EventData = eventData,
         });
 

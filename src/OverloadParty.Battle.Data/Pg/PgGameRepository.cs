@@ -17,24 +17,19 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
 
+        // games テーブル（セッション情報のみ）
         await using (var cmd = new NpgsqlCommand(@"
             INSERT INTO games (
-                game_id, player1_id, player2_id,
-                player1_deck_snapshot, player2_deck_snapshot,
-                status, npc1_model, npc2_model, winner_num, win_reason,
+                game_id, status, first_player,
+                winning_player_num, win_reason,
                 engine_version, card_data_version,
                 created_at, updated_at, finished_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)", conn, tx))
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", conn, tx))
         {
             cmd.Parameters.AddWithValue(game.GameID);
-            cmd.Parameters.Add(NullableUuidParam(game.Player1ID));
-            cmd.Parameters.Add(NullableUuidParam(game.Player2ID));
-            cmd.Parameters.Add(JsonbParam(game.Player1DeckSnapshot));
-            cmd.Parameters.Add(JsonbParam(game.Player2DeckSnapshot));
             cmd.Parameters.AddWithValue(game.Status.ToWireString());
-            cmd.Parameters.AddWithValue((object?)game.Npc1Model ?? DBNull.Value);
-            cmd.Parameters.AddWithValue((object?)game.Npc2Model ?? DBNull.Value);
-            cmd.Parameters.AddWithValue((object?)game.WinnerNum ?? DBNull.Value);
+            cmd.Parameters.AddWithValue((short)game.FirstPlayer);
+            cmd.Parameters.AddWithValue((object?)(game.WinningPlayerNum is { } w ? (short)w : null) ?? DBNull.Value);
             cmd.Parameters.AddWithValue((object?)game.WinReason ?? DBNull.Value);
             cmd.Parameters.AddWithValue(game.EngineVersion);
             cmd.Parameters.AddWithValue(game.CardDataVersion);
@@ -44,20 +39,71 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             await cmd.ExecuteNonQueryAsync(ct);
         }
 
+        // game_npcs テーブル（NPC スロットのみ）
+        if (game.Npc1Model is not null)
+        {
+            await InsertGameNpc(conn, tx, game.GameID, 1, game.Npc1Model, ct);
+        }
+        if (game.Npc2Model is not null)
+        {
+            await InsertGameNpc(conn, tx, game.GameID, 2, game.Npc2Model, ct);
+        }
+
+        // game_decks テーブル（両スロット）
+        await InsertGameDeck(conn, tx, game.GameID, 1, state.GetRepository(1), state.GetHand(1), ct);
+        await InsertGameDeck(conn, tx, game.GameID, 2, state.GetRepository(2), state.GetHand(2), ct);
+
         await InsertGameState(conn, tx, state, ct);
         await tx.CommitAsync(ct);
+    }
+
+    /// <summary>game_decks に初期デッキ（hand + repository）のスナップショットを INSERT する。</summary>
+    private static async Task InsertGameDeck(
+        NpgsqlConnection conn, NpgsqlTransaction tx,
+        string gameID, int playerNum,
+        List<UndeployedCard> repository, List<UndeployedCard> hand,
+        CancellationToken ct)
+    {
+        var snapshot = hand.Concat(repository)
+            .Select(c => new { card_id = c.CardID, art_no = c.ArtNo })
+            .ToList();
+
+        await using var cmd = new NpgsqlCommand(@"
+            INSERT INTO game_decks (game_id, player_num, deck_snapshot)
+            VALUES ($1, $2, $3)", conn, tx);
+        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue((short)playerNum);
+        cmd.Parameters.Add(JsonbParam(snapshot));
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+
+    private static async Task InsertGameNpc(
+        NpgsqlConnection conn, NpgsqlTransaction tx,
+        string gameID, int playerNum, string npcModel,
+        CancellationToken ct)
+    {
+        await using var cmd = new NpgsqlCommand(@"
+            INSERT INTO game_npcs (game_id, player_num, npc_model)
+            VALUES ($1, $2, $3)", conn, tx);
+        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue((short)playerNum);
+        cmd.Parameters.AddWithValue(npcModel);
+        await cmd.ExecuteNonQueryAsync(ct);
     }
 
     public async Task<Game?> GetGame(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
-            SELECT game_id, player1_id, player2_id,
-                   player1_deck_snapshot, player2_deck_snapshot,
-                   status, npc1_model, npc2_model, winner_num, win_reason,
-                   created_at, updated_at, finished_at,
-                   engine_version, card_data_version
-            FROM games WHERE game_id = $1", conn);
+            SELECT g.game_id, g.status, g.first_player,
+                   g.winning_player_num, g.win_reason,
+                   g.created_at, g.updated_at, g.finished_at,
+                   g.engine_version, g.card_data_version,
+                   n1.npc_model, n2.npc_model
+            FROM games g
+            LEFT JOIN game_npcs n1 ON g.game_id = n1.game_id AND n1.player_num = 1
+            LEFT JOIN game_npcs n2 ON g.game_id = n2.game_id AND n2.player_num = 2
+            WHERE g.game_id = $1", conn);
         cmd.Parameters.AddWithValue(gameID);
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -123,14 +169,14 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         {
             await using var cmd = new NpgsqlCommand(@"
                 INSERT INTO game_actions (
-                    game_id, seq, player_id, action_type, action_data, created_at
+                    game_id, seq, player_num, action_type, action_data, created_at
                 ) VALUES (
                     $1,
                     COALESCE((SELECT MAX(seq) FROM game_actions WHERE game_id = $1), 0) + 1,
                     $2, $3, $4, $5
                 )", conn, tx);
             cmd.Parameters.AddWithValue(gameID);
-            cmd.Parameters.AddWithValue(pendingAction.PlayerID);
+            cmd.Parameters.AddWithValue((short)pendingAction.PlayerNum);
             cmd.Parameters.AddWithValue(pendingAction.ActionType);
             cmd.Parameters.Add(JsonbParam(pendingAction.ActionData));
             cmd.Parameters.AddWithValue(DateTime.UtcNow);
@@ -145,12 +191,12 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
             INSERT INTO game_events (
-                game_id, sequence_number, event_type, player_id, event_data, created_at
+                game_id, sequence_number, event_type, player_num, event_data, created_at
             ) VALUES ($1,$2,$3,$4,$5,$6)", conn);
         cmd.Parameters.AddWithValue(evt.GameID);
         cmd.Parameters.AddWithValue(evt.SequenceNumber);
         cmd.Parameters.AddWithValue(evt.EventType);
-        cmd.Parameters.Add(NullableUuidParam(evt.PlayerID));
+        cmd.Parameters.AddWithValue(evt.PlayerNum.HasValue ? (object)(short)evt.PlayerNum.Value : DBNull.Value);
         cmd.Parameters.Add(JsonbParam(evt.EventData));
         cmd.Parameters.AddWithValue(evt.CreatedAt);
         await cmd.ExecuteNonQueryAsync(ct);
@@ -161,11 +207,11 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         var now = DateTime.UtcNow;
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
-            UPDATE games SET status = $1, winner_num = $2, win_reason = $3,
+            UPDATE games SET status = $1, winning_player_num = $2, win_reason = $3,
                              finished_at = $4, updated_at = $5
             WHERE game_id = $6", conn);
         cmd.Parameters.AddWithValue(GameStatus.Finished.ToWireString());
-        cmd.Parameters.AddWithValue(winnerNum);
+        cmd.Parameters.AddWithValue((short)winnerNum);
         cmd.Parameters.AddWithValue(winReason);
         cmd.Parameters.AddWithValue(now);
         cmd.Parameters.AddWithValue(now);
@@ -197,7 +243,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
-            SELECT game_id, sequence_number, event_type, player_id, event_data, created_at
+            SELECT game_id, sequence_number, event_type, player_num, event_data, created_at
             FROM game_events
             WHERE game_id = $1
             ORDER BY sequence_number", conn);
@@ -212,7 +258,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 GameID = reader.GetString(0),
                 SequenceNumber = reader.GetInt64(1),
                 EventType = reader.GetString(2),
-                PlayerID = reader.IsDBNull(3) ? null : reader.GetGuid(3).ToString(),
+                PlayerNum = reader.IsDBNull(3) ? null : reader.GetInt16(3),
                 EventData = reader.IsDBNull(4)
                     ? null
                     : JsonSerializer.Deserialize<Dictionary<string, object>>(reader.GetString(4), DbJsonOptions.Default),
@@ -252,29 +298,29 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
 
     // ─── Helpers ─────────────────────────────────────────────────
 
+    /// <summary>
+    /// Reads a Game from the current reader row.
+    /// Expected columns: game_id(0), status(1), first_player(2),
+    /// winning_player_num(3), win_reason(4), created_at(5), updated_at(6),
+    /// finished_at(7), engine_version(8), card_data_version(9),
+    /// n1.npc_model(10), n2.npc_model(11).
+    /// </summary>
     private static Game ReadGame(NpgsqlDataReader r)
     {
         return new Game
         {
             GameID = r.GetString(0),
-            Player1ID = r.IsDBNull(1) ? "" : r.GetGuid(1).ToString(),
-            Player2ID = r.IsDBNull(2) ? "" : r.GetGuid(2).ToString(),
-            Player1DeckSnapshot = r.IsDBNull(3)
-                ? null
-                : JsonSerializer.Deserialize<DeckSnapshot>(r.GetString(3), DbJsonOptions.Default),
-            Player2DeckSnapshot = r.IsDBNull(4)
-                ? null
-                : JsonSerializer.Deserialize<DeckSnapshot>(r.GetString(4), DbJsonOptions.Default),
-            Status = EnumExtensions.ParseGameStatus(r.GetString(5)),
-            Npc1Model = r.IsDBNull(6) ? null : r.GetString(6),
-            Npc2Model = r.IsDBNull(7) ? null : r.GetString(7),
-            WinnerNum = r.IsDBNull(8) ? null : r.GetInt16(8),
-            WinReason = r.IsDBNull(9) ? null : r.GetString(9),
-            CreatedAt = r.GetDateTime(10),
-            UpdatedAt = r.GetDateTime(11),
-            FinishedAt = r.IsDBNull(12) ? null : r.GetDateTime(12),
-            EngineVersion = r.IsDBNull(13) ? "" : r.GetString(13),
-            CardDataVersion = r.IsDBNull(14) ? "" : r.GetString(14),
+            Status = EnumExtensions.ParseGameStatus(r.GetString(1)),
+            FirstPlayer = r.GetInt16(2),
+            WinningPlayerNum = r.IsDBNull(3) ? null : r.GetInt16(3),
+            WinReason = r.IsDBNull(4) ? null : r.GetString(4),
+            CreatedAt = r.GetDateTime(5),
+            UpdatedAt = r.GetDateTime(6),
+            FinishedAt = r.IsDBNull(7) ? null : r.GetDateTime(7),
+            EngineVersion = r.IsDBNull(8) ? "" : r.GetString(8),
+            CardDataVersion = r.IsDBNull(9) ? "" : r.GetString(9),
+            Npc1Model = r.IsDBNull(10) ? null : r.GetString(10),
+            Npc2Model = r.IsDBNull(11) ? null : r.GetString(11),
         };
     }
 
@@ -365,17 +411,4 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };
     }
 
-    private static NpgsqlParameter UuidParam(string value)
-    {
-        return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Uuid, Value = Guid.Parse(value) };
-    }
-
-    private static NpgsqlParameter NullableUuidParam(string? value)
-    {
-        return new NpgsqlParameter
-        {
-            NpgsqlDbType = NpgsqlDbType.Uuid,
-            Value = string.IsNullOrEmpty(value) ? DBNull.Value : Guid.Parse(value),
-        };
-    }
 }

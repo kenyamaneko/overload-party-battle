@@ -63,12 +63,11 @@ public static class ScaleUpProcessor
             FireOnScaleUp(state, game, playerNum, resource, cc, effects, events);
         }
 
-        var playerId = game.GetPlayerID(playerNum);
         var evt = new GameEvent
         {
             GameID = game.GameID,
             EventType = ActionTypes.ScaleUp,
-            PlayerID = playerId,
+            PlayerNum = playerNum,
             EventData = new ScaleUpEventData
             {
                 InstanceId = req.InstanceID,

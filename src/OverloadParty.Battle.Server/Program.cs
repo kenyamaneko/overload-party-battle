@@ -228,18 +228,18 @@ api.MapGet("/npc/models", () =>
 // NPC Game Creation
 api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
 {
-    var cards = req.Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
-    var game = await gameSvc.StartNPCBattle(req.PlayerID, req.DeckID, cards, req.NpcModel);
-    return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID, npc1_model = game.Npc1Model, npc2_model = game.Npc2Model });
+    var cards = req.DeckCards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
+    var game = await gameSvc.StartNPCBattle(cards, req.NpcModel);
+    return Results.Ok(new GameCreatedResult { GameID = game.GameID });
 });
 
 // PvP Game Creation (called by Gateway after matchmaking)
 api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
 {
-    var p1Cards = req.Player1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
-    var p2Cards = req.Player2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
-    var game = await gameSvc.CreateGameFromMatch(req.Player1ID, req.Player1DeckID, p1Cards, req.Player2ID, req.Player2DeckID, p2Cards);
-    return Results.Ok(new { game_id = game.GameID, player1_id = game.Player1ID, player2_id = game.Player2ID });
+    var p1Cards = req.Deck1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
+    var p2Cards = req.Deck2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
+    var game = await gameSvc.CreateGameFromMatch(p1Cards, p2Cards);
+    return Results.Ok(new GameCreatedResult { GameID = game.GameID });
 });
 
 // Game Action
@@ -247,30 +247,30 @@ api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId
 {
     var actionType = EnumExtensions.ParseActionType(req.ActionType);
     var actionData = ActionDataDeserializer.Deserialize(actionType, req.Data);
-    var result = await gameSvc.ProcessAction(gameId, req.PlayerID, actionType, actionData);
+    var result = await gameSvc.ProcessAction(gameId, req.PlayerNum, actionType, actionData);
     return Results.Ok(ProjectActionResult(result));
 });
 
 // Advance NPC Turn
 // Called by the gateway after game_enter to run the NPC's first turn
 // so that action events can be delivered via WebSocket.
-api.MapPost("/games/{gameId}/advance-npc", async (GameService gameSvc, string gameId, NpcAdvanceRequest req) =>
+api.MapPost("/games/{gameId}/advance-npc", async (GameService gameSvc, string gameId) =>
 {
-    var result = await gameSvc.AdvanceNpcTurn(gameId, req.PlayerID);
+    var result = await gameSvc.AdvanceNpcTurn(gameId);
     return Results.Ok(ProjectActionResult(result));
 });
 
 // Game State Retrieval
-api.MapGet("/games/{gameId}/state/{playerId}", async (GameService gameSvc, string gameId, string playerId) =>
+api.MapGet("/games/{gameId}/state/{playerNum:int}", async (GameService gameSvc, string gameId, int playerNum) =>
 {
-    var state = await gameSvc.GetGameStateForPlayer(gameId, playerId);
+    var state = await gameSvc.GetGameStateForPlayer(gameId, playerNum);
     return Results.Ok(state);
 });
 
 // Turn Controls Retrieval
-api.MapGet("/games/{gameId}/controls/{playerId}", async (GameService gameSvc, string gameId, string playerId) =>
+api.MapGet("/games/{gameId}/controls/{playerNum:int}", async (GameService gameSvc, string gameId, int playerNum) =>
 {
-    var controls = await gameSvc.GetTurnControlsForPlayer(gameId, playerId);
+    var controls = await gameSvc.GetTurnControlsForPlayer(gameId, playerNum);
     return Results.Ok(controls);
 });
 
@@ -307,15 +307,14 @@ app.Run();
 ActionResult ProjectActionResult(GameActionResult result) => new()
 {
     GameOver = result.GameOver is not null,
-    WinnerNum = result.GameOver?.WinnerNum ?? 0,
+    WinningPlayerNum = result.GameOver?.WinnerNum ?? 0,
     WinReason = result.GameOver?.Reason ?? "",
     NpcPending = result.NpcPending,
     Events = result.Events.Select(e => new ActionEvent
     {
         Sequence = e.Event.SequenceNumber,
         EventType = e.Event.EventType,
-        PlayerID = e.Event.PlayerID ?? "",
-        IsSystem = e.Event.IsSystemEvent,
+        PlayerNum = e.Event.PlayerNum,
         EventData = JsonSerializer.SerializeToElement(e.Event.EventData, envelopeJsonOptions),
         State = JsonSerializer.SerializeToElement(e.State, envelopeJsonOptions),
     }).ToList(),

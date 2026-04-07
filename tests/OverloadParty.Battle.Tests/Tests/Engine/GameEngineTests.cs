@@ -31,15 +31,13 @@ public class GameEngineTests
     {
         var deck = MakeSingleCardDeck("SH-0001");
 
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         gameID.Should().NotBeNullOrEmpty();
 
         var game = await _repo.GetGame(gameID);
         game.Should().NotBeNull();
-        game!.Player1ID.Should().Be("p1");
-        game.Player2ID.Should().Be("p2");
-        game.Status.Should().Be(GameStatus.Playing);
+        game!.Status.Should().Be(GameStatus.Playing);
 
         var state = await _repo.GetGameState(gameID);
         state.Should().NotBeNull();
@@ -65,7 +63,7 @@ public class GameEngineTests
     {
         var deck = MakeSingleCardDeck("SH-0001");
 
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 2);
+        var gameID = await _engine.CreateNewGame(deck, deck, 2);
 
         var state = await _repo.GetGameState(gameID);
         state!.ActivePlayer.Should().Be(2);
@@ -77,7 +75,7 @@ public class GameEngineTests
     public async Task RunAutoAdvance_DrawPhase_DrawsCardAndAdvancesToMain()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         var state = await _repo.GetGameState(gameID);
         int handBefore = state!.Player1Hand.Count;
@@ -100,7 +98,7 @@ public class GameEngineTests
     public async Task ProcessAction_PlayCard_PlaysCardAndReturnsEvents()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         // Advance past draw phase
         var game = await _repo.GetGame(gameID);
@@ -138,7 +136,7 @@ public class GameEngineTests
     public async Task ProcessAction_Attack_DealsDamageAndReturnsEvents()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         // Set up the game state directly for attack testing
         var state = await _repo.GetGameState(gameID);
@@ -182,7 +180,7 @@ public class GameEngineTests
     public async Task ProcessAction_WrongPlayer_Throws()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
 
@@ -204,23 +202,23 @@ public class GameEngineTests
     }
 
     [Fact]
-    public async Task ResolvePlayerNum_InvalidPlayer_Throws()
+    public async Task GetNpcModel_InvalidPlayer_Throws()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         var game = await _repo.GetGame(gameID);
 
-        var act = () => game!.ResolvePlayerNum("unknown_player");
+        var act = () => game!.GetNpcModel(0);
 
-        act.Should().Throw<ArgumentException>().WithMessage("*not in this game*");
+        act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
     public async Task Forfeit_EndsGameImmediately()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         var game = await _repo.GetGame(gameID);
         var result = await _engine.Forfeit(game!, 1, WinReason.Surrender);
@@ -231,7 +229,7 @@ public class GameEngineTests
 
         game = await _repo.GetGame(gameID);
         game!.Status.Should().Be(GameStatus.Finished);
-        game.WinnerNum.Should().Be(2);
+        game.WinningPlayerNum.Should().Be(2);
         game.WinReason.Should().Be(WinReasons.Surrender);
     }
 
@@ -239,7 +237,7 @@ public class GameEngineTests
     public async Task ProcessAction_FinishedGame_Throws()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         // Forfeit to finish the game
         var game = await _repo.GetGame(gameID);
@@ -259,7 +257,7 @@ public class GameEngineTests
     public async Task GetInitialState_ReturnsOriginalState_AfterMutations()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         var initialState = await _repo.GetInitialState(gameID);
         initialState.Should().NotBeNull();
@@ -284,7 +282,7 @@ public class GameEngineTests
     public async Task CreateNewGame_RecordsVersions()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1,
+        var gameID = await _engine.CreateNewGame(deck, deck, 1,
             engineVersion: "1.2.3", cardDataVersion: "4.5.6");
 
         var game = await _repo.GetGame(gameID);
@@ -298,7 +296,7 @@ public class GameEngineTests
     public async Task ProcessAction_PendingSlotSelect_BlocksOtherActions()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
 
@@ -321,7 +319,7 @@ public class GameEngineTests
     public async Task ProcessAction_PendingSlotSelect_AllowsSelectSlot()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
 
@@ -347,7 +345,7 @@ public class GameEngineTests
     public async Task ProcessAction_PendingSlotSelect_DoesNotBlockOtherPlayer()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
 
@@ -379,7 +377,7 @@ public class GameEngineTests
     public async Task ProcessAction_WhilePendingSlotSelect_BlocksNextAction()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
 
@@ -421,7 +419,7 @@ public class GameEngineTests
     public async Task ProcessAction_SelectSlot_ResolvesAndReturnsNeedsSlotSelectTrue_WhenQueueRemains()
     {
         var deck = MakeSingleCardDeck("SH-0001");
-        var gameID = await _engine.CreateNewGame("p1", "p2", deck, deck, 1);
+        var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
 

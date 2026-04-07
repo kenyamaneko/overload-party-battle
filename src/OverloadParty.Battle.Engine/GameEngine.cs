@@ -34,7 +34,6 @@ public class GameEngine
     /// Creates a new game with shuffled decks and initial hands.
     /// </summary>
     public async Task<string> CreateNewGame(
-        string player1ID, string player2ID,
         DeckSnapshot deck1, DeckSnapshot deck2,
         long firstPlayer,
         string? npc1Model = null, string? npc2Model = null,
@@ -43,7 +42,7 @@ public class GameEngine
     {
         var gameID = Guid.NewGuid().ToString("N");
         var (game, state) = GameInitializer.CreateNewGame(
-            gameID, player1ID, player2ID, deck1, deck2, firstPlayer, _cardCache);
+            gameID, deck1, deck2, firstPlayer, _cardCache);
 
         game.Npc1Model = npc1Model;
         game.Npc2Model = npc2Model;
@@ -119,8 +118,7 @@ public class GameEngine
 
         ActionResult actionResult = null!;
 
-        var playerID = game.GetPlayerID(playerNum);
-        var pending = new PendingAction(playerID, actionType.ToWireString(), actionData);
+        var pending = new PendingAction(playerNum, actionType.ToWireString(), actionData);
 
         await _repo.UpdateGameState(game.GameID, state =>
         {

@@ -72,12 +72,11 @@ public static class PlayCardProcessor
             cancelled = PlaceResource(ctx, field, cardDef, handCard, req, deployOrder, events);
         }
 
-        var playerId = game.GetPlayerID(playerNum);
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
             EventType = ActionTypes.PlayCard,
-            PlayerID = playerId,
+            PlayerNum = playerNum,
             EventData = new PlayCardEventData
             {
                 CardId = handCard.CardID,
@@ -126,12 +125,11 @@ public static class PlayCardProcessor
 
         CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, instanceID, handCard.ArtNo);
 
-        var playerId = ctx.Game.GetPlayerID(ctx.PlayerNum);
         events.Insert(0, new GameEvent
         {
             GameID = ctx.Game.GameID,
             EventType = ActionTypes.PlayCard,
-            PlayerID = playerId,
+            PlayerNum = ctx.PlayerNum,
             EventData = new PlayCardEventData
             {
                 CardId = handCard.CardID,
@@ -301,12 +299,11 @@ public static class PlayCardProcessor
 
         FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
 
-        var playerId = ctx.Game.GetPlayerID(ctx.PlayerNum);
         events.Insert(0, new GameEvent
         {
             GameID = ctx.Game.GameID,
             EventType = EventTypes.AttachCard,
-            PlayerID = playerId,
+            PlayerNum = ctx.PlayerNum,
             EventData = new AttachCardEventData
             {
                 CardId = handCard.CardID,
