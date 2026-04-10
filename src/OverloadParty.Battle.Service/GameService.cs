@@ -253,8 +253,8 @@ public class GameService
     {
         if (game.Npc1Model is null && game.Npc2Model is null) return false;
 
-        var state = await _gameRepo.GetGameState(gameID, ct);
-        if (state is null) return false;
+        var state = await _gameRepo.GetGameState(gameID, ct)
+            ?? throw new InvalidOperationException($"game state {gameID} not found after ProcessAction");
 
         return game.GetNpcModel(state.ActivePlayer) is not null;
     }

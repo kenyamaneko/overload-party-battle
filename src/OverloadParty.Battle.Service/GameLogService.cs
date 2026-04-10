@@ -33,7 +33,8 @@ public class GameLogService
         var game = await _gameRepo.GetGame(gameID, ct);
         if (game is null) return null;
 
-        var state = await _gameRepo.GetGameState(gameID, ct);
+        var state = await _gameRepo.GetGameState(gameID, ct)
+            ?? throw new InvalidOperationException($"game state {gameID} not found");
         var events = await _gameRepo.GetEvents(gameID, ct);
 
         var durationSecs = game.FinishedAt.HasValue
@@ -42,10 +43,10 @@ public class GameLogService
 
         var winnerLabel = game.WinningPlayerNum switch
         {
-            null => null,
-            0 => null,
+            null or 0 => null,
             1 => "player1",
-            _ => "player2",
+            2 => "player2",
+            var n => throw new InvalidOperationException($"Invalid WinningPlayerNum: {n}"),
         };
 
         var winReason = game.WinReason ?? FindWinReasonFromEvents(events);
@@ -64,11 +65,9 @@ public class GameLogService
             GameId = gameID,
             Winner = winnerLabel,
             WinReason = winReason,
-            TotalTurns = state?.CurrentTurn ?? 0,
+            TotalTurns = state.CurrentTurn,
             DurationSeconds = durationSecs,
-            FinalBudget = state is not null
-                ? new FinalBudgetInfo { Player1 = state.Player1Budget, Player2 = state.Player2Budget }
-                : null,
+            FinalBudget = new FinalBudgetInfo { Player1 = state.Player1Budget, Player2 = state.Player2Budget },
             Entries = entries,
         };
     }
@@ -80,7 +79,8 @@ public class GameLogService
         var game = await _gameRepo.GetGame(gameID, ct);
         if (game is null) return null;
 
-        var state = await _gameRepo.GetGameState(gameID, ct);
+        var state = await _gameRepo.GetGameState(gameID, ct)
+            ?? throw new InvalidOperationException($"game state {gameID} not found");
         var events = await _gameRepo.GetEvents(gameID, ct);
 
         var sb = new StringBuilder();
@@ -103,19 +103,17 @@ public class GameLogService
             null => "N/A",
             0 => "Draw",
             1 => $"P1 ({winReason})",
-            _ => $"P2 ({winReason})",
+            2 => $"P2 ({winReason})",
+            var n => throw new InvalidOperationException($"Invalid WinningPlayerNum: {n}"),
         };
 
-        var turns = state?.CurrentTurn ?? 0;
+        var turns = state.CurrentTurn;
         var durationStr = game.FinishedAt.HasValue
             ? FormatDuration(game.FinishedAt.Value - game.CreatedAt)
             : "in progress";
         sb.AppendLine($"Winner: {winnerTag} | {turns} turns | {durationStr}");
 
-        if (state is not null)
-        {
-            sb.AppendLine($"Final Budget: P1={state.Player1Budget}  P2={state.Player2Budget}");
-        }
+        sb.AppendLine($"Final Budget: P1={state.Player1Budget}  P2={state.Player2Budget}");
 
         sb.AppendLine();
 
@@ -157,23 +155,21 @@ public class GameLogService
             EventTypes.PhaseEnd => DescribePhaseEnd(data),
             EventTypes.TurnEnd => DescribeTurnEnd(data),
             EventTypes.GameOver => DescribeGameOver(game),
-            _ => $"{playerTag} {evt.EventType}",
+            _ => throw new InvalidOperationException($"Unknown event type: {evt.EventType}"),
         };
     }
 
     private string DescribePlayCard(string player, Dictionary<string, object>? data)
     {
-        if (data is null) return $"{player} played a card";
-
-        var cardId = GetString(data, "cardId");
-        var zone = GetString(data, "zone");
+        var cardId = GetRequiredString(data, "cardId");
+        var zone = GetRequiredString(data, "zone");
         var cancelled = GetBool(data, "cancelled");
         var cardName = ResolveCardName(cardId);
 
         if (cancelled)
             return $"{player} deploy of \"{cardName}\" was cancelled";
 
-        var card = cardId is not null ? _cardCache.Get(cardId) : null;
+        var card = _cardCache.Get(cardId);
         var cost = card?.MaintenanceCost ?? 0;
         var costStr = cost > 0 ? $" [-{cost} Budget]" : "";
         return $"{player} deployed \"{cardName}\" to {CapitalizeFirst(zone)}{costStr}";
@@ -181,24 +177,20 @@ public class GameLogService
 
     private string DescribeAttachCard(string player, Dictionary<string, object>? data)
     {
-        if (data is null) return $"{player} attached a card";
-
-        var cardId = GetString(data, "cardId");
+        var cardId = GetRequiredString(data, "cardId");
         var cardName = ResolveCardName(cardId);
         return $"{player} attached \"{cardName}\"";
     }
 
     private string DescribeAttack(string player, Dictionary<string, object>? data)
     {
-        if (data is null) return $"{player} attacked";
-
-        var damage = GetLong(data, "damage") ?? 0;
-        var destroyed = GetBool(data, "destroyed");
-        var slaPenalty = GetLong(data, "slaPenalty");
         var cancelled = GetBool(data, "cancelled");
-
         if (cancelled)
             return $"{player} attack was cancelled";
+
+        var damage = GetRequiredLong(data, "damage");
+        var destroyed = GetBool(data, "destroyed");
+        var slaPenalty = GetLong(data, "slaPenalty");
 
         var parts = new List<string> { $"{player} attacked for {damage} damage" };
         if (destroyed) parts.Add("(destroyed)");
@@ -208,9 +200,7 @@ public class GameLogService
 
     private string DescribeScaleUp(string player, Dictionary<string, object>? data)
     {
-        if (data is null) return $"{player} scaled up";
-
-        var targetRank = GetString(data, "targetRank") ?? "?";
+        var targetRank = GetRequiredString(data, "targetRank");
         var family = GetString(data, "instanceFamily");
         var familyStr = family is not null ? $" {family}" : "";
         return $"{player} scaled up → {CapitalizeFirst(targetRank)}{familyStr}";
@@ -230,23 +220,21 @@ public class GameLogService
 
     private string DescribeUseEffect(string player, Dictionary<string, object>? data)
     {
-        if (data is null) return $"{player} activated an effect";
-
-        var cardId = GetString(data, "cardId");
+        var cardId = GetRequiredString(data, "cardId");
         var cardName = ResolveCardName(cardId);
         return $"{player} activated effect: {cardName}";
     }
 
     private static string DescribePhaseChange(string player, Dictionary<string, object>? data)
     {
-        var prev = GetString(data, "previousPhase") ?? "?";
-        var curr = GetString(data, "currentPhase") ?? "?";
+        var prev = GetRequiredString(data, "previousPhase");
+        var curr = GetRequiredString(data, "currentPhase");
         return $"{player} ended {CapitalizeFirst(prev)} → {CapitalizeFirst(curr)}";
     }
 
     private static string DescribePhaseEnd(Dictionary<string, object>? data)
     {
-        var phase = GetString(data, "phase") ?? "?";
+        var phase = GetRequiredString(data, "phase");
         var needsDiscard = GetBool(data, "needsDiscard");
         var suffix = needsDiscard ? " (discard required)" : "";
         return $"{CapitalizeFirst(phase)} phase ended{suffix}";
@@ -254,8 +242,8 @@ public class GameLogService
 
     private static string DescribeTurnEnd(Dictionary<string, object>? data)
     {
-        var nextTurn = GetLong(data, "nextTurn") ?? 0;
-        var activePlayer = GetLong(data, "activePlayer") ?? 0;
+        var nextTurn = GetRequiredLong(data, "nextTurn");
+        var activePlayer = GetRequiredLong(data, "activePlayer");
         return $"Turn end → Turn {nextTurn} (P{activePlayer})";
     }
 
@@ -265,7 +253,8 @@ public class GameLogService
         {
             null or 0 => "Game over: Draw",
             1 => "Game over: P1 wins",
-            _ => "Game over: P2 wins",
+            2 => "Game over: P2 wins",
+            var n => throw new InvalidOperationException($"Invalid WinningPlayerNum: {n}"),
         };
     }
 
@@ -312,6 +301,18 @@ public class GameLogService
     }
 
     // ─── EventData value extraction ──────────────────────────────
+
+    private static string GetRequiredString(Dictionary<string, object>? data, string key)
+    {
+        return GetString(data, key)
+            ?? throw new InvalidOperationException($"EventData missing required key '{key}'");
+    }
+
+    private static long GetRequiredLong(Dictionary<string, object>? data, string key)
+    {
+        return GetLong(data, key)
+            ?? throw new InvalidOperationException($"EventData missing required key '{key}'");
+    }
 
     private static string? GetString(Dictionary<string, object>? data, string key)
     {
