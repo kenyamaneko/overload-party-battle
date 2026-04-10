@@ -76,16 +76,7 @@ public class NpcRunner
         }
 
         // Decide actions for current phase
-        List<NpcAction> actions;
-        try
-        {
-            actions = DecideActions(npcAI, state, game, npcPlayerNum);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "NPC action decision failed (game={GameID})", gameID);
-            return NpcAdvanceResult.Done();
-        }
+        var actions = DecideActions(npcAI, state, game, npcPlayerNum);
 
         if (actions.Count == 0)
         {
@@ -108,11 +99,6 @@ public class NpcRunner
             catch (GameRuleException ex)
             {
                 _logger.LogWarning(ex, "NPC action rejected (game={GameID}, action={Action})", gameID, action.ActionType);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "NPC action failed unexpectedly (game={GameID}, action={Action})", gameID, action.ActionType);
-                return NpcAdvanceResult.Done();
             }
         }
 

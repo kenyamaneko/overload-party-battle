@@ -30,6 +30,87 @@ make run     # ローカル開発サーバー起動
 
 どうしてもそうする必要がある場合はユーザーに確認する。
 
+### 上流で保証された契約を下流で再検証しない
+
+上流のプロデューサ（`AvailableActions`, `ResourceHelpers`, `GameEngine` など）が契約上保証している値を、下流のコンシューマが「念のため」再検証して silent fallback する。これはバグ検知を難しくするアンチパターン。
+
+**典型パターン:**
+
+1. **`FirstOrDefault` / `.First()` + silent default**
+   ```csharp
+   // Bad: AvailableActions が既に絞った ValidZones に対して、下流が再マッチ + フォールバック
+   return available.FirstOrDefault();  // 契約違反を黙って通してしまう
+   ```
+
+2. **`switch` / `if/else` の silent default アーム**
+   ```csharp
+   // Bad: 既存の closed enum に新値を足した時、ここが silently 「?」を返す
+   _ => $"{playerTag} {evt.EventType}",
+   _ => null,  // unknown を null 扱いで通す
+   ```
+
+3. **sentinel 戻り値（空文字・0・"?"）**
+   ```csharp
+   // Bad: 呼び出し側が == "" で分岐することを強制、かつ本物の空文字と区別不能
+   return "";  // "not found" の代わりに
+   ```
+
+4. **`cc.Get(...); if (card is null) continue;`**
+   場所 A で `MustGet` してる同じ値を、場所 B で `Get` + null チェックしてる。**同じ種類の処理は同じパイプラインに乗せる** 原則違反。
+
+**正しい対処:**
+
+- 契約違反は **`throw new InvalidOperationException(...)`** で即座にクラッシュ。wire 境界の HTTP middleware が 500 に変換する。
+- カード定義の取得は **`ICardCache.MustGet`** に統一。`Get` は本当に optional な検索にだけ使う。
+- `switch` / `if/else` の default アームは **throw** にする。`_ => throw new InvalidOperationException($"Unknown X: {value}")`。
+- 「見つからない」を表現したいなら、sentinel 値ではなく **nullable を返す** か **例外を投げる**。
+
+**判断基準:** 「この null/空文字は**実運用で発生しうるか**」を考える。「上流のバグ以外では起きない」なら fallback ではなく throw。
+
+### YAML・設定ファイルから読む値の扱い
+
+YAML パーサ・config ローダで unknown な値（known enum に該当しない文字列など）を silently drop したり null 扱いしない。**typo を検知できなくなる**。
+
+```csharp
+// Bad: typo がサイレントに消える
+var categories = yamlArray
+    .Select(x => TryParse(x))
+    .Where(x => x is not null)
+    .ToList();
+
+private static EffectCategory? TryParse(string s) => s switch
+{
+    "budget_gain" => EffectCategory.BudgetGain,
+    ...
+    _ => null,  // typo がここを通る
+};
+
+// Good: 全てのパーサで unknown は throw 統一
+private static EffectCategory ParseEffectCategory(string s) => s switch
+{
+    "budget_gain" => EffectCategory.BudgetGain,
+    ...
+    _ => throw new InvalidOperationException($"Unknown effect category: {s}"),
+};
+```
+
+同一ファイル内のパーサ群はすべて **unknown → throw** で統一する。片方が throw・片方が silent drop は不整合。
+
+### エラーハンドリングの責務分担
+
+例外は **「意味のある処置ができる層」** まで伝播させる。途中で catch して silent default を返さない。
+
+| 層 | 責務 |
+|---|---|
+| Engine / Helpers / Processors | バグは `InvalidOperationException` 等を throw。ルール違反は `GameRuleException` を throw。 |
+| `NpcAi.Decide*` / `ActionFilter` | 同上。silent skip しない。 |
+| `NpcRunner.AdvanceOneAction` | **`GameRuleException` のみ catch** (= 「この NPC アクションは engine に reject された、次を試す」)。それ以外は上に throw。 |
+| `GameService` | 原則 catch しない。propagate。 |
+| HTTP endpoint handler | catch しない。propagate。 |
+| `app.UseExceptionHandler` (Program.cs) | ここが **唯一の catch 地点**。`GameRuleException` → 400、それ以外 → 500 + log。 |
+
+`catch (Exception)` で握って default を返すのは、バグを silently 握り潰して NPC ターンを黙って飛ばす等の「見えない失敗」を生む。**避ける。**
+
 ## C# コーディング規約
 
 ### LINQ を積極的に使う
@@ -73,13 +154,13 @@ users.ForEach(u => u.Deactivate());
 値を返す分岐には switch 式を使う。if/else チェーンや三項演算子のネストより宣言的で読みやすい。
 
 ```csharp
-// Good: switch 式
+// Good: switch 式（default は throw で未知値を検知）
 var winnerLabel = game.WinnerNum switch
 {
-    null => null,
-    0 => null,
+    null or 0 => null,
     1 => "player1",
-    _ => "player2",
+    2 => "player2",
+    var n => throw new InvalidOperationException($"Invalid WinnerNum: {n}"),
 };
 
 // Good: LINQ と組み合わせ

@@ -94,7 +94,7 @@ public static class PriorityResolver
 
         if (!CategoryKeys.TryGetValue(cat, out var key))
         {
-            return (0, false);
+            throw new InvalidOperationException($"No priority key for EffectCategory {cat}");
         }
 
         if (!config.EffectPriorities.TryGetValue(key, out var entry))

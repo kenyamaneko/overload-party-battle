@@ -87,7 +87,7 @@ public class ActionFilterTests
     public void PickBestZone_ComputeCard_PrefersFrontend()
     {
         var card = TestFactory.ComputeCard();
-        var zones = new List<string> { "backend_0", "frontend_1", "support_0" };
+        var zones = new List<string> { "backend_0", "frontend_1" };
 
         var result = ActionFilter.PickBestZone(zones, card, []);
 
@@ -98,7 +98,7 @@ public class ActionFilterTests
     public void PickBestZone_ComputeCard_FallsBackToBackend()
     {
         var card = TestFactory.ComputeCard();
-        var zones = new List<string> { "backend_0", "support_0" };
+        var zones = new List<string> { "backend_0" };
 
         var result = ActionFilter.PickBestZone(zones, card, []);
 
@@ -117,25 +117,25 @@ public class ActionFilterTests
     }
 
     [Fact]
-    public void PickBestZone_DataCard_PrefersBackend()
+    public void PickBestZone_ComputeCard_NoMatchingZone_Throws()
     {
-        var card = TestFactory.DataCard(cardType: CardTypes.Database);
-        var zones = new List<string> { "frontend_0", "backend_2" };
+        var card = TestFactory.ComputeCard();
+        var zones = new List<string> { "support_0" };
 
-        var result = ActionFilter.PickBestZone(zones, card, []);
+        var act = () => ActionFilter.PickBestZone(zones, card, []);
 
-        result.Should().Be("backend_2");
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]
-    public void PickBestZone_SupportCard_PrefersSupport()
+    public void PickBestZone_ObjectStorageCard_NoMatchingZone_Throws()
     {
-        var card = TestFactory.PlatformCard();
-        var zones = new List<string> { "frontend_0", "support_0", "backend_0" };
+        var card = TestFactory.DataCard(cardType: CardTypes.ObjectStorage);
+        var zones = new List<string> { "support_0" };
 
-        var result = ActionFilter.PickBestZone(zones, card, []);
+        var act = () => ActionFilter.PickBestZone(zones, card, []);
 
-        result.Should().Be("support_0");
+        act.Should().Throw<InvalidOperationException>();
     }
 
     [Fact]
@@ -206,9 +206,10 @@ public class ActionFilterTests
     }
 
     [Fact]
-    public void ResolveCardIdForInstance_NotFound_ReturnsZero()
+    public void ResolveCardIdForInstance_NotFound_Throws()
     {
         var field = TestFactory.MakeField();
-        ActionFilter.ResolveCardIdForInstance("missing", field).Should().Be("");
+        var act = () => ActionFilter.ResolveCardIdForInstance("missing", field);
+        act.Should().Throw<InvalidOperationException>();
     }
 }

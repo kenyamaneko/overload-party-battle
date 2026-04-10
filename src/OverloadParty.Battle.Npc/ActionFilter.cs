@@ -19,56 +19,32 @@ public static class ActionFilter
     /// </summary>
     public static string? PickBestZone(List<string>? validZones, CardDefinition cardDef, HashSet<string> usedZones)
     {
-        if (validZones is null)
-        {
-            return null;
-        }
+        if (validZones is null || validZones.Count == 0) { return null; }
         var available = FilterZones(validZones, usedZones);
+        if (available.Count == 0) { return null; }
 
         if (cardDef.IsComputeType)
         {
-            var z = FirstWithPrefix(available, "frontend_");
-            if (z is not null)
-            {
-                return z;
-            }
-            z = FirstWithPrefix(available, "backend_");
-            if (z is not null)
-            {
-                return z;
-            }
-        }
-        else if (cardDef.CardType == CardTypes.ObjectStorage)
-        {
-            var z = FirstWithPrefix(available, "backend_");
-            if (z is not null)
-            {
-                return z;
-            }
-            z = FirstWithPrefix(available, "frontend_");
-            if (z is not null)
-            {
-                return z;
-            }
-        }
-        else if (cardDef.IsDataType)
-        {
-            var z = FirstWithPrefix(available, "backend_");
-            if (z is not null)
-            {
-                return z;
-            }
-        }
-        else if (cardDef.IsSupportType || FieldHelpers.IsImmediateType(cardDef.CardType))
-        {
-            var z = FirstWithPrefix(available, "support_");
-            if (z is not null)
-            {
-                return z;
-            }
+            var frontend = FirstWithPrefix(available, "frontend_");
+            if (frontend is not null) { return frontend; }
+            var backend = FirstWithPrefix(available, "backend_");
+            if (backend is not null) { return backend; }
+            throw new InvalidOperationException(
+                $"PickBestZone: Compute card '{cardDef.CardId}' received validZones with no frontend/backend: [{string.Join(", ", available)}]");
         }
 
-        return available.FirstOrDefault();
+        if (cardDef.CardType == CardTypes.ObjectStorage)
+        {
+            var backend = FirstWithPrefix(available, "backend_");
+            if (backend is not null) { return backend; }
+            var frontend = FirstWithPrefix(available, "frontend_");
+            if (frontend is not null) { return frontend; }
+            throw new InvalidOperationException(
+                $"PickBestZone: ObjectStorage card '{cardDef.CardId}' received validZones with no frontend/backend: [{string.Join(", ", available)}]");
+        }
+
+        // Data / Support / Incident / Strategy: AvailableActions emits exactly one zone kind; any available entry is valid.
+        return available[0];
     }
 
     public static string? PickSupportZone(List<string>? validZones, HashSet<string> usedZones)
@@ -104,7 +80,7 @@ public static class ActionFilter
             return support.CardID;
         }
 
-        return "";
+        throw new InvalidOperationException($"Instance '{instanceId}' not found on field");
     }
 
     private static List<string> FilterZones(List<string> validZones, HashSet<string> usedZones)

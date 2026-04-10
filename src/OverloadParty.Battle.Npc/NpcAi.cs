@@ -644,10 +644,6 @@ public class NpcAi : INpcStrategy
         foreach (var a in activateActions)
         {
             var cardId = ActionFilter.ResolveCardIdForInstance(a.SourceInstanceID!, ctx.Field);
-            if (cardId == "")
-            {
-                continue;
-            }
 
             var (pri, use, choiceData) = PriorityResolver.Evaluate(
                 cardId, TriggerType.Activate, ctx, activeConfig, _effects, _cc);
@@ -727,9 +723,7 @@ public class NpcAi : INpcStrategy
         foreach (var a in sorted)
         {
             var cardId = ActionFilter.ResolveCardIdForInstance(a.SourceInstanceID!, ctx.Field);
-            var estimatedCostIncrease = cardId != ""
-                ? ResolveCard(cardId).MaintenanceCost
-                : 0L;
+            var estimatedCostIncrease = ResolveCard(cardId).MaintenanceCost;
             if (estimatedCostIncrease > 0 &&
                 WouldExceedMaintenanceLimit(ctx, addedMaintenanceCost + estimatedCostIncrease))
             {
