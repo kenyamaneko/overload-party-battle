@@ -148,6 +148,12 @@ public class EffectRegistry : IEffectRegistry
             .FirstOrDefault();
     }
 
+    /// <inheritdoc />
+    public IEffectOp[]? GetOps(string cardId, TriggerType trigger)
+    {
+        return GetRegistration(cardId, trigger)?.Ops;
+    }
+
     /// <summary>
     /// Returns all card IDs that have a handler for the given trigger.
     /// </summary>

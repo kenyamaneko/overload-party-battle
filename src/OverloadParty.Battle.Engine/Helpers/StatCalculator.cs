@@ -221,8 +221,7 @@ public static class StatCalculator
         {
             if (cfg.ExcludeSelf && res.InstanceID == instance.InstanceID) { continue; }
 
-            var resCard = cc.Get(res.CardID);
-            if (resCard is null) { continue; }
+            var resCard = cc.MustGet(res.CardID);
             if (resCard.CardType is not (CardTypes.Database or CardTypes.CacheDB)) { continue; }
 
             count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
@@ -237,8 +236,8 @@ public static class StatCalculator
         {
             if (cfg.ExcludeSelf && res.InstanceID == instance.InstanceID) { continue; }
 
-            var resCard = cc.Get(res.CardID);
-            if (resCard is null || !resCard.IsDataType) { continue; }
+            var resCard = cc.MustGet(res.CardID);
+            if (!resCard.IsDataType) { continue; }
 
             count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
         }
@@ -251,8 +250,7 @@ public static class StatCalculator
 
         foreach (var res in FieldHelpers.AllFaceUpResources(field))
         {
-            var resCard = cc.Get(res.CardID);
-            if (resCard is null){ continue; }
+            var resCard = cc.MustGet(res.CardID);
 
             if (cfg.CardTypes.Contains(resCard.CardType))
             {
@@ -274,8 +272,7 @@ public static class StatCalculator
         {
             if (res.InstanceID == instance.InstanceID) { continue; }
 
-            var resCard = cc.Get(res.CardID);
-            if (resCard is null) { continue; }
+            var resCard = cc.MustGet(res.CardID);
             if (resCard.CardType is not (CardTypes.Database or CardTypes.CacheDB)) { continue; }
 
             count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
@@ -289,8 +286,8 @@ public static class StatCalculator
 
         foreach (var res in FieldHelpers.AllFaceUpResources(field))
         {
-            var resCard = cc.Get(res.CardID);
-            if (resCard is not null && cfg.SpecificCardIDs.Contains(resCard.CardId)) { return cfg.FlatBonus; }
+            var resCard = cc.MustGet(res.CardID);
+            if (cfg.SpecificCardIDs.Contains(resCard.CardId)) { return cfg.FlatBonus; }
         }
         return 0;
     }
@@ -302,8 +299,7 @@ public static class StatCalculator
         long total = 0;
         foreach (var support in field.Support.Where(s => s.FaceUp && s.DeployingTurnsLeft <= 0))
         {
-            var supCard = cc.Get(support.CardID);
-            if (supCard is null) { continue; }
+            var supCard = cc.MustGet(support.CardID);
 
             foreach (var pe in supCard.PlatformEffects)
             {
@@ -325,8 +321,7 @@ public static class StatCalculator
         if (expectedStatType != statType) { return 0; }
 
         var cfg = pe.Params;
-        var targetCard = cc.Get(target.CardID);
-        if (targetCard is null) { return 0; }
+        var targetCard = cc.MustGet(target.CardID);
 
         if (cfg.TargetFaction is { Length: > 0 } faction
             && targetCard.Faction != faction) { return 0; }
@@ -345,8 +340,7 @@ public static class StatCalculator
         long total = 0;
         foreach (var att in field.Support.Where(a => a.TargetInstanceID == instance.InstanceID))
         {
-            var attCard = cc.Get(att.CardID);
-            if (attCard is null) { continue; }
+            var attCard = cc.MustGet(att.CardID);
 
             foreach (var ae in attCard.AttachmentEffects)
             {

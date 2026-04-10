@@ -1,6 +1,7 @@
 using System.Linq;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Effects.Ops;
 
 namespace OverloadParty.Battle.Engine;
 
@@ -95,12 +96,12 @@ public static class AvailableActions
                 actions.AddRange(EnumeratePlayCardActions(state, myField, hand, budget, cc, effects));
                 actions.AddRange(EnumerateScaleUpActions(myField, cc));
                 actions.AddRange(EnumerateMonetizeActions(state, myField, insightPool, cc));
-                actions.AddRange(EnumerateUseEffectActions(myField, oppField, budget, cc, effects));
+                actions.AddRange(EnumerateUseEffectActions(state, myField, oppField, budget, cc, effects));
                 break;
 
             case Phase.Battle:
                 actions.AddRange(EnumerateAttackActions(myField, oppField, cc));
-                actions.AddRange(EnumerateUseEffectActions(myField, oppField, budget, cc, effects));
+                actions.AddRange(EnumerateUseEffectActions(state, myField, oppField, budget, cc, effects));
                 break;
         }
 
@@ -113,21 +114,20 @@ public static class AvailableActions
     {
         foreach (var handCard in hand)
         {
-            var card = cc.Get(handCard.CardID);
-            if (card is null) { continue; }
+            var card = cc.MustGet(handCard.CardID);
 
-            var action = BuildPlayCardAction(state, field, handCard, card, budget, effects);
+            var action = BuildPlayCardAction(state, field, handCard, card, budget, cc, effects);
             if (action is not null) { yield return action; }
         }
     }
 
     private static AvailableAction? BuildPlayCardAction(
         GameState state, Field field, UndeployedCard handCard, CardDefinition card,
-        long budget, IEffectRegistry? effects)
+        long budget, ICardCache cc, IEffectRegistry? effects)
     {
         return EnumExtensions.GetCategory(card.CardType) switch
         {
-            CardTypeCategory.Support => BuildSupportPlayAction(state, field, handCard, card, budget, effects),
+            CardTypeCategory.Support => BuildSupportPlayAction(state, field, handCard, card, budget, cc, effects),
             CardTypeCategory.Compute or CardTypeCategory.Data => BuildResourcePlayAction(field, handCard, card),
             _ => null,
         };
@@ -135,7 +135,7 @@ public static class AvailableActions
 
     private static AvailableAction? BuildSupportPlayAction(
         GameState state, Field field, UndeployedCard handCard, CardDefinition card,
-        long budget, IEffectRegistry? effects)
+        long budget, ICardCache cc, IEffectRegistry? effects)
     {
         if (card.CardType == CardTypes.Attachment)
         {
@@ -174,15 +174,53 @@ public static class AvailableActions
                 var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
                 if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { return null; }
             }
-            return new AvailableAction
+
+            var action = new AvailableAction
             {
                 Type = ActionTypes.PlayCard,
                 HandInstanceID = handCard.InstanceID,
                 CardID = handCard.CardID,
             };
+
+            if (!TryPopulateTrashChoice(action, state, card.CardId, cc, effects)) { return null; }
+
+            return action;
         }
 
         return BuildSupportSlotAction(field, handCard);
+    }
+
+    /// <summary>
+    /// Populates <see cref="AvailableAction.ValidTargets"/> and
+    /// <see cref="AvailableAction.EffectTargetType"/> for effects containing a
+    /// <see cref="TrashToHandOp"/>. Returns false if the op exists but no trash card
+    /// passes the filter (in which case the action must be suppressed).
+    /// </summary>
+    private static bool TryPopulateTrashChoice(
+        AvailableAction action, GameState state, string cardId, ICardCache cc, IEffectRegistry? effects)
+    {
+        if (effects is null) { return true; }
+
+        var ops = effects.GetOps(cardId, TriggerType.Activate);
+        if (ops is null) { return true; }
+
+        var trashOp = ops.OfType<TrashToHandOp>().FirstOrDefault();
+        if (trashOp is null) { return true; }
+
+        var trash = state.GetTrash(state.ActivePlayer);
+
+        var validTargets = trashOp.Filter is null
+            ? trash.Select(c => c.InstanceID).ToList()
+            : trash
+                .Where(c => trashOp.Filter(cc.MustGet(c.CardID)))
+                .Select(c => c.InstanceID)
+                .ToList();
+
+        if (validTargets.Count == 0) { return false; }
+
+        action.EffectTargetType = "Choice";
+        action.ValidTargets = validTargets;
+        return true;
     }
 
     private static AvailableAction? BuildSupportSlotAction(Field field, UndeployedCard handCard)
@@ -235,8 +273,8 @@ public static class AvailableActions
         // Find eligible attackers
         foreach (var attacker in myField.Frontend.Where(r => r.FaceUp))
         {
-            var attackerCard = cc.Get(attacker.CardID);
-            if (attackerCard is null || !attackerCard.IsComputeType) { continue; }
+            var attackerCard = cc.MustGet(attacker.CardID);
+            if (!attackerCard.IsComputeType) { continue; }
             if (attacker.HasAttacked) { continue; }
             if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate)) { continue; }
 
@@ -255,8 +293,8 @@ public static class AvailableActions
     {
         foreach (var resource in FieldHelpers.AllFaceUpResources(field))
         {
-            var card = cc.Get(resource.CardID);
-            if (card is null || !card.Resizable) { continue; }
+            var card = cc.MustGet(resource.CardID);
+            if (!card.Resizable) { continue; }
 
             if (resource.Rank is not { } currentRank || currentRank == Rank.Large) { continue; }
 
@@ -304,8 +342,8 @@ public static class AvailableActions
 
         foreach (var res in field.Backend.Where(r => r.FaceUp))
         {
-            var card = cc.Get(res.CardID);
-            if (card is null || !card.IsComputeType) { continue; }
+            var card = cc.MustGet(res.CardID);
+            if (!card.IsComputeType) { continue; }
 
             long effectiveTP = StatCalculator.CalculateEffectiveTP(res, field, cc);
             long remaining = effectiveTP - res.MonetizedAmount;
@@ -321,7 +359,8 @@ public static class AvailableActions
     }
 
     private static IEnumerable<AvailableAction> EnumerateUseEffectActions(
-        Field myField, Field oppField, long budget, ICardCache cc, IEffectRegistry? effects)
+        GameState state, Field myField, Field oppField,
+        long budget, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { yield break; }
 
@@ -331,20 +370,21 @@ public static class AvailableActions
             if (resource.EffectUsedThisTurn) { continue; }
             if (FieldHelpers.HasTemporaryEffect(resource, EffectTypes.CannotOperate)) { continue; }
 
-            var card = cc.Get(resource.CardID);
-            if (card is null) { continue; }
+            var card = cc.MustGet(resource.CardID);
             if (!effects.Has(card.CardId, TriggerType.Activate)) { continue; }
 
             // budget 条件を満たさなければ除外
             var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
             if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
 
-            yield return new AvailableAction
+            var action = new AvailableAction
             {
                 Type = ActionTypes.UseEffect,
                 SourceInstanceID = resource.InstanceID,
                 CardID = card.CardId,
             };
+            if (!TryPopulateTrashChoice(action, state, card.CardId, cc, effects)) { continue; }
+            yield return action;
         }
 
         // Support zone
@@ -353,20 +393,21 @@ public static class AvailableActions
             if (support.DeployingTurnsLeft > 0) { continue; }
             if (support.EffectUsedThisTurn) { continue; }
 
-            var card = cc.Get(support.CardID);
-            if (card is null) { continue; }
+            var card = cc.MustGet(support.CardID);
             if (!effects.Has(card.CardId, TriggerType.Activate)) { continue; }
 
             // budget 条件を満たさなければ除外
             var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
             if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
 
-            yield return new AvailableAction
+            var action = new AvailableAction
             {
                 Type = ActionTypes.UseEffect,
                 SourceInstanceID = support.InstanceID,
                 CardID = card.CardId,
             };
+            if (!TryPopulateTrashChoice(action, state, card.CardId, cc, effects)) { continue; }
+            yield return action;
         }
     }
 }

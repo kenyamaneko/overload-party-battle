@@ -86,8 +86,8 @@ public class ByChoiceSelector : ISelector
 
         if (Faction is { Length: > 0 } faction)
         {
-            var card = ctx.CardCache.Get(resource.CardID);
-            if (card?.Faction != faction)
+            var card = ctx.CardCache.MustGet(resource.CardID);
+            if (card.Faction != faction)
             {
                 return [];
             }
@@ -95,8 +95,8 @@ public class ByChoiceSelector : ISelector
 
         if (CardType is { Length: > 0 } cardType)
         {
-            var card = ctx.CardCache.Get(resource.CardID);
-            if (card?.CardType != cardType)
+            var card = ctx.CardCache.MustGet(resource.CardID);
+            if (card.CardType != cardType)
             {
                 return [];
             }
@@ -151,13 +151,8 @@ public class AllOwnSelector : ISelector
 
         return candidates
             .Where(r => r.FaceUp)
-            .Where(r => faction is not { Length: > 0 } || cc.Get(r.CardID)?.Faction == faction)
-            .Where(r =>
-            {
-                if (cardTypes is not { Count: > 0 }) return true;
-                var card = cc.Get(r.CardID);
-                return card is not null && cardTypes.Contains(card.CardType);
-            })
+            .Where(r => faction is not { Length: > 0 } || cc.MustGet(r.CardID).Faction == faction)
+            .Where(r => cardTypes is not { Count: > 0 } || cardTypes.Contains(cc.MustGet(r.CardID).CardType))
             .ToList();
     }
 }

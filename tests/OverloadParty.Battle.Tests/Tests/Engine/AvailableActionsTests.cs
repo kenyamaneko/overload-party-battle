@@ -493,7 +493,7 @@ public class AvailableActionsTests
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "fe_2");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "fe_2");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -1269,6 +1269,7 @@ public class AvailableActionsTests
         // Database はそもそも Backend のみ。フロントが満杯でも関係ない
         var cc = new TestCardCache();
         cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();

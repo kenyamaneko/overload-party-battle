@@ -34,13 +34,6 @@ public static class ChainResolver
         state.ChainStack.Add(entry);
     }
 
-    public static TriggerType ChainActionToTrigger(string actionType) => actionType switch
-    {
-        ActionTypes.Reactive => TriggerType.Reactive,
-        ActionTypes.Attack => TriggerType.OnAttack,
-        _ => TriggerType.Activate
-    };
-
     /// <summary>
     /// Check if a reactive can be chained on the current stack.
     /// </summary>

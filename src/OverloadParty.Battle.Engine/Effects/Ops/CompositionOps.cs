@@ -151,14 +151,13 @@ public class ResourceCountGuardOp(
     private bool MatchesFaction(string cardID, ICardCache cc)
     {
         if (faction is not { Length: > 0 }) return true;
-        return cc.Get(cardID)?.Faction == faction;
+        return cc.MustGet(cardID).Faction == faction;
     }
 
     private bool MatchesCardTypes(string cardID, ICardCache cc)
     {
         if (cardTypes is not { Count: > 0 }) return true;
-        var card = cc.Get(cardID);
-        return card is not null && cardTypes.Contains(card.CardType);
+        return cardTypes.Contains(cc.MustGet(cardID).CardType);
     }
 
     private bool MatchesCardIds(string cardID)

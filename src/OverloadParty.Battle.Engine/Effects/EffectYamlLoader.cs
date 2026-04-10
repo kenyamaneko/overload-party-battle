@@ -23,7 +23,7 @@ public static class EffectYamlLoader
     public static void LoadFromCards(
         IEnumerable<CardDefinition> cards,
         EffectRegistry registry,
-        ICustomEffectRegistry? customRegistry = null)
+        ICustomEffectRegistry customRegistry)
     {
         foreach (var card in cards)
         {
@@ -36,7 +36,7 @@ public static class EffectYamlLoader
         string cardId,
         List<EffectDef> effects,
         EffectRegistry registry,
-        ICustomEffectRegistry? customRegistry)
+        ICustomEffectRegistry customRegistry)
     {
         var byTrigger = effects.GroupBy(e => ParseTrigger(e.Trigger));
 
@@ -57,7 +57,7 @@ public static class EffectYamlLoader
 
     private static List<IEffectOp> BuildTriggerOps(
         List<EffectDef> defs,
-        ICustomEffectRegistry? customRegistry)
+        ICustomEffectRegistry customRegistry)
     {
         var independent = defs.Where(d => d.After is null).ToList();
         var dependent = defs.Where(d => d.After is not null).ToList();
@@ -128,7 +128,7 @@ public static class EffectYamlLoader
 
     private static List<IEffectOp> BuildSingleBlock(
         EffectDef def,
-        ICustomEffectRegistry? customRegistry)
+        ICustomEffectRegistry customRegistry)
     {
         if (def.Custom is { } customName)
         {
@@ -174,18 +174,10 @@ public static class EffectYamlLoader
     private static List<IEffectOp> BuildCustomBlock(
         string customName,
         Dictionary<string, JsonElement>? meta,
-        ICustomEffectRegistry? customRegistry)
+        ICustomEffectRegistry customRegistry)
     {
-        if (customRegistry is null)
-        {
-            return [];
-        }
-
-        var fn = customRegistry.Build(customName, meta);
-        if (fn is null)
-        {
-            return [];
-        }
+        var fn = customRegistry.Build(customName, meta)
+            ?? throw new InvalidOperationException($"Unknown custom effect: {customName}");
 
         List<EffectCategory>? categories = null;
         EffectTargetType targetType = EffectTargetType.None;
@@ -196,9 +188,7 @@ public static class EffectYamlLoader
             if (meta.TryGetValue("categories", out var catEl))
             {
                 categories = catEl.EnumerateArray()
-                    .Select(c => TryParseEffectCategory(c.GetString()!))
-                    .Where(c => c is not null)
-                    .Select(c => c!.Value)
+                    .Select(c => ParseEffectCategory(c.GetString()!))
                     .ToList();
             }
             if (meta.TryGetValue("target", out var tgtEl))
@@ -266,7 +256,7 @@ public static class EffectYamlLoader
 
             "add_to_hand" => AddToHandOp.Instance,
 
-            "trash_to_hand" => new TrashToHandOp(),
+            "trash_to_hand" => BuildTrashToHand(p),
 
             "deploy_from_hand" => BuildRequestSlotFromHand(p),
 
@@ -345,6 +335,22 @@ public static class EffectYamlLoader
         long overrideAV = p.TryGetProperty("override_av", out var oav) ? oav.GetInt64() : 0;
         return new RequestSlotFromRepoOp { Filter = filter, OverrideAV = overrideAV };
     }
+
+    private static IEffectOp BuildTrashToHand(JsonElement p)
+    {
+        if (p.ValueKind != JsonValueKind.Object)
+        {
+            return new TrashToHandOp();
+        }
+
+        Func<CardDefinition, bool>? filter = HasFilterProperty(p) ? BuildCardFilter(p) : null;
+        return new TrashToHandOp { Filter = filter };
+    }
+
+    private static bool HasFilterProperty(JsonElement p) =>
+        p.TryGetProperty("faction", out _)
+        || p.TryGetProperty("card_type", out _)
+        || p.TryGetProperty("card_id", out _);
 
     // ================================================================
     // Selector builder
@@ -689,7 +695,7 @@ public static class EffectYamlLoader
         return null;
     }
 
-    private static EffectCategory? TryParseEffectCategory(string s) => s switch
+    private static EffectCategory ParseEffectCategory(string s) => s switch
     {
         "budget_gain" => EffectCategory.BudgetGain,
         "budget_penalty" => EffectCategory.BudgetPenalty,
@@ -708,7 +714,11 @@ public static class EffectYamlLoader
         "destroy_platform" => EffectCategory.DestroyPlatform,
         "cancel_action" => EffectCategory.CancelAction,
         "survive" => EffectCategory.Survive,
-        _ => null,
+        "self_destruct" => EffectCategory.SelfDestruct,
+        "cost_reduction" => EffectCategory.CostReduction,
+        "defensive" => EffectCategory.Defensive,
+        "utility" => EffectCategory.Utility,
+        _ => throw new InvalidOperationException($"Unknown effect category: {s}"),
     };
 
     private static EffectTargetType ParseEffectTargetType(string s) => s switch

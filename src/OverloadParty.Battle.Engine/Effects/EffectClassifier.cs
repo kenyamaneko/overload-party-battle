@@ -25,6 +25,10 @@ public enum EffectCategory
     DestroyPlatform,
     CancelAction,
     Survive,
+    SelfDestruct,
+    CostReduction,
+    Defensive,
+    Utility,
 }
 
 /// <summary>

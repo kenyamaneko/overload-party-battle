@@ -109,4 +109,11 @@ public interface IEffectRegistry
     /// Returns branch keys if the effect uses BranchOnChoice, or null otherwise.
     /// </summary>
     List<string>? GetChoiceOptions(string cardId, TriggerType trigger);
+
+    /// <summary>
+    /// Returns the raw ops for an effect, or null if no handler or no ops are stored.
+    /// Used by <see cref="AvailableActions"/> to inspect filter information that
+    /// only the ops themselves carry (e.g. <c>trash_to_hand</c> filters).
+    /// </summary>
+    IEffectOp[]? GetOps(string cardId, TriggerType trigger);
 }

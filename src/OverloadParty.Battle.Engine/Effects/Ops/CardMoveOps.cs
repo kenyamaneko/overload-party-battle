@@ -55,21 +55,33 @@ public class AddToHandOp : IEffectOp
 }
 
 /// <summary>
-/// Returns a card from the player's trash to their hand.
+/// Returns a player-chosen card from trash to hand.
+/// The choice is always required; the op never auto-picks.
+/// A <see cref="Filter"/> may restrict which trash cards qualify.
 /// </summary>
 public class TrashToHandOp : IEffectOp
 {
+    /// <summary>Optional filter restricting which trash cards can be returned.</summary>
+    public Func<CardDefinition, bool>? Filter { get; init; }
+
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        var trash = ctx.State.GetTrash(ctx.PlayerNum);
-        if (trash.Count == 0)
-        {
-            return;
-        }
-
         var instanceId = ctx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString()
-            ?? trash[0].InstanceID;
+            ?? throw new GameRuleException("No card chosen for trash_to_hand");
+
+        var trash = ctx.State.GetTrash(ctx.PlayerNum);
+        var chosen = trash.FirstOrDefault(c => c.InstanceID == instanceId)
+            ?? throw new GameRuleException($"chosen instance {instanceId} not in trash");
+
+        if (Filter is not null)
+        {
+            var card = ctx.CardCache.MustGet(chosen.CardID);
+            if (!Filter(card))
+            {
+                throw new GameRuleException($"Card {chosen.CardID} does not match trash_to_hand filter");
+            }
+        }
 
         CardMoveHelpers.TrashToHand(ctx.State, ctx.PlayerNum, instanceId);
     }

@@ -311,6 +311,7 @@ public class PriorityResolverTests
         public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger) => null;
         public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
         public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
+        public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
     }
 
     private class StubEffectRegistry : IEffectRegistry
@@ -326,5 +327,6 @@ public class PriorityResolverTests
         public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) =>
             _infos.GetValueOrDefault((cardId, trigger));
         public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
+        public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
     }
 }

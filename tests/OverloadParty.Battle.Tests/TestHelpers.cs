@@ -379,6 +379,7 @@ public class TestEffectRegistry : IEffectRegistry
     public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger) => null;
     public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
     public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
+    public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
 }
 
 internal static class EffectInfoTestExtensions

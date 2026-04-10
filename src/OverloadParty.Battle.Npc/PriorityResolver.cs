@@ -86,8 +86,13 @@ public static class PriorityResolver
         EffectCategory cat, EffectInfo info, DecisionContext ctx,
         AiConfig config, ICardCache cc)
     {
-        // Reactive categories — never use proactively
-        if (cat is EffectCategory.CancelAction or EffectCategory.Survive)
+        // Reactive / automatic / uncategorized categories — never use proactively
+        if (cat is EffectCategory.CancelAction
+                or EffectCategory.Survive
+                or EffectCategory.SelfDestruct
+                or EffectCategory.CostReduction
+                or EffectCategory.Defensive
+                or EffectCategory.Utility)
         {
             return (0, false);
         }

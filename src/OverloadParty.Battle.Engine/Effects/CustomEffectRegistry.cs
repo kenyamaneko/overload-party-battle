@@ -25,7 +25,13 @@ public class CustomEffectRegistry : ICustomEffectRegistry
         [CustomEffects.Reattach] = _ => Reattach,
 
         [CustomEffects.ScaleToZero] = _ => ScaleToZero,
+
+        // target_shield はカード定義を passive に検査する marker（FieldHelpers.IsTargetShielded）。
+        // deploy trigger では副作用なしだが、登録しておかないと loader が unknown custom として throw する。
+        [CustomEffects.TargetShield] = _ => NoOp,
     };
+
+    private static void NoOp(OpContext _) { }
 
     /// <inheritdoc />
     public Action<OpContext>? Build(string customName, Dictionary<string, JsonElement>? meta)
@@ -55,8 +61,8 @@ public class CustomEffectRegistry : ICustomEffectRegistry
             .Where(r => r.InstanceID != octx.Source?.InstanceID)
             .FirstOrDefault(r =>
             {
-                var card = octx.CardCache.Get(r.CardID);
-                return card is not null && card.Faction == Factions.Sugar && card.IsComputeType;
+                var card = octx.CardCache.MustGet(r.CardID);
+                return card.Faction == Factions.Sugar && card.IsComputeType;
             });
         if (ally is not null)
         {
@@ -105,8 +111,8 @@ public class CustomEffectRegistry : ICustomEffectRegistry
             return;
         }
 
-        var targetCard = octx.CardCache.Get(target.CardID);
-        if (targetCard is null || (!targetCard.IsComputeType && targetCard.CardType != CardTypes.AIML))
+        var targetCard = octx.CardCache.MustGet(target.CardID);
+        if (!targetCard.IsComputeType && targetCard.CardType != CardTypes.AIML)
         {
             return;
         }

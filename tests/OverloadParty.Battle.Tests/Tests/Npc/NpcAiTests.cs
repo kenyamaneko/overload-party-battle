@@ -1232,5 +1232,6 @@ public class NpcAiTests
         public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) =>
             _infos.GetValueOrDefault((cardId, trigger));
         public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
+        public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
     }
 }

@@ -224,6 +224,12 @@ public class NpcAi : INpcStrategy
                 continue;
             }
 
+            if (a.EffectTargetType == "Choice" && choice is null)
+            {
+                if (!(a.ValidTargets?.Count > 0)) { continue; }
+                choice = new Dictionary<string, object> { ["instanceId"] = a.ValidTargets[0] };
+            }
+
             candidates.Add((a, pri, choice));
         }
 

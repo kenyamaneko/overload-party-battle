@@ -153,14 +153,4 @@ public class ChainResolverTests
         ChainResolver.IsChainActive(state).Should().BeFalse();
     }
 
-    // ─── ChainActionToTrigger ─────────────────────────────────
-
-    [Theory]
-    [InlineData("reactive", TriggerType.Reactive)]
-    [InlineData("attack", TriggerType.OnAttack)]
-    [InlineData("unknown", TriggerType.Activate)]
-    public void ChainActionToTrigger_MapsCorrectly(string action, TriggerType expected)
-    {
-        ChainResolver.ChainActionToTrigger(action).Should().Be(expected);
-    }
 }
