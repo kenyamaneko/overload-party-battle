@@ -261,7 +261,7 @@ public class NpcEventStateTests
 
     private static List<DeckSnapshotCard> MakePlayerCards(string cardId)
     {
-        return Enumerable.Range(0, GameConstants.DeckSize)
+        return Enumerable.Range(0, InitialValues.DeckSize)
             .Select(_ => new DeckSnapshotCard { CardId = cardId })
             .ToList();
     }

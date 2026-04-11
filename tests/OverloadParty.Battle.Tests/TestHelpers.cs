@@ -294,7 +294,7 @@ public static class TestFactory
     {
         var cards = new List<DeckSnapshotCard>();
         int idx = 0;
-        while (cards.Count < GameConstants.DeckSize)
+        while (cards.Count < InitialValues.DeckSize)
         {
             cards.Add(new DeckSnapshotCard { CardId = cardIds[idx % cardIds.Length] });
             idx++;

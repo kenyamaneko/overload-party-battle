@@ -1,7 +1,7 @@
 namespace OverloadParty.Battle.Models;
 
 // Battle-specific constants not in shared constants.json.
-// Generated constants (DeckSize, Factions, Zones, etc.) are in OverloadParty.GameData.GameConstants.
+// Generated constants (DeckSize, Factions, Zones, etc.) are in OverloadParty.GameData.GameDesign / GameLogic.
 public static class BattleConstants
 {
     // Game setup

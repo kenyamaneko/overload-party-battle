@@ -21,7 +21,7 @@ public class GameServiceTests
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
         _cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
         _engine = new GameEngine(_repo, _cc);
-        var npcDeck = Enumerable.Range(0, GameConstants.DeckSize)
+        var npcDeck = Enumerable.Range(0, InitialValues.DeckSize)
             .Select(_ => new DeckEntry { CardId = "SH-0001", Copies = 1 })
             .ToList();
         var aiConfigs = new Dictionary<string, AiConfig>
@@ -34,7 +34,7 @@ public class GameServiceTests
 
     private List<DeckSnapshotCard> MakePlayerCards(string cardId = "SH-0001")
     {
-        return Enumerable.Range(0, GameConstants.DeckSize)
+        return Enumerable.Range(0, InitialValues.DeckSize)
             .Select(_ => new DeckSnapshotCard { CardId = cardId })
             .ToList();
     }

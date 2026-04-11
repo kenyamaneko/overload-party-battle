@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using OverloadParty.Battle.Models;
 using OverloadParty.GameData;
+using OverloadParty.GameData.GameLogic;
 
 namespace OverloadParty.Battle.Data;
 

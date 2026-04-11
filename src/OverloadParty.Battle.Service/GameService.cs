@@ -48,7 +48,7 @@ public class GameService
     private static readonly string EngineVersion =
         typeof(GameEngine).Assembly.GetName().Version?.ToString() ?? "unknown";
     private static readonly string CardDataVersion =
-        typeof(GameConstants).Assembly.GetName().Version?.ToString() ?? "unknown";
+        typeof(InitialValues).Assembly.GetName().Version?.ToString() ?? "unknown";
 
     public GameService(
         GameEngine engine,

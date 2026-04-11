@@ -90,8 +90,8 @@ public class GameInitializerTests
         int total1 = state.Player1Hand.Count + state.Player1Repository.Count;
         int total2 = state.Player2Hand.Count + state.Player2Repository.Count;
 
-        total1.Should().Be(GameConstants.DeckSize);
-        total2.Should().Be(GameConstants.DeckSize);
+        total1.Should().Be(InitialValues.DeckSize);
+        total2.Should().Be(InitialValues.DeckSize);
     }
 
     [Fact]

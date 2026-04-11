@@ -52,8 +52,8 @@ public class NpcAiIntegrationTests
     {
         var config = _configs[model];
         var total = config.Deck.Sum(e => e.Copies);
-        total.Should().Be(GameConstants.DeckSize,
-            $"{model} deck should have exactly {GameConstants.DeckSize} cards");
+        total.Should().Be(InitialValues.DeckSize,
+            $"{model} deck should have exactly {InitialValues.DeckSize} cards");
     }
 
     [Theory]

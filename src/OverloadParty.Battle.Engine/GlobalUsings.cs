@@ -1,6 +1,8 @@
 global using OverloadParty.GameData;
+global using OverloadParty.GameData.GameDesign;
+global using OverloadParty.GameData.GameLogic;
 global using OverloadParty.Battle.Engine.Helpers;
-global using CardTypes = OverloadParty.GameData.CardTypes;
+global using CardTypes = OverloadParty.GameData.GameDesign.CardTypes;
 global using GameStatus = OverloadParty.Battle.Models.GameStatus;
 global using Field = OverloadParty.Battle.Models.Field;
 global using DeployedResource = OverloadParty.Battle.Models.DeployedResource;

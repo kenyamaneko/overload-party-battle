@@ -66,15 +66,15 @@ public static class EnumExtensions
 
     public static string ToWireString(this GameStatus status) => status switch
     {
-        GameStatus.Playing => OverloadParty.GameData.GameStatus.Playing,
-        GameStatus.Finished => OverloadParty.GameData.GameStatus.Finished,
+        GameStatus.Playing => OverloadParty.GameData.GameLogic.GameStatus.Playing,
+        GameStatus.Finished => OverloadParty.GameData.GameLogic.GameStatus.Finished,
         _ => throw new ArgumentOutOfRangeException(nameof(status))
     };
 
     public static GameStatus ParseGameStatus(string s) => s switch
     {
-        OverloadParty.GameData.GameStatus.Playing => GameStatus.Playing,
-        OverloadParty.GameData.GameStatus.Finished => GameStatus.Finished,
+        OverloadParty.GameData.GameLogic.GameStatus.Playing => GameStatus.Playing,
+        OverloadParty.GameData.GameLogic.GameStatus.Finished => GameStatus.Finished,
         _ => throw new ArgumentException($"Unknown game status: {s}")
     };
 

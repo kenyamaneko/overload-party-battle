@@ -52,7 +52,7 @@ public class GameEngineTests
         state.Player2Hand.Should().HaveCount(BattleConstants.InitialHandSize);
 
         // Repository should have remaining cards
-        state.Player1Repository.Should().HaveCount(GameConstants.DeckSize - BattleConstants.InitialHandSize);
+        state.Player1Repository.Should().HaveCount(InitialValues.DeckSize - BattleConstants.InitialHandSize);
 
         // All hand cards should reference the correct card
         state.Player1Hand.Should().AllSatisfy(h => h.CardID.Should().Be("SH-0001"));
