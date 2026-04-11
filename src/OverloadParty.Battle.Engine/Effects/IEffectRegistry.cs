@@ -23,7 +23,7 @@ public class EffectResult
 public class EffectContext
 {
     /// <summary>Current game state.</summary>
-    public required GameState State { get; init; }
+    public required BattleGameState State { get; init; }
 
     /// <summary>The game metadata.</summary>
     public required Game Game { get; init; }

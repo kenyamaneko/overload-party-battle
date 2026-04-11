@@ -21,7 +21,7 @@ PORT ?= 9002
 run:  ## Run local dev server (port 9002, in-memory mock repos)
 	@lsof -ti :$(PORT) | xargs kill -9 2>/dev/null || true
 	ASPNETCORE_ENVIRONMENT=Development BATTLE_MODE=local \
-	CARDS_JSON_PATH=$(COMMON_DIR)/packages/gamedata-dotnet/cache/cards_gen.json \
+	CARDS_JSON_PATH=$(COMMON_DIR)/packages/game-state-dotnet/cache/cards_gen.json \
 		dotnet run --project $(SERVER)
 
 # ─── Test ────────────────────────────────────────────────
@@ -40,13 +40,13 @@ test-coverage:  ## Run tests with code coverage report
 	dotnet test $(TESTS) --collect:"XPlat Code Coverage" --results-directory .coverage
 
 # ─── Dependencies ───────────────────────────────────────
-GENERATED_PKG := OverloadParty.GameData
+GENERATED_PKGS := OverloadParty.GameDesignConstants OverloadParty.GameLogicConstants OverloadParty.GameState OverloadParty.ApiBattleRpc
 
-update-common:  ## Update OverloadParty.GameData to the latest version
+update-common:  ## Update OverloadParty.* generated packages to the latest version
 	dotnet nuget locals http-cache --clear
-	@rm -rf $(HOME)/.nuget/packages/$(shell echo $(GENERATED_PKG) | tr A-Z a-z)
+	@for pkg in $(GENERATED_PKGS); do rm -rf $(HOME)/.nuget/packages/$$(echo $$pkg | tr A-Z a-z); done
 	dotnet restore $(SLN)
-	@echo "Updated to:" && dotnet list $(SERVER) package --include-prerelease | grep $(GENERATED_PKG)
+	@echo "Updated to:" && dotnet list $(SERVER) package --include-prerelease | grep OverloadParty\.
 
 # ─── Misc ────────────────────────────────────────────────
 clean:  ## Remove build artifacts

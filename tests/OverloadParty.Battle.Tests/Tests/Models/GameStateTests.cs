@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Tests.Models;
 
 /// <summary>
-/// Tests for GameState accessor helpers. Validates that playerNum-based
+/// Tests for BattleGameState accessor helpers. Validates that playerNum-based
 /// getters/setters correctly route to the underlying Player1/Player2 properties.
 /// </summary>
 public class GameStateTests

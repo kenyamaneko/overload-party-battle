@@ -16,7 +16,7 @@ public static class DrawPhaseProcessor
     /// <param name="game">The game metadata.</param>
     /// <param name="cc">The card definition cache.</param>
     /// <returns>A game-over result if a win condition is met; otherwise <c>null</c>.</returns>
-    public static GameOverResult? Process(GameState state, Game game, ICardCache cc, IEffectRegistry? effects = null)
+    public static GameOverResult? Process(BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects = null)
     {
         if (state.CurrentPhase != Phase.Draw) { return null; }
 
@@ -36,10 +36,10 @@ public static class DrawPhaseProcessor
         return WinConditionChecker.Check(state, game);
     }
 
-    static bool CanDraw(GameState state) =>
+    static bool CanDraw(BattleGameState state) =>
         state.GetRepository(state.ActivePlayer).Count > 0;
 
-    static void ProcessDeployCountdown(GameState state, Game game, ICardCache cc, IEffectRegistry? effects)
+    static void ProcessDeployCountdown(BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects)
     {
         var playerNum = state.ActivePlayer;
         var field = state.GetField(playerNum);

@@ -16,7 +16,7 @@ public static class TurnManager
     /// Main → Battle (or Main → End on first turn), Battle → End, Draw → Main.
     /// Returns the previous phase.
     /// </summary>
-    public static Phase AdvancePhase(GameState state)
+    public static Phase AdvancePhase(BattleGameState state)
     {
         var previous = state.CurrentPhase;
         state.CurrentPhase = previous switch
@@ -46,7 +46,7 @@ public static class TurnManager
     /// <summary>
     /// Switch active player and start the next turn at Draw phase.
     /// </summary>
-    public static void SwitchActivePlayer(GameState state)
+    public static void SwitchActivePlayer(BattleGameState state)
     {
         state.ActivePlayer = state.OpponentOf(state.ActivePlayer);
         state.CurrentTurn++;

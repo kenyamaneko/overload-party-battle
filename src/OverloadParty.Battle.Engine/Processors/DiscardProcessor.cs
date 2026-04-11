@@ -18,7 +18,7 @@ public static class DiscardProcessor
     /// <param name="cc">The card definition cache.</param>
     /// <returns>The action result containing discard events and possible game-over result.</returns>
     public static ActionResult Process(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         DiscardHandRequest req, ICardCache cc, IEffectRegistry? effects = null)
     {
         var hand = state.GetHand(playerNum);

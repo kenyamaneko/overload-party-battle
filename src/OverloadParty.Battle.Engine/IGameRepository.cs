@@ -16,7 +16,7 @@ public interface IGameRepository
     /// <summary>Creates a new game with its initial state.</summary>
     /// <param name="game">The game metadata.</param>
     /// <param name="state">The initial game state.</param>
-    Task CreateGame(Game game, GameState state, CancellationToken ct = default);
+    Task CreateGame(Game game, BattleGameState state, CancellationToken ct = default);
 
     /// <summary>Returns the game metadata, or <c>null</c> if not found.</summary>
     /// <param name="gameID">The game ID.</param>
@@ -24,16 +24,16 @@ public interface IGameRepository
 
     /// <summary>Returns the current game state, or <c>null</c> if not found.</summary>
     /// <param name="gameID">The game ID.</param>
-    Task<GameState?> GetGameState(string gameID, CancellationToken ct = default);
+    Task<BattleGameState?> GetGameState(string gameID, CancellationToken ct = default);
 
     /// <summary>
-    /// Updates GameState within a read-write transaction.
+    /// Updates BattleGameState within a read-write transaction.
     /// The callback receives the current state; it must modify it in place.
     /// The implementation handles optimistic locking (version check + increment).
     /// If <paramref name="pendingAction"/> is provided, it is appended atomically
     /// within the same transaction with a safe auto-incremented seq number.
     /// </summary>
-    Task UpdateGameState(string gameID, Func<GameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default);
+    Task UpdateGameState(string gameID, Func<BattleGameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default);
 
     /// <summary>Persists a game event to the event log.</summary>
     /// <param name="evt">The event to append.</param>
@@ -60,6 +60,6 @@ public interface IGameRepository
 
     /// <summary>Returns the initial game state (for replay).</summary>
     /// <param name="gameID">The game ID.</param>
-    Task<GameState?> GetInitialState(string gameID, CancellationToken ct = default);
+    Task<BattleGameState?> GetInitialState(string gameID, CancellationToken ct = default);
 
 }

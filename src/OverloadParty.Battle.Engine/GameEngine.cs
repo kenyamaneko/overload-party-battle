@@ -5,7 +5,7 @@ using OverloadParty.Battle.Engine.Processors;
 namespace OverloadParty.Battle.Engine;
 
 /// <summary>
-/// Stateless game engine. All state lives in GameState (persisted via IGameRepository).
+/// Stateless game engine. All state lives in BattleGameState (persisted via IGameRepository).
 /// Depends only on IGameRepository, ICardCache, and IEffectRegistry interfaces.
 /// </summary>
 public class GameEngine
@@ -207,7 +207,7 @@ public class GameEngine
     /// Deducts elapsed time since TurnStartedAt from the active player's TimeBank
     /// and resets TurnStartedAt to now.
     /// </summary>
-    internal static void DeductElapsedTime(GameState state)
+    internal static void DeductElapsedTime(BattleGameState state)
     {
         var now = DateTime.UtcNow;
         var elapsed = (long)(now - state.TurnStartedAt).TotalSeconds;
@@ -243,7 +243,7 @@ public class GameEngine
     /// <summary>
     /// Computes turn control information (whether the player can end the phase, discard count).
     /// </summary>
-    public TurnControlsMessage ComputeTurnControls(GameState state, List<UndeployedCard> hand)
+    public TurnControlsMessage ComputeTurnControls(BattleGameState state, List<UndeployedCard> hand)
     {
         return AvailableActions.ComputeTurnControls(state, hand);
     }

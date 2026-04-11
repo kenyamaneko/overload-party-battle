@@ -18,7 +18,7 @@ public static class ScaleUpProcessor
     /// <param name="cc">The card definition cache.</param>
     /// <returns>The action result containing the scale-up event and state update flag.</returns>
     public static ActionResult Process(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         ScaleUpRequest req, ICardCache cc, IEffectRegistry? effects = null)
     {
         var field = state.GetField(playerNum);
@@ -81,7 +81,7 @@ public static class ScaleUpProcessor
     }
 
     private static void FireOnScaleUp(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         DeployedResource resource, ICardCache cc, IEffectRegistry effects,
         List<GameEvent> events)
     {

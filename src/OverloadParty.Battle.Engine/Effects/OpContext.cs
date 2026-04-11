@@ -26,7 +26,7 @@ public class OpContext
     }
 
     /// <summary>Current game state.</summary>
-    public GameState State => Ctx.State;
+    public BattleGameState State => Ctx.State;
 
     /// <summary>The game metadata.</summary>
     public Game Game => Ctx.Game;

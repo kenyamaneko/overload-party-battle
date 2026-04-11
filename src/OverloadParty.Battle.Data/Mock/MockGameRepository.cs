@@ -12,11 +12,11 @@ public class MockGameRepository : IGameRepository
 {
     private readonly Lock _lock = new();
     private readonly Dictionary<string, Game> _games = new();
-    private readonly Dictionary<string, GameState> _states = new();
-    private readonly Dictionary<string, GameState> _initialStates = new();
+    private readonly Dictionary<string, BattleGameState> _states = new();
+    private readonly Dictionary<string, BattleGameState> _initialStates = new();
     private readonly Dictionary<string, List<GameEvent>> _events = new();
 
-    public Task CreateGame(Game game, GameState state, CancellationToken ct = default)
+    public Task CreateGame(Game game, BattleGameState state, CancellationToken ct = default)
     {
         lock (_lock)
         {
@@ -24,7 +24,7 @@ public class MockGameRepository : IGameRepository
             _states[game.GameID] = state;
             // Deep-copy via JSON round-trip to preserve the initial snapshot
             var json = JsonSerializer.Serialize(state, DbJsonOptions.Default);
-            _initialStates[game.GameID] = JsonSerializer.Deserialize<GameState>(json, DbJsonOptions.Default)!;
+            _initialStates[game.GameID] = JsonSerializer.Deserialize<BattleGameState>(json, DbJsonOptions.Default)!;
             _events[game.GameID] = [];
         }
         return Task.CompletedTask;
@@ -35,14 +35,14 @@ public class MockGameRepository : IGameRepository
         lock (_lock) { return Task.FromResult(_games.GetValueOrDefault(gameID)); }
     }
 
-    public Task<GameState?> GetGameState(string gameID, CancellationToken ct = default)
+    public Task<BattleGameState?> GetGameState(string gameID, CancellationToken ct = default)
     {
         lock (_lock) { return Task.FromResult(_states.GetValueOrDefault(gameID)); }
     }
 
-    public async Task UpdateGameState(string gameID, Func<GameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
+    public async Task UpdateGameState(string gameID, Func<BattleGameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
     {
-        GameState state;
+        BattleGameState state;
         lock (_lock)
         {
             state = _states.GetValueOrDefault(gameID)
@@ -118,7 +118,7 @@ public class MockGameRepository : IGameRepository
         }
     }
 
-    public Task<GameState?> GetInitialState(string gameID, CancellationToken ct = default)
+    public Task<BattleGameState?> GetInitialState(string gameID, CancellationToken ct = default)
     {
         lock (_lock)
         {

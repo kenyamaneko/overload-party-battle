@@ -1,6 +1,6 @@
-global using OverloadParty.GameData;
-global using OverloadParty.GameData.GameDesign;
-global using OverloadParty.GameData.GameLogic;
+global using OverloadParty.GameDesignConstants;
+global using OverloadParty.GameLogicConstants;
+global using OverloadParty.GameState;
 global using AvailableAction = OverloadParty.Battle.Engine.AvailableAction;
 global using GameStatus = OverloadParty.Battle.Models.GameStatus;
 global using Field = OverloadParty.Battle.Models.Field;

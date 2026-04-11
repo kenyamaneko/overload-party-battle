@@ -16,7 +16,7 @@ public class PgGameRepositoryTests
 
     private static string NewGameID() => $"g-{Guid.NewGuid():N}"[..26];
 
-    private static (Game game, GameState state) MakeFixture(string? gameID = null)
+    private static (Game game, BattleGameState state) MakeFixture(string? gameID = null)
     {
         var id = gameID ?? NewGameID();
         var now = DateTime.UtcNow;
@@ -30,7 +30,7 @@ public class PgGameRepositoryTests
             UpdatedAt = now,
         };
 
-        var state = new GameState
+        var state = new BattleGameState
         {
             GameID = id,
             Version = 1,

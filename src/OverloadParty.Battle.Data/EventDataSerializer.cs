@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OverloadParty.Battle.Models;
-using OverloadParty.GameData;
-using OverloadParty.GameData.GameLogic;
+using OverloadParty.GameLogicConstants;
+using OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Data;
 

@@ -163,7 +163,7 @@ public static class FieldHelpers
     /// <summary>
     /// サポートカードを破壊してトラッシュに移動する。
     /// </summary>
-    public static bool DestroySupport(GameState state, long ownerNum, Field field, string instanceID)
+    public static bool DestroySupport(BattleGameState state, long ownerNum, Field field, string instanceID)
     {
         var support = field.Support.FirstOrDefault(s => s.InstanceID == instanceID);
         if (support is null)

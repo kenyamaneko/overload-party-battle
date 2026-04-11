@@ -72,7 +72,7 @@ public static class ResourceHelpers
     /// <summary>
     /// 手札からカードを配置する。
     /// </summary>
-    public static void DeployFromHand(GameState state, long playerNum, Field field, string cardId, ICardCache cc)
+    public static void DeployFromHand(BattleGameState state, long playerNum, Field field, string cardId, ICardCache cc)
     {
         var hand = state.GetHand(playerNum);
         int handIdx = hand.FindIndex(c => c.CardID == cardId);
@@ -92,7 +92,7 @@ public static class ResourceHelpers
     /// <summary>
     /// リポジトリからカードを配置する。
     /// </summary>
-    public static void DeployFromRepo(GameState state, long playerNum, Field field, UndeployedCard repoCard, long overrideAV, ICardCache cc)
+    public static void DeployFromRepo(BattleGameState state, long playerNum, Field field, UndeployedCard repoCard, long overrideAV, ICardCache cc)
     {
         var repo = state.GetRepository(playerNum);
         repo.Remove(repoCard);
@@ -133,7 +133,7 @@ public static class ResourceHelpers
     /// <summary>
     /// リソースを破壊する（SLAペナルティ適用、マイグレーションリンククリア、トラッシュ移動、フィールド除去）。
     /// </summary>
-    public static void DestroyResource(GameState state, long ownerNum, Field field, DeployedResource resource, ICardCache cc)
+    public static void DestroyResource(BattleGameState state, long ownerNum, Field field, DeployedResource resource, ICardCache cc)
     {
         var card = cc.MustGet(resource.CardID);
 

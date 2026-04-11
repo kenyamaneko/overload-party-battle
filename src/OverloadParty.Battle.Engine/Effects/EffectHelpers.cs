@@ -33,7 +33,7 @@ public static class EffectHelpers
     /// <param name="state">Current game state.</param>
     /// <param name="playerNum">The player whose opponent's backend is counted.</param>
     /// <returns>Number of backend resources.</returns>
-    public static int CountOpponentBackend(GameState state, long playerNum)
+    public static int CountOpponentBackend(BattleGameState state, long playerNum)
     {
         long oppNum = state.OpponentOf(playerNum);
         var field = state.GetField(oppNum);

@@ -16,7 +16,7 @@ public class SlotRequestOpsTests
         _cc.Add(TestFactory.DataCard(cardId: "TST-DB01", cardType: "Database"));
     }
 
-    private EffectContext MakeContext(GameState? state = null, DeployedResource? target = null,
+    private EffectContext MakeContext(BattleGameState? state = null, DeployedResource? target = null,
         Dictionary<string, object>? choiceData = null)
     {
         state ??= TestFactory.MakeGameState();

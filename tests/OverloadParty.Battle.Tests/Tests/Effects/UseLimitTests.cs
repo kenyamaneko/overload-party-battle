@@ -10,7 +10,7 @@ public class UseLimitTests
     private readonly Game _game = TestFactory.MakeGame();
 
     private OpContext MakeOpContext(
-        GameState state,
+        BattleGameState state,
         long playerNum,
         DeployedResource? source = null,
         DeployedSupport? supSource = null)

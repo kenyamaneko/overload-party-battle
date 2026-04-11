@@ -13,7 +13,7 @@ public static class WinConditionChecker
     /// <param name="state">The current game state.</param>
     /// <param name="game">The game metadata.</param>
     /// <returns>Non-null if a win condition is met.</returns>
-    public static GameOverResult? Check(GameState state, Game game)
+    public static GameOverResult? Check(BattleGameState state, Game game)
     {
         bool p1BudgetZero = state.Player1Budget <= 0;
         bool p2BudgetZero = state.Player2Budget <= 0;
@@ -78,7 +78,7 @@ public static class WinConditionChecker
     /// Checks only the timeout condition (TimeBank &lt;= 0).
     /// Used by GameEngine before processing an action to detect mid-turn timeout.
     /// </summary>
-    public static GameOverResult? CheckTimeout(GameState state)
+    public static GameOverResult? CheckTimeout(BattleGameState state)
     {
         if (state.Player1TimeBank <= 0)
         {
@@ -95,7 +95,7 @@ public static class WinConditionChecker
     /// Check if a player has lost due to system down (no active resources).
     /// Only triggers if the player has previously deployed a resource.
     /// </summary>
-    public static bool IsSystemDown(GameState state, long playerNum)
+    public static bool IsSystemDown(BattleGameState state, long playerNum)
     {
         if (!state.GetHasHadActiveResource(playerNum))
         {
@@ -108,7 +108,7 @@ public static class WinConditionChecker
     /// <summary>
     /// Check if a player has failed to launch (no active resource by turn 3).
     /// </summary>
-    public static bool CheckLaunchFailure(GameState state, long playerNum)
+    public static bool CheckLaunchFailure(BattleGameState state, long playerNum)
     {
         long personalTurn = (state.CurrentTurn + 1) / 2;
         if (personalTurn < BattleConstants.LaunchFailureTurn)

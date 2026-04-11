@@ -10,7 +10,7 @@ namespace OverloadParty.Battle.Tests.Effects;
 /// </summary>
 public class EffectComposerTests
 {
-    private static EffectContext MakeContext(GameState? state = null)
+    private static EffectContext MakeContext(BattleGameState? state = null)
     {
         state ??= TestFactory.MakeGameState();
         return new EffectContext

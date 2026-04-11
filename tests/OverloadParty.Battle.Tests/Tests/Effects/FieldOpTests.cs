@@ -11,7 +11,7 @@ public class FieldOpTests
     private readonly TestCardCache _cc = new();
     private readonly Game _game = TestFactory.MakeGame();
 
-    private OpContext MakeOpContext(GameState state, long playerNum)
+    private OpContext MakeOpContext(BattleGameState state, long playerNum)
     {
         var ctx = new EffectContext
         {

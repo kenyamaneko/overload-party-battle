@@ -131,7 +131,7 @@ public class NpcRunner
     }
 
     private async Task<NpcAdvanceResult> ProcessOneSlotSelect(
-        Game game, GameState state, long npcPlayerNum, INpcStrategy npcAI,
+        Game game, BattleGameState state, long npcPlayerNum, INpcStrategy npcAI,
         CancellationToken ct)
     {
         var gameID = game.GameID;
@@ -149,7 +149,7 @@ public class NpcRunner
     }
 
     private List<NpcAction> DecideActions(
-        INpcStrategy npcAI, GameState state, Game game, long npcPlayerNum)
+        INpcStrategy npcAI, BattleGameState state, Game game, long npcPlayerNum)
     {
         var myField = state.GetField(npcPlayerNum);
         var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
@@ -171,7 +171,7 @@ public class NpcRunner
     }
 
     private static List<NpcAction> BuildDiscardActions(
-        INpcStrategy npcAI, GameState state, long npcPlayerNum, string gameID)
+        INpcStrategy npcAI, BattleGameState state, long npcPlayerNum, string gameID)
     {
         var hand = state.GetHand(npcPlayerNum);
         var discardCount = hand.Count - BattleConstants.HandLimit;

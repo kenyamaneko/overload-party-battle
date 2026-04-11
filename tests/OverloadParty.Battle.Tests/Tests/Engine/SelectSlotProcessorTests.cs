@@ -14,7 +14,7 @@ public class SelectSlotProcessorTests
         _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
     }
 
-    private GameState MakeStateWithPending(string zone = "frontend", int index = 0)
+    private BattleGameState MakeStateWithPending(string zone = "frontend", int index = 0)
     {
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         state.PendingSlotSelects.Add(new AwaitingSlotSelect

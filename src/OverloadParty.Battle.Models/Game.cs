@@ -27,10 +27,10 @@ public class Game
 }
 
 /// <summary>
-/// GameState holds the full mutable state of a game in progress.
+/// BattleGameState holds the full mutable state of a game in progress.
 /// The Data layer handles serialization/deserialization to/from the DB.
 /// </summary>
-public class GameState
+public class BattleGameState
 {
     public string GameID { get; set; } = "";
     public long Version { get; set; }

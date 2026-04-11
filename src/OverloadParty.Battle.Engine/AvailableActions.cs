@@ -59,7 +59,7 @@ public static class AvailableActions
     /// <param name="state">The current game state.</param>
     /// <param name="hand">The active player's hand.</param>
     /// <returns>Turn control information for the UI.</returns>
-    public static TurnControlsMessage ComputeTurnControls(GameState state, List<UndeployedCard> hand)
+    public static TurnControlsMessage ComputeTurnControls(BattleGameState state, List<UndeployedCard> hand)
     {
         return new TurnControlsMessage
         {
@@ -83,7 +83,7 @@ public static class AvailableActions
     /// <param name="effects">Effect registry (may be null).</param>
     /// <returns>A list of all valid actions.</returns>
     public static List<AvailableAction> GetAllAvailableActions(
-        GameState state,
+        BattleGameState state,
         Field myField, Field oppField, List<UndeployedCard> hand,
         long budget, long insightPool,
         ICardCache cc, IEffectRegistry? effects)
@@ -109,7 +109,7 @@ public static class AvailableActions
     }
 
     private static IEnumerable<AvailableAction> EnumeratePlayCardActions(
-        GameState state, Field field, List<UndeployedCard> hand,
+        BattleGameState state, Field field, List<UndeployedCard> hand,
         long budget, ICardCache cc, IEffectRegistry? effects)
     {
         foreach (var handCard in hand)
@@ -122,7 +122,7 @@ public static class AvailableActions
     }
 
     private static AvailableAction? BuildPlayCardAction(
-        GameState state, Field field, UndeployedCard handCard, CardDefinition card,
+        BattleGameState state, Field field, UndeployedCard handCard, CardDefinition card,
         long budget, ICardCache cc, IEffectRegistry? effects)
     {
         return EnumExtensions.GetCategory(card.CardType) switch
@@ -134,7 +134,7 @@ public static class AvailableActions
     }
 
     private static AvailableAction? BuildSupportPlayAction(
-        GameState state, Field field, UndeployedCard handCard, CardDefinition card,
+        BattleGameState state, Field field, UndeployedCard handCard, CardDefinition card,
         long budget, ICardCache cc, IEffectRegistry? effects)
     {
         if (card.CardType == CardTypes.Attachment)
@@ -197,7 +197,7 @@ public static class AvailableActions
     /// passes the filter (in which case the action must be suppressed).
     /// </summary>
     private static bool TryPopulateTrashChoice(
-        AvailableAction action, GameState state, string cardId, ICardCache cc, IEffectRegistry? effects)
+        AvailableAction action, BattleGameState state, string cardId, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return true; }
 
@@ -335,7 +335,7 @@ public static class AvailableActions
     }
 
     private static IEnumerable<AvailableAction> EnumerateMonetizeActions(
-        GameState state, Field field, long insightPool, ICardCache cc)
+        BattleGameState state, Field field, long insightPool, ICardCache cc)
     {
         if (TurnManager.IsFirstTurn(state.CurrentTurn)) { yield break; }
         if (insightPool <= 0) { yield break; }
@@ -359,7 +359,7 @@ public static class AvailableActions
     }
 
     private static IEnumerable<AvailableAction> EnumerateUseEffectActions(
-        GameState state, Field myField, Field oppField,
+        BattleGameState state, Field myField, Field oppField,
         long budget, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { yield break; }

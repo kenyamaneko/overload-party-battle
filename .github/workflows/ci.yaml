@@ -27,7 +27,7 @@ jobs:
         run: |
           curl -sSf -H "Authorization: token ${{ secrets.COMMON_CONTENT_FETCH }}" \
             -H "Accept: application/vnd.github.raw+json" \
-            "https://api.github.com/repos/kenyamaneko/overload-party-common/contents/packages/dotnet/cache/cards_gen.json" \
+            "https://api.github.com/repos/kenyamaneko/overload-party-common/contents/packages/game-state-dotnet/cache/cards_gen.json" \
             -o cards_gen.json
       - uses: actions/setup-dotnet@v4
         with:

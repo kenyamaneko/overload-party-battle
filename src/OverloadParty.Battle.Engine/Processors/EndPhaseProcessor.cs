@@ -17,7 +17,7 @@ public static class EndPhaseProcessor
     /// <param name="cc">The card definition cache.</param>
     /// <returns>The action result containing phase change events and possible game-over or discard requirements.</returns>
     public static ActionResult Process(
-        GameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects = null)
+        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects = null)
     {
         var previousPhase = TurnManager.AdvancePhase(state);
 
@@ -43,7 +43,7 @@ public static class EndPhaseProcessor
     }
 
     private static ActionResult ProcessEndPhaseTransition(
-        GameState state, Game game, long playerNum, ICardCache cc,
+        BattleGameState state, Game game, long playerNum, ICardCache cc,
         IEffectRegistry? effects, List<GameEvent> events)
     {
         bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects);
@@ -92,7 +92,7 @@ public static class EndPhaseProcessor
     /// <summary>
     /// Returns true if the player needs to discard (hand > 6).
     /// </summary>
-    static bool ProcessEndPhaseLogic(GameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects)
+    static bool ProcessEndPhaseLogic(BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects)
     {
         var field = state.GetField(playerNum);
 
@@ -123,7 +123,7 @@ public static class EndPhaseProcessor
             resource.TemporaryEffects, BuffTypes.MaintenanceReduction, baseCost);
     }
 
-    static void CollectMaintenanceCost(GameState state, long playerNum, Field field, ICardCache cc)
+    static void CollectMaintenanceCost(BattleGameState state, long playerNum, Field field, ICardCache cc)
     {
         long totalMC = FieldHelpers.AllFaceUpResources(field)
             .Sum(r => CalculateMaintenanceCost(r, cc.MustGet(r.CardID)));
@@ -131,7 +131,7 @@ public static class EndPhaseProcessor
         state.SetBudget(playerNum, state.GetBudget(playerNum) - totalMC);
     }
 
-    static void GenerateInsight(GameState state, long playerNum, Field field, ICardCache cc)
+    static void GenerateInsight(BattleGameState state, long playerNum, Field field, ICardCache cc)
     {
         long totalYield = 0;
 
@@ -168,7 +168,7 @@ public static class EndPhaseProcessor
         }
     }
 
-    static void ResetPerTurnFlags(GameState state, long playerNum, Field field)
+    static void ResetPerTurnFlags(BattleGameState state, long playerNum, Field field)
     {
         foreach (var resource in FieldHelpers.AllResources(field))
         {
@@ -191,7 +191,7 @@ public static class EndPhaseProcessor
     }
 
     static void FirePassiveEffects(
-        GameState state, Game game, long playerNum, Field field,
+        BattleGameState state, Game game, long playerNum, Field field,
         ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return; }
@@ -255,7 +255,7 @@ public static class EndPhaseProcessor
             ?? effects.Get(cardId, TriggerType.Passive);
     }
 
-    private static GameEvent MakeTurnEndEvent(string gameID, long playerNum, GameState state)
+    private static GameEvent MakeTurnEndEvent(string gameID, long playerNum, BattleGameState state)
     {
         return new GameEvent
         {
@@ -272,7 +272,7 @@ public static class EndPhaseProcessor
         };
     }
 
-    internal static GameEvent MakeTurnStartEvent(string gameID, GameState state)
+    internal static GameEvent MakeTurnStartEvent(string gameID, BattleGameState state)
     {
         return new GameEvent
         {

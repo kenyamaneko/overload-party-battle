@@ -402,7 +402,7 @@ public class EndPhaseProcessorTests
 
     // ─── helpers ─────────────────────────────────────────────
 
-    private static void AddRepoCards(GameState state, long playerNum)
+    private static void AddRepoCards(BattleGameState state, long playerNum)
     {
         var repo = state.GetRepository(playerNum);
         repo.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "SH-0001" });

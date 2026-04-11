@@ -11,7 +11,7 @@ public static class GameInitializer
     /// Create a new game with shuffled decks and initial hands.
     /// Returns (game, gameState).
     /// </summary>
-    public static (Game Game, GameState State) CreateNewGame(
+    public static (Game Game, BattleGameState State) CreateNewGame(
         string gameID,
         DeckSnapshot deck1,
         DeckSnapshot deck2,
@@ -27,7 +27,7 @@ public static class GameInitializer
             UpdatedAt = DateTime.UtcNow,
         };
 
-        var state = new GameState
+        var state = new BattleGameState
         {
             GameID = gameID,
             Version = 1,
@@ -54,7 +54,7 @@ public static class GameInitializer
         return (game, state);
     }
 
-    private static void DealCards(GameState state, long playerNum, List<DeckSnapshotCard> cards, Random rng)
+    private static void DealCards(BattleGameState state, long playerNum, List<DeckSnapshotCard> cards, Random rng)
     {
         // Shuffle
         var shuffled = new List<DeckSnapshotCard>(cards);

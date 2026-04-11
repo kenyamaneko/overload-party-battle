@@ -7,7 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OverloadParty.GameData" Version="0.1.34" />
+    <PackageReference Include="OverloadParty.GameDesignConstants" Version="0.1.0" />
+    <PackageReference Include="OverloadParty.GameLogicConstants" Version="0.1.0" />
+    <PackageReference Include="OverloadParty.GameState" Version="0.1.0" />
   </ItemGroup>
 
 </Project>

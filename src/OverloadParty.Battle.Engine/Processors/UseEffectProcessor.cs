@@ -20,7 +20,7 @@ public static class UseEffectProcessor
     /// <param name="effects">The optional effect registry containing effect handlers.</param>
     /// <returns>The action result containing effect events and state update flag.</returns>
     public static ActionResult Process(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         UseEffectRequest req, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null)
@@ -48,7 +48,7 @@ public static class UseEffectProcessor
     }
 
     private static ActionResult ActivateResourceEffect(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         DeployedResource source,
         UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
@@ -96,7 +96,7 @@ public static class UseEffectProcessor
     }
 
     private static ActionResult ActivateSupportEffect(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         Field field, DeployedSupport support,
         UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {

@@ -17,7 +17,7 @@ public class TrashToHandOpTests
         _cc.Add(TestFactory.DataCard(cardId: "TST-DB01", faction: "Tenki"));
     }
 
-    private EffectContext MakeContext(GameState state, Dictionary<string, object>? choiceData = null)
+    private EffectContext MakeContext(BattleGameState state, Dictionary<string, object>? choiceData = null)
     {
         return new EffectContext
         {

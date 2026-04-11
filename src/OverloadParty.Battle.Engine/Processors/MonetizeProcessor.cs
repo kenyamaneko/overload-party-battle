@@ -18,7 +18,7 @@ public static class MonetizeProcessor
     /// <param name="cc">The card definition cache.</param>
     /// <returns>The action result containing the monetize event and state update flag.</returns>
     public static ActionResult Process(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         MonetizeRequest req, ICardCache cc)
     {
         if (TurnManager.IsFirstTurn(state.CurrentTurn))

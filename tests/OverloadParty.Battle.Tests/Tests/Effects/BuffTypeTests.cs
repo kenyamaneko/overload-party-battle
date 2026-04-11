@@ -19,7 +19,7 @@ public class BuffTypeTests
 
     // ─── Helper: build OpContext with a fixed target list ─────────────
 
-    private OpContext MakeOpContext(GameState state, long playerNum, DeployedResource? source = null, DeployedResource? target = null)
+    private OpContext MakeOpContext(BattleGameState state, long playerNum, DeployedResource? source = null, DeployedResource? target = null)
     {
         var ctx = new EffectContext
         {

@@ -12,7 +12,7 @@ namespace OverloadParty.Battle.Data.Pg;
 /// </summary>
 public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
 {
-    public async Task CreateGame(Game game, GameState state, CancellationToken ct = default)
+    public async Task CreateGame(Game game, BattleGameState state, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
@@ -114,7 +114,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return ReadGame(reader);
     }
 
-    public async Task<GameState?> GetGameState(string gameID, CancellationToken ct = default)
+    public async Task<BattleGameState?> GetGameState(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(SelectGameStateSql, conn);
@@ -128,12 +128,12 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return ReadGameState(reader);
     }
 
-    public async Task UpdateGameState(string gameID, Func<GameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
+    public async Task UpdateGameState(string gameID, Func<BattleGameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
 
-        GameState state;
+        BattleGameState state;
         await using (var cmd = new NpgsqlCommand(SelectGameStateSql + " FOR UPDATE", conn, tx))
         {
             cmd.Parameters.AddWithValue(gameID);
@@ -268,7 +268,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return events;
     }
 
-    public async Task<GameState?> GetInitialState(string gameID, CancellationToken ct = default)
+    public async Task<BattleGameState?> GetInitialState(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(
@@ -282,7 +282,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         }
         return reader.IsDBNull(0)
             ? null
-            : JsonSerializer.Deserialize<GameState>(reader.GetString(0), DbJsonOptions.Default);
+            : JsonSerializer.Deserialize<BattleGameState>(reader.GetString(0), DbJsonOptions.Default);
     }
 
     // ─── SQL constants ──────────────────────────────────────────
@@ -324,9 +324,9 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         };
     }
 
-    private static GameState ReadGameState(NpgsqlDataReader r)
+    private static BattleGameState ReadGameState(NpgsqlDataReader r)
     {
-        return new GameState
+        return new BattleGameState
         {
             GameID = r.GetString(0),
             Version = r.GetInt64(1),
@@ -357,7 +357,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         };
     }
 
-    private async Task InsertGameState(NpgsqlConnection conn, NpgsqlTransaction tx, GameState state, CancellationToken ct)
+    private async Task InsertGameState(NpgsqlConnection conn, NpgsqlTransaction tx, BattleGameState state, CancellationToken ct)
     {
         var stateJson = JsonSerializer.Serialize(state, DbJsonOptions.Default);
 
@@ -376,7 +376,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
-    private static void AddGameStateParams(NpgsqlCommand cmd, GameState state)
+    private static void AddGameStateParams(NpgsqlCommand cmd, BattleGameState state)
     {
         cmd.Parameters.AddWithValue(state.Version);
         cmd.Parameters.AddWithValue(state.CurrentTurn);
@@ -412,10 +412,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     }
 
     /// <summary>
-    /// EventData の JSONB パラメータは EventDataSerializer を通す。GameState など他の JSONB 列の
+    /// EventData の JSONB パラメータは EventDataSerializer を通す。BattleGameState など他の JSONB 列の
     /// snake_case 設定 (DbJsonOptions) とは別経路で camelCase 統一されている点に注意。
     /// </summary>
-    private static NpgsqlParameter EventDataJsonbParam(OverloadParty.GameData.IEventData? value)
+    private static NpgsqlParameter EventDataJsonbParam(OverloadParty.GameState.IEventData? value)
     {
         var json = value is null ? (object)DBNull.Value : EventDataSerializer.Serialize(value);
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };

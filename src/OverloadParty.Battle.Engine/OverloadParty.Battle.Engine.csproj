@@ -11,6 +11,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="OverloadParty.GameDesignConstants" Version="0.1.0" />
+    <PackageReference Include="OverloadParty.GameLogicConstants" Version="0.1.0" />
+    <PackageReference Include="OverloadParty.GameState" Version="0.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <InternalsVisibleTo Include="OverloadParty.Battle.Tests" />
   </ItemGroup>
 

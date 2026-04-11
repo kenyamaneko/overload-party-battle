@@ -153,7 +153,7 @@ public class ComplianceAuditEffectTests
 
     // ─── Helper methods ───────────────────────────────────────────
 
-    private EffectResult ExecuteEffect(GameState state, long playerNum)
+    private EffectResult ExecuteEffect(BattleGameState state, long playerNum)
     {
         var handler = _registry.Get(CardId, TriggerType.Activate)
             ?? throw new InvalidOperationException("Card #112 handler not registered");
@@ -169,7 +169,7 @@ public class ComplianceAuditEffectTests
         return handler(ctx);
     }
 
-    private static void AddComplianceAuditSupport(GameState state, long playerNum)
+    private static void AddComplianceAuditSupport(BattleGameState state, long playerNum)
     {
         var field = playerNum == 1 ? state.Player1Field : state.Player2Field;
         field.Support[0] = new DeployedSupport

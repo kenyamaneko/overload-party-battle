@@ -248,19 +248,19 @@ public static class TestFactory
         return new Field();
     }
 
-    // ─── GameState Builder ────────────────────────────────────
+    // ─── BattleGameState Builder ────────────────────────────────────
 
     /// <summary>
-    /// Create a minimal GameState for testing.
+    /// Create a minimal BattleGameState for testing.
     /// </summary>
-    public static GameState MakeGameState(
+    public static BattleGameState MakeGameState(
         long turn = 1,
         Phase phase = Phase.Main,
         long activePlayer = 1,
         long p1Budget = 5000,
         long p2Budget = 5000)
     {
-        return new GameState
+        return new BattleGameState
         {
             GameID = "test-game",
             CurrentTurn = turn,
@@ -345,7 +345,7 @@ public static class TestEffectSetup
         while (dir is not null)
         {
             var candidate = Path.Combine(dir.FullName, "overload-party-common",
-                "packages", "gamedata-dotnet", "cache", "cards_gen.json");
+                "packages", "game-state-dotnet", "cache", "cards_gen.json");
             if (File.Exists(candidate))
             {
                 return candidate;

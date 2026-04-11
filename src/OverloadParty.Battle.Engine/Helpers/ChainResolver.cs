@@ -11,7 +11,7 @@ public static class ChainResolver
     /// <summary>
     /// Push an entry onto the chain stack.
     /// </summary>
-    public static void PushToChain(GameState state, ChainEntry entry)
+    public static void PushToChain(BattleGameState state, ChainEntry entry)
     {
         if (state.ChainStack.Count >= BattleConstants.MaxChainLevel)
         {
@@ -37,7 +37,7 @@ public static class ChainResolver
     /// <summary>
     /// Check if a reactive can be chained on the current stack.
     /// </summary>
-    public static bool CanChainReactive(GameState state)
+    public static bool CanChainReactive(BattleGameState state)
     {
         if (!state.ChainStack.Any()) { return false; }
         if (state.ChainStack.Count >= BattleConstants.MaxChainLevel) { return false; }
@@ -50,7 +50,7 @@ public static class ChainResolver
     /// <summary>
     /// Check if the chain stack has any unresolved entries.
     /// </summary>
-    public static bool IsChainActive(GameState state)
+    public static bool IsChainActive(BattleGameState state)
     {
         return state.ChainStack.Any(e => !e.Resolved);
     }

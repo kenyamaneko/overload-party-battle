@@ -427,7 +427,7 @@ public class NpcAiIntegrationTests
     //  Helpers
     // ═══════════════════════════════════════════════════════════════
 
-    private List<AvailableAction> BuildAvailable(GameState state, long playerNum)
+    private List<AvailableAction> BuildAvailable(BattleGameState state, long playerNum)
     {
         var myField = state.GetField(playerNum);
         var oppField = state.GetField(state.OpponentOf(playerNum));

@@ -9,7 +9,7 @@ namespace OverloadParty.Battle.Engine.Processors;
 public static class PlayCardProcessor
 {
     private record PlayContext(
-        GameState State, Game Game, long PlayerNum,
+        BattleGameState State, Game Game, long PlayerNum,
         ICardCache CC, IEffectRegistry? Effects);
 
     /// <summary>
@@ -23,7 +23,7 @@ public static class PlayCardProcessor
     /// <param name="effects">The optional effect registry for triggering deploy effects.</param>
     /// <returns>The action result containing generated events and state update flag.</returns>
     public static ActionResult Process(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         PlayCardRequest req, ICardCache cc, IEffectRegistry? effects)
     {
         var hand = state.GetHand(playerNum);

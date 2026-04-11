@@ -8,7 +8,7 @@ namespace OverloadParty.Battle.Engine.Processors;
 public static class SelectSlotProcessor
 {
     public static ActionResult Process(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         SelectSlotRequest req, ICardCache cc)
     {
         if (state.PendingSlotSelects.Count == 0)

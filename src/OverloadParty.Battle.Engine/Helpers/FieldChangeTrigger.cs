@@ -13,7 +13,7 @@ public static class FieldChangeTrigger
     /// Fires OnFieldChange for all eligible cards on both players' fields.
     /// </summary>
     public static void Fire(
-        GameState state, Game game, ICardCache cc, IEffectRegistry? effects)
+        BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return; }
 
@@ -22,7 +22,7 @@ public static class FieldChangeTrigger
     }
 
     private static void FireForPlayer(
-        GameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects)
+        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects)
     {
         var field = state.GetField(playerNum);
 

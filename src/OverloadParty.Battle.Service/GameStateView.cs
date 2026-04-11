@@ -3,18 +3,18 @@ using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
 
-using GD = OverloadParty.GameData;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Service;
 
 /// <summary>
 /// Builds info-hidden game state for a specific player.
-/// Maps engine-internal types (Models) to API-contract types (GameData).
+/// Maps engine-internal types (Models) to API-contract types (BattleGameState).
 /// </summary>
 public static class GameStateView
 {
     public static GD.ClientGameState Build(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         ICardCache cc, IEffectRegistry? effects)
     {
         var oppNum = state.OpponentOf(playerNum);

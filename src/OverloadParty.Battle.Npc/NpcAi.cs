@@ -27,7 +27,7 @@ public class NpcAi : INpcStrategy
     // ═══════════════════════════════════════════════════════════════
 
     public List<NpcAction> DecideMainPhaseActions(
-        GameState state, Game game, long npcPlayerNum, List<AvailableAction> available)
+        BattleGameState state, Game game, long npcPlayerNum, List<AvailableAction> available)
     {
         var field = state.GetField(npcPlayerNum);
         var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
@@ -62,7 +62,7 @@ public class NpcAi : INpcStrategy
     // ═══════════════════════════════════════════════════════════════
 
     public List<NpcAction> DecideBattlePhaseActions(
-        GameState state, Game game, long npcPlayerNum, List<AvailableAction> available)
+        BattleGameState state, Game game, long npcPlayerNum, List<AvailableAction> available)
     {
         var selfField = state.GetField(npcPlayerNum);
         var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
@@ -91,7 +91,7 @@ public class NpcAi : INpcStrategy
     //  Discard
     // ═══════════════════════════════════════════════════════════════
 
-    public List<string> DecideDiscard(GameState state, long npcPlayerNum, int discardCount)
+    public List<string> DecideDiscard(BattleGameState state, long npcPlayerNum, int discardCount)
     {
         var hand = state.GetHand(npcPlayerNum);
         var field = state.GetField(npcPlayerNum);
@@ -163,7 +163,7 @@ public class NpcAi : INpcStrategy
     //  Slot Select
     // ═══════════════════════════════════════════════════════════════
 
-    public NpcAction? DecideSlotSelect(GameState state, long npcPlayerNum)
+    public NpcAction? DecideSlotSelect(BattleGameState state, long npcPlayerNum)
     {
         var pending = state.PendingSlotSelects.FirstOrDefault();
         if (pending is null || pending.PlayerNum != npcPlayerNum || pending.ValidZones.Count == 0)

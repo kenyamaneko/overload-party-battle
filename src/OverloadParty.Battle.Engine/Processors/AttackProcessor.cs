@@ -19,7 +19,7 @@ public static class AttackProcessor
     /// <param name="effects">The optional effect registry for triggering reactive and on-attack effects.</param>
     /// <returns>The action result containing attack events and state update flag.</returns>
     public static ActionResult Process(
-        GameState state, Game game, long playerNum,
+        BattleGameState state, Game game, long playerNum,
         AttackRequest req, ICardCache cc, IEffectRegistry? effects)
     {
         var myField = state.GetField(playerNum);
@@ -188,7 +188,7 @@ public static class AttackProcessor
     }
 
     private static (bool Cancelled, List<GameEvent> Events) FireReactives(
-        GameState state, Game game, long defenderPlayerNum, Field defenderField,
+        BattleGameState state, Game game, long defenderPlayerNum, Field defenderField,
         DeployedResource attacker, DeployedResource target,
         ICardCache cc, IEffectRegistry? effects)
     {
@@ -227,7 +227,7 @@ public static class AttackProcessor
     }
 
     private static List<GameEvent> FireOnDestroy(
-        GameState state, Game game, long ownerNum,
+        BattleGameState state, Game game, long ownerNum,
         DeployedResource destroyed, Field attackerField, Field ownerField,
         ICardCache cc, IEffectRegistry? effects)
     {
@@ -278,7 +278,7 @@ public static class AttackProcessor
     }
 
     private static List<GameEvent> FireOnHit(
-        GameState state, Game game, long defenderPlayerNum,
+        BattleGameState state, Game game, long defenderPlayerNum,
         DeployedResource defender, ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return []; }

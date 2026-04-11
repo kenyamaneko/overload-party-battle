@@ -395,7 +395,7 @@ public class EffectRegistrationTests
 
     // ─── Helper methods ──────────────────────────────────────────
 
-    private EffectResult ExecuteEffect(GameState state, string cardId, TriggerType trigger, long playerNum)
+    private EffectResult ExecuteEffect(BattleGameState state, string cardId, TriggerType trigger, long playerNum)
     {
         var handler = _registry.Get(cardId, trigger)
             ?? throw new InvalidOperationException($"{cardId} {trigger} handler not registered");
