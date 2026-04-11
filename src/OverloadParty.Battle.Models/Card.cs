@@ -1,5 +1,3 @@
-using System.Text.Json;
-
 namespace OverloadParty.Battle.Models;
 
 public class CardDefinition
@@ -24,11 +22,6 @@ public class CardDefinition
     // Typed stats (one of these is populated based on card type category)
     public ComputeStats? ComputeStats { get; set; }
     public DataStats? DataStats { get; set; }
-
-    // Typed effect definitions
-    public List<PassiveEffect> PassiveEffects { get; set; } = [];
-    public List<PlatformEffect> PlatformEffects { get; set; } = [];
-    public List<AttachmentEffect> AttachmentEffects { get; set; } = [];
 
     public List<EffectDef>? Effects { get; set; }
 

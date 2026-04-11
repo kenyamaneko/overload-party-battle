@@ -177,8 +177,7 @@ public static class TestFactory
     /// </summary>
     public static CardDefinition PlatformCard(
         string cardId = "TST-0200",
-        string name = "TestPlatform",
-        List<PlatformEffect>? platformEffects = null)
+        string name = "TestPlatform")
     {
         return new CardDefinition
         {
@@ -186,7 +185,6 @@ public static class TestFactory
             CardName = name,
             CardType = "Platform",
             DeployTurns = 2,
-            PlatformEffects = platformEffects ?? [],
         };
     }
 
@@ -195,8 +193,7 @@ public static class TestFactory
     /// </summary>
     public static CardDefinition AttachmentCard(
         string cardId = "TST-0300",
-        string name = "TestAttachment",
-        List<AttachmentEffect>? attachmentEffects = null)
+        string name = "TestAttachment")
     {
         return new CardDefinition
         {
@@ -204,7 +201,6 @@ public static class TestFactory
             CardName = name,
             CardType = "Attachment",
             DeployTurns = 0,
-            AttachmentEffects = attachmentEffects ?? [],
         };
     }
 

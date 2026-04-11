@@ -9,8 +9,6 @@ namespace OverloadParty.Battle.Data.Pg;
 /// <summary>
 /// PostgreSQL implementation of ICardRepository using Npgsql.
 /// Reads card definitions from the card_definitions table.
-/// Note: The DB stores stats/effects as JSONB; passive_effects/platform_effects/attachment_effects
-/// are not separate DB columns — they are part of the card JSON loaded at build time.
 /// </summary>
 public class PgCardRepository(NpgsqlDataSource ds) : ICardRepository
 {

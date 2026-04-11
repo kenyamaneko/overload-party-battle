@@ -6,7 +6,7 @@ namespace OverloadParty.Battle.Engine.Helpers;
 /// <summary>
 /// Calculates effective stats for resources (TP, Yield, AV, MC).
 /// Applies rank multipliers, instance family modifiers, elastic scaling,
-/// passive bonuses, platform bonuses, attachment bonuses, and temporary effects.
+/// and temporary effects.
 /// </summary>
 public static class StatCalculator
 {
@@ -51,16 +51,12 @@ public static class StatCalculator
             elasticBonus = EffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
         }
 
-        long platformBonus = CalculatePlatformBonus(instance, field, StatTypes.Tp, cc);
-        long passiveBonus = CalculatePassiveTPBonus(instance, field, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, field, StatTypes.Tp, cc);
-
         long tempBonus = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.BuffTP).Sum(e => e.Value);
         long tempDebuff = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.DebuffTP).Sum(e => e.Value);
 
-        long total = baseValue + elasticBonus + platformBonus + passiveBonus + attachmentBonus + tempBonus - tempDebuff;
+        long total = baseValue + elasticBonus + tempBonus - tempDebuff;
         return Math.Max(0, total);
     }
 
@@ -91,16 +87,12 @@ public static class StatCalculator
             elasticBonus = EffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
         }
 
-        long platformBonus = CalculatePlatformBonus(instance, field, StatTypes.Yield, cc);
-        long passiveBonus = CalculatePassiveYieldBonus(instance, field, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, field, StatTypes.Yield, cc);
-
         long tempBonus = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.BuffYield).Sum(e => e.Value);
         long tempDebuff = instance.TemporaryEffects
             .Where(e => e.EffectType == EffectTypes.DebuffYield).Sum(e => e.Value);
 
-        long total = baseValue + elasticBonus + platformBonus + passiveBonus + attachmentBonus + tempBonus - tempDebuff;
+        long total = baseValue + elasticBonus + tempBonus - tempDebuff;
         return Math.Max(0, total);
     }
 
@@ -121,12 +113,7 @@ public static class StatCalculator
         }
 
         long baseValue = Truncate(baseAV * rankMult * avMult);
-
-        long platformBonus = CalculatePlatformBonus(instance, field, StatTypes.Av, cc);
-        long attachmentBonus = CalculateAttachmentBonus(instance, field, StatTypes.Av, cc);
-
-        long total = baseValue + platformBonus + attachmentBonus;
-        return Math.Max(0, total);
+        return Math.Max(0, baseValue);
     }
 
     /// <summary>
@@ -181,175 +168,4 @@ public static class StatCalculator
     /// <summary>Truncates a floating-point value to a long integer (floor towards zero).</summary>
     /// <param name="val">The value to truncate.</param>
     public static long Truncate(double val) => (long)val;
-
-    // ─── Passive bonuses ─────────────────────────────────────
-
-    static long CalculatePassiveTPBonus(DeployedResource instance, Field field, ICardCache cc)
-    {
-        var card = cc.MustGet(instance.CardID);
-        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, StatTypes.Tp));
-    }
-
-    static long CalculatePassiveYieldBonus(DeployedResource instance, Field field, ICardCache cc)
-    {
-        var card = cc.MustGet(instance.CardID);
-        return card.PassiveEffects.Sum(pe => ApplyPassiveEffect(pe, instance, field, cc, StatTypes.Yield));
-    }
-
-    private static long ApplyPassiveEffect(PassiveEffect pe, DeployedResource instance, Field field, ICardCache cc, string statType)
-    {
-        return pe.Type switch
-        {
-            PassiveEffectTypes.TPPerBackendDB when statType == StatTypes.Tp
-                => CalculateTPPerBackendDB(instance, field, pe.Params, cc),
-            PassiveEffectTypes.TPPerBackendData when statType == StatTypes.Tp
-                => CalculateTPPerBackendData(instance, field, pe.Params, cc),
-            PassiveEffectTypes.TPIfCardTypeOnField when statType == StatTypes.Tp
-                => CalculateTPIfCardTypeOnField(field, pe.Params, cc),
-            PassiveEffectTypes.YieldPerOtherDB when statType == StatTypes.Yield
-                => CalculateYieldPerOtherDB(instance, field, pe.Params, cc),
-            PassiveEffectTypes.YieldIfCardOnField when statType == StatTypes.Yield
-                => CalculateYieldIfCardOnField(field, pe.Params, cc),
-            _ => 0
-        };
-    }
-
-    private static long CalculateTPPerBackendDB(DeployedResource instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
-    {
-        int count = 0;
-        foreach (var res in field.Backend.Where(r => r.FaceUp))
-        {
-            if (cfg.ExcludeSelf && res.InstanceID == instance.InstanceID) { continue; }
-
-            var resCard = cc.MustGet(res.CardID);
-            if (resCard.CardType is not (CardTypes.Database or CardTypes.CacheDB)) { continue; }
-
-            count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
-        }
-        return cfg.BonusPerCard * count;
-    }
-
-    private static long CalculateTPPerBackendData(DeployedResource instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
-    {
-        int count = 0;
-        foreach (var res in field.Backend.Where(r => r.FaceUp))
-        {
-            if (cfg.ExcludeSelf && res.InstanceID == instance.InstanceID) { continue; }
-
-            var resCard = cc.MustGet(res.CardID);
-            if (!resCard.IsDataType) { continue; }
-
-            count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
-        }
-        return cfg.BonusPerCard * count;
-    }
-
-    private static long CalculateTPIfCardTypeOnField(Field field, PassiveEffectConfig cfg, ICardCache cc)
-    {
-        if (!(cfg.CardTypes?.Count > 0)) { return 0; }
-
-        foreach (var res in FieldHelpers.AllFaceUpResources(field))
-        {
-            var resCard = cc.MustGet(res.CardID);
-
-            if (cfg.CardTypes.Contains(resCard.CardType))
-            {
-                if (cfg.Faction is null
-                    || cfg.Faction == ""
-                    || resCard.Faction == cfg.Faction)
-                {
-                    return cfg.FlatBonus;
-                }
-            }
-        }
-        return 0;
-    }
-
-    private static long CalculateYieldPerOtherDB(DeployedResource instance, Field field, PassiveEffectConfig cfg, ICardCache cc)
-    {
-        int count = 0;
-        foreach (var res in field.Backend.Where(r => r.FaceUp))
-        {
-            if (res.InstanceID == instance.InstanceID) { continue; }
-
-            var resCard = cc.MustGet(res.CardID);
-            if (resCard.CardType is not (CardTypes.Database or CardTypes.CacheDB)) { continue; }
-
-            count += cfg.MultiModelCardIDs is { } mm && mm.Contains(resCard.CardId) ? 2 : 1;
-        }
-        return cfg.BonusPerCard * count;
-    }
-
-    private static long CalculateYieldIfCardOnField(Field field, PassiveEffectConfig cfg, ICardCache cc)
-    {
-        if (!(cfg.SpecificCardIDs?.Count > 0)) { return 0; }
-
-        foreach (var res in FieldHelpers.AllFaceUpResources(field))
-        {
-            var resCard = cc.MustGet(res.CardID);
-            if (cfg.SpecificCardIDs.Contains(resCard.CardId)) { return cfg.FlatBonus; }
-        }
-        return 0;
-    }
-
-    // ─── Platform bonuses ────────────────────────────────────
-
-    static long CalculatePlatformBonus(DeployedResource instance, Field field, string statType, ICardCache cc)
-    {
-        long total = 0;
-        foreach (var support in field.Support.Where(s => s.FaceUp && s.DeployingTurnsLeft <= 0))
-        {
-            var supCard = cc.MustGet(support.CardID);
-
-            foreach (var pe in supCard.PlatformEffects)
-            {
-                total += ApplyPlatformEffect(pe, instance, statType, cc);
-            }
-        }
-        return total;
-    }
-
-    private static long ApplyPlatformEffect(PlatformEffect pe, DeployedResource target, string statType, ICardCache cc)
-    {
-        string expectedStatType = pe.Type switch
-        {
-            PlatformEffectTypes.TPBonus => StatTypes.Tp,
-            PlatformEffectTypes.YieldBonus => StatTypes.Yield,
-            PlatformEffectTypes.AVBonus => StatTypes.Av,
-            _ => ""
-        };
-        if (expectedStatType != statType) { return 0; }
-
-        var cfg = pe.Params;
-        var targetCard = cc.MustGet(target.CardID);
-
-        if (cfg.TargetFaction is { Length: > 0 } faction
-            && targetCard.Faction != faction) { return 0; }
-
-
-        if (cfg.TargetCardTypes?.Count > 0
-            && !cfg.TargetCardTypes.Contains(targetCard.CardType)) { return 0; }
-
-        return cfg.Bonus;
-    }
-
-    // ─── Attachment bonuses ──────────────────────────────────
-
-    static long CalculateAttachmentBonus(DeployedResource instance, Field field, string statType, ICardCache cc)
-    {
-        long total = 0;
-        foreach (var att in field.Support.Where(a => a.TargetInstanceID == instance.InstanceID))
-        {
-            var attCard = cc.MustGet(att.CardID);
-
-            foreach (var ae in attCard.AttachmentEffects)
-            {
-                if (ae.Type == AttachmentEffectTypes.StatBonus && ae.Params.StatType == statType)
-                {
-                    total += ae.Params.Bonus;
-                }
-            }
-        }
-        return total;
-    }
 }
