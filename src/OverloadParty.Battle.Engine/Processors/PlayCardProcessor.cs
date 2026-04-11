@@ -83,7 +83,7 @@ public static class PlayCardProcessor
                 Zone = req.Zone,
                 Index = req.Index,
                 Cancelled = cancelled ? true : null,
-            }.ToDictionary(),
+            },
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
@@ -135,7 +135,7 @@ public static class PlayCardProcessor
                 CardId = handCard.CardID,
                 Zone = "",
                 Index = -1,
-            }.ToDictionary(),
+            },
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
@@ -308,7 +308,7 @@ public static class PlayCardProcessor
             {
                 CardId = handCard.CardID,
                 TargetId = req.TargetInstanceID!,
-            }.ToDictionary(),
+            },
         });
 
         return new ActionResult { Events = events, StateUpdated = true };

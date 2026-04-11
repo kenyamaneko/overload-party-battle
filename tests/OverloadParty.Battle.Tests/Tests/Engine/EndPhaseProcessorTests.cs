@@ -48,9 +48,9 @@ public class EndPhaseProcessorTests
 
         result.Events.Should().ContainSingle();
         result.Events[0].EventType.Should().Be(EventTypes.PhaseChange);
-        var data = result.Events[0].EventData!;
-        data["previousPhase"].Should().Be("main");
-        data["currentPhase"].Should().Be("battle");
+        var data = result.Events[0].EventData.Should().BeOfType<PhaseChangeEventData>().Subject;
+        data.PreviousPhase.Should().Be("main");
+        data.CurrentPhase.Should().Be("battle");
     }
 
     // ─── Phase transition: Main → End (first turn skip) ──────
@@ -395,8 +395,9 @@ public class EndPhaseProcessorTests
 
         evt.EventType.Should().Be(EventTypes.TurnStart);
         evt.PlayerNum.Should().BeNull();
-        evt.EventData!["turn"].Should().Be(3L);
-        evt.EventData["active_player"].Should().Be(2L);
+        var data = evt.EventData.Should().BeOfType<TurnStartInternalEventData>().Subject;
+        data.Turn.Should().Be(3L);
+        data.ActivePlayer.Should().Be(2L);
     }
 
     // ─── helpers ─────────────────────────────────────────────

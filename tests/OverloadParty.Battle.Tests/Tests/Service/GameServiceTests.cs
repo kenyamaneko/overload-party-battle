@@ -192,8 +192,9 @@ public class GameServiceTests
         var turnStartEvent = result.Events
             .FirstOrDefault(e => e.Event.EventType == EventTypes.TurnStart);
         turnStartEvent.Should().NotBeNull("turn switch should emit a turn_start event");
-        turnStartEvent!.Event.EventData!["is_my_turn"].Should().Be(false,
-            "active player switched, so the requesting player's turn is over");
+        turnStartEvent!.Event.EventData.Should().BeOfType<TurnStartEventData>()
+            .Which.IsMyTurn.Should().BeFalse(
+                "active player switched, so the requesting player's turn is over");
     }
 
     // ─── GetGameStateForPlayer ──────────────────────────────

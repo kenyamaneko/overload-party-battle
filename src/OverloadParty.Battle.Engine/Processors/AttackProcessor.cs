@@ -55,7 +55,7 @@ public static class AttackProcessor
                     Damage = 0,
                     Destroyed = false,
                     Cancelled = true,
-                }.ToDictionary(),
+                },
             });
             return new ActionResult { Events = events, StateUpdated = true };
         }
@@ -125,7 +125,7 @@ public static class AttackProcessor
                 Damage = damage,
                 Destroyed = destroyed,
                 SlaPenalty = slaPenalty,
-            }.ToDictionary(),
+            },
         });
 
         return new ActionResult { Events = events, StateUpdated = true };

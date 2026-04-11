@@ -139,112 +139,98 @@ public class GameLogService
     private string EventToDescription(GameEvent evt, Game game)
     {
         var playerTag = PlayerTag(evt);
-        var data = evt.EventData;
 
-        return evt.EventType switch
+        return evt.EventData switch
         {
-            ActionTypes.PlayCard => DescribePlayCard(playerTag, data),
-            EventTypes.AttachCard => DescribeAttachCard(playerTag, data),
-            ActionTypes.Attack => DescribeAttack(playerTag, data),
-            ActionTypes.ScaleUp => DescribeScaleUp(playerTag, data),
-            ActionTypes.Monetize => DescribeMonetize(playerTag, data),
-            ActionTypes.DiscardHand => DescribeDiscardHand(playerTag, data),
-            ActionTypes.UseEffect => DescribeUseEffect(playerTag, data),
-            EventTypes.ReactiveRevealed => $"{playerTag} reactive revealed",
-            EventTypes.PhaseChange => DescribePhaseChange(playerTag, data),
-            EventTypes.PhaseEnd => DescribePhaseEnd(data),
-            EventTypes.TurnEnd => DescribeTurnEnd(data),
-            EventTypes.GameOver => DescribeGameOver(game),
-            _ => throw new InvalidOperationException($"Unknown event type: {evt.EventType}"),
+            PlayCardEventData d => DescribePlayCard(playerTag, d),
+            AttachCardEventData d => DescribeAttachCard(playerTag, d),
+            AttackEventData d => DescribeAttack(playerTag, d),
+            ScaleUpEventData d => DescribeScaleUp(playerTag, d),
+            MonetizeEventData d => DescribeMonetize(playerTag, d),
+            DiscardHandEventData d => DescribeDiscardHand(playerTag, d),
+            UseEffectEventData d => DescribeUseEffect(playerTag, d),
+            PhaseChangeEventData d => DescribePhaseChange(playerTag, d),
+            PhaseEndEventData d => DescribePhaseEnd(d),
+            TurnEndEventData d => DescribeTurnEnd(d),
+            TurnStartInternalEventData d => DescribeTurnStart(d),
+            ReactiveRevealedEventData => $"{playerTag} reactive revealed",
+            GameOverEventData => DescribeGameOver(game),
+            BattleStartEventData => $"{playerTag} battle start",
+            SelectSlotEventData d => DescribeSelectSlot(playerTag, d),
+            null => throw new InvalidOperationException(
+                $"GameEvent {evt.SequenceNumber} (type={evt.EventType}) has null EventData"),
+            _ => throw new InvalidOperationException(
+                $"Unknown IEventData runtime type: {evt.EventData.GetType().Name}"),
         };
     }
 
-    private string DescribePlayCard(string player, Dictionary<string, object>? data)
+    private string DescribePlayCard(string player, PlayCardEventData d)
     {
-        var cardId = GetRequiredString(data, "cardId");
-        var zone = GetRequiredString(data, "zone");
-        var cancelled = GetBool(data, "cancelled");
-        var cardName = ResolveCardName(cardId);
+        var cardName = ResolveCardName(d.CardId);
 
-        if (cancelled)
+        if (d.Cancelled == true)
             return $"{player} deploy of \"{cardName}\" was cancelled";
 
-        var card = _cardCache.Get(cardId);
+        var card = !string.IsNullOrEmpty(d.CardId) ? _cardCache.Get(d.CardId) : null;
         var cost = card?.MaintenanceCost ?? 0;
         var costStr = cost > 0 ? $" [-{cost} Budget]" : "";
-        return $"{player} deployed \"{cardName}\" to {CapitalizeFirst(zone)}{costStr}";
+        return $"{player} deployed \"{cardName}\" to {CapitalizeFirst(d.Zone)}{costStr}";
     }
 
-    private string DescribeAttachCard(string player, Dictionary<string, object>? data)
+    private string DescribeAttachCard(string player, AttachCardEventData d)
     {
-        var cardId = GetRequiredString(data, "cardId");
-        var cardName = ResolveCardName(cardId);
+        var cardName = ResolveCardName(d.CardId);
         return $"{player} attached \"{cardName}\"";
     }
 
-    private string DescribeAttack(string player, Dictionary<string, object>? data)
+    private static string DescribeAttack(string player, AttackEventData d)
     {
-        var cancelled = GetBool(data, "cancelled");
-        if (cancelled)
+        if (d.Cancelled == true)
             return $"{player} attack was cancelled";
 
-        var damage = GetRequiredLong(data, "damage");
-        var destroyed = GetBool(data, "destroyed");
-        var slaPenalty = GetLong(data, "slaPenalty");
-
-        var parts = new List<string> { $"{player} attacked for {damage} damage" };
-        if (destroyed) parts.Add("(destroyed)");
-        if (slaPenalty.HasValue && slaPenalty.Value > 0) parts.Add($"[SLA -{slaPenalty.Value}]");
+        var parts = new List<string> { $"{player} attacked for {d.Damage} damage" };
+        if (d.Destroyed) parts.Add("(destroyed)");
+        if (d.SlaPenalty is { } sla && sla > 0) parts.Add($"[SLA -{sla}]");
         return string.Join(" ", parts);
     }
 
-    private string DescribeScaleUp(string player, Dictionary<string, object>? data)
+    private static string DescribeScaleUp(string player, ScaleUpEventData d)
     {
-        var targetRank = GetRequiredString(data, "targetRank");
-        var family = GetString(data, "instanceFamily");
-        var familyStr = family is not null ? $" {family}" : "";
-        return $"{player} scaled up → {CapitalizeFirst(targetRank)}{familyStr}";
+        var familyStr = d.InstanceFamily is not null ? $" {d.InstanceFamily}" : "";
+        return $"{player} scaled up → {CapitalizeFirst(d.TargetRank)}{familyStr}";
     }
 
-    private string DescribeMonetize(string player, Dictionary<string, object>? data)
-    {
-        var amount = GetLong(data, "totalAmount") ?? 0;
-        return $"{player} distributed {amount} Yield";
-    }
+    private static string DescribeMonetize(string player, MonetizeEventData d) =>
+        $"{player} distributed {d.TotalAmount} Yield";
 
-    private string DescribeDiscardHand(string player, Dictionary<string, object>? data)
-    {
-        var count = GetLong(data, "discardedCount") ?? 0;
-        return $"{player} discarded {count} card{(count != 1 ? "s" : "")}";
-    }
+    private static string DescribeDiscardHand(string player, DiscardHandEventData d) =>
+        $"{player} discarded {d.DiscardedCount} card{(d.DiscardedCount != 1 ? "s" : "")}";
 
-    private string DescribeUseEffect(string player, Dictionary<string, object>? data)
+    private string DescribeUseEffect(string player, UseEffectEventData d)
     {
-        var cardId = GetRequiredString(data, "cardId");
-        var cardName = ResolveCardName(cardId);
+        var cardName = ResolveCardName(d.CardId);
         return $"{player} activated effect: {cardName}";
     }
 
-    private static string DescribePhaseChange(string player, Dictionary<string, object>? data)
+    private static string DescribePhaseChange(string player, PhaseChangeEventData d) =>
+        $"{player} ended {CapitalizeFirst(d.PreviousPhase)} → {CapitalizeFirst(d.CurrentPhase)}";
+
+    private static string DescribePhaseEnd(PhaseEndEventData d)
     {
-        var prev = GetRequiredString(data, "previousPhase");
-        var curr = GetRequiredString(data, "currentPhase");
-        return $"{player} ended {CapitalizeFirst(prev)} → {CapitalizeFirst(curr)}";
+        var suffix = d.NeedsDiscard ? " (discard required)" : "";
+        return $"{CapitalizeFirst(d.Phase)} phase ended{suffix}";
     }
 
-    private static string DescribePhaseEnd(Dictionary<string, object>? data)
-    {
-        var phase = GetRequiredString(data, "phase");
-        var needsDiscard = GetBool(data, "needsDiscard");
-        var suffix = needsDiscard ? " (discard required)" : "";
-        return $"{CapitalizeFirst(phase)} phase ended{suffix}";
-    }
+    private static string DescribeTurnEnd(TurnEndEventData d) =>
+        $"Turn end → Turn {d.NextTurn} (P{d.ActivePlayer})";
 
-    private static string DescribeTurnEnd(Dictionary<string, object>? data)
+    private static string DescribeTurnStart(TurnStartInternalEventData d) =>
+        $"Turn start → Turn {d.Turn} (P{d.ActivePlayer})";
+
+    private string DescribeSelectSlot(string player, SelectSlotEventData d)
     {
-        var nextTurn = GetRequiredLong(data, "nextTurn");
-        var activePlayer = GetRequiredLong(data, "activePlayer");
-        return $"Turn end → Turn {nextTurn} (P{activePlayer})";
+        var cardName = ResolveCardName(d.CardId);
+        return $"{player} selected slot for \"{cardName}\" at {CapitalizeFirst(d.Zone)}[{d.Index}]";
     }
 
     private string DescribeGameOver(Game game)
@@ -270,21 +256,15 @@ public class GameLogService
 
     private string ResolveCardName(string? cardId)
     {
-        if (cardId is null) return "???";
+        if (string.IsNullOrEmpty(cardId)) return "???";
         var card = _cardCache.Get(cardId);
         return card?.CardName ?? $"Card#{cardId}";
     }
 
     private static string? FindWinReasonFromEvents(List<GameEvent> events)
     {
-        var gameOverEvent = events.LastOrDefault(e => e.EventType == "game_over");
-        if (gameOverEvent?.EventData is not null)
-        {
-            var reason = GetString(gameOverEvent.EventData, "winReason")
-                      ?? GetString(gameOverEvent.EventData, "reason");
-            if (reason is not null) return reason;
-        }
-        return null;
+        var gameOverEvent = events.LastOrDefault(e => e.EventType == EventTypes.GameOver);
+        return gameOverEvent?.EventData is GameOverEventData go ? go.WinReason : null;
     }
 
     private static string CapitalizeFirst(string? s)
@@ -298,58 +278,6 @@ public class GameLogService
         if (ts.TotalHours >= 1)
             return $"{(int)ts.TotalHours}h{ts.Minutes:D2}m{ts.Seconds:D2}s";
         return $"{ts.Minutes}m{ts.Seconds:D2}s";
-    }
-
-    // ─── EventData value extraction ──────────────────────────────
-
-    private static string GetRequiredString(Dictionary<string, object>? data, string key)
-    {
-        return GetString(data, key)
-            ?? throw new InvalidOperationException($"EventData missing required key '{key}'");
-    }
-
-    private static long GetRequiredLong(Dictionary<string, object>? data, string key)
-    {
-        return GetLong(data, key)
-            ?? throw new InvalidOperationException($"EventData missing required key '{key}'");
-    }
-
-    private static string? GetString(Dictionary<string, object>? data, string key)
-    {
-        if (data is null || !data.TryGetValue(key, out var val)) return null;
-        return val switch
-        {
-            string s => s,
-            JsonElement je when je.ValueKind == JsonValueKind.String => je.GetString(),
-            _ => val.ToString(),
-        };
-    }
-
-    private static long? GetLong(Dictionary<string, object>? data, string key)
-    {
-        if (data is null || !data.TryGetValue(key, out var val)) return null;
-        return val switch
-        {
-            long l => l,
-            int i => i,
-            double d => (long)d,
-            JsonElement je when je.ValueKind == JsonValueKind.Number => je.GetInt64(),
-            _ when long.TryParse(val.ToString(), out var parsed) => parsed,
-            _ => null,
-        };
-    }
-
-    private static bool GetBool(Dictionary<string, object>? data, string key)
-    {
-        if (data is null || !data.TryGetValue(key, out var val)) return false;
-        return val switch
-        {
-            bool b => b,
-            JsonElement je when je.ValueKind == JsonValueKind.True => true,
-            JsonElement je when je.ValueKind == JsonValueKind.False => false,
-            _ when bool.TryParse(val.ToString(), out var parsed) => parsed,
-            _ => false,
-        };
     }
 }
 

@@ -164,7 +164,8 @@ public class NpcEventStateTests
         bool sawRedacted = false;
         foreach (var evt in playCards)
         {
-            var cardId = (string)evt.EventData!["cardId"];
+            var data = evt.EventData.Should().BeOfType<PlayCardEventData>().Subject;
+            var cardId = data.CardId;
             if (cardId == "")
             {
                 sawRedacted = true;
@@ -199,8 +200,8 @@ public class NpcEventStateTests
             });
 
         var playCard = result.Events.First(e => e.Event.EventType == ActionTypes.PlayCard);
-        var cardId = (string)playCard.Event.EventData!["cardId"];
-        cardId.Should().Be(first.CardID,
+        var data = playCard.Event.EventData.Should().BeOfType<PlayCardEventData>().Subject;
+        data.CardId.Should().Be(first.CardID,
             "player's own play_card must keep the real cardId (actor == viewer)");
     }
 
@@ -287,14 +288,11 @@ public class NpcEventStateTests
     /// フィールドにカードを追加する play_card イベントかどうか。
     /// Immediate カード (zone="") やキャンセルはフィールドに残らない。
     /// </summary>
-    private static bool IsFieldDeploy(Dictionary<string, object>? data)
+    private static bool IsFieldDeploy(IEventData? data)
     {
-        if (data is null) return false;
-        if (data.TryGetValue("cancelled", out var c) && c is true or System.Text.Json.JsonElement { ValueKind: System.Text.Json.JsonValueKind.True })
-            return false;
-        if (!data.TryGetValue("zone", out var z)) return false;
-        var zone = z switch { string s => s, System.Text.Json.JsonElement je => je.GetString(), _ => z?.ToString() };
-        return !string.IsNullOrEmpty(zone);
+        return data is PlayCardEventData pc
+            && pc.Cancelled != true
+            && !string.IsNullOrEmpty(pc.Zone);
     }
 
     private static int CountOppFieldCards(GD.ClientGameState state)

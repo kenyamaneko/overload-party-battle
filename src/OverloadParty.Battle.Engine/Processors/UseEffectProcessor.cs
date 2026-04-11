@@ -89,7 +89,7 @@ public static class UseEffectProcessor
                 CardId = card.CardId,
                 SourceId = req.InstanceID,
                 TargetId = req.TargetInstanceID,
-            }.ToDictionary(),
+            },
         });
 
         return new ActionResult { Events = events, StateUpdated = true };
@@ -131,7 +131,7 @@ public static class UseEffectProcessor
             {
                 CardId = card.CardId,
                 SourceId = req.InstanceID,
-            }.ToDictionary(),
+            },
         });
 
         return new ActionResult { Events = events, StateUpdated = true };

@@ -73,7 +73,7 @@ public static class ScaleUpProcessor
                 InstanceId = req.InstanceID,
                 TargetRank = req.TargetRank,
                 InstanceFamily = req.InstanceFamily,
-            }.ToDictionary(),
+            },
         };
 
         events.Insert(0, evt);

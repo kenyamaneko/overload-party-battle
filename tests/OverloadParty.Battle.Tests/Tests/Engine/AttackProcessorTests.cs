@@ -70,7 +70,8 @@ public class AttackProcessorTests
 
         // SLA penalty event data
         var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
-        attackEvent.EventData.Should().ContainKey("slaPenalty");
+        attackEvent.EventData.Should().BeOfType<AttackEventData>()
+            .Which.SlaPenalty.Should().NotBeNull();
 
         // Budget decreased by SLA penalty
         state.Player2Budget.Should().Be(budgetBefore - 400);
@@ -267,10 +268,11 @@ public class AttackProcessorTests
             state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
 
         var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
-        attackEvent.EventData!["attackerId"].Should().Be("atk_1");
-        attackEvent.EventData!["targetId"].Should().Be("def_1");
-        attackEvent.EventData!["damage"].Should().Be(600L);
-        attackEvent.EventData!["destroyed"].Should().Be(false);
+        var data = attackEvent.EventData.Should().BeOfType<AttackEventData>().Subject;
+        data.AttackerId.Should().Be("atk_1");
+        data.TargetId.Should().Be("def_1");
+        data.Damage.Should().Be(600L);
+        data.Destroyed.Should().Be(false);
     }
 
     // ─── 12. Attacker not found on field → throws ────────────
@@ -392,8 +394,9 @@ public class AttackProcessorTests
         attacker.HasAttacked.Should().BeTrue();
         // Attack event should show cancelled=true
         var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
-        attackEvent.EventData!["cancelled"].Should().Be(true);
-        attackEvent.EventData!["damage"].Should().Be(0L);
+        var data = attackEvent.EventData.Should().BeOfType<AttackEventData>().Subject;
+        data.Cancelled.Should().Be(true);
+        data.Damage.Should().Be(0L);
         // Reactive should be removed from support zone and sent to trash
         state.Player2Field.Support[0].Should().BeNull();
         state.Player2Trash.Should().Contain(c => c.CardID == "TEST-0200");
@@ -511,7 +514,8 @@ public class AttackProcessorTests
             state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
 
         var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
-        attackEvent.EventData!["slaPenalty"].Should().Be(0L);
+        attackEvent.EventData.Should().BeOfType<AttackEventData>()
+            .Which.SlaPenalty.Should().Be(0L);
     }
 
     // ─── 21. Reactive with no effects registry → no cancel ───

@@ -290,47 +290,37 @@ public class GameService
 
     /// <summary>
     /// Maps view-dependent event data fields for a specific player.
-    /// TurnStart: replaces internal active_player with player-relative is_my_turn.
-    /// PlayCard: redacts cardId when the actor is the opponent and the card lands face-down.
+    /// TurnStart: converts internal ActivePlayer to viewer-relative IsMyTurn (internal → wire type).
+    /// PlayCard: redacts CardId when the actor is the opponent and the card lands face-down.
     /// </summary>
-    private Dictionary<string, object>? MapEventData(GameEvent evt, long viewerPlayerNum)
+    private IEventData? MapEventData(GameEvent evt, long viewerPlayerNum)
     {
-        if (evt.EventData is null) { return null; }
-
-        return evt.EventType switch
+        return evt.EventData switch
         {
-            EventTypes.TurnStart => MapTurnStart(evt.EventData, viewerPlayerNum),
-            EventTypes.PlayCard => RedactPlayCardIfFaceDown(evt, viewerPlayerNum),
+            null => null,
+            TurnStartInternalEventData ts => new TurnStartEventData
+            {
+                Turn = ts.Turn,
+                IsMyTurn = ts.ActivePlayer == viewerPlayerNum,
+            },
+            PlayCardEventData pc when ShouldRedactPlayCard(evt, viewerPlayerNum, pc.CardId)
+                => new PlayCardEventData
+                {
+                    CardId = "",
+                    Zone = pc.Zone,
+                    Index = pc.Index,
+                    Cancelled = pc.Cancelled,
+                },
             _ => evt.EventData,
         };
     }
 
-    private static Dictionary<string, object> MapTurnStart(
-        Dictionary<string, object> data, long viewerPlayerNum) => new()
+    private bool ShouldRedactPlayCard(GameEvent evt, long viewerPlayerNum, string cardId)
     {
-        ["turn"] = data["turn"],
-        ["is_my_turn"] = Convert.ToInt64(data["active_player"]) == viewerPlayerNum,
-    };
-
-    private Dictionary<string, object>? RedactPlayCardIfFaceDown(
-        GameEvent evt, long viewerPlayerNum)
-    {
-        var data = evt.EventData!;
-
-        if (evt.PlayerNum == viewerPlayerNum) { return data; }
-
-        if (!data.TryGetValue("cardId", out var cardIdObj) || cardIdObj is not string cardId
-            || string.IsNullOrEmpty(cardId))
-        {
-            return data;
-        }
-
+        if (evt.PlayerNum == viewerPlayerNum) { return false; }
+        if (string.IsNullOrEmpty(cardId)) { return false; }
         var cardDef = _cardCache.Get(cardId);
-        if (cardDef is null) { return data; }
-
-        var faceDown = cardDef.CardType == CardTypes.Reactive || cardDef.DeployTurns > 0;
-        if (!faceDown) { return data; }
-
-        return new Dictionary<string, object>(data) { ["cardId"] = "" };
+        if (cardDef is null) { return false; }
+        return cardDef.CardType == CardTypes.Reactive || cardDef.DeployTurns > 0;
     }
 }

@@ -315,7 +315,7 @@ ActionResult ProjectActionResult(GameActionResult result) => new()
         Sequence = e.Event.SequenceNumber,
         EventType = e.Event.EventType,
         PlayerNum = e.Event.PlayerNum,
-        EventData = JsonSerializer.SerializeToElement(e.Event.EventData, envelopeJsonOptions),
+        EventData = EventDataSerializer.SerializeToElement(e.Event.EventData),
         State = JsonSerializer.SerializeToElement(e.State, envelopeJsonOptions),
     }).ToList(),
 };

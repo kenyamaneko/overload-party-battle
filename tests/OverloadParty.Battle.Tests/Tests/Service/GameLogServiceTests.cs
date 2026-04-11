@@ -34,7 +34,7 @@ public class GameLogServiceTests
             SequenceNumber = 1,
             EventType = ActionTypes.PlayCard,
             PlayerNum = 1,
-            EventData = new PlayCardEventData { CardId = "SH-0001", Zone = "frontend", Index = 0 }.ToDictionary(),
+            EventData = new PlayCardEventData { CardId = "SH-0001", Zone = "frontend", Index = 0 },
         });
         await _repo.AppendEvent(new GameEvent
         {
@@ -46,7 +46,7 @@ public class GameLogServiceTests
             {
                 AttackerId = "atk_1", TargetId = "def_1",
                 Damage = 600, Destroyed = true, SlaPenalty = 400,
-            }.ToDictionary(),
+            },
         });
         await _repo.AppendEvent(new GameEvent
         {
@@ -57,14 +57,19 @@ public class GameLogServiceTests
             EventData = new TurnEndEventData
             {
                 Phase = "battle", NextTurn = 2, ActivePlayer = 2, CurrentPhase = "draw",
-            }.ToDictionary(),
+            },
         });
         await _repo.AppendEvent(new GameEvent
         {
             GameID = "test-game",
             SequenceNumber = 4,
-            EventType = "game_over",
+            EventType = EventTypes.GameOver,
             PlayerNum = null,
+            EventData = new GameOverEventData
+            {
+                WinnerNum = 1,
+                WinReason = WinReasons.BudgetZero,
+            },
         });
 
         await _repo.FinishGame("test-game", 1, WinReasons.BudgetZero);
@@ -156,22 +161,22 @@ public class GameLogServiceTests
         var state = TestFactory.MakeGameState();
         await _repo.CreateGame(game, state);
 
-        var eventData = eventType switch
+        IEventData eventData = eventType switch
         {
             ActionTypes.ScaleUp => new ScaleUpEventData
             {
                 InstanceId = "inst_1", TargetRank = "medium",
-            }.ToDictionary(),
-            ActionTypes.Monetize => new MonetizeEventData { TotalAmount = 300 }.ToDictionary(),
+            },
+            ActionTypes.Monetize => new MonetizeEventData { TotalAmount = 300 },
             ActionTypes.DiscardHand => new DiscardHandEventData
             {
                 DiscardedCount = 2, DiscardedIds = ["i1", "i2"],
-            }.ToDictionary(),
+            },
             EventTypes.PhaseChange => new PhaseChangeEventData
             {
                 PreviousPhase = "main", CurrentPhase = "battle",
-            }.ToDictionary(),
-            _ => new Dictionary<string, object>(),
+            },
+            _ => throw new InvalidOperationException($"Unhandled event type in test fixture: {eventType}"),
         };
 
         await _repo.AppendEvent(new GameEvent

@@ -37,7 +37,7 @@ public static class EndPhaseProcessor
             {
                 PreviousPhase = previousPhase.ToWireString(),
                 CurrentPhase = state.CurrentPhase.ToWireString(),
-            }.ToDictionary(),
+            },
         });
         return new ActionResult { Events = events, StateUpdated = true };
     }
@@ -61,7 +61,7 @@ public static class EndPhaseProcessor
                 {
                     Phase = Phases.End,
                     NeedsDiscard = true,
-                }.ToDictionary(),
+                },
             });
             return result;
         }
@@ -268,7 +268,7 @@ public static class EndPhaseProcessor
                 NextTurn = state.CurrentTurn,
                 ActivePlayer = state.ActivePlayer,
                 CurrentPhase = state.CurrentPhase.ToWireString(),
-            }.ToDictionary(),
+            },
         };
     }
 
@@ -279,10 +279,10 @@ public static class EndPhaseProcessor
             GameID = gameID,
             EventType = EventTypes.TurnStart,
             PlayerNum = null,
-            EventData = new Dictionary<string, object>
+            EventData = new TurnStartInternalEventData
             {
-                ["turn"] = state.CurrentTurn,
-                ["active_player"] = state.ActivePlayer,
+                Turn = state.CurrentTurn,
+                ActivePlayer = state.ActivePlayer,
             },
         };
     }

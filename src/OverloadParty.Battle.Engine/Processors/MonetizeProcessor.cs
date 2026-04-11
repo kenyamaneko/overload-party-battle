@@ -73,7 +73,7 @@ public static class MonetizeProcessor
                     EventData = new MonetizeEventData
                     {
                         TotalAmount = totalDistributed,
-                    }.ToDictionary()
+                    }
                 }
             ],
             StateUpdated = true,

@@ -177,18 +177,23 @@ public class PgGameRepositoryTests
         {
             GameID = game.GameID,
             SequenceNumber = 1,
-            EventType = "play_card",
+            EventType = EventTypes.PlayCard,
             PlayerNum = 1,
-            EventData = new Dictionary<string, object> { ["cardId"] = "SH-0001" },
+            EventData = new PlayCardEventData
+            {
+                CardId = "SH-0001",
+                Zone = "frontend",
+                Index = 0,
+            },
             CreatedAt = DateTime.UtcNow,
         };
         var evt2 = new GameEvent
         {
             GameID = game.GameID,
             SequenceNumber = 2,
-            EventType = "end_turn",
+            EventType = EventTypes.TurnStart,
             PlayerNum = null,
-            EventData = new Dictionary<string, object> { ["turn"] = 1 },
+            EventData = new TurnStartInternalEventData { Turn = 1, ActivePlayer = 2 },
             CreatedAt = DateTime.UtcNow,
         };
 
@@ -198,11 +203,15 @@ public class PgGameRepositoryTests
         var events = await repo.GetEvents(game.GameID);
         events.Should().HaveCount(2);
         events[0].SequenceNumber.Should().Be(1);
-        events[0].EventType.Should().Be("play_card");
+        events[0].EventType.Should().Be(EventTypes.PlayCard);
         events[0].PlayerNum.Should().Be(1);
+        events[0].EventData.Should().BeOfType<PlayCardEventData>()
+            .Which.CardId.Should().Be("SH-0001");
         events[1].SequenceNumber.Should().Be(2);
-        events[1].EventType.Should().Be("end_turn");
-        events[1].PlayerNum.Should().Be(0);
+        events[1].EventType.Should().Be(EventTypes.TurnStart);
+        events[1].PlayerNum.Should().BeNull();
+        events[1].EventData.Should().BeOfType<TurnStartInternalEventData>()
+            .Which.Turn.Should().Be(1);
     }
 
     [Fact]
@@ -219,8 +228,8 @@ public class PgGameRepositoryTests
         {
             GameID = game.GameID,
             SequenceNumber = 1,
-            EventType = "test",
-            EventData = new Dictionary<string, object>(),
+            EventType = EventTypes.Monetize,
+            EventData = new MonetizeEventData { TotalAmount = 0 },
             CreatedAt = DateTime.UtcNow,
         });
 

@@ -260,6 +260,21 @@ public class GameEvent
     public string EventType { get; set; } = "";
     /// <summary>null = system event (turn_start)、1 or 2 = player event。</summary>
     public long? PlayerNum { get; set; }
-    public Dictionary<string, object>? EventData { get; set; }
+    public IEventData? EventData { get; set; }
     public DateTime CreatedAt { get; set; }
+}
+
+/// <summary>
+/// Engine-internal TurnStart event data. GameService.MapEventData converts this to the
+/// viewer-facing TurnStartEventData (with is_my_turn computed per viewer) before wire serialization.
+/// Property names are pinned with [JsonPropertyName] to match the legacy hand-rolled
+/// Dictionary&lt;string, object&gt; keys (snake_case) so existing JSONB rows remain readable.
+/// </summary>
+public class TurnStartInternalEventData : IEventData
+{
+    [System.Text.Json.Serialization.JsonPropertyName("turn")]
+    public required long Turn { get; init; }
+
+    [System.Text.Json.Serialization.JsonPropertyName("active_player")]
+    public required long ActivePlayer { get; init; }
 }

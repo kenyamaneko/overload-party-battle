@@ -41,12 +41,12 @@ public static class SelectSlotProcessor
                 GameID = game.GameID,
                 EventType = ActionTypes.SelectSlot,
                 PlayerNum = playerNum,
-                EventData = new Dictionary<string, object>
+                EventData = new SelectSlotEventData
                 {
-                    ["cardId"] = pending.Resource.CardID,
-                    ["instanceId"] = pending.Resource.InstanceID,
-                    ["zone"] = req.Zone,
-                    ["index"] = req.Index,
+                    CardId = pending.Resource.CardID,
+                    InstanceId = pending.Resource.InstanceID,
+                    Zone = req.Zone,
+                    Index = req.Index,
                 },
             },
         };

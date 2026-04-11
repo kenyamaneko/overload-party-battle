@@ -197,7 +197,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(evt.SequenceNumber);
         cmd.Parameters.AddWithValue(evt.EventType);
         cmd.Parameters.AddWithValue(evt.PlayerNum.HasValue ? (object)(short)evt.PlayerNum.Value : DBNull.Value);
-        cmd.Parameters.Add(JsonbParam(evt.EventData));
+        cmd.Parameters.Add(EventDataJsonbParam(evt.EventData));
         cmd.Parameters.AddWithValue(evt.CreatedAt);
         await cmd.ExecuteNonQueryAsync(ct);
     }
@@ -261,7 +261,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 PlayerNum = reader.IsDBNull(3) ? null : reader.GetInt16(3),
                 EventData = reader.IsDBNull(4)
                     ? null
-                    : JsonSerializer.Deserialize<Dictionary<string, object>>(reader.GetString(4), DbJsonOptions.Default),
+                    : EventDataSerializer.Deserialize(reader.GetString(2), reader.GetString(4)),
                 CreatedAt = reader.GetDateTime(5),
             });
         }
@@ -408,6 +408,16 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     private static NpgsqlParameter JsonbParam<T>(T? value)
     {
         var json = value is null ? (object)DBNull.Value : JsonSerializer.Serialize(value, DbJsonOptions.Default);
+        return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };
+    }
+
+    /// <summary>
+    /// EventData の JSONB パラメータは EventDataSerializer を通す。GameState など他の JSONB 列の
+    /// snake_case 設定 (DbJsonOptions) とは別経路で camelCase 統一されている点に注意。
+    /// </summary>
+    private static NpgsqlParameter EventDataJsonbParam(OverloadParty.GameData.IEventData? value)
+    {
+        var json = value is null ? (object)DBNull.Value : EventDataSerializer.Serialize(value);
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };
     }
 

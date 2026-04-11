@@ -55,7 +55,8 @@ public class DiscardProcessorTests
         // (Note: SwitchActivePlayer + DrawPhaseProcessor runs after, so hand count may change for P2)
         // We verify the discard event was emitted with correct count
         var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
-        discardEvent.EventData!["discardedCount"].Should().Be(2L);
+        discardEvent.EventData.Should().BeOfType<DiscardHandEventData>()
+            .Which.DiscardedCount.Should().Be(2);
     }
 
     // ─── 2. No discard needed → throws ──────────────────────
@@ -115,7 +116,7 @@ public class DiscardProcessorTests
             state, _game, 1, MakeReq("h_6"), _cc);
 
         var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
-        discardEvent.EventData.Should().ContainKey("discardedCount");
-        discardEvent.EventData["discardedCount"].Should().Be(1L);
+        discardEvent.EventData.Should().BeOfType<DiscardHandEventData>()
+            .Which.DiscardedCount.Should().Be(1);
     }
 }

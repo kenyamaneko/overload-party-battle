@@ -47,7 +47,7 @@ public static class DiscardProcessor
             {
                 DiscardedCount = discardedCount,
                 DiscardedIds = req.CardInstanceIDs,
-            }.ToDictionary(),
+            },
         });
 
         var result = new ActionResult { Events = events, StateUpdated = true };
