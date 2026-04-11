@@ -59,7 +59,6 @@ public class EffectRegistrationTests
     [Theory]
     [InlineData("TK-0008", TriggerType.OnDestroy)]
     [InlineData("TK-0010", TriggerType.Deploy)]
-    // TK-0025: YAML data has wrong trigger (reactive) in v0.1.7; fixed in source, awaiting package update
     [InlineData("TK-0014", TriggerType.Reactive)]
     [InlineData("TK-0015", TriggerType.OnDestroy)]
     [InlineData("TK-0017", TriggerType.Reactive)]
@@ -69,8 +68,7 @@ public class EffectRegistrationTests
     [InlineData("TK-0022", TriggerType.Activate)]
     [InlineData("TK-0023", TriggerType.Reactive)]
     [InlineData("TK-0024", TriggerType.Reactive)]
-    // TK-0005: on_field_change + custom tp_per_backend_data — custom handler not yet migrated from StatCalculator
-    [InlineData("TK-0025", TriggerType.Deploy)]         // Reactive: peek + incident_reduction
+    [InlineData("TK-0025", TriggerType.Deploy)]
     [InlineData("NT-0027", TriggerType.Reactive)]
     [InlineData("NT-0028", TriggerType.Reactive)]
     public void Tenki_Cards_AreRegistered(string cardId, TriggerType trigger)
