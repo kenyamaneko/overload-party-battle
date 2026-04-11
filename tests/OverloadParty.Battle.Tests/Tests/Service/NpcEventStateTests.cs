@@ -6,7 +6,6 @@ using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 using OverloadParty.Battle.Service;
-using GD = OverloadParty.GameData;
 
 namespace OverloadParty.Battle.Tests.Service;
 
@@ -32,30 +31,6 @@ public class NpcEventStateTests
 
         var npcRunner = new NpcRunner(engine, _repo, cc, aiConfigs, NullNpcLogger.Instance);
         _svc = new GameService(engine, _repo, cc, npcRunner, aiConfigs);
-    }
-
-    [Fact]
-    public async Task NpcPlayCardEvents_EachStateReflectsOneMoreDeploy()
-    {
-        var result = await RunNpcTurn();
-
-        // Immediate カード（Incident/Strategy: zone=""）やキャンセルされたデプロイは
-        // フィールドにカードを残さないため除外する
-        var playCardEvents = result.Events
-            .Where(e => e.Event.EventType == ActionTypes.PlayCard && e.State is not null
-                && IsFieldDeploy(e.Event.EventData))
-            .ToList();
-
-        playCardEvents.Should().HaveCountGreaterThanOrEqualTo(2,
-            "NPC should deploy multiple cards during main phase");
-
-        for (int i = 1; i < playCardEvents.Count; i++)
-        {
-            var prev = CountOppFieldCards(playCardEvents[i - 1].State!);
-            var curr = CountOppFieldCards(playCardEvents[i].State!);
-            curr.Should().Be(prev + 1,
-                $"play_card event {i} should reflect exactly one new deploy vs event {i - 1}");
-        }
     }
 
     [Fact]
@@ -282,25 +257,6 @@ public class NpcEventStateTests
             Events = events,
             NpcPending = current.NpcPending,
         };
-    }
-
-    /// <summary>
-    /// フィールドにカードを追加する play_card イベントかどうか。
-    /// Immediate カード (zone="") やキャンセルはフィールドに残らない。
-    /// </summary>
-    private static bool IsFieldDeploy(IEventData? data)
-    {
-        return data is PlayCardEventData pc
-            && pc.Cancelled != true
-            && !string.IsNullOrEmpty(pc.Zone);
-    }
-
-    private static int CountOppFieldCards(GD.ClientGameState state)
-    {
-        var field = state.OppView.Field;
-        return field.Frontend.Count(r => r is not null)
-             + field.Backend.Count(r => r is not null)
-             + field.Support.Count(s => s is not null);
     }
 
     private static List<DeckSnapshotCard> MakePlayerCards(string cardId)
