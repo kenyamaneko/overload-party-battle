@@ -117,15 +117,13 @@ jobs:
 
       - name: Build npm packages (Layer 1 → Layer 2)
         run: |
-          # game-state-npm depends on @kenyamaneko/overload-party-game-design-constants
-          # (published by common) and on game-logic-constants-npm (published here).
-          # Local dependency resolution is not possible for the common dep, so the
-          # build step installs it from the GitHub Packages registry.
+          # game-state-npm の file: 参照は CI 上では解決できない（common リポのパス）。
+          # レジストリ公開版を使うよう "*" に書き換えてからビルドする。
           for pkg in \
             game-logic-constants-npm \
             game-state-npm; do
             echo "::group::build $pkg"
-            (cd "packages/$pkg" && npm install && npm run build)
+            (cd "packages/$pkg" && sed -i 's|"file:\.\./[^"]*"|"*"|g' package.json && npm install && npm run build)
             echo "::endgroup::"
           done
         env:
