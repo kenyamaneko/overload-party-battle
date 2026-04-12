@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Fails if player's budget is below the minimum.
+/// RequireBudgetOp はプレイヤーのバジェットが最低値未満の場合に失敗します
 /// </summary>
 public class RequireBudgetOp(long min) : IEffectOp
 {
@@ -22,7 +22,7 @@ public class RequireBudgetOp(long min) : IEffectOp
 }
 
 /// <summary>
-/// Fails if player's budget exceeds the maximum.
+/// RequireMaxBudgetOp はプレイヤーのバジェットが最大値を超える場合に失敗します
 /// </summary>
 public class RequireMaxBudgetOp(long max) : IEffectOp
 {
@@ -41,7 +41,7 @@ public class RequireMaxBudgetOp(long max) : IEffectOp
 }
 
 /// <summary>
-/// Fails if faction card count on own field is below minimum.
+/// RequireFactionCountOp はフィールド上のファクションカード数が最低値未満の場合に失敗します
 /// </summary>
 public class RequireFactionCountOp(string faction, int min) : IEffectOp
 {
@@ -63,7 +63,7 @@ public class RequireFactionCountOp(string faction, int min) : IEffectOp
 }
 
 /// <summary>
-/// Fails if opponent has no backend resources.
+/// RequireOpponentBackendOp は相手がバックエンドリソースを持たない場合に失敗します
 /// </summary>
 public class RequireOpponentBackendOp : IEffectOp
 {

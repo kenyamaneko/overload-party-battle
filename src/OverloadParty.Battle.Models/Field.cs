@@ -1,7 +1,7 @@
 namespace OverloadParty.Battle.Models;
 
 /// <summary>
-/// Field represents one player's complete field layout. Each zone has 3 slots.
+/// フィールド は 1 プレイヤーの全ゾーン配置を表現します（各ゾーン 3 スロット）
 /// </summary>
 public class Field
 {
@@ -11,7 +11,7 @@ public class Field
 }
 
 /// <summary>
-/// DeployedResource is a card deployed on the frontend or backend zone.
+/// DeployedResource はフロントエンドまたはバックエンドゾーンに配置されたカードを表現します
 /// </summary>
 public class DeployedResource
 {
@@ -40,13 +40,13 @@ public class DeployedResource
     public long LastAttackTurn { get; set; }
 
     /// <summary>
-    /// Effective AV = MaxAV - Damage. Can go below zero.
+    /// 実効 AV = MaxAV - Damage（負になりうる）
     /// </summary>
     public long EffectiveAV => MaxAV - Damage;
 }
 
 /// <summary>
-/// TemporaryEffect is a time-limited modifier on a resource.
+/// TemporaryEffect はリソースに付与される期限付き修飾効果を表現します
 /// </summary>
 public class TemporaryEffect
 {
@@ -86,7 +86,7 @@ public class DeployedSupport
 }
 
 /// <summary>
-/// UndeployedCard represents a card not yet deployed (hand, repository, or trash).
+/// UndeployedCard は未配置のカード（手札・リポジトリ・トラッシュ）を表現します
 /// </summary>
 public class UndeployedCard
 {
@@ -107,7 +107,7 @@ public class AwaitingSlotSelect
 }
 
 /// <summary>
-/// ChainEntry is one entry in the chain stack.
+/// ChainEntry はチェインスタック内の 1 エントリを表現します
 /// </summary>
 public class ChainEntry
 {

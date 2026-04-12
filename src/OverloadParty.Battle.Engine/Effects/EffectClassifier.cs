@@ -4,7 +4,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// Categories describing what an effect does, for NPC decision-making.
+/// EffectCategory は NPC 意思決定用にエフェクトの動作カテゴリを定義します
 /// </summary>
 public enum EffectCategory
 {
@@ -32,7 +32,7 @@ public enum EffectCategory
 }
 
 /// <summary>
-/// How the NPC should select targets for an effect.
+/// EffectTargetType は NPC がエフェクトのターゲットを選択する方法を定義します
 /// </summary>
 public enum EffectTargetType
 {
@@ -43,7 +43,7 @@ public enum EffectTargetType
 }
 
 /// <summary>
-/// A prerequisite for an effect to fire.
+/// EffectCondition はエフェクト発動の前提条件を表現します
 /// </summary>
 public class EffectCondition
 {
@@ -58,7 +58,7 @@ public class EffectCondition
 }
 
 /// <summary>
-/// Classification result for an effect pipeline, used by NPC AI.
+/// EffectInfo は NPC AI 用のエフェクトパイプライン分類結果を保持します
 /// </summary>
 public class EffectInfo
 {
@@ -107,7 +107,7 @@ public class EffectInfo
 }
 
 /// <summary>
-/// Inspects Op pipelines to classify effects for NPC decision-making.
+/// EffectClassifier は NPC 意思決定用に Op パイプラインを検査してエフェクトを分類します
 /// </summary>
 public static class EffectClassifier
 {
@@ -130,7 +130,7 @@ public static class EffectClassifier
     {
         switch (op)
         {
-            // Budget
+            // バジェット
             case GainBudgetOp g:
                 info.AddCategory(EffectCategory.BudgetGain);
                 break;
@@ -138,7 +138,7 @@ public static class EffectClassifier
                 info.AddCategory(EffectCategory.BudgetPenalty);
                 break;
 
-            // Insight
+            // インサイト
             case GainInsightOp:
                 info.AddCategory(EffectCategory.InsightGain);
                 break;
@@ -146,7 +146,7 @@ public static class EffectClassifier
                 info.AddCategory(EffectCategory.InsightAbsorb);
                 break;
 
-            // Damage
+            // ダメージ
             case DealDamageOp d:
                 ClassifyDamageTarget(info, d);
                 break;
@@ -154,18 +154,18 @@ public static class EffectClassifier
                 ClassifyIncidentDamageTarget(info, id);
                 break;
 
-            // Buff / Debuff
+            // バフ / デバフ
             case ApplyBuffOp b:
                 ClassifyBuffTarget(info, b);
                 break;
 
-            // Heal
+            // ヒール
             case HealDamageOp:
             case FullHealOp:
                 info.AddCategory(EffectCategory.Heal);
                 break;
 
-            // Card Movement
+            // カード移動
             case DrawCardsOp:
                 info.AddCategory(EffectCategory.Draw);
                 break;
@@ -188,7 +188,7 @@ public static class EffectClassifier
                 info.AddCategory(EffectCategory.RecoverCard);
                 break;
 
-            // Field
+            // フィールド
             case RevealReactiveOp:
                 info.AddCategory(EffectCategory.RevealReactive);
                 break;
@@ -196,7 +196,7 @@ public static class EffectClassifier
                 info.AddCategory(EffectCategory.DestroyPlatform);
                 break;
 
-            // Reactive
+            // リアクティブ
             case SetCancelActionOp:
                 info.AddCategory(EffectCategory.CancelAction);
                 break;
@@ -204,7 +204,7 @@ public static class EffectClassifier
                 info.AddCategory(EffectCategory.Survive);
                 break;
 
-            // Conditions
+            // 条件
             case RequireBudgetOp rb:
                 info.Conditions.Add(new EffectCondition { Type = ConditionTypes.MinBudget, Value = rb.Min });
                 break;
@@ -218,7 +218,7 @@ public static class EffectClassifier
                 info.Conditions.Add(new EffectCondition { Type = ConditionTypes.OpponentBackend });
                 break;
 
-            // Branching
+            // 分岐
             case BranchOnChoiceOp bc:
                 info.HasBranch = true;
                 foreach (var branchOps in bc.Branches.Values)
@@ -232,7 +232,7 @@ public static class EffectClassifier
                 info.MergeCategories(thenInfo);
                 break;
 
-            // CustomFn with tags
+            // タグ付きカスタム関数
             case CustomFnTaggedOp tagged:
                 foreach (var cat in tagged.Categories)
                 {

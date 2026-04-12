@@ -1,0 +1,256 @@
+# Battle-owned model definitions (ADR-015 Phase 6 / ADR-014 split).
+#
+# This repo owns the battle-facing contracts only:
+#   - battle_gateway_rpc: gateway ↔ battle internal REST envelope
+#       → packages/api-battle-rpc-go/battle_gateway_rpc_gen.go
+#       → packages/api-battle-rpc-dotnet/BattleGatewayRpc_gen.cs
+#   - game_state_view:    client-visible snapshot of in-flight game state
+#       → packages/game-state-dotnet/GameStateView_gen.cs
+#       → packages/game-state-npm/src/models.ts
+#   - variant_types (AvailableAction etc.):
+#       → packages/game-state-dotnet/VariantTypes_gen.cs
+#       → packages/game-state-npm/src/variantTypes.ts
+#
+# event_schemas.yaml drives EventData_gen.cs / eventData.ts (game-state packages).
+#
+# ClientGameState / AvailableAction の TS は
+# @kenyamaneko/overload-party-game-design-constants と
+# @kenyamaneko/overload-party-game-logic-constants のシンボルを import する。
+# これらは共通定数なので引き続き common 側の npm package を参照する。
+
+files:
+  # ─── Battle ↔ Gateway RPC (internal REST envelope) ───
+  # Handwritten in battle.md — this section is the Go + C# code generator's SSoT.
+  # Go struct tags are snake_case; C# uses explicit [JsonPropertyName("snake_case")].
+  - name: battle_gateway_rpc
+    target: both
+    pkg: api
+    ts_skip: true
+    imports:
+      - encoding/json
+    types:
+      # ── Response types ──
+      - name: BattleDeckCard
+        comment: "BattleDeckCard is a single card entry in a deck snapshot sent to the battle server."
+        fields:
+          - {name: CardID, type: string, json: "card_id"}
+          - {name: ArtNo, type: int64, json: "art_no"}
+
+      - name: GameCreatedResult
+        comment: "GameCreatedResult is returned when a new game (NPC or PvP) is created on the battle server."
+        fields:
+          - {name: GameID, type: string, json: "game_id"}
+
+      - name: ActionEvent
+        comment: "ActionEvent is a single game event emitted by the battle server after an action."
+        fields:
+          - {name: Sequence, type: int64, json: "sequence"}
+          - {name: EventType, type: string, json: "event_type"}
+          - {name: PlayerNum, type: "*int64", json: "player_num", doc: "アクション元のスロット番号（1 or 2）。system event (turn_start) では null"}
+          - {name: EventData, type: json.RawMessage, json: "event_data"}
+          - {name: State, type: json.RawMessage, json: "state"}
+
+      - name: ActionResult
+        comment: "ActionResult is returned after a game action is processed by the battle server."
+        fields:
+          - {name: GameOver, type: bool, json: "game_over", doc: "ゲーム終了フラグ"}
+          - {name: WinningPlayerNum, type: int64, json: "winning_player_num", doc: "勝者プレイヤー番号（1 or 2、未終了時は 0）"}
+          - {name: WinReason, type: string, json: "win_reason", doc: "終了理由（WinReasons enum の文字列、未終了時は空文字）"}
+          - {name: NpcPending, type: bool, json: "npc_pending", doc: "true の場合、Gateway は AdvanceNpcTurn を呼んで次の NPC アクションを取得する必要がある"}
+          - {name: Events, type: "[]ActionEvent", json: "events", doc: "このアクションで発生したイベント列"}
+
+      # ── Request types ──
+      - name: NpcBattleRequest
+        comment: "NpcBattleRequest is the request body for POST /api/v1/games/npc."
+        fields:
+          - {name: DeckCards, type: "[]BattleDeckCard", json: "deck_cards"}
+          - {name: NpcModel, type: string, json: "npc_model"}
+
+      - name: PvpBattleRequest
+        comment: "PvpBattleRequest is the request body for POST /api/v1/games/pvp."
+        fields:
+          - {name: Deck1Cards, type: "[]BattleDeckCard", json: "deck1_cards"}
+          - {name: Deck2Cards, type: "[]BattleDeckCard", json: "deck2_cards"}
+
+      - name: GameActionRequest
+        comment: "GameActionRequest is the request body for POST /api/v1/games/{gameId}/actions."
+        fields:
+          - {name: PlayerNum, type: int64, json: "player_num"}
+          - {name: ActionType, type: string, json: "action_type"}
+          - {name: Data, type: json.RawMessage, json: "data"}
+
+  # ─── Game State View (client-facing snapshot) ───
+  # Nullable pointer fields without omitempty are emitted as optional in TS
+  # (C# serializes them with WhenWritingNull, so they may be absent).
+  - name: game_state_view
+    target: both
+    pkg: gamedata
+    go_skip: true
+    nullable_as_optional: true
+    imports:
+      - time
+    ts_imports:
+      - {names: [AvailableAction], from: "./variantTypes"}
+      - {names: [InstanceFamily, Rank], from: "@kenyamaneko/overload-party-game-design-constants"}
+      - {names: [EffectDuration, GamePhase], from: "@kenyamaneko/overload-party-game-logic-constants"}
+    types:
+      - name: ClientGameState
+        fields:
+          - {name: GameID, type: string, json: "gameID", doc: "ゲームID（ULID）"}
+          - {name: CurrentTurn, type: int64, json: "currentTurn", doc: "現在のターン番号"}
+          - {name: CurrentPhase, type: string, json: "currentPhase", ts_type: GamePhase, doc: "現在のフェーズ（`selecting` / `draw` / `yield` / `main` / `battle` / `end`）"}
+          - {name: ActivePlayer, type: int64, json: "activePlayer", doc: "アクティブプレイヤー番号（1 or 2）"}
+          - {name: IsMyTurn, type: bool, json: "isMyTurn", doc: "自分のターンか"}
+          - {name: TurnStartedAt, type: time.Time, json: "turnStartedAt", doc: "ターン開始日時"}
+          - {name: MyView, type: PlayerView, json: "myView", doc: "自分の視点"}
+          - {name: OppView, type: OpponentView, json: "oppView", doc: "相手の視点（情報秘匿適用済み）"}
+
+      - name: PlayerView
+        fields:
+          - {name: PlayerNum, type: int64, json: "playerNum", doc: "プレイヤー番号（1 or 2）"}
+          - {name: Budget, type: int64, json: "budget", doc: "予算"}
+          - {name: InsightPool, type: int64, json: "insightPool", doc: "Insight プール"}
+          - {name: TimeBank, type: int64, json: "timeBank", doc: "タイムバンク（秒）"}
+          - {name: Field, type: Field, json: "field", doc: "フィールド（Frontend/Backend/Support）"}
+          - {name: Hand, type: "[]UndeployedCard", json: "hand", doc: "手札"}
+          - {name: RepoCount, type: int, json: "repoCount", doc: "リポジトリ残り枚数"}
+          - {name: TrashCount, type: int, json: "trashCount", doc: "トラッシュ枚数"}
+          - {name: Trash, type: "[]UndeployedCard", json: "trash", doc: "トラッシュ"}
+          - {name: AvailableActions, type: "[]AvailableAction", json: "availableActions,omitempty", doc: "実行可能アクション一覧（アクティブプレイヤーのみ）"}
+
+      - name: OpponentView
+        fields:
+          - {name: PlayerNum, type: int64, json: "playerNum", doc: "プレイヤー番号"}
+          - {name: Budget, type: int64, json: "budget", doc: "予算"}
+          - {name: InsightPool, type: int64, json: "insightPool", doc: "Insight プール"}
+          - {name: TimeBank, type: int64, json: "timeBank", doc: "タイムバンク（秒）"}
+          - {name: Field, type: OpponentField, json: "field", doc: "フィールド（サポートは非公開カード隠蔽）"}
+          - {name: HandCount, type: int, json: "handCount", doc: "手札枚数（内容は非公開）"}
+          - {name: RepoCount, type: int, json: "repoCount", doc: "リポジトリ残り枚数"}
+          - {name: TrashCount, type: int, json: "trashCount", doc: "トラッシュ枚数"}
+          - {name: Trash, type: "[]UndeployedCard", json: "trash", doc: "トラッシュ"}
+
+      - name: Field
+        comment: "Field represents one player's complete field layout."
+        fields:
+          - {name: Frontend, type: "[]*DeployedResource", json: "frontend", doc: "フロントゾーン（3スロット）"}
+          - {name: Backend, type: "[]*DeployedResource", json: "backend", doc: "バックエンドゾーン（3スロット）"}
+          - {name: Support, type: "[]*DeployedSupport", json: "support", doc: "サポートゾーン（3スロット）"}
+
+      - name: OpponentField
+        comment: "Opponent's field with reactive cards hidden."
+        fields:
+          - {name: Frontend, type: "[]*DeployedResource", json: "frontend", doc: "フロントゾーン（3スロット）"}
+          - {name: Backend, type: "[]*DeployedResource", json: "backend", doc: "バックエンドゾーン（3スロット）"}
+          - {name: Support, type: "[]*HiddenDeployedSupport", json: "support", doc: "サポートゾーン（非公開カードは隠蔽）"}
+
+      - name: DeployedResource
+        fields:
+          - {name: InstanceID, type: string, json: "instanceID", doc: "インスタンスID"}
+          - {name: CardID, type: string, json: "cardID", doc: "カードID"}
+          - {name: ArtNo, type: int64, json: "artNo", doc: "アート番号"}
+          - {name: Rank, type: "*string", json: "rank", ts_type: Rank, doc: "ランク（S/M/L/XL）"}
+          - {name: InstanceFamily, type: "*string", json: "instanceFamily", ts_type: InstanceFamily, doc: "インスタンスファミリー"}
+          - {name: FaceUp, type: bool, json: "faceUp", doc: "表向きか"}
+          - {name: DeployingTurnsLeft, type: int64, json: "deployingTurnsLeft", doc: "デプロイ残りターン数（0=アクティブ）"}
+          - {name: CurrentAV, type: int64, json: "currentAV", doc: "現在の可用性"}
+          - {name: MaxAV, type: int64, json: "maxAV", doc: "最大可用性"}
+          - {name: CurrentTP, type: "*int64", json: "currentTP", doc: "現在のスループット（Compute のみ）"}
+          - {name: MaxTP, type: "*int64", json: "maxTP", doc: "最大スループット（Compute のみ）"}
+          - {name: CurrentYield, type: "*int64", json: "currentYield", doc: "現在のイールド（Data のみ）"}
+          - {name: MaxYield, type: "*int64", json: "maxYield", doc: "最大イールド（Data のみ）"}
+          - {name: Damage, type: int64, json: "damage", doc: "受けたダメージ量"}
+          - {name: TemporaryEffects, type: "[]TemporaryEffect", json: "temporaryEffects", doc: "一時効果リスト"}
+          - {name: MonetizedAmount, type: int64, json: "monetizedAmount", doc: "収益化で配分された Insight 量"}
+          - {name: HasAttacked, type: bool, json: "hasAttacked", doc: "このターンに攻撃済みか"}
+          - {name: EffectUsedThisTurn, type: bool, json: "effectUsedThisTurn", doc: "このターンにエフェクト使用済みか"}
+          - {name: EffectUsedThisGame, type: bool, json: "effectUsedThisGame", doc: "このゲームでエフェクト使用済みか"}
+          - {name: DeployedOnTurn, type: int64, json: "deployedOnTurn", doc: "デプロイされたターン"}
+          - {name: DeployOrder, type: int64, json: "deployOrder", doc: "デプロイ順序"}
+          - {name: ElasticBonus, type: int64, json: "elasticBonus", doc: "Elastic によるボーナス"}
+          - {name: LastAttackTurn, type: int64, json: "lastAttackTurn", doc: "最後に攻撃したターン"}
+
+      - name: DeployedSupport
+        fields:
+          - {name: InstanceID, type: string, json: "instanceID", doc: "インスタンスID"}
+          - {name: CardID, type: string, json: "cardID", doc: "カードID"}
+          - {name: ArtNo, type: int64, json: "artNo", doc: "アート番号"}
+          - {name: FaceUp, type: bool, json: "faceUp", doc: "表向きか"}
+          - {name: DeployingTurnsLeft, type: int64, json: "deployingTurnsLeft", doc: "デプロイ残りターン数"}
+          - {name: DeployOrder, type: int64, json: "deployOrder", doc: "デプロイ順序"}
+          - {name: EffectUsedThisTurn, type: bool, json: "effectUsedThisTurn", doc: "このターンにエフェクト使用済みか"}
+          - {name: EffectUsedThisGame, type: bool, json: "effectUsedThisGame", doc: "このゲームでエフェクト使用済みか"}
+          - {name: TargetInstanceID, type: "*string", json: "targetInstanceID", doc: "Attachment 対象のインスタンスID"}
+
+      - name: HiddenDeployedSupport
+        comment: "Support instance with face-down card details hidden."
+        fields:
+          - {name: InstanceID, type: string, json: "instanceID", doc: "インスタンスID"}
+          - {name: CardID, type: "*string", json: "cardID", doc: "カードID（表向きの場合のみ）"}
+          - {name: ArtNo, type: int64, json: "artNo", doc: "アート番号"}
+          - {name: FaceDown, type: bool, json: "faceDown", doc: "裏向きか"}
+          - {name: Peeked, type: bool, json: "peeked", doc: "覗き見されたか"}
+
+      - name: UndeployedCard
+        fields:
+          - {name: InstanceID, type: string, json: "instanceID", doc: "インスタンスID"}
+          - {name: CardID, type: string, json: "cardID", doc: "カードID"}
+          - {name: ArtNo, type: int64, json: "artNo", doc: "アート番号"}
+
+      - name: TemporaryEffect
+        fields:
+          - {name: EffectType, type: string, json: "effectType", doc: "効果タイプ"}
+          - {name: Value, type: int64, json: "value", doc: "効果値"}
+          - {name: Duration, type: string, json: "duration", ts_type: EffectDuration, doc: "持続期間（`until_end_of_turn` / `permanent`）"}
+          - {name: SourceID, type: string, json: "sourceID", doc: "効果の発生源インスタンスID"}
+          - {name: Mode, type: string, json: "mode", doc: "バフモード（空文字=flat / `percent`=割合）"}
+
+      - name: TurnControlsMessage
+        fields:
+          - {name: CanEndPhase, type: bool, json: "canEndPhase", doc: "現在のフェーズを終了できるか（main / battle フェーズで `true`）"}
+          - {name: DiscardRequired, type: int, json: "discardRequired", doc: "手札破棄が必要な枚数（end フェーズで手札 > 6 枚の場合のみ > 0）"}
+
+# ─── Variant Types (C# flat class + TS discriminated union) ───
+# generate_types.py reads this section and outputs:
+#   - packages/game-state-dotnet/VariantTypes_gen.cs
+#   - packages/game-state-npm/src/variantTypes.ts
+#
+# Field types: string, int, long, bool, string[]
+# Optional fields are nullable in C# and have ? in TS.
+variant_types:
+  - name: AvailableAction
+    comment: "Available action that a player can perform during their turn."
+    discriminator: type
+    variants:
+      - value: play_card
+        fields:
+          - {name: handInstanceID, type: string}
+          - {name: cardID, type: string}
+          - {name: validZones, type: "string[]", optional: true}
+          - {name: validTargets, type: "string[]", optional: true}
+          - {name: cost, type: int, optional: true}
+          - {name: choiceOptions, type: "string[]", optional: true}
+
+      - value: attack
+        fields:
+          - {name: sourceInstanceID, type: string}
+          - {name: validTargets, type: "string[]", optional: true}
+
+      - value: scale_up
+        fields:
+          - {name: sourceInstanceID, type: string}
+          - {name: targetRank, type: string, ref: Rank}
+          - {name: instanceFamily, type: string, ref: InstanceFamily, optional: true}
+          - {name: needsFamily, type: bool, optional: true}
+
+      - value: monetize
+        fields:
+          - {name: sourceInstanceID, type: string}
+          - {name: remainingCapacity, type: long, optional: true}
+
+      - value: use_effect
+        fields:
+          - {name: sourceInstanceID, type: string}
+          - {name: validTargets, type: "string[]", optional: true}
+          - {name: effectTargetType, type: string, optional: true}
+          - {name: requiredCount, type: int, optional: true}

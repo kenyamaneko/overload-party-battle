@@ -1,7 +1,7 @@
 namespace OverloadParty.Battle.Models;
 
 /// <summary>
-/// Game maps to the Games table.
+/// Game は games テーブルにマッピングされるゲームメタデータを保持します
 /// </summary>
 public class Game
 {
@@ -38,7 +38,7 @@ public class BattleGameState
     public Phase CurrentPhase { get; set; } = Phase.Draw;
     public long ActivePlayer { get; set; }
 
-    // Player 1 state
+    // プレイヤー 1 の状態
     public long Player1Budget { get; set; }
     public long Player1InsightPool { get; set; }
     public Field Player1Field { get; set; } = new();
@@ -49,7 +49,7 @@ public class BattleGameState
     public bool Player1IncidentPlayedThisTurn { get; set; }
     public bool Player1HasHadActiveResource { get; set; }
 
-    // Player 2 state
+    // プレイヤー 2 の状態
     public long Player2Budget { get; set; }
     public long Player2InsightPool { get; set; }
     public Field Player2Field { get; set; } = new();
@@ -60,7 +60,7 @@ public class BattleGameState
     public bool Player2IncidentPlayedThisTurn { get; set; }
     public bool Player2HasHadActiveResource { get; set; }
 
-    // Shared state
+    // 共有状態
     public List<ChainEntry> ChainStack { get; set; } = [];
     public long? CurrentActionTimer { get; set; }
     public DateTime TurnStartedAt { get; set; }
@@ -251,7 +251,7 @@ public class BattleGameState
 }
 
 /// <summary>
-/// GameEvent maps to the GameEvents table.
+/// GameEvent は game_events テーブルにマッピングされるゲームイベントを表現します
 /// </summary>
 public class GameEvent
 {

@@ -5,7 +5,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
-/// Resolves effect category priorities from AiConfig instead of hardcoded NpcParams.
+/// PriorityResolver はハードコードされた NpcParams の代わりに AiConfig からエフェクトカテゴリの優先度を解決します
 /// </summary>
 public static class PriorityResolver
 {
@@ -86,7 +86,7 @@ public static class PriorityResolver
         EffectCategory cat, EffectInfo info, DecisionContext ctx,
         AiConfig config, ICardCache cc)
     {
-        // Reactive / automatic / uncategorized categories — never use proactively
+        // リアクティブ / automatic / uncategorized categories — never use proactively
         if (cat is EffectCategory.CancelAction
                 or EffectCategory.Survive
                 or EffectCategory.SelfDestruct
@@ -107,7 +107,6 @@ public static class PriorityResolver
             return (0, false);
         }
 
-        // Check entry-level condition
         if (entry.Condition is not null && !GuardChecker.Check(entry.Condition, ctx, cc))
         {
             return (0, false);
@@ -153,7 +152,7 @@ public static class PriorityResolver
 
     private static int ResolvePriority(EffectCategory cat, EffectPriorityEntry entry, DecisionContext ctx)
     {
-        // Budget-based threshold (e.g. budget_gain: high when budget < threshold)
+        // バジェット-based threshold (e.g. budget_gain: high when budget < threshold)
         if (entry.Threshold is not null && entry.LowPriority is not null)
         {
             return ctx.Budget < entry.Threshold.Value

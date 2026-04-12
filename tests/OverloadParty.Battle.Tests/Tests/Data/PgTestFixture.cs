@@ -14,7 +14,7 @@ public static class PgTestFixture
 {
     private static readonly string[] TruncateTables =
     [
-        "game_events", "game_states", "games", "card_definitions",
+        "game_events", "game_states", "games",
     ];
 
     private static readonly Lazy<NpgsqlDataSource?> _lazyDs = new(InitDataSource);

@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Draws cards from the player's deck into their hand.
+/// DrawCardsOp はプレイヤーのデッキからカードを手札に引きます
 /// </summary>
 public class DrawCardsOp(int count) : IEffectOp
 {
@@ -15,7 +15,7 @@ public class DrawCardsOp(int count) : IEffectOp
 }
 
 /// <summary>
-/// Searches the player's repository and adds a matching card to hand.
+/// SearchRepoOp はプレイヤーのリポジトリを検索し条件に合うカードを手札に加えます
 /// </summary>
 public class SearchRepoOp : IEffectOp
 {

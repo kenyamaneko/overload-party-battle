@@ -6,7 +6,7 @@ using OverloadParty.Battle.Engine.Effects.Ops;
 namespace OverloadParty.Battle.Engine;
 
 /// <summary>
-/// Represents a valid action a player can take.
+/// AvailableAction はプレイヤーが実行可能な有効なアクションを表現します
 /// </summary>
 public class AvailableAction
 {
@@ -51,7 +51,7 @@ public class AvailableAction
 }
 
 /// <summary>
-/// Computes available actions based on game state and phase.
+/// AvailableActions はゲーム状態とフェーズに基づいて実行可能なアクションを算出します
 /// </summary>
 public static class AvailableActions
 {
@@ -257,7 +257,7 @@ public static class AvailableActions
     private static IEnumerable<AvailableAction> EnumerateAttackActions(
         Field myField, Field oppField, ICardCache cc)
     {
-        // Determine valid targets
+        // 有効なターゲットを決定
         bool oppHasFrontend = FieldHelpers.HasFrontendResources(oppField);
         var validTargets = new List<string>();
 
@@ -270,7 +270,6 @@ public static class AvailableActions
 
         if (validTargets.Count == 0) { yield break; }
 
-        // Find eligible attackers
         foreach (var attacker in myField.Frontend.Where(r => r.FaceUp))
         {
             var attackerCard = cc.MustGet(attacker.CardID);
@@ -364,7 +363,7 @@ public static class AvailableActions
     {
         if (effects is null) { yield break; }
 
-        // Frontend and backend resources
+        // フロントエンドおよびバックエンドリソース
         foreach (var resource in FieldHelpers.AllFaceUpResources(myField))
         {
             if (resource.EffectUsedThisTurn) { continue; }
@@ -387,7 +386,7 @@ public static class AvailableActions
             yield return action;
         }
 
-        // Support zone
+        // サポートゾーン
         foreach (var support in FieldHelpers.AllSupports(myField))
         {
             if (support.DeployingTurnsLeft > 0) { continue; }

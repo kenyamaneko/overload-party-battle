@@ -1,0 +1,187 @@
+# Game logic constants (SSoT).
+#
+# Runtime game state machine enums — owned by battle conceptually (per ADR-015),
+# but physically lives in common until battle repo is created (ADR-011).
+#
+# Per ADR-015 Phase 1, this file is split out of the former data/constants.yaml.
+# Consumers: battle (primary), gateway (subset for RPC dispatch), client (subset for display).
+#
+# Consumed by scripts/generate_types.py → packages/game-logic-constants/
+#                                            → packages/game-logic-constants-dotnet/
+#                                            → packages/game-logic-constants-npm/src/index.ts
+
+phases:
+- draw
+- main
+- battle
+- end
+
+game_status:
+- waiting
+- playing
+- finished
+
+win_reasons:
+- budget_zero
+- system_down
+- repository_out
+- turn_timeout
+- disconnect
+- turn_limit
+- draw
+- launch_failure
+- surrender
+
+action_types:
+- play_card
+- attack
+- scale_up
+- monetize
+- discard_hand
+- use_effect
+- set_reactive
+- end_phase
+- forfeit
+- select_slot
+- reactive
+
+event_types:
+- play_card
+- attach_card
+- attack
+- scale_up
+- monetize
+- discard_hand
+- use_effect
+- reactive_revealed
+- phase_change
+- phase_end
+- turn_end
+- turn_start
+- game_over
+- battle_start
+
+effect_durations:
+- this_turn
+- until_next_turn_end
+- until_next_own_turn_end
+- while_on_field
+- permanent
+- next_turn
+
+trigger_types:
+- deploy
+- activate
+- passive
+- on_end_phase
+- on_field_change
+- on_scale_up
+- on_attack
+- on_hit
+- on_destroy
+- reactive
+- on_enemy_deploy
+
+effect_ops:
+- gain_budget
+- lose_budget
+- deal_damage
+- heal_damage
+- destroy_check
+- survive_destruction
+- apply_buff
+- draw
+- search_repo
+- add_to_hand
+- trash_to_hand
+- deploy_from_hand
+- deploy_from_repo
+- deploy_from_repo_same_card
+- destroy_platform
+- scale_to_rank
+- cancel_action
+- reveal_reactive
+- peek_reactive
+- reduce_deploy_turns
+- absorb_insight
+- gain_insight
+
+buff_types:
+- tp
+- yield
+- av
+- cannot_attack
+- incident_immune
+- incident_block
+- incident_reduction
+- ransomware
+- reserved_instance
+- scale_cost_reduction
+- deploy_discount
+- maintenance_reduction
+- pending_revival
+- attack_damage_reduction
+- count_multiplier
+- sla_penalty
+- sla_penalty_reduction
+- tp_suppressed
+
+buff_modes:
+- flat
+- percent
+
+custom_effects:
+- cancel_nth_deploy
+- chain_attack_bonus
+- cloud_shift
+- deploy_same_type_from_hand
+- disable_high_tp_deploy
+- reattach
+- redirect_attack
+- scale_to_zero
+- spot_expiry
+- target_shield
+
+effect_categories:
+- budget_gain
+- budget_penalty
+- insight_absorb
+- insight_gain
+- single_damage
+- aoe_damage
+- buff
+- debuff
+- heal
+- draw
+- search
+- deploy_free
+- recover_card
+- reveal_reactive
+- destroy_platform
+- cancel_action
+- survive
+
+effect_target_types:
+- none
+- choice
+- all_opp
+- self
+
+player_refs:
+- self
+- opponent
+- both
+
+use_limits:
+- once_per_turn
+- once_per_game
+
+guard_types:
+- count
+- stat
+- match
+- not_same
+
+selector_pick_modes:
+- all
+- choice

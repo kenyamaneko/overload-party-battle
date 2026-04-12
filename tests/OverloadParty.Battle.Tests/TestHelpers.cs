@@ -340,11 +340,11 @@ public static class TestEffectSetup
 
     private static string? FindCardsJson()
     {
-        // Walk up from the test binary to find the common repo
+        // Walk up from the test binary to find the battle repo's own cache.
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            var candidate = Path.Combine(dir.FullName, "overload-party-common",
+            var candidate = Path.Combine(dir.FullName, "overload-party-battle",
                 "packages", "game-state-dotnet", "cache", "cards_gen.json");
             if (File.Exists(candidate))
             {

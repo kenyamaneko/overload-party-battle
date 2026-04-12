@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// Selects target resources for an effect operation.
+/// ISelector はエフェクト操作のターゲットリソースを選択します
 /// </summary>
 public interface ISelector
 {
@@ -16,7 +16,7 @@ public interface ISelector
 }
 
 /// <summary>
-/// Select the source resource.
+/// SourceSelector はソースリソースを選択します
 /// </summary>
 public class SourceSelector : ISelector
 {
@@ -29,7 +29,7 @@ public class SourceSelector : ISelector
 }
 
 /// <summary>
-/// Select the target resource.
+/// TargetSelector はターゲットリソースを選択します
 /// </summary>
 public class TargetSelector : ISelector
 {
@@ -42,7 +42,7 @@ public class TargetSelector : ISelector
 }
 
 /// <summary>
-/// Select a resource by player choice (from ChoiceData.instanceId).
+/// ByChoiceSelector はプレイヤーの選択（ChoiceData.instanceId）でリソースを選択します
 /// </summary>
 public class ByChoiceSelector : ISelector
 {
@@ -74,7 +74,7 @@ public class ByChoiceSelector : ISelector
             return [];
         }
 
-        // Apply filters
+        // フィルターを適用
         if (Zone is { } z)
         {
             var actualZone = FieldHelpers.FindResourceZone(field, instanceId)?.ToWireString();
@@ -120,7 +120,7 @@ public class ByChoiceSelector : ISelector
 }
 
 /// <summary>
-/// Select all own resources (optionally filtered by zone and faction).
+/// AllOwnSelector は自分の全リソースを選択します（ゾーン・ファクションでフィルタ可能）
 /// </summary>
 public class AllOwnSelector : ISelector
 {
@@ -158,7 +158,7 @@ public class AllOwnSelector : ISelector
 }
 
 /// <summary>
-/// Select all opponent resources (optionally filtered by zone and faction).
+/// AllOpponentSelector は相手の全リソースを選択します（ゾーン・ファクションでフィルタ可能）
 /// </summary>
 public class AllOpponentSelector : ISelector
 {
@@ -180,7 +180,7 @@ public class AllOpponentSelector : ISelector
 }
 
 /// <summary>
-/// Combines two selectors by concatenating their results.
+/// UnionSelector は 2 つのセレクタの結果を結合します
 /// </summary>
 public class UnionSelector(ISelector a, ISelector b) : ISelector
 {
@@ -190,7 +190,7 @@ public class UnionSelector(ISelector a, ISelector b) : ISelector
 }
 
 /// <summary>
-/// Wraps another selector and excludes the source resource from the results.
+/// ExcludeSourceSelector は別のセレクタをラップしソースリソースを結果から除外します
 /// </summary>
 public class ExcludeSourceSelector(ISelector inner) : ISelector
 {

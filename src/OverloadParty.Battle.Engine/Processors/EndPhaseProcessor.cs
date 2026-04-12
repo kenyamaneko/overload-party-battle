@@ -4,7 +4,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes phase advancement and end-of-turn logic including maintenance, insight generation, and turn switching.
+/// EndPhaseProcessor はフェーズ進行とターン終了ロジック（維持費・インサイト生成・ターン交代）を処理します
 /// </summary>
 public static class EndPhaseProcessor
 {

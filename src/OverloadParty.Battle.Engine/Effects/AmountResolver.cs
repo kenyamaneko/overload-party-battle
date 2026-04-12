@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// Resolves a dynamic amount value for effect operations.
+/// IAmountResolver はエフェクト操作の動的な数値を解決します
 /// </summary>
 public interface IAmountResolver
 {
@@ -16,7 +16,7 @@ public interface IAmountResolver
 }
 
 /// <summary>
-/// Constant value.
+/// 固定値リゾルバ
 /// </summary>
 public class StaticAmount(long value) : IAmountResolver
 {
@@ -25,7 +25,7 @@ public class StaticAmount(long value) : IAmountResolver
 }
 
 /// <summary>
-/// Custom function resolver.
+/// カスタム関数リゾルバ
 /// </summary>
 public class FnAmount(Func<OpContext, long> fn) : IAmountResolver
 {
@@ -34,7 +34,7 @@ public class FnAmount(Func<OpContext, long> fn) : IAmountResolver
 }
 
 /// <summary>
-/// Source resource's current effective yield.
+/// ソースリソースの現在の実効イールドを解決します
 /// </summary>
 public class SourceYieldAmount : IAmountResolver
 {
@@ -53,7 +53,7 @@ public class SourceYieldAmount : IAmountResolver
 }
 
 /// <summary>
-/// Target resource's current effective TP.
+/// ターゲットリソースの現在の実効 TP を解決します
 /// </summary>
 public class TargetTPAmount : IAmountResolver
 {
@@ -72,7 +72,7 @@ public class TargetTPAmount : IAmountResolver
 }
 
 /// <summary>
-/// Half of target's MaxAV, rounded down.
+/// ターゲットの MaxAV の半分（切り捨て）を解決します
 /// </summary>
 public class HalfMaxAVAmount : IAmountResolver
 {
@@ -92,7 +92,7 @@ public class HalfMaxAVAmount : IAmountResolver
 
 
 /// <summary>
-/// SLA penalty from target's card definition.
+/// ターゲットのカード定義から SLA ペナルティを解決します
 /// </summary>
 public class SLAPenaltyAmount : IAmountResolver
 {

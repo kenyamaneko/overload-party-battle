@@ -3,12 +3,12 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Identifies which player an operation targets.
+/// PlayerRef は操作の対象プレイヤーを識別します
 /// </summary>
 public enum PlayerRef { Self, Opponent, Both }
 
 /// <summary>
-/// Adds budget to a player.
+/// GainBudgetOp はプレイヤーのバジェットを増加させます
 /// </summary>
 public class GainBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
 {
@@ -23,7 +23,7 @@ public class GainBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
 }
 
 /// <summary>
-/// Subtracts budget from a player.
+/// LoseBudgetOp はプレイヤーのバジェットを減少させます
 /// </summary>
 public class LoseBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
 {

@@ -9,7 +9,7 @@ namespace OverloadParty.Battle.Engine;
 public record GameOverResult(long WinnerNum, string Reason);
 
 /// <summary>
-/// Result of processing a game action or auto-advance.
+/// ActionResult はアクション処理または自動進行の結果を表現します
 /// </summary>
 public class ActionResult
 {

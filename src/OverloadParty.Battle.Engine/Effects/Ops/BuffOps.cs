@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Applies a temporary effect (buff or debuff) to selected resources.
+/// ApplyBuffOp は選択されたリソースに一時効果（バフ/デバフ）を適用します
 /// </summary>
 public class ApplyBuffOp(ISelector sel, string effectType, IAmountResolver value, string duration, string? sourceId = null, string mode = "") : IEffectOp
 {

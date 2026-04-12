@@ -7,7 +7,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
-/// Result of a single NPC action advancement.
+/// NpcAdvanceResult は 1 つの NPC アクション進行の結果を表現します
 /// </summary>
 public record NpcAdvanceResult(
     List<GameEvent> Events,
@@ -68,14 +68,14 @@ public class NpcRunner
 
         var npcPlayerNum = state.ActivePlayer;
 
-        // Pending slot select takes priority
+        // 保留中のスロット選択を優先処理
         if (state.PendingSlotSelects.Count > 0
             && state.PendingSlotSelects[0].PlayerNum == npcPlayerNum)
         {
             return await ProcessOneSlotSelect(game, state, npcPlayerNum, npcAI, ct);
         }
 
-        // Decide actions for current phase
+        // 現在のフェーズのアクションを決定
         var actions = DecideActions(npcAI, state, game, npcPlayerNum);
 
         if (actions.Count == 0)
@@ -83,7 +83,8 @@ public class NpcRunner
             return NpcAdvanceResult.Done();
         }
 
-        // Try each action until one succeeds (skip rejected ones)
+        // 成功するまで各アクションを試行（拒否されたものはスキップ）
+        var rejections = new List<string>();
         foreach (var action in actions)
         {
             var actionType = EnumExtensions.ParseActionType(action.ActionType);
@@ -98,11 +99,14 @@ public class NpcRunner
             }
             catch (GameRuleException ex)
             {
+                rejections.Add($"{action.ActionType}:{ex.Message}");
                 _logger.LogWarning(ex, "NPC action rejected (game={GameID}, action={Action})", gameID, action.ActionType);
             }
         }
 
-        _logger.LogWarning("All NPC actions rejected (game={GameID})", gameID);
+        _logger.LogWarning(
+            "All NPC actions rejected (game={GameID}, phase={Phase}, tried={Tried}, rejections=[{Rejections}])",
+            gameID, state.CurrentPhase, actions.Count, string.Join(" | ", rejections));
         return NpcAdvanceResult.Done();
     }
 

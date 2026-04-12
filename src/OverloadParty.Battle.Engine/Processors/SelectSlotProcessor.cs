@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Resolves a pending effect deploy by placing the resource at the player-chosen slot.
+/// SelectSlotProcessor は保留中のエフェクトデプロイをプレイヤーが選択したスロットに配置して解決します
 /// </summary>
 public static class SelectSlotProcessor
 {

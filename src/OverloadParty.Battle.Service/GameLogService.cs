@@ -7,7 +7,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Service;
 
 /// <summary>
-/// Builds human-readable game logs (replay) from persisted game events.
+/// GameLogService は永続化されたゲームイベントから人間可読なゲームログ（リプレイ）を構築します
 /// </summary>
 public class GameLogService
 {
@@ -85,7 +85,7 @@ public class GameLogService
 
         var sb = new StringBuilder();
 
-        // Header
+        // ヘッダー
         sb.AppendLine($"=== Game {gameID} ===");
 
         var p1Label = game.Npc1Model is not null
@@ -96,7 +96,7 @@ public class GameLogService
             : "P2";
         sb.AppendLine($"P1: {p1Label}  vs  P2: {p2Label}");
 
-        // Winner / duration
+        // 勝者/所要時間
         var winReason = game.WinReason ?? FindWinReasonFromEvents(events);
         var winnerTag = game.WinningPlayerNum switch
         {
@@ -117,7 +117,7 @@ public class GameLogService
 
         sb.AppendLine();
 
-        // Events
+        // イベント一覧
         foreach (var e in events)
         {
             var desc = EventToDescription(e, game);

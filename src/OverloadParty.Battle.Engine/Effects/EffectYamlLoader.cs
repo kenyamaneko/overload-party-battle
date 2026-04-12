@@ -23,7 +23,7 @@ public static class EffectYamlLoader
     public static void LoadFromCards(
         IEnumerable<CardDefinition> cards,
         EffectRegistry registry,
-        ICustomEffectRegistry customRegistry)
+        CustomEffectRegistry customRegistry)
     {
         foreach (var card in cards)
         {
@@ -36,7 +36,7 @@ public static class EffectYamlLoader
         string cardId,
         List<EffectDef> effects,
         EffectRegistry registry,
-        ICustomEffectRegistry customRegistry)
+        CustomEffectRegistry customRegistry)
     {
         var byTrigger = effects.GroupBy(e => ParseTrigger(e.Trigger));
 
@@ -57,7 +57,7 @@ public static class EffectYamlLoader
 
     private static List<IEffectOp> BuildTriggerOps(
         List<EffectDef> defs,
-        ICustomEffectRegistry customRegistry)
+        CustomEffectRegistry customRegistry)
     {
         var independent = defs.Where(d => d.After is null).ToList();
         var dependent = defs.Where(d => d.After is not null).ToList();
@@ -128,7 +128,7 @@ public static class EffectYamlLoader
 
     private static List<IEffectOp> BuildSingleBlock(
         EffectDef def,
-        ICustomEffectRegistry customRegistry)
+        CustomEffectRegistry customRegistry)
     {
         if (def.Custom is { } customName)
         {
@@ -174,7 +174,7 @@ public static class EffectYamlLoader
     private static List<IEffectOp> BuildCustomBlock(
         string customName,
         Dictionary<string, JsonElement>? meta,
-        ICustomEffectRegistry customRegistry)
+        CustomEffectRegistry customRegistry)
     {
         var fn = customRegistry.Build(customName, meta)
             ?? throw new InvalidOperationException($"Unknown custom effect: {customName}");

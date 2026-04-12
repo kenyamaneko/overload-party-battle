@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Cancels the triggering action (for reactive effects).
+/// SetCancelActionOp はトリガーとなったアクションをキャンセルします（リアクティブエフェクト用）
 /// </summary>
 public class SetCancelActionOp : IEffectOp
 {
@@ -41,7 +41,7 @@ public class SurviveDestructionOp(long surviveAV) : IEffectOp
 }
 
 /// <summary>
-/// Reads player choice and dispatches to the corresponding op sequence.
+/// BranchOnChoiceOp はプレイヤーの選択を読み取り対応する Op シーケンスにディスパッチします
 /// </summary>
 public class BranchOnChoiceOp(Dictionary<string, List<IEffectOp>> branches) : IEffectOp
 {

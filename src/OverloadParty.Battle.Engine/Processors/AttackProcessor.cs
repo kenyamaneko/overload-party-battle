@@ -4,7 +4,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes attack actions where a frontend compute resource deals damage to an opponent's resource.
+/// AttackProcessor はフロントエンドの Compute リソースが相手リソースにダメージを与える攻撃アクションを処理します
 /// </summary>
 public static class AttackProcessor
 {
@@ -29,19 +29,19 @@ public static class AttackProcessor
         var (attacker, attackerCard) = ValidateAttacker(myField, req.AttackerInstanceID, cc);
         var defender = ValidateDefender(oppField, req.TargetInstanceID, cc);
 
-        // Calculate damage
+        // ダメージを算出
         long damage = StatCalculator.CalculateEffectiveTP(attacker, myField, cc);
 
         var events = new List<GameEvent>();
 
-        // Fire reactive effects (opponent's support zone)
+        // リアクティブエフェクトを発動（相手のサポートゾーン）
         var (cancelled, reactiveEvents) = FireReactives(
             state, game, opponentNum, oppField, attacker, defender, cc, effects);
         events.AddRange(reactiveEvents);
 
         if (cancelled)
         {
-            // Attack cancelled by reactive, but attacker still used their attack
+            // リアクティブでキャンセルされたが、攻撃者の攻撃権は消費される
             attacker.HasAttacked = true;
             events.Add(new GameEvent
             {
@@ -60,13 +60,13 @@ public static class AttackProcessor
             return new ActionResult { Events = events, StateUpdated = true };
         }
 
-        // Apply damage (reduced by attack_damage_reduction buffs on defender)
+        // ダメージを適用（防御者の attack_damage_reduction バフで軽減）
         defender.Damage += FieldHelpers.ApplyReduction(
             defender.TemporaryEffects, BuffTypes.AttackDamageReduction, damage);
         attacker.HasAttacked = true;
         attacker.LastAttackTurn = state.CurrentTurn;
 
-        // Fire OnAttack trigger
+        // OnAttack トリガーを発動
         if (effects?.Has(attackerCard.CardId, TriggerType.OnAttack) == true)
         {
             var handler = effects.Get(attackerCard.CardId, TriggerType.OnAttack)!;
@@ -83,11 +83,10 @@ public static class AttackProcessor
             events.AddRange(result.Events);
         }
 
-        // Fire OnHit effects for the defender and its attachments
+        // 防御者とそのアタッチメントの OnHit エフェクトを発動
         var onHitEvents = FireOnHit(state, game, opponentNum, defender, cc, effects);
         events.AddRange(onHitEvents);
 
-        // Check destruction
         bool destroyed = defender.EffectiveAV <= 0;
         long slaPenalty = 0;
 
@@ -96,7 +95,7 @@ public static class AttackProcessor
             var defCard = cc.MustGet(defender.CardID);
             slaPenalty = defCard.SLAPenalty;
 
-            // Fire OnDestroy triggers
+            // OnDestroy トリガーを発動
             var destroyEvents = FireOnDestroy(state, game, opponentNum, defender, myField, oppField, cc, effects);
             events.AddRange(destroyEvents);
 
@@ -105,7 +104,7 @@ public static class AttackProcessor
         }
         else
         {
-            // Elastic scaling when attacked (frontend resources)
+            // 攻撃を受けたときの Elastic スケーリング
             var defCard = cc.MustGet(defender.CardID);
             if (defCard.Elastic)
             {

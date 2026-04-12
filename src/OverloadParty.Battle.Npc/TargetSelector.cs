@@ -4,7 +4,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
-/// Target selection helpers for NPC category-based decisions.
+/// TargetSelector は NPC のカテゴリベース意思決定向けターゲット選択ヘルパーを提供します
 /// </summary>
 public static class TargetSelector
 {

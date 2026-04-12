@@ -205,13 +205,13 @@ public class NpcAi : INpcStrategy
                 continue;
             }
 
-            // hold_until: don't use certain card types until condition is met
+            // hold_until: 条件が満たされるまで特定カードタイプを使わない
             if (ShouldHoldImmediate(card, ctx, activeConfig))
             {
                 continue;
             }
 
-            // use_conditions: check category-specific conditions
+            // use_conditions: カテゴリ固有の条件をチェック
             if (!CheckImmediateUseConditions(card, ctx, activeConfig))
             {
                 continue;
@@ -290,7 +290,6 @@ public class NpcAi : INpcStrategy
             return true;
         }
 
-        // Check effect categories for this card to find matching use_conditions
         var info = _effects.GetEffectInfo(card.CardId, TriggerType.Activate);
         if (info is null)
         {
@@ -334,7 +333,7 @@ public class NpcAi : INpcStrategy
             {
                 continue;
             }
-            // Reactive cards handled separately
+            // リアクティブ cards handled separately
             if (card.CardType == CardTypes.Reactive)
             {
                 continue;
@@ -389,13 +388,13 @@ public class NpcAi : INpcStrategy
             addedMaintenanceCost += c.Card.MaintenanceCost;
         }
 
-        // Deploy attachments after resources
+        // リソースの後にアタッチメントをデプロイ
         if (_config.Attachments is not null)
         {
             actions.AddRange(DoAttachmentDeploy(ctx, playActions, usedZones));
         }
 
-        // Deploy reactive cards
+        // リアクティブカードをデプロイ
         if (_config.Reactive is not null)
         {
             actions.AddRange(DoReactiveDeploy(playActions, usedZones));
@@ -406,7 +405,6 @@ public class NpcAi : INpcStrategy
 
     private int ResolveDeployPriority(CardDefinition card, DecisionContext ctx)
     {
-        // Check conditional priorities first (card-specific with conditions)
         if (_config.Deploy.ConditionalPriorities is not null)
         {
             foreach (var cp in _config.Deploy.ConditionalPriorities)
@@ -422,7 +420,6 @@ public class NpcAi : INpcStrategy
             }
         }
 
-        // Check static priorities (card_id match first, then card_type)
         foreach (var entry in _config.Deploy.Priorities)
         {
             if (entry.CardId is not null && entry.CardId == card.CardId)
@@ -583,7 +580,7 @@ public class NpcAi : INpcStrategy
         var reactive = _config.Reactive!;
         var actions = new List<NpcAction>();
 
-        // Count existing reactive cards in support zone
+        // サポートゾーンの既存リアクティブカード数を計算
         var usedReactiveSlots = usedZones.Count(z => z.StartsWith("support_"));
 
         var candidates = new List<(AvailableAction Action, int Priority)>();
@@ -781,7 +778,7 @@ public class NpcAi : INpcStrategy
 
         var sorted = TargetSelector.OrderActions(yieldActions, _config.Monetize.OrderBy, ctx.Field, _cc);
 
-        // Reserve a portion of insight pool
+        // インサイトプールの一定割合を確保
         var reserve = (long)(insightPool * _config.Monetize.ReserveRatio);
         var distributable = insightPool - reserve;
 
@@ -853,7 +850,7 @@ public class NpcAi : INpcStrategy
             return _config;
         }
 
-        // Merge late-phase overrides on top of base config
+        // レイトフェーズのオーバーライドをベース設定にマージ
         return new AiConfig
         {
             Model = _config.Model,

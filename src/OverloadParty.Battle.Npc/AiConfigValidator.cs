@@ -26,7 +26,16 @@ public static class AiConfigValidator
         AiConfig config, HashSet<string> deckCardIds, ICardCache cc)
     {
         var attachmentCards = deckCardIds
-            .Where(id => cc.Get(id)?.CardType == CardTypes.Attachment)
+            .Where(id =>
+            {
+                var card = cc.Get(id);
+                if (card is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Config '{config.Model}': deck references unknown card_id '{id}'");
+                }
+                return card.CardType == CardTypes.Attachment;
+            })
             .ToList();
 
         if (attachmentCards.Count == 0)
@@ -56,7 +65,16 @@ public static class AiConfigValidator
         AiConfig config, HashSet<string> deckCardIds, ICardCache cc)
     {
         var reactiveCards = deckCardIds
-            .Where(id => cc.Get(id)?.CardType == CardTypes.Reactive)
+            .Where(id =>
+            {
+                var card = cc.Get(id);
+                if (card is null)
+                {
+                    throw new InvalidOperationException(
+                        $"Config '{config.Model}': deck references unknown card_id '{id}'");
+                }
+                return card.CardType == CardTypes.Reactive;
+            })
             .ToList();
 
         if (reactiveCards.Count == 0)

@@ -5,7 +5,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes effect activation actions for resources and support cards.
+/// UseEffectProcessor はリソースおよびサポートカードのエフェクト発動アクションを処理します
 /// </summary>
 public static class UseEffectProcessor
 {
@@ -30,14 +30,14 @@ public static class UseEffectProcessor
 
         var field = state.GetField(playerNum);
 
-        // Try to find as resource first
+        // まずリソースとして検索
         var resource = FieldHelpers.FindResourceByID(field, req.InstanceID);
         if (resource is not null)
         {
             return ActivateResourceEffect(state, game, playerNum, resource, req, cc, effects);
         }
 
-        // Try support zone
+        // サポートゾーンを検索
         var support = FieldHelpers.FindSupportByID(field, req.InstanceID);
         if (support is not null)
         {
@@ -54,11 +54,10 @@ public static class UseEffectProcessor
     {
         var card = ValidateResourceActivation(source, cc, effects);
 
-        // Find target if specified
         DeployedResource? target = null;
         if (req.TargetInstanceID is { } targetId)
         {
-            // Search own field first, then opponent field
+            // 自分のフィールドを先に検索、次に相手のフィールド
             target = FieldHelpers.FindResourceByID(state.GetField(playerNum), targetId)
                   ?? FieldHelpers.FindResourceByID(state.GetField(state.OpponentOf(playerNum)), targetId);
         }

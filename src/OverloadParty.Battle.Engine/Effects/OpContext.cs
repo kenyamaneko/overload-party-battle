@@ -70,7 +70,7 @@ public class OpContext
     public DeployedResource? Target => Ctx.Target;
 
     /// <summary>
-    /// Support zone source (for platform/reactive cards).
+    /// サポートゾーン source (for platform/reactive cards).
     /// </summary>
     public DeployedSupport? SupSource => Ctx.SupSource;
 

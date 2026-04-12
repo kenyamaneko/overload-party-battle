@@ -1,5 +1,8 @@
 namespace OverloadParty.Battle.Models;
 
+/// <summary>
+/// CardDefinition はカードマスターの定義情報を保持します
+/// </summary>
 public class CardDefinition
 {
     public string CardId { get; set; } = "";
@@ -19,53 +22,56 @@ public class CardDefinition
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
-    // Typed stats (one of these is populated based on card type category)
+    // カードタイプカテゴリに応じてどちらか一方が設定される
     public ComputeStats? ComputeStats { get; set; }
     public DataStats? DataStats { get; set; }
 
     public List<EffectDef>? Effects { get; set; }
 
     /// <summary>
-    /// Returns whether this card type falls under the Compute category.
+    /// IsComputeType はカードタイプが Compute カテゴリに属するかを返します
     /// </summary>
     public bool IsComputeType => CardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML;
 
     /// <summary>
-    /// Returns whether this card type falls under the Data category.
+    /// IsDataType はカードタイプが Data カテゴリに属するかを返します
     /// </summary>
     public bool IsDataType => CardType is CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
 
     /// <summary>
-    /// Returns whether this card type falls under the Support category.
+    /// IsSupportType はカードタイプが Support カテゴリに属するかを返します
     /// </summary>
     public bool IsSupportType => CardType is CardTypes.Platform or CardTypes.Attachment or CardTypes.Strategy or CardTypes.Reactive or CardTypes.Incident;
 
     /// <summary>
-    /// Base throughput from stats. Returns 0 for non-compute cards.
+    /// BaseThroughput はベーススループットを返します（非 Compute カードの場合は 0）
     /// </summary>
     public long BaseThroughput => ComputeStats?.Throughput ?? 0;
 
     /// <summary>
-    /// Base yield from stats. Returns 0 for non-data cards.
+    /// BaseYield はベースイールドを返します（非 Data カードの場合は 0）
     /// </summary>
     public long BaseYield => DataStats?.Yield ?? 0;
 
     /// <summary>
-    /// Base availability from either compute or data stats.
+    /// BaseAvailability は Compute または Data のベース可用性を返します
     /// </summary>
     public long BaseAvailability => ComputeStats?.Availability ?? DataStats?.Availability ?? 0;
 
     /// <summary>
-    /// Maintenance cost from either compute or data stats.
+    /// MaintenanceCost は Compute または Data の維持費を返します
     /// </summary>
     public long MaintenanceCost => ComputeStats?.MaintenanceCost ?? DataStats?.MaintenanceCost ?? 0;
 
     /// <summary>
-    /// SLA penalty from either compute or data stats.
+    /// SLAPenalty は Compute または Data の SLA ペナルティを返します
     /// </summary>
     public long SLAPenalty => ComputeStats?.SLAPenalty ?? DataStats?.SLAPenalty ?? 0;
 }
 
+/// <summary>
+/// ComputeStats は Compute カテゴリカードのステータスを保持します
+/// </summary>
 public class ComputeStats
 {
     public long Throughput { get; set; }
@@ -75,6 +81,9 @@ public class ComputeStats
     public long SLAPenalty { get; set; }
 }
 
+/// <summary>
+/// DataStats は Data カテゴリカードのステータスを保持します
+/// </summary>
 public class DataStats
 {
     public long Yield { get; set; }

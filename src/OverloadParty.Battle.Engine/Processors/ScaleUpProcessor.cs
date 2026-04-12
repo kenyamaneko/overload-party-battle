@@ -4,7 +4,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes scale-up actions that change a resource's rank or instance family.
+/// ScaleUpProcessor はリソースのランクまたはインスタンスファミリーを変更するスケールアップアクションを処理します
 /// </summary>
 public static class ScaleUpProcessor
 {
@@ -56,7 +56,7 @@ public static class ScaleUpProcessor
 
         ResourceHelpers.ChangeRank(resource, targetRank, field, cc);
 
-        // Fire OnScaleUp triggers (resource itself + attachments)
+        // OnScaleUp トリガーを発動（リソース自体＋アタッチメント）
         var events = new List<GameEvent>();
         if (effects is not null)
         {

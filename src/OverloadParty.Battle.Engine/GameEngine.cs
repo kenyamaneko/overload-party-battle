@@ -31,7 +31,7 @@ public class GameEngine
     public IEffectRegistry? EffectRegistry => _effects;
 
     /// <summary>
-    /// Creates a new game with shuffled decks and initial hands.
+    /// CreateNewGame はシャッフルしたデッキと初期手札で新しいゲームを作成します
     /// </summary>
     public async Task<string> CreateNewGame(
         DeckSnapshot deck1, DeckSnapshot deck2,
@@ -78,7 +78,7 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Immediately ends the game as a forfeit.
+    /// Forfeit はゲームを即座にフォーフェイト（棄権）で終了します
     /// </summary>
     /// <param name="game">The game metadata.</param>
     /// <param name="playerNum">The forfeiting player's number (1 or 2).</param>
@@ -185,7 +185,7 @@ public class GameEngine
             return Task.CompletedTask;
         }, pending, ct);
 
-        // Persist events
+        // イベントを永続化
         var eventCount = await _repo.GetEventCount(game.GameID, ct);
         foreach (var evt in actionResult.Events)
         {

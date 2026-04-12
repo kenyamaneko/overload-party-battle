@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
-/// Checks all win conditions and returns the result.
+/// WinConditionChecker は全勝利条件を判定し結果を返します
 /// </summary>
 public static class WinConditionChecker
 {

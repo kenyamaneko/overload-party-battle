@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine;
 
 /// <summary>
-/// Creates and initializes new games.
+/// GameInitializer はゲームの新規作成と初期化を担当します
 /// </summary>
 public static class GameInitializer
 {
@@ -18,6 +18,9 @@ public static class GameInitializer
         long firstPlayer,
         ICardCache cc)
     {
+        ValidateDeck(1, deck1, cc);
+        ValidateDeck(2, deck2, cc);
+
         var game = new Game
         {
             GameID = gameID,
@@ -45,7 +48,7 @@ public static class GameInitializer
             UpdatedAt = DateTime.UtcNow,
         };
 
-        // Shuffle and deal for both players
+        // 両プレイヤーにシャッフルして配る
         var rng = Random.Shared;
 
         DealCards(state, 1, deck1.Cards, rng);
@@ -54,9 +57,24 @@ public static class GameInitializer
         return (game, state);
     }
 
+    private static void ValidateDeck(long playerNum, DeckSnapshot deck, ICardCache cc)
+    {
+        var missing = deck.Cards
+            .Select(c => c.CardId)
+            .Where(id => cc.Get(id) is null)
+            .Distinct()
+            .ToList();
+
+        if (missing.Count > 0)
+        {
+            throw new GameRuleException(
+                $"deck for player {playerNum} references unknown card_id(s): {string.Join(", ", missing)}");
+        }
+    }
+
     private static void DealCards(BattleGameState state, long playerNum, List<DeckSnapshotCard> cards, Random rng)
     {
-        // Shuffle
+        // シャッフル
         var shuffled = new List<DeckSnapshotCard>(cards);
         for (int i = shuffled.Count - 1; i > 0; i--)
         {
@@ -64,7 +82,7 @@ public static class GameInitializer
             (shuffled[i], shuffled[j]) = (shuffled[j], shuffled[i]);
         }
 
-        // Deal initial hand
+        // 初期手札を配る
         var hand = new List<UndeployedCard>();
         int handSize = Math.Min(BattleConstants.InitialHandSize, shuffled.Count);
         for (int i = 0; i < handSize; i++)
@@ -77,7 +95,7 @@ public static class GameInitializer
             });
         }
 
-        // Remaining cards go to repository
+        // 残りのカードをリポジトリに入れる
         var repo = new List<UndeployedCard>();
         for (int i = handSize; i < shuffled.Count; i++)
         {

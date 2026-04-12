@@ -1,7 +1,7 @@
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
-/// Represents a single action the NPC wants to take.
+/// NpcAction は NPC が実行したい 1 つのアクションを表現します
 /// </summary>
 public class NpcAction
 {

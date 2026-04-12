@@ -8,7 +8,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Data.Pg;
 
 /// <summary>
-/// PostgreSQL implementation of IGameRepository using Npgsql.
+/// PgGameRepository は Npgsql を使用した IGameRepository の PostgreSQL 実装です
 /// </summary>
 public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
 {

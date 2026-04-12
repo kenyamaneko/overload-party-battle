@@ -5,7 +5,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
-/// Helper functions for filtering and selecting NPC actions.
+/// ActionFilter は NPC アクションのフィルタリングと選択のヘルパー関数を提供します
 /// </summary>
 public static class ActionFilter
 {

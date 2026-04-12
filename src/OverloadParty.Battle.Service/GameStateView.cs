@@ -19,7 +19,7 @@ public static class GameStateView
     {
         var oppNum = state.OpponentOf(playerNum);
 
-        // Player's own view (full)
+        // 自分のビュー（全情報）
         var myField = state.GetField(playerNum);
         var myHand = state.GetHand(playerNum);
         var myRepo = state.GetRepository(playerNum);
@@ -27,13 +27,13 @@ public static class GameStateView
         var budget = state.GetBudget(playerNum);
         var insightPool = state.GetInsightPool(playerNum);
 
-        // Opponent data
+        // 相手のデータ
         var oppField = state.GetField(oppNum);
         var oppHand = state.GetHand(oppNum);
         var oppRepo = state.GetRepository(oppNum);
         var oppTrash = state.GetTrash(oppNum);
 
-        // Compute available actions BEFORE constructing PlayerView (init-only)
+        // PlayerView 構築前に実行可能アクションを算出（init-only のため先に計算）
         GD.AvailableAction[]? availableActions = null;
         if (state.ActivePlayer == playerNum && game.Status == GameStatus.Playing)
         {

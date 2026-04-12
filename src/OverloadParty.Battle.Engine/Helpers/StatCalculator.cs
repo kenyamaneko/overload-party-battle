@@ -34,7 +34,7 @@ public static class StatCalculator
         long baseTP = card.ComputeStats.Throughput;
         long rankMult = BattleConstants.RankMultiplier(instance.Rank);
 
-        // Instance family multiplier
+        // インスタンスファミリー倍率
         double tpMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {
@@ -44,7 +44,7 @@ public static class StatCalculator
 
         long baseValue = Truncate(baseTP * rankMult * tpMult);
 
-        // Elastic bonus with diminishing returns
+        // 逓減効果付き Elastic ボーナス
         long elasticBonus = 0;
         if (card.Elastic && card.FreeTier > 0)
         {
@@ -71,7 +71,7 @@ public static class StatCalculator
         long baseYield = card.DataStats.Yield;
         long rankMult = BattleConstants.RankMultiplier(instance.Rank);
 
-        // Instance family multiplier (uses AV multiplier for yield)
+        // インスタンスファミリー倍率 (uses AV multiplier for yield)
         double yieldMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {

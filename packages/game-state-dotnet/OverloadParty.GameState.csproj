@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <PackageId>OverloadParty.GameState</PackageId>
+    <Version>0.0.0</Version>
+    <Description>Overload Party game state contracts (ClientGameState / PlayerView / OpponentView / Field / EventData / AvailableAction). Auto-generated from data/models.yaml and data/event_schemas.yaml.</Description>
+    <RepositoryUrl>https://github.com/kenyamaneko/overload-party-common</RepositoryUrl>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="cache/cards_gen.json" />
+  </ItemGroup>
+</Project>

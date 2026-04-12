@@ -6,7 +6,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Data.Mock;
 
 /// <summary>
-/// In-memory game repository for local development.
+/// MockGameRepository はローカル開発用のインメモリゲームリポジトリです
 /// </summary>
 public class MockGameRepository : IGameRepository
 {
@@ -22,7 +22,7 @@ public class MockGameRepository : IGameRepository
         {
             _games[game.GameID] = game;
             _states[game.GameID] = state;
-            // Deep-copy via JSON round-trip to preserve the initial snapshot
+            // 初期スナップショットを保持するため JSON ラウンドトリップでディープコピー
             var json = JsonSerializer.Serialize(state, DbJsonOptions.Default);
             _initialStates[game.GameID] = JsonSerializer.Deserialize<BattleGameState>(json, DbJsonOptions.Default)!;
             _events[game.GameID] = [];
@@ -56,7 +56,7 @@ public class MockGameRepository : IGameRepository
             state.Version++;
             state.UpdatedAt = DateTime.UtcNow;
 
-            // pendingAction is written to the DB in production but not tracked in-memory
+            // pendingAction は本番では DB に書き込まれるがインメモリでは追跡しない
         }
     }
 

@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Deals damage to selected resources.
+/// DealDamageOp は選択されたリソースにダメージを与えます
 /// </summary>
 public class DealDamageOp(ISelector sel, IAmountResolver value) : IEffectOp
 {
@@ -59,7 +59,7 @@ public class IncidentDamageOp(ISelector sel, IAmountResolver value, IAmountResol
 }
 
 /// <summary>
-/// Heals (reduces) damage on selected resources.
+/// ヒールDamageOp は選択されたリソースのダメージを回復（減少）します
 /// </summary>
 public class HealDamageOp(ISelector sel, IAmountResolver value) : IEffectOp
 {
@@ -80,7 +80,7 @@ public class HealDamageOp(ISelector sel, IAmountResolver value) : IEffectOp
 }
 
 /// <summary>
-/// Fully heals selected resources by setting damage to zero.
+/// FullHealOp は選択されたリソースのダメージをゼロにして完全回復します
 /// </summary>
 public class FullHealOp(ISelector sel) : IEffectOp
 {

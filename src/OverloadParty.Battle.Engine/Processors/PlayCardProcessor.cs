@@ -4,7 +4,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes play-card actions, placing resources, supports, and attachments onto the field.
+/// PlayCardProcessor はリソース・サポート・アタッチメントをフィールドに配置するカードプレイアクションを処理します
 /// </summary>
 public static class PlayCardProcessor
 {
@@ -204,19 +204,18 @@ public static class PlayCardProcessor
             field.Backend[req.Index] = resource;
         }
 
-        // Fire deploy reactives (opponent's TriggerOnEnemyDeploy)
+        // デプロイリアクティブを発動（相手の OnEnemyDeploy トリガー）
         var (cancelled, reactiveEvents) = FireDeployReactives(ctx, resource);
         events.AddRange(reactiveEvents);
 
         if (cancelled)
         {
-            // Remove the deployed resource and send to trash
             FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
             CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, resource.InstanceID, resource.ArtNo);
             return true;
         }
 
-        // Fire deploy trigger on the resource itself
+        // リソース自体のデプロイトリガーを発動
         if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
         {
             var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;
@@ -279,7 +278,7 @@ public static class PlayCardProcessor
 
         var events = new List<GameEvent>();
 
-        // Fire deploy trigger for attachment
+        // アタッチメントのデプロイトリガーを発動
         if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
         {
             var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;

@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine;
 
 /// <summary>
-/// Manages turn switching and phase transitions.
+/// TurnManager はターン交代とフェーズ遷移を管理します
 /// </summary>
 public static class TurnManager
 {

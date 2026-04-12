@@ -1,209 +1,41 @@
-# CLAUDE.md
+# CLAUDE.md - overload-party-battle
 
-このファイルはリポジトリで作業する際のガイドラインを提供する。
+## 行動制約
 
-## ビルド・テスト
-
-```bash
-make build   # ビルド
-make test    # テスト実行
-make run     # ローカル開発サーバー起動
-```
-
-## NuGet パッケージ（OverloadParty.GameData）
-
-- common リポの `data/models.yaml` から C# 型を自動生成し NuGet publish
-- ゲームステート View 型（ClientGameState, PlayerView, OpponentView 等）は GameData パッケージの生成型を使用
-- `GameStateView.Build()` がエンジン内部型（Models）→ API 契約型（GameData）のマッピング境界
-- エンジン内部型（Field, DeployedResource, UndeployedCard 等）は Models に残る（可変性が必要なため）
-
-## 設計原則
-
-### ワークアラウンドではなく根本解決する
-
-問題に対して場当たり的な回避策を取らない。原因を特定し、既存のフローや責務分担と整合する形で根本的に解決する。
-
-- 暫定対応を入れる場合は、なぜ暫定なのか・いつ解消するかをコメントかイシューで明記する
-- 既存の処理フローと異なる特殊パスを作らない。同じ種類の処理は同じパイプラインに乗せる
-
-### エラーは握りつぶさない
-
-どうしてもそうする必要がある場合はユーザーに確認する。
-
-### 上流で保証された契約を下流で再検証しない
-
-上流のプロデューサ（`AvailableActions`, `ResourceHelpers`, `GameEngine` など）が契約上保証している値を、下流のコンシューマが「念のため」再検証して silent fallback する。これはバグ検知を難しくするアンチパターン。
-
-**典型パターン:**
-
-1. **`FirstOrDefault` / `.First()` + silent default**
-   ```csharp
-   // Bad: AvailableActions が既に絞った ValidZones に対して、下流が再マッチ + フォールバック
-   return available.FirstOrDefault();  // 契約違反を黙って通してしまう
-   ```
-
-2. **`switch` / `if/else` の silent default アーム**
-   ```csharp
-   // Bad: 既存の closed enum に新値を足した時、ここが silently 「?」を返す
-   _ => $"{playerTag} {evt.EventType}",
-   _ => null,  // unknown を null 扱いで通す
-   ```
-
-3. **sentinel 戻り値（空文字・0・"?"）**
-   ```csharp
-   // Bad: 呼び出し側が == "" で分岐することを強制、かつ本物の空文字と区別不能
-   return "";  // "not found" の代わりに
-   ```
-
-4. **`cc.Get(...); if (card is null) continue;`**
-   場所 A で `MustGet` してる同じ値を、場所 B で `Get` + null チェックしてる。**同じ種類の処理は同じパイプラインに乗せる** 原則違反。
-
-**正しい対処:**
-
-- 契約違反は **`throw new InvalidOperationException(...)`** で即座にクラッシュ。wire 境界の HTTP middleware が 500 に変換する。
-- カード定義の取得は **`ICardCache.MustGet`** に統一。`Get` は本当に optional な検索にだけ使う。
-- `switch` / `if/else` の default アームは **throw** にする。`_ => throw new InvalidOperationException($"Unknown X: {value}")`。
-- 「見つからない」を表現したいなら、sentinel 値ではなく **nullable を返す** か **例外を投げる**。
-
-**判断基準:** 「この null/空文字は**実運用で発生しうるか**」を考える。「上流のバグ以外では起きない」なら fallback ではなく throw。
-
-### YAML・設定ファイルから読む値の扱い
-
-YAML パーサ・config ローダで unknown な値（known enum に該当しない文字列など）を silently drop したり null 扱いしない。**typo を検知できなくなる**。
-
-```csharp
-// Bad: typo がサイレントに消える
-var categories = yamlArray
-    .Select(x => TryParse(x))
-    .Where(x => x is not null)
-    .ToList();
-
-private static EffectCategory? TryParse(string s) => s switch
-{
-    "budget_gain" => EffectCategory.BudgetGain,
-    ...
-    _ => null,  // typo がここを通る
-};
-
-// Good: 全てのパーサで unknown は throw 統一
-private static EffectCategory ParseEffectCategory(string s) => s switch
-{
-    "budget_gain" => EffectCategory.BudgetGain,
-    ...
-    _ => throw new InvalidOperationException($"Unknown effect category: {s}"),
-};
-```
-
-同一ファイル内のパーサ群はすべて **unknown → throw** で統一する。片方が throw・片方が silent drop は不整合。
-
-### エラーハンドリングの責務分担
-
-例外は **「意味のある処置ができる層」** まで伝播させる。途中で catch して silent default を返さない。
-
-| 層 | 責務 |
-|---|---|
-| Engine / Helpers / Processors | バグは `InvalidOperationException` 等を throw。ルール違反は `GameRuleException` を throw。 |
-| `NpcAi.Decide*` / `ActionFilter` | 同上。silent skip しない。 |
-| `NpcRunner.AdvanceOneAction` | **`GameRuleException` のみ catch** (= 「この NPC アクションは engine に reject された、次を試す」)。それ以外は上に throw。 |
-| `GameService` | 原則 catch しない。propagate。 |
-| HTTP endpoint handler | catch しない。propagate。 |
-| `app.UseExceptionHandler` (Program.cs) | ここが **唯一の catch 地点**。`GameRuleException` → 400、それ以外 → 500 + log。 |
-
-`catch (Exception)` で握って default を返すのは、バグを silently 握り潰して NPC ターンを黙って飛ばす等の「見えない失敗」を生む。**避ける。**
+- 設計変更を伴う作業の後は memory ファイルを更新する
+- エラーは握りつぶさない
+- コメントは意図（なぜそうしたか）が読み取りづらい場合のみ記述する
+- git tag を手動で打たない（CI が自動作成する）
+- card service の `card_definitions` テーブルを battle から直接 DB 参照しない。`CardCache` 経由のみ
+- Card 取得失敗時はリトライせず `Environment.Exit(1)` で即死し k8s 再起動に任せる
 
 ## C# コーディング規約
 
+### 上流で保証された契約を下流で再検証しない
+
+上流のプロデューサ（`AvailableActions`, `ResourceHelpers`, `GameEngine` 等）が契約上保証している値を「念のため」再検証して silent fallback しない。契約違反は `throw new InvalidOperationException(...)` で即クラッシュ。
+
+- `FirstOrDefault` + silent default → 禁止。契約上存在するなら `First()` または `MustGet`
+- `switch` / `if/else` の default は `throw`。sentinel 値（空文字・0・`"?"`）を返さない
+- カード定義の取得は `ICardCache.MustGet` に統一
+- 判断基準: 「この null/空文字は実運用で発生しうるか」 → 上流のバグ以外で起きないなら throw
+
+### YAML パーサで unknown 値を silent drop しない
+
+typo 検知のため全パーサで unknown → throw 統一。
+
+### エラーハンドリングの責務分担
+
+例外は「意味のある処置ができる層」まで伝播。途中で catch して silent default を返さない。`app.UseExceptionHandler` (Program.cs) が唯一の catch 地点。
+
 ### LINQ を積極的に使う
 
-コレクション操作には可能な限り LINQ を使い、宣言的で可読性の高いコードを書く。
-
-**LINQ で置き換えるべきパターン:**
-- フィルタ・変換・集計のための手動ループ → `Where`, `Select`, `Count`, `Sum`, `Any`, `All` 等
-- 手動 Dictionary 構築 → `ToDictionary()`
-- 手動ソート (`List.Sort()`) → `OrderBy()` / `OrderByDescending()`
-- 手動 min/max 探索 → `MinBy()` / `MaxBy()`
-- 手動の存在チェックループ → `Any()` / `All()`
-- 手動の検索ループ → `First()` / `FirstOrDefault()`
-
-**LINQ を使わない場面:**
-- 副作用を伴うループ（状態変更、フィールドへの null 代入など）→ `foreach` 文を使う
-- インデックスとゾーン情報が必要な検索（`FindResourceByID` 等）→ for ループで可
-- 配置ロジックなど早期 return + 副作用が必要な処理
-
-### foreach 文 vs List.ForEach()
-
-`List<T>.ForEach()` は使わない。副作用の実行には `foreach` 文を使う。
-
-- LINQ は**値の変換・問い合わせ**（副作用なし）
-- `foreach` は**副作用の実行**
-
-```csharp
-// Good: 変換 → LINQ
-var names = users.Where(u => u.Active).Select(u => u.Name).ToList();
-
-// Good: 副作用 → foreach
-foreach (var user in users)
-    user.Deactivate();
-
-// Bad: 副作用に ForEach を使わない
-users.ForEach(u => u.Deactivate());
-```
+フィルタ・変換・集計には LINQ。副作用を伴うループには `foreach` 文。`List<T>.ForEach()` は使わない。
 
 ### switch 式を優先する
 
-値を返す分岐には switch 式を使う。if/else チェーンや三項演算子のネストより宣言的で読みやすい。
-
-```csharp
-// Good: switch 式（default は throw で未知値を検知）
-var winnerLabel = game.WinnerNum switch
-{
-    null or 0 => null,
-    1 => "player1",
-    2 => "player2",
-    var n => throw new InvalidOperationException($"Invalid WinnerNum: {n}"),
-};
-
-// Good: LINQ と組み合わせ
-return conditions.All(cond => cond.Type switch
-{
-    "min_budget" => ctx.Budget >= cond.Value,
-    "max_budget" => ctx.Budget <= cond.Value,
-    _ => true,
-});
-
-// Bad: if/else で値を決める
-string winnerID;
-if (actionResult.WinnerNum == 0)
-    winnerID = "";
-else
-    winnerID = actionResult.WinnerNum == 1 ? game.Player1ID : game.Player2ID;
-```
-
-副作用を伴う分岐（メソッド呼び出し、例外送出など）には従来の switch 文を使う。
+値を返す分岐には switch 式。default アームは `throw`。副作用を伴う分岐には switch 文。
 
 ### 既存ヘルパーの再利用
 
-フィールド走査には `FieldHelpers` の LINQ ベースメソッドを再利用する:
-- `FieldHelpers.AllFaceUpResources(field)` — 表向きリソース列挙
-- `FieldHelpers.AllResources(field)` — 全リソース列挙
-- `TargetSelector.FaceUpInZone(field, zone)` — ゾーン指定の表向きリソース（Npc 内）
-
-同じパターンの for ループを新たに書かず、これらを `Where`, `Any`, `Count` 等と組み合わせる。
-
-### コメントは「意図」だけ書く
-
-実装を読めばわかる内容のコメントは書かない。コメントを残すのは、コードから読み取れない **意図・背景・理由** を伝える必要があるときだけ。Doc コメント（`/// <summary>` 等）はこのルールの対象外。
-
-```csharp
-// Bad: コードを読めばわかる
-// Already at max rank
-if (currentRank == Rank.Large) { continue; }
-
-// Bad: 条件の言い換え
-// Must have a family for Medium/Large
-if (targetFamily is null) { ... }
-
-// Good: ルール上の理由など、コードだけでは読み取れない意図
-// ダメージは Rank 変更後も保持される（ルールブック §6）
-resource.CurrentAV = newMaxAV - existingDamage;
-```
+フィールド走査には `FieldHelpers.AllFaceUpResources` / `AllResources` / `TargetSelector.FaceUpInZone` を再利用する。同じパターンの for ループを新たに書かない。

@@ -54,16 +54,8 @@ public class CardCache : ICardCache
     }
 
     /// <summary>
-    /// Load all cards from a repository.
-    /// </summary>
-    public async Task LoadFromRepository(ICardRepository repo, CancellationToken ct = default)
-    {
-        var cards = await repo.FindAll(ct);
-        ReplaceCards(cards);
-    }
-
-    /// <summary>
-    /// Load cards from a pre-built list (e.g., parsed from JSON in the Server layer).
+    /// Load cards from a pre-built list (e.g., parsed from JSON in the Server layer
+    /// or fetched from the card service via <see cref="CardServiceClient"/>).
     /// </summary>
     public void LoadFromList(IEnumerable<CardDefinition> cards)
     {

@@ -4,7 +4,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes monetize actions that distribute insight yield from backend compute resources into budget.
+/// MonetizeProcessor はバックエンド Compute リソースのインサイトイールドをバジェットに変換するマネタイズアクションを処理します
 /// </summary>
 public static class MonetizeProcessor
 {
@@ -35,7 +35,7 @@ public static class MonetizeProcessor
         long insightPool = state.GetInsightPool(playerNum);
         long budget = state.GetBudget(playerNum);
 
-        // Validate all distributions before mutating any state
+        // 状態変更前に全配分をバリデーション
         var validated = req.Distributions
             .Select(dist => (dist, ValidateDistribution(field, dist, cc)))
             .ToList();
@@ -46,12 +46,12 @@ public static class MonetizeProcessor
             throw new GameRuleException($"total distribution {totalDistributed} exceeds insight pool {insightPool}");
         }
 
-        // Apply mutations after all validation passes
+        // 全バリデーション通過後に状態変更を適用
         foreach (var (dist, (resource, card)) in validated)
         {
             resource.MonetizedAmount += dist.Amount;
 
-            // Elastic scaling
+            // Elastic スケーリング
             if (card.Elastic && card.ElasticIncrement > 0)
             {
                 StatCalculator.ApplyElasticBonus(resource, card);

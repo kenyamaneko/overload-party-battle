@@ -4,7 +4,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes discard actions during the end phase when a player's hand exceeds the limit.
+/// DiscardProcessor はエンドフェーズで手札上限超過時のディスカードアクションを処理します
 /// </summary>
 public static class DiscardProcessor
 {

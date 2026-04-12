@@ -18,7 +18,7 @@ public static class ChainResolver
             throw new GameRuleException($"chain stack full (max {BattleConstants.MaxChainLevel})");
         }
 
-        // Reactive cannot chain on top of unresolved reactive
+        // リアクティブ cannot chain on top of unresolved reactive
         if (entry.ActionType == ActionTypes.Reactive)
         {
             foreach (var existing in state.ChainStack)
@@ -42,7 +42,7 @@ public static class ChainResolver
         if (!state.ChainStack.Any()) { return false; }
         if (state.ChainStack.Count >= BattleConstants.MaxChainLevel) { return false; }
 
-        // Last entry must not be reactive
+        // 最後のエントリがリアクティブであってはならない
         var last = state.ChainStack.Last();
         return last.ActionType != ActionTypes.Reactive;
     }

@@ -1,0 +1,110 @@
+# ─── API Endpoint Definitions ───
+endpoint_groups:
+  - name: Health
+    base_path: ""
+    auth: none
+    endpoints:
+      - method: GET
+        path: /health
+        summary: ヘルスチェック
+        response_body: |
+          {"status": "ok"}
+
+  - name: NPC
+    base_path: /api/v1
+    auth: internal
+    description: NPC モデル情報の取得および NPC 対戦ゲームの作成。
+    endpoints:
+      - method: GET
+        path: /npc/models
+        summary: NPC モデル一覧を取得
+        response_body: |
+          {"models": [{"model": "string", "faction": "string", "difficulty": "string", "display_name": "string"}]}
+
+      - method: POST
+        path: /games/npc
+        summary: NPC 対戦ゲームを作成
+        request_type: NpcBattleRequest
+        response_type: GameCreatedResult
+        errors:
+          - {status: 400, description: "デッキカードが不正、または NPC モデルが存在しない"}
+
+  - name: PvP
+    base_path: /api/v1
+    auth: internal
+    description: マッチメイキング後に Gateway が呼び出す PvP ゲーム作成。
+    endpoints:
+      - method: POST
+        path: /games/pvp
+        summary: PvP ゲームを作成（Gateway → Battle）
+        request_type: PvpBattleRequest
+        response_type: GameCreatedResult
+        errors:
+          - {status: 400, description: "デッキカードが不正"}
+
+  - name: Game Actions
+    base_path: /api/v1
+    auth: internal
+    description: ゲーム内アクション送信および NPC ターン進行。
+    endpoints:
+      - method: POST
+        path: /games/{gameId}/actions
+        summary: ゲームアクションを実行
+        request_type: GameActionRequest
+        response_type: ActionResult
+        errors:
+          - {status: 400, description: "ルール違反（GameRuleException）"}
+          - {status: 500, description: "内部エラー"}
+
+      - method: POST
+        path: /games/{gameId}/advance-npc
+        summary: NPC ターンを進行（game_enter 後に Gateway が呼び出す）
+        response_type: ActionResult
+        errors:
+          - {status: 400, description: "ルール違反（GameRuleException）"}
+          - {status: 500, description: "内部エラー"}
+
+  - name: Game State
+    base_path: /api/v1
+    auth: internal
+    description: ゲーム状態・ターンコントロール・リプレイログの取得。
+    endpoints:
+      - method: GET
+        path: /games/{gameId}/state/{playerNum}
+        summary: プレイヤー視点のゲーム状態を取得
+        response_type: ClientGameState
+        errors:
+          - {status: 500, description: "ゲームが存在しないか内部エラー"}
+
+      - method: GET
+        path: /games/{gameId}/controls/{playerNum}
+        summary: ターンコントロール情報を取得
+        response_type: TurnControlsMessage
+        errors:
+          - {status: 500, description: "ゲームが存在しないか内部エラー"}
+
+      - method: GET
+        path: /games/{gameId}/log
+        summary: ゲームログを JSON 形式で取得（リプレイ用）
+        response_content_type: application/json
+        errors:
+          - {status: 404, description: "ゲームが見つからない"}
+
+      - method: GET
+        path: /games/{gameId}/log/text
+        summary: ゲームログをテキスト形式で取得
+        response_content_type: text/plain
+        errors:
+          - {status: 404, description: "ゲームが見つからない"}
+
+  - name: Dev (ローカル開発専用)
+    base_path: /api/dev
+    auth: none
+    description: ローカル開発モード（BATTLE_MODE=local）でのみ有効。
+    dev_only: true
+    endpoints:
+      - method: GET
+        path: /cards
+        summary: カード定義一覧を取得（開発用）
+        response_body: |
+          [{"cardId": "string", "cardName": "string", "faction": "string", "cardType": "string"}]

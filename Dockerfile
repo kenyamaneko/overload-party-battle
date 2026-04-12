@@ -8,5 +8,5 @@ RUN dotnet nuget update source github --username kenyamaneko --password "${NUGET
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
 WORKDIR /app
 COPY --from=builder /app/publish .
-EXPOSE 9001
+EXPOSE 9002
 ENTRYPOINT ["dotnet", "OverloadParty.Battle.Server.dll"]

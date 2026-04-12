@@ -104,7 +104,7 @@ public static class GuardChecker
             var o => throw new InvalidOperationException($"Unknown selector owner: '{o}'"),
         };
 
-        // Support zone face-down counting (for reactive detection)
+        // サポートゾーン face-down counting (for reactive detection)
         if (sel.Owner == "opponent" && sel.FaceDown == true && sel.Zone == "support")
         {
             return field.Support.Count(s => !s.FaceUp);

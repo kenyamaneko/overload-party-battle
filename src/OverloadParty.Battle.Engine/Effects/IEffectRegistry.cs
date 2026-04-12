@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// Result of executing an effect handler.
+/// EffectResult はエフェクトハンドラの実行結果を保持します
 /// </summary>
 public class EffectResult
 {
@@ -18,7 +18,7 @@ public class EffectResult
 }
 
 /// <summary>
-/// Context passed to effect handlers during execution.
+/// EffectContext はエフェクトハンドラ実行時に渡されるコンテキストです
 /// </summary>
 public class EffectContext
 {
@@ -48,12 +48,12 @@ public class EffectContext
 }
 
 /// <summary>
-/// Delegate type for effect handlers.
+/// エフェクトハンドラのデリゲート型
 /// </summary>
 public delegate EffectResult EffectHandler(EffectContext ctx);
 
 /// <summary>
-/// Budget conditions extracted from an effect's ops.
+/// バジェットRequirement はエフェクトの Op から抽出されたバジェット条件を保持します
 /// </summary>
 public class BudgetRequirement
 {

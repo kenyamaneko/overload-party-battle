@@ -5,7 +5,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// Processes the draw phase including deploy countdowns and card draw.
+/// DrawPhaseProcessor はデプロイカウントダウンとカードドローを含むドローフェーズを処理します
 /// </summary>
 public static class DrawPhaseProcessor
 {

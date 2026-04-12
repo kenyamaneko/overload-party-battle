@@ -35,7 +35,7 @@ public class GameActionResult
 }
 
 /// <summary>
-/// Unified facade for both PvP and NPC game operations.
+/// GameService は PvP と NPC の両方のゲーム操作を統合するファサードです
 /// </summary>
 public class GameService
 {

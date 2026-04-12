@@ -6,20 +6,20 @@ namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
 /// Named custom effect implementations that cannot be expressed with standard ops.
-/// Implements ICustomEffectRegistry to support parameterized customs via YAML meta.
+/// Builds Action&lt;OpContext&gt; closures from a custom name and optional YAML meta parameters.
 /// </summary>
-public class CustomEffectRegistry : ICustomEffectRegistry
+public class CustomEffectRegistry
 {
     private readonly Dictionary<string, Func<Dictionary<string, JsonElement>?, Action<OpContext>?>> _factories = new()
     {
-        // Phase 2-2: existing customs (migrated from EffectInit)
+        // Phase 2-2: 既存カスタム（EffectInit から移行）
         [CustomEffects.ChainAttackBonus] = _ => ChainAttackBonus,
         [CustomEffects.DeploySameTypeFromHand] = _ => DeploySameTypeFromHand,
         [CustomEffects.DisableHighTpDeploy] = _ => DisableHighTpDeploy,
         [CustomEffects.CancelNthDeploy] = _ => CancelNthDeploy,
         [CustomEffects.RedirectAttack] = _ => RedirectAttack,
 
-        // Phase 2-3: new customs
+        // Phase 2-3: 新規カスタム
         [CustomEffects.CloudShift] = BuildCloudShift,
         [CustomEffects.SpotExpiry] = BuildSpotExpiry,
         [CustomEffects.Reattach] = _ => Reattach,
@@ -33,7 +33,10 @@ public class CustomEffectRegistry : ICustomEffectRegistry
 
     private static void NoOp(OpContext _) { }
 
-    /// <inheritdoc />
+    /// <summary>
+    /// Builds a custom effect function for the given name and meta parameters.
+    /// Returns null if the custom name is not registered.
+    /// </summary>
     public Action<OpContext>? Build(string customName, Dictionary<string, JsonElement>? meta)
     {
         if (!_factories.TryGetValue(customName, out var factory))
@@ -44,7 +47,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
     }
 
     // ================================================================
-    // Phase 2-2: existing customs
+    // Phase 2-2: 既存カスタム
     // ================================================================
 
     /// <summary>
@@ -183,7 +186,7 @@ public class CustomEffectRegistry : ICustomEffectRegistry
     }
 
     // ================================================================
-    // Phase 2-3: new customs
+    // Phase 2-3: 新規カスタム
     // ================================================================
 
     /// <summary>

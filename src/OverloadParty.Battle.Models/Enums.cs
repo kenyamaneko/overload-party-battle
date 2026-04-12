@@ -2,6 +2,9 @@ using System.Text.Json.Serialization;
 
 namespace OverloadParty.Battle.Models;
 
+/// <summary>
+/// Phase はゲームのフェーズを表現します
+/// </summary>
 public enum Phase
 {
     Draw,
@@ -10,6 +13,9 @@ public enum Phase
     End
 }
 
+/// <summary>
+/// Zone はフィールドのゾーンを表現します
+/// </summary>
 public enum Zone
 {
     Frontend,
@@ -28,11 +34,14 @@ public enum Rank
 [JsonConverter(typeof(JsonStringEnumConverter<InstanceFamily>))]
 public enum InstanceFamily
 {
-    [JsonPropertyName("M")] M, // Balanced
-    [JsonPropertyName("C")] C, // Compute-optimized
-    [JsonPropertyName("R")] R  // Reliability
+    [JsonPropertyName("M")] M, // バランス型
+    [JsonPropertyName("C")] C, // コンピュート最適化型
+    [JsonPropertyName("R")] R  // 信頼性重視型
 }
 
+/// <summary>
+/// CardTypeCategory はカードタイプの大分類を表現します
+/// </summary>
 public enum CardTypeCategory
 {
     Compute,
@@ -40,12 +49,18 @@ public enum CardTypeCategory
     Support
 }
 
+/// <summary>
+/// GameStatus はゲームの進行状態を表現します
+/// </summary>
 public enum GameStatus
 {
     Playing,
     Finished
 }
 
+/// <summary>
+/// WinReason は勝利理由を表現します
+/// </summary>
 public enum WinReason
 {
     BudgetZero,
@@ -59,6 +74,9 @@ public enum WinReason
     Surrender
 }
 
+/// <summary>
+/// ActionType はプレイヤーアクションの種類を表現します
+/// </summary>
 public enum ActionType
 {
     PlayCard,
@@ -72,6 +90,9 @@ public enum ActionType
     SelectSlot
 }
 
+/// <summary>
+/// TriggerType はエフェクトの発動条件を表現します
+/// </summary>
 public enum TriggerType
 {
     Deploy,

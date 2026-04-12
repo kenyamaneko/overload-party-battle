@@ -1,10 +1,10 @@
 namespace OverloadParty.Battle.Models;
 
-// Battle-specific constants not in shared constants.json.
-// Generated constants (DeckSize, Factions, Zones, etc.) are in OverloadParty.GameDesignConstants / OverloadParty.GameLogicConstants.
+/// <summary>
+/// BattleConstants はバトル固有の定数を定義します
+/// </summary>
 public static class BattleConstants
 {
-    // Game setup
     public const int InitialBudget = 5000;
     public const int InitialInsightPool = 0;
     public const int InitialHandSize = 5;
@@ -12,12 +12,13 @@ public static class BattleConstants
     public const int InitialTimeBank = 480;
     public const int SlotsPerZone = 3;
 
-    // Game limits
     public const int MaxTurns = 30;
     public const int MaxChainLevel = 3;
     public const int LaunchFailureTurn = 3;
 
-    // Rank multipliers
+    /// <summary>
+    /// RankMultiplier はランクに応じた倍率を返します
+    /// </summary>
     public static long RankMultiplier(Rank? rank) => rank switch
     {
         Rank.Small => 1,
@@ -26,7 +27,9 @@ public static class BattleConstants
         _ => 1
     };
 
-    // Instance family multipliers (TP, AV)
+    /// <summary>
+    /// FamilyMultiplier はインスタンスファミリーに応じた TP/AV 倍率を返します
+    /// </summary>
     public static (double TpMult, double AvMult) FamilyMultiplier(InstanceFamily family) => family switch
     {
         InstanceFamily.M => (1.0, 1.0),

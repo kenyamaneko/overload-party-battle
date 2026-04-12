@@ -1,97 +1,67 @@
-# Overload Party — Battle Server
+# overload-party-battle
 
-クラウドインフラをテーマにしたカードゲーム「Overload Party」のバトルサーバー。
+C# ゲームエンジン。Gateway から HTTP RPC で呼ばれ、NPC / PvP 対戦のゲーム作成・アクション処理・状態管理を行う。カード定義は card service から起動時にロードする。
 
-ASP.NET Core によるゲームエンジン API バックエンド。エフェクトシステム・NPC AIを含むステートレスな対戦ロジックを提供します。
-
-## 必要環境
-
-- .NET 10 SDK
-- PostgreSQL（本番モード時のみ）
-
-## クイックスタート
-
-```bash
-# ビルド
-make build
-
-# ローカルサーバー起動（port 9002, in-memory mock repos）
-make run
-
-# テスト実行
-make test
-```
-
-## プロジェクト構成
+## サービス間連携
 
 ```
-src/
-├── OverloadParty.Battle.Models/        # POCO モデル・定数・enum
-├── OverloadParty.Battle.Engine/        # ゲームエンジン（ステートレス）
-│   └── Effects/                        # エフェクトシステム（Op パイプライン）
-├── OverloadParty.Battle.Npc/           # NPC AI（ルールベース + 陣営別戦略）
-├── OverloadParty.Battle.Data/          # リポジトリ（Dapper / Mock）
-├── OverloadParty.Battle.Service/       # サービス層（ゲーム操作ファサード）
-└── OverloadParty.Battle.Server/        # ASP.NET Core エントリポイント (REST API)
-tests/
-└── OverloadParty.Battle.Tests/         # xUnit テスト
+Gateway (:9001)
+  ├─ POST /api/v1/games/npc          ← NPC 対戦作成
+  ├─ POST /api/v1/games/pvp          ← PvP 対戦作成
+  ├─ POST /api/v1/games/{id}/actions ← アクション実行
+  ├─ POST /api/v1/games/{id}/advance-npc ← NPC ターン進行
+  ├─ GET  /api/v1/games/{id}/state/{n}   ← プレイヤー n の状態取得
+  ├─ GET  /api/v1/games/{id}/controls/{n} ← ターン制御取得
+  ├─ GET  /api/v1/games/{id}/log     ← ゲームログ (JSON)
+  ├─ GET  /api/v1/games/{id}/log/text ← ゲームログ (テキスト)
+  └─ GET  /api/v1/npc/models         ← NPC モデル一覧
+              │
+              ▼
+Battle (このサービス, :9002)
+  ├─ PostgreSQL  battle スキーマ (games / game_npcs / game_decks /
+  │                               game_players / game_states /
+  │                               game_actions / game_events)
+  └─ Card Service (:9003, 起動時 1 回の GET /internal/v1/cards)
 ```
 
-## アーキテクチャ
+- Gateway が唯一の呼び出し元。battle 自身は外部サービスを呼び出さない (card service への起動時フェッチを除く)
+- Pub/Sub なし
 
-```
-Server (ASP.NET REST API)
-    ↓
-Service (ゲーム操作ファサード)
-    ↓
-Engine / Effects / NPC   ← 外部技術に依存しない純粋なドメインロジック
-    ↓
-Models                   ← POCO のみ
-    ↑
-Data (Dapper, PostgreSQL) ← インターフェース経由で分離
-```
+内部設計は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) を参照。
 
-Engine / Effects / NPC は NuGet パッケージに依存せず、`System.*` のみ使用。
+## 環境変数
 
-## Make コマンド
+**Deployment env (インフラ層):**
 
-| コマンド | 内容 |
-|---|---|
-| `make build` | ソリューションビルド |
-| `make run` | ローカル開発サーバー起動 |
-| `make test` | ユニットテスト実行（DB 不要） |
-| `make test-integration` | DB 統合テスト込みで実行（コンテナ自動起動） |
-| `make test-coverage` | カバレッジ付きテスト |
-| `make clean` | ビルド成果物削除 |
+| 変数名 | デフォルト | 説明 |
+|---|---|---|
+| `PORT` | `9002` | リッスンポート |
+| `DATABASE_URL` / `ConnectionStrings__DefaultConnection` | *(本番必須)* | PostgreSQL 接続文字列 (`battle` スキーマ) |
 
-## 統合テスト
+**ConfigMap (サービス URL):**
 
-`PgGameRepository` / `PgCardRepository` の DB 統合テストは、共通リポジトリの PostgreSQL テストコンテナを使用します。
+| 変数名 | デフォルト | 説明 |
+|---|---|---|
+| `CARD_SERVICE_URL` | `http://card:9003` | Card Service ベース URL (起動時カードロード先) |
 
-```bash
-# 自動（コンテナ起動→テスト→停止）
-make test-integration
+**ConfigMap (アプリ挙動):**
 
-# 手動
-docker compose -f ../overload-party-common/db/docker-compose.test.yml up -d
-TEST_DB_URL="Host=localhost;Port=5433;Database=testdb;Username=testuser;Password=testpass" make test
-docker compose -f ../overload-party-common/db/docker-compose.test.yml down
-```
+| 変数名 | デフォルト | 説明 |
+|---|---|---|
+| `BATTLE_MODE` | *(空)* | `local` でローカル開発モード有効化 (`ASPNETCORE_ENVIRONMENT=Development` でも可) |
+| `CARDS_JSON_PATH` | *(空)* | `BATTLE_MODE=local` 時のみ。card service の代わりにこの JSON ファイルからカード定義を読み込む |
+| `NPC_AI_CONFIG_DIR` | `src/OverloadParty.Battle.Npc/Data` | NPC AI 設定 YAML ディレクトリ |
 
-`TEST_DB_URL` が未設定の場合、DB テストは自動スキップされます。CI では `make test` のみで既存のユニットテストだけ実行されます。
+## 公開パッケージ
 
-## Roadmap
+| パッケージ | 言語 | 説明 |
+|---|---|---|
+| `packages/api-battle-rpc-go/` | Go | gateway が import する RPC 型 |
+| `packages/api-battle-rpc-dotnet/` | NuGet | Battle 内部で使う RPC 型 |
+| `packages/game-state-dotnet/` | NuGet | ゲーム状態型 |
+| `packages/game-state-npm/` | npm | クライアント向けゲーム状態型 |
+| `packages/game-logic-constants-go/` | Go | ゲームロジック定数 |
+| `packages/game-logic-constants-dotnet/` | NuGet | ゲームロジック定数 |
+| `packages/game-logic-constants-npm/` | npm | ゲームロジック定数 |
 
-- [ ] ターンタイマー
-- [ ] セキュリティ監査
-- [ ] ロードテスト
-- [ ] 本番リリース
-
-## ローカル開発モード
-
-`make run` で起動するローカルモードでは:
-
-- DB 不要（in-memory mock リポジトリ）
-- Firebase 不要（`dev-token-{uid}` 形式のトークンで認証）
-- NPC 対戦が即時プレイ可能
-- REST: `/api/v1/games/npc`, `/api/v1/games/{id}/actions`, `/health` 等
+SSoT: `data/models.yaml` + `data/game_logic_constants.yaml` + `data/event_schemas.yaml` → `python3 scripts/generate_types.py` で再生成。

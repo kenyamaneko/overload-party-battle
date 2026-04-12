@@ -39,7 +39,7 @@ public class DependentEffectOp(string parentGroupId, IEffectOp[] ops) : IEffectO
         }
         catch (GameRuleException)
         {
-            // Dependent group guard failure is silently swallowed
+            // 従属グループのガード失敗は無視される
         }
     }
 }
@@ -70,7 +70,7 @@ public class NegateGuardOp(IEffectOp inner) : IEffectOp
         }
         catch (GameRuleException)
         {
-            return; // Inner failed → negated guard passes
+            return; // 内部が失敗 → 否定ガードは通過
         }
         throw new GameRuleException("Negated guard: inner condition was true");
     }
