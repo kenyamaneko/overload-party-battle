@@ -1,0 +1,8 @@
+{
+  "name": "overload-party-battle-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/game-logic-constants-npm",
+    "packages/game-state-npm"
+  ]
+}

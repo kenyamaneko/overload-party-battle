@@ -21,8 +21,8 @@
     "directory": "packages/game-state-npm"
   },
   "dependencies": {
-    "@kenyamaneko/overload-party-game-design-constants": "file:../game-design-constants-npm",
-    "@kenyamaneko/overload-party-game-logic-constants": "file:../game-logic-constants-npm"
+    "@kenyamaneko/overload-party-game-design-constants": "*",
+    "@kenyamaneko/overload-party-game-logic-constants": "*"
   },
   "devDependencies": {
     "typescript": "^5.8.0"

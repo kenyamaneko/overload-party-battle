@@ -117,17 +117,12 @@ jobs:
             echo "::endgroup::"
           done
 
-      - name: Build npm packages (Layer 1 → Layer 2)
+      - name: Build npm packages (via workspaces)
         run: |
-          # game-state-npm の file: 参照は CI 上では解決できない（common リポのパス）。
-          # レジストリ公開版を使うよう "*" に書き換えてからビルドする。
-          for pkg in \
-            game-logic-constants-npm \
-            game-state-npm; do
-            echo "::group::build $pkg"
-            (cd "packages/$pkg" && sed -i 's|"file:\.\./[^"]*"|"*"|g' package.json && npm install && npm run build)
-            echo "::endgroup::"
-          done
+          npm install
+          # Layer 1 を先にビルド (game-state-npm の tsc が dist を参照するため)
+          npm run build -w @kenyamaneko/overload-party-game-logic-constants
+          npm run build -w @kenyamaneko/overload-party-game-state
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -281,11 +276,6 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # file: refs in package.json are rewritten to "*" so npm resolves
-          # the registry-published versions of both the co-located
-          # game-logic-constants-npm and common-owned game-design-constants-npm
-          # from GitHub Packages.
-          sed -i 's|"file:\.\./[^"]*"|"*"|g' package.json
           npm install
           npm version ${{ needs.detect.outputs.game_state_npm_version }} --no-git-tag-version
           npm run build
