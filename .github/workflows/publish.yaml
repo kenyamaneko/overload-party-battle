@@ -124,7 +124,7 @@ jobs:
           npm run build -w @kenyamaneko/overload-party-game-logic-constants
           npm run build -w @kenyamaneko/overload-party-game-state
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
 
   # ──────────────────────────────────────────────
   # 3. Publish Go modules (tag only — go get resolves via git tag)
