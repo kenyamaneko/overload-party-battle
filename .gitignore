@@ -17,5 +17,4 @@ TestResults/
 .claude/
 CLAUDE.md
 
-# Symlinks
-docs
+# Symlinks (removed: docs was a symlink to common/docs, now a real directory)
