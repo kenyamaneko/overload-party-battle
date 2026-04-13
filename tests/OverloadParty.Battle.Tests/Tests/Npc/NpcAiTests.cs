@@ -33,18 +33,18 @@ public class NpcAiTests
               priorities:
                 - card_id: SH-0001
                   priority: 80
-                - card_type: compute
+                - card_type: Compute
                   priority: 50
-                - card_type: data
+                - card_type: Data
                   priority: 40
-                - card_type: platform
+                - card_type: Platform
                   priority: 30
               choices:
                 SH-0006: use
               zone_preferences:
-                compute: [frontend, backend]
-                data: [backend]
-                platform: [support]
+                Compute: [frontend, backend]
+                Data: [backend]
+                Platform: [support]
             effect_priorities:
               budget_gain:
                 priority: 90
@@ -88,7 +88,7 @@ public class NpcAiTests
               maintenance_limit_ratio: 0.8
             deploy:
               priorities:
-                - card_type: compute
+                - card_type: Compute
                   priority: 50
               conditional_priorities:
                 - card_id: TK-0005
@@ -158,7 +158,7 @@ public class NpcAiTests
                 - family: M
                   condition:
                     selector: { owner: self, zone: backend }
-                    card_type: data
+                    card_type: Data
                     min: 2
               max_maintenance_ratio: 0.6
               order_by: tp_desc
@@ -1059,7 +1059,7 @@ public class NpcAiTests
               maintenance_limit_ratio: 0.8
             deploy:
               priorities:
-                - card_type: compute
+                - card_type: Compute
                   priority: 50
             effect_priorities: {}
             target_selection:

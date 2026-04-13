@@ -57,26 +57,26 @@ game_phases:
 
 deploy:
   priorities:
-    - card_type: compute
+    - card_type: Compute
       priority: 50
-    - card_type: data
+    - card_type: Data
       priority: 40
-    - card_type: platform
+    - card_type: Platform
       priority: 30
-    - card_type: attachment
+    - card_type: Attachment
       priority: 60
 
   zone_preferences:
-    compute: [frontend, backend]
-    data: [backend]
-    object_storage: [backend, frontend]
-    platform: [support]
-    attachment: [support]
+    Compute: [frontend, backend]
+    Data: [backend]
+    ObjectStorage: [backend, frontend]
+    Platform: [support]
+    Attachment: [support]
 
 immediate_cards:
   always_use: [draw, search, deploy_free]
   hold_until:
-    - card_type: incident
+    - card_type: Incident
       condition:
         selector: { owner: opponent, zone: frontend }
         min: 2
@@ -132,7 +132,7 @@ effect_priorities:
     priority: 70
     condition:
       selector: { owner: opponent }
-      card_type: platform
+      card_type: Platform
       min: 1
 
 target_selection:

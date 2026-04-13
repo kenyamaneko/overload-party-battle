@@ -111,13 +111,13 @@ public class AiConfigLoaderTests
               priorities:
                 - card_id: SH-0001
                   priority: 80
-                - card_type: compute
+                - card_type: Compute
                   priority: 50
               choices:
                 SH-0006: use
               zone_preferences:
-                compute: [frontend, backend]
-                data: [backend]
+                Compute: [frontend, backend]
+                Data: [backend]
             """;
 
         var config = AiConfigLoader.LoadFromString(yaml);
@@ -125,9 +125,9 @@ public class AiConfigLoaderTests
         config.Deploy.Priorities.Should().HaveCount(2);
         config.Deploy.Priorities[0].CardId.Should().Be("SH-0001");
         config.Deploy.Priorities[0].Priority.Should().Be(80);
-        config.Deploy.Priorities[1].CardType.Should().Be("compute");
+        config.Deploy.Priorities[1].CardType.Should().Be("Compute");
         config.Deploy.Choices!["SH-0006"].Should().Be("use");
-        config.Deploy.ZonePreferences!["compute"].Should().Equal("frontend", "backend");
+        config.Deploy.ZonePreferences!["Compute"].Should().Equal("frontend", "backend");
     }
 
     [Fact]
@@ -201,7 +201,7 @@ public class AiConfigLoaderTests
               conditional_family:
                 - family: M
                   condition:
-                    selector: { owner: self, card_type: data, zone: backend }
+                    selector: { owner: self, card_type: Data, zone: backend }
                     min: 2
               max_maintenance_ratio: 0.6
               order_by: tp_desc
@@ -214,7 +214,7 @@ public class AiConfigLoaderTests
         var cf = config.ScaleUp.ConditionalFamily![0];
         cf.Family.Should().Be("M");
         cf.Condition.Selector!.Zone.Should().Be("backend");
-        cf.Condition.Selector!.CardType.Should().Be("data");
+        cf.Condition.Selector!.CardType.Should().Be("Data");
     }
 
     [Fact]

@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Engine;
+using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Npc.Strategies;
@@ -13,14 +14,8 @@ internal static class NpcSharedHelpers
         cc.Get(cardId)
             ?? throw new InvalidOperationException($"Card '{cardId}' not found in card cache");
 
-    public static bool MatchesCardType(CardDefinition card, string typeKey) => typeKey switch
-    {
-        "compute" => card.IsComputeType,
-        "data" => card.IsDataType,
-        "platform" => card.CardType == CardTypes.Platform,
-        "attachment" => card.CardType == CardTypes.Attachment,
-        _ => card.CardType == typeKey,
-    };
+    public static bool MatchesCardType(CardDefinition card, string typeKey) =>
+        EffectHelpers.MatchesCardType(card, typeKey);
 
     public static int ResolveDeployPriority(
         AiConfig config, ICardCache cc, CardDefinition card, DecisionContext ctx)
