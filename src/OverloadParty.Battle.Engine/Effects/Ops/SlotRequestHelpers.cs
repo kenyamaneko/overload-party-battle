@@ -30,7 +30,7 @@ public static class SlotRequestHelpers
         instance.DeployOrder = ctx.State.NextDeployOrder();
 
         var field = ctx.GetField(ctx.PlayerNum);
-        var validZones = ResourceHelpers.BuildValidZones(field, card.CardType);
+        var validZones = ResourceHelpers.BuildValidZones(field, card);
 
         if (validZones.Count == 0)
         {

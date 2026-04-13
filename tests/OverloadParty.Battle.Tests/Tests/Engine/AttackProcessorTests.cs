@@ -17,7 +17,7 @@ public class AttackProcessorTests
         // High-TP attacker: TP=1500
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
         // ObjectStorage card (data type, cannot attack)
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0010", cardType: CardTypes.ObjectStorage, name: "TestObjStorage"));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0010", subtype: "ObjectStorage", name: "TestObjStorage"));
         // Elastic compute card
         _cc.Add(TestFactory.ElasticContainerCard(cardId: "SH-0009"));
         // Platform card for reactive test

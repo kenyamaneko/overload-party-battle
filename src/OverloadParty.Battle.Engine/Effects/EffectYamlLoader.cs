@@ -10,11 +10,13 @@ namespace OverloadParty.Battle.Engine.Effects;
 /// </summary>
 public static class EffectYamlLoader
 {
-    private const string CardTypeCategoryData = "data";
-    private const string CardTypeCategoryCompute = "compute";
-
-    private static readonly List<string> DataCardTypes = [CardTypes.Database, CardTypes.CacheDB, CardTypes.ObjectStorage];
-    private static readonly List<string> ComputeCardTypes = [CardTypes.Compute, CardTypes.Container, CardTypes.Orchestrator, CardTypes.Serverless, CardTypes.AIML];
+    // 旧 YAML 互換: lowercase "data"/"compute" を新 category 名にマッピング。
+    // 新 YAML は CardCategories.Data / CardCategories.Compute を直接使う。
+    private static readonly Dictionary<string, string> LowercaseCategoryAliases = new()
+    {
+        ["data"] = CardCategories.Data,
+        ["compute"] = CardCategories.Compute,
+    };
 
     /// <summary>
     /// Loads effects from card definitions and registers them into the registry.
@@ -606,7 +608,7 @@ public static class EffectYamlLoader
         return card =>
         {
             if (faction is { Length: > 0 } && card.Faction != faction) return false;
-            if (cardTypes is { Count: > 0 } && !cardTypes.Contains(card.CardType)) return false;
+            if (cardTypes is { Count: > 0 } && !EffectHelpers.MatchesAnyCardType(card, cardTypes)) return false;
             if (cardIds is { Count: > 0 } && !cardIds.Contains(card.CardId)) return false;
             return true;
         };
@@ -659,10 +661,10 @@ public static class EffectYamlLoader
     };
 
     /// <summary>
-    /// Parses card_type from a JSON element, handling:
-    /// - single string: "Database" → ["Database"]
-    /// - list: ["Compute", "AI/ML"] → ["Compute", "AI/ML"]
-    /// - category: "data" → ["Database", "CacheDB", "ObjectStorage"]
+    /// Parses card_type from a JSON element. 各値は category 名 (Compute/Data/Platform...)
+    /// または subtype 名 (VM/Container/Database...) のいずれでもよく、後段の matcher が
+    /// dual-match (CardType OR Subtype) で判定する。lowercase "data"/"compute" は旧 YAML
+    /// 互換のため category 名にエイリアスする。
     /// </summary>
     private static List<string>? ParseCardTypes(JsonElement el)
     {
@@ -674,17 +676,15 @@ public static class EffectYamlLoader
         if (ctEl.ValueKind == JsonValueKind.String)
         {
             string val = ctEl.GetString()!;
-            return val switch
-            {
-                CardTypeCategoryData => new List<string>(DataCardTypes),
-                CardTypeCategoryCompute => new List<string>(ComputeCardTypes),
-                _ => [val],
-            };
+            return [LowercaseCategoryAliases.GetValueOrDefault(val, val)];
         }
 
         if (ctEl.ValueKind == JsonValueKind.Array)
         {
-            return ctEl.EnumerateArray().Select(e => e.GetString()!).ToList();
+            return ctEl.EnumerateArray()
+                .Select(e => e.GetString()!)
+                .Select(v => LowercaseCategoryAliases.GetValueOrDefault(v, v))
+                .ToList();
         }
 
         return null;

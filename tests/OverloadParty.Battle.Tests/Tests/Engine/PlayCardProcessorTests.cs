@@ -16,7 +16,7 @@ public class PlayCardProcessorTests
         // Serverless card: deployTurns=0
         _cc.Add(TestFactory.ServerlessCard(cardId: "SH-0002"));
         // Database card (data type, backend-only)
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", subtype: "Database"));
         // Attachment card
         _cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
         // Incident card

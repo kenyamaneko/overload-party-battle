@@ -96,7 +96,7 @@ public class ByChoiceSelector : ISelector
         if (CardType is { Length: > 0 } cardType)
         {
             var card = ctx.CardCache.MustGet(resource.CardID);
-            if (card.CardType != cardType)
+            if (!EffectHelpers.MatchesCardType(card, cardType))
             {
                 return [];
             }
@@ -152,7 +152,7 @@ public class AllOwnSelector : ISelector
         return candidates
             .Where(r => r.FaceUp)
             .Where(r => faction is not { Length: > 0 } || cc.MustGet(r.CardID).Faction == faction)
-            .Where(r => cardTypes is not { Count: > 0 } || cardTypes.Contains(cc.MustGet(r.CardID).CardType))
+            .Where(r => cardTypes is not { Count: > 0 } || EffectHelpers.MatchesAnyCardType(cc.MustGet(r.CardID), cardTypes))
             .ToList();
     }
 }

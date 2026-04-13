@@ -323,7 +323,7 @@ public static class PlayCardProcessor
         {
             throw new GameRuleException($"invalid slot index {req.Index}");
         }
-        if (!ZoneValidator.IsZoneEligible(cardDef.CardType, req.Zone))
+        if (!ZoneValidator.IsZoneEligible(cardDef, req.Zone))
         {
             throw new GameRuleException($"{cardDef.CardType} cannot be placed in {req.Zone}");
         }

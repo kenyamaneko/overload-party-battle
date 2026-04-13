@@ -16,7 +16,7 @@ public class MonetizeProcessorTests
         // Second backend compute card: TP=400
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 400, name: "SmallCompute"));
         // Database card (data type, not compute)
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", subtype: "Database"));
     }
 
     private static MonetizeRequest MakeReq(params MonetizeDistribution[] dists) =>

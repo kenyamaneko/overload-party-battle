@@ -108,7 +108,7 @@ public class ActionFilterTests
     [Fact]
     public void PickBestZone_ObjectStorageCard_PrefersBackend()
     {
-        var card = TestFactory.DataCard(cardType: CardTypes.ObjectStorage);
+        var card = TestFactory.DataCard(subtype: "ObjectStorage");
         var zones = new List<string> { "frontend_0", "backend_1" };
 
         var result = ActionFilter.PickBestZone(zones, card, []);
@@ -130,7 +130,7 @@ public class ActionFilterTests
     [Fact]
     public void PickBestZone_ObjectStorageCard_NoMatchingZone_Throws()
     {
-        var card = TestFactory.DataCard(cardType: CardTypes.ObjectStorage);
+        var card = TestFactory.DataCard(subtype: "ObjectStorage");
         var zones = new List<string> { "support_0" };
 
         var act = () => ActionFilter.PickBestZone(zones, card, []);

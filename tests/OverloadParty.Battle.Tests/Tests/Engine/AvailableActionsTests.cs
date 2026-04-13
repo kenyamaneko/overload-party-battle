@@ -86,7 +86,7 @@ public class AvailableActionsTests
     {
         // Database は Backend のみ
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0009", subtype: "Database"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "NT-0009" } };
@@ -103,7 +103,7 @@ public class AvailableActionsTests
     public void PlayCard_CacheDBCanOnlyGoToBackend()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "NT-0010", cardType: CardTypes.CacheDB));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0010", subtype: "CacheDB"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_cache", CardID = "NT-0010" } };
@@ -121,7 +121,7 @@ public class AvailableActionsTests
     {
         // ObjectStorage は Frontend / Backend 両方
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "NT-0011", cardType: CardTypes.ObjectStorage));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0011", subtype: "ObjectStorage"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_os", CardID = "NT-0011" } };
@@ -139,7 +139,7 @@ public class AvailableActionsTests
     {
         // AI/ML は Frontend / Backend 両方
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0004", cardType: CardTypes.AIML, deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "SH-0004", subtype: "AI/ML", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_ai", CardID = "SH-0004" } };
@@ -568,7 +568,7 @@ public class AvailableActionsTests
     {
         // Object Storage をフロントエンドに置いた場合、攻撃できない
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "NT-0011", cardType: CardTypes.ObjectStorage));
+        cc.Add(TestFactory.DataCard(cardId: "NT-0011", subtype: "ObjectStorage"));
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);

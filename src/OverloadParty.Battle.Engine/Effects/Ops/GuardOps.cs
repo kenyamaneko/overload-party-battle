@@ -105,18 +105,18 @@ public class GuardFactionOp(string faction, string? cardType = null) : IEffectOp
         {
             throw new GameRuleException($"Target is not {faction} faction");
         }
-        if (cardType is { Length: > 0 } ct && card.CardType != ct)
+        // ct は category (Compute/Data/Platform...) または subtype (VM/Container/Database...)
+        // どちらでも受け付けるため dual-match。"data"/"compute" lowercase は EffectYamlLoader が
+        // category 名にエイリアスする想定だが、念のため受け付ける。
+        if (cardType is { Length: > 0 } ct)
         {
-            // Also check category match (e.g., "data" matches Database/CacheDB/etc.)
-            if (ct == "data" && !card.IsDataType)
+            string normalized = ct switch
             {
-                throw new GameRuleException($"Target is not data type");
-            }
-            else if (ct == "compute" && !card.IsComputeType)
-            {
-                throw new GameRuleException($"Target is not compute type");
-            }
-            else if (ct != "data" && ct != "compute" && card.CardType != ct)
+                "data" => CardCategories.Data,
+                "compute" => CardCategories.Compute,
+                _ => ct,
+            };
+            if (!EffectHelpers.MatchesCardType(card, normalized))
             {
                 throw new GameRuleException($"Target is not {ct} type");
             }

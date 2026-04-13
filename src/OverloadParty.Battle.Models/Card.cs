@@ -12,7 +12,6 @@ public class CardDefinition
     public string CardType { get; set; } = "";
 
     // Compute/Data カテゴリのサブタイプ (VM/Container/Database 等)。それ以外は null。
-    // Phase 2a で追加、現状 battle ロジックは参照しない。Phase 2b で IsComputeType 等の判定側を更新予定。
     public string? Subtype { get; set; }
 
     public long DeployTurns { get; set; }
@@ -36,17 +35,18 @@ public class CardDefinition
     /// <summary>
     /// IsComputeType はカードタイプが Compute カテゴリに属するかを返します
     /// </summary>
-    public bool IsComputeType => CardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML;
+    public bool IsComputeType => CardType == CardCategories.Compute;
 
     /// <summary>
     /// IsDataType はカードタイプが Data カテゴリに属するかを返します
     /// </summary>
-    public bool IsDataType => CardType is CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
+    public bool IsDataType => CardType == CardCategories.Data;
 
     /// <summary>
     /// IsSupportType はカードタイプが Support カテゴリに属するかを返します
     /// </summary>
-    public bool IsSupportType => CardType is CardTypes.Platform or CardTypes.Attachment or CardTypes.Strategy or CardTypes.Reactive or CardTypes.Incident;
+    public bool IsSupportType => CardType is CardCategories.Platform or CardCategories.Attachment
+                                          or CardCategories.Strategy or CardCategories.Reactive or CardCategories.Incident;
 
     /// <summary>
     /// BaseThroughput はベーススループットを返します（非 Compute カードの場合は 0）

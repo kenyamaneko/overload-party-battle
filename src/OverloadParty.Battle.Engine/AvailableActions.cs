@@ -241,7 +241,7 @@ public static class AvailableActions
     private static AvailableAction? BuildResourcePlayAction(
         Field field, UndeployedCard handCard, CardDefinition card)
     {
-        var validZones = ResourceHelpers.BuildValidZones(field, card.CardType);
+        var validZones = ResourceHelpers.BuildValidZones(field, card);
 
         return validZones.Count > 0
             ? new AvailableAction

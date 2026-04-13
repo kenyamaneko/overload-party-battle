@@ -33,7 +33,7 @@ public static class ActionFilter
                 $"PickBestZone: Compute card '{cardDef.CardId}' received validZones with no frontend/backend: [{string.Join(", ", available)}]");
         }
 
-        if (cardDef.CardType == CardTypes.ObjectStorage)
+        if (cardDef.IsDataType && cardDef.Subtype == "ObjectStorage")
         {
             var backend = FirstWithPrefix(available, "backend_");
             if (backend is not null) { return backend; }

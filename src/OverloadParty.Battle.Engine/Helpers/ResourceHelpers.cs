@@ -44,29 +44,30 @@ public static class ResourceHelpers
     /// <summary>
     /// リソースをフィールドの適切なゾーンに自動配置する。
     /// </summary>
-    public static void PlaceResourceOnField(Field field, DeployedResource instance, string cardType)
+    public static void PlaceResourceOnField(Field field, DeployedResource instance, CardDefinition card)
     {
-        if (FieldHelpers.IsComputeType(cardType))
+        if (card.IsComputeType)
         {
             if (field.Frontend.TryPlace(instance)) { return; }
             if (field.Backend.TryPlace(instance)) { return; }
             throw new GameRuleException("No empty slot for compute resource");
         }
 
-        if (cardType == CardTypes.ObjectStorage)
+        // ObjectStorage は Data カテゴリの中で唯一 frontend にも置ける。優先は backend。
+        if (card.IsDataType && card.Subtype == "ObjectStorage")
         {
             if (field.Backend.TryPlace(instance)) { return; }
             if (field.Frontend.TryPlace(instance)) { return; }
             throw new GameRuleException("No empty slot for ObjectStorage");
         }
 
-        if (FieldHelpers.IsDataType(cardType))
+        if (card.IsDataType)
         {
             if (field.Backend.TryPlace(instance)) { return; }
             throw new GameRuleException("No empty backend slot");
         }
 
-        throw new GameRuleException($"Card type {cardType} cannot be auto-deployed");
+        throw new GameRuleException($"Card type {card.CardType}/{card.Subtype} cannot be auto-deployed");
     }
 
     /// <summary>
@@ -86,7 +87,7 @@ public static class ResourceHelpers
 
         var card = cc.MustGet(cardId);
         var instance = CreateDeployedResource(card, state.NextInstanceID(), state.CurrentTurn, handCard.ArtNo);
-        PlaceResourceOnField(field, instance, card.CardType);
+        PlaceResourceOnField(field, instance, card);
     }
 
     /// <summary>
@@ -106,23 +107,23 @@ public static class ResourceHelpers
             instance.Damage = 0;
         }
 
-        PlaceResourceOnField(field, instance, card.CardType);
+        PlaceResourceOnField(field, instance, card);
     }
 
     /// <summary>
     /// カードタイプに基づいて配置可能なスロット一覧を返す。
     /// ワイヤーフォーマット: "{zone}_{slotIndex}" (例: "frontend_0", "backend_2")
     /// </summary>
-    public static List<string> BuildValidZones(Field field, string cardType)
+    public static List<string> BuildValidZones(Field field, CardDefinition card)
     {
         var validZones = new List<string>();
 
-        if (ZoneValidator.IsZoneEligible(cardType, Zones.Frontend))
+        if (ZoneValidator.IsZoneEligible(card, Zones.Frontend))
         {
             validZones.AddRange(field.Frontend.EmptySlotIndices().Select(i => $"{Zones.Frontend}_{i}"));
         }
 
-        if (ZoneValidator.IsZoneEligible(cardType, Zones.Backend))
+        if (ZoneValidator.IsZoneEligible(card, Zones.Backend))
         {
             validZones.AddRange(field.Backend.EmptySlotIndices().Select(i => $"{Zones.Backend}_{i}"));
         }

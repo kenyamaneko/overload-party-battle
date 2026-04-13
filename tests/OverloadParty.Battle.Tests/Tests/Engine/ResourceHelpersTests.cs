@@ -92,7 +92,7 @@ public class ResourceHelpersTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(instanceId: "inst_1");
 
-        ResourceHelpers.PlaceResourceOnField(field, resource, CardTypes.Compute);
+        ResourceHelpers.PlaceResourceOnField(field, resource, TestFactory.ComputeCard());
 
         field.Frontend.Any(r => r.InstanceID == "inst_1").Should().BeTrue();
     }
@@ -108,7 +108,7 @@ public class ResourceHelpersTests
         }
 
         var resource = TestFactory.MakeResource(instanceId: "inst_new");
-        ResourceHelpers.PlaceResourceOnField(field, resource, CardTypes.Compute);
+        ResourceHelpers.PlaceResourceOnField(field, resource, TestFactory.ComputeCard());
 
         field.Backend.Any(r => r.InstanceID == "inst_new").Should().BeTrue();
     }
@@ -128,19 +128,19 @@ public class ResourceHelpersTests
 
         var resource = TestFactory.MakeResource(instanceId: "overflow");
 
-        var act = () => ResourceHelpers.PlaceResourceOnField(field, resource, CardTypes.Compute);
+        var act = () => ResourceHelpers.PlaceResourceOnField(field, resource, TestFactory.ComputeCard());
         act.Should().Throw<GameRuleException>();
     }
 
     [Theory]
-    [InlineData(CardTypes.Database)]
-    [InlineData(CardTypes.ObjectStorage)]
-    public void PlaceResourceOnField_BackendType_PlacedInBackend(string cardType)
+    [InlineData("Database")]
+    [InlineData("ObjectStorage")]
+    public void PlaceResourceOnField_BackendType_PlacedInBackend(string subtype)
     {
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(instanceId: "be_1");
 
-        ResourceHelpers.PlaceResourceOnField(field, resource, cardType);
+        ResourceHelpers.PlaceResourceOnField(field, resource, TestFactory.DataCard(subtype: subtype));
 
         field.Backend.Any(r => r.InstanceID == "be_1").Should().BeTrue();
     }
@@ -156,7 +156,7 @@ public class ResourceHelpersTests
 
         var resource = TestFactory.MakeResource(instanceId: "db_overflow");
 
-        var act = () => ResourceHelpers.PlaceResourceOnField(field, resource, CardTypes.Database);
+        var act = () => ResourceHelpers.PlaceResourceOnField(field, resource, TestFactory.DataCard(subtype: "Database"));
         act.Should().Throw<GameRuleException>();
     }
 
@@ -170,7 +170,7 @@ public class ResourceHelpersTests
         }
 
         var resource = TestFactory.MakeResource(instanceId: "os_fallback");
-        ResourceHelpers.PlaceResourceOnField(field, resource, CardTypes.ObjectStorage);
+        ResourceHelpers.PlaceResourceOnField(field, resource, TestFactory.DataCard(subtype: "ObjectStorage"));
 
         field.Frontend.Any(r => r.InstanceID == "os_fallback").Should().BeTrue();
     }
@@ -181,7 +181,8 @@ public class ResourceHelpersTests
         var field = TestFactory.MakeField();
         var resource = TestFactory.MakeResource(instanceId: "inst_1");
 
-        var act = () => ResourceHelpers.PlaceResourceOnField(field, resource, "UnknownType");
+        var unknownCard = new CardDefinition { CardType = "UnknownType" };
+        var act = () => ResourceHelpers.PlaceResourceOnField(field, resource, unknownCard);
         act.Should().Throw<GameRuleException>();
     }
 

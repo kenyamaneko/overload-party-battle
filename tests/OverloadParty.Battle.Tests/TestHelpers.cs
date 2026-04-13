@@ -30,11 +30,11 @@ public static class TestFactory
     // ─── Card Builders ────────────────────────────────────────
 
     /// <summary>
-    /// Create a Compute-type card (TP-based, frontend or backend).
+    /// Create a Compute-type card (TP-based, frontend or backend). Subtype defaults to VM.
     /// </summary>
     public static CardDefinition ComputeCard(
         string cardId = "TST-0001",
-        string cardType = "Compute",
+        string subtype = "VM",
         long tp = 600,
         long av = 1400,
         long mc = 150,
@@ -52,7 +52,8 @@ public static class TestFactory
         {
             CardId = cardId,
             CardName = name,
-            CardType = cardType,
+            CardType = CardCategories.Compute,
+            Subtype = subtype,
             Faction = faction,
             DeployTurns = deployTurns,
             Resizable = resizable,
@@ -71,11 +72,11 @@ public static class TestFactory
     }
 
     /// <summary>
-    /// Create a Data-type card (Yield-based, backend only).
+    /// Create a Data-type card (Yield-based, backend only). Subtype defaults to Database.
     /// </summary>
     public static CardDefinition DataCard(
         string cardId = "TST-0100",
-        string cardType = "Database",
+        string subtype = "Database",
         long yield = 400,
         long av = 800,
         long mc = 100,
@@ -93,7 +94,8 @@ public static class TestFactory
         {
             CardId = cardId,
             CardName = name,
-            CardType = cardType,
+            CardType = CardCategories.Data,
+            Subtype = subtype,
             Faction = faction,
             DeployTurns = deployTurns,
             Resizable = resizable,
@@ -119,7 +121,7 @@ public static class TestFactory
     {
         return ComputeCard(
             cardId: cardId,
-            cardType: "Container",
+            subtype: "Container",
             tp: 500,
             av: 1200,
             mc: 0,
@@ -139,7 +141,7 @@ public static class TestFactory
     {
         return ComputeCard(
             cardId: cardId,
-            cardType: "Serverless",
+            subtype: "Serverless",
             tp: 300,
             av: 600,
             mc: 0,
@@ -159,7 +161,7 @@ public static class TestFactory
     {
         return ComputeCard(
             cardId: cardId,
-            cardType: "Orchestrator",
+            subtype: "Orchestrator",
             tp: 600,
             av: 1800,
             mc: 200,

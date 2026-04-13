@@ -15,8 +15,8 @@ public class NpcAiTests
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, mc: 150));
         _cc.Add(TestFactory.ComputeCard(cardId: "TK-0005", tp: 500, av: 1200, mc: 120));
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
-        _cc.Add(TestFactory.DataCard(cardId: "TK-0010", cardType: CardTypes.Database, yield: 300, av: 600, mc: 80));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", subtype: "Database", yield: 400, av: 800, mc: 100));
+        _cc.Add(TestFactory.DataCard(cardId: "TK-0010", subtype: "Database", yield: 300, av: 600, mc: 80));
         _cc.Add(TestFactory.PlatformCard(cardId: "NT-0023", name: "TestPlatform"));
         _cc.Add(TestFactory.AttachmentCard(cardId: "SH-0022", name: "TestAttachment"));
     }

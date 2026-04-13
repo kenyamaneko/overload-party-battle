@@ -11,7 +11,7 @@ public class TargetSelectorTests
     public TargetSelectorTests()
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, mc: 150));
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database, yield: 400, av: 800, mc: 100));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", subtype: "Database", yield: 400, av: 800, mc: 100));
         _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", name: "TestPlatform"));
     }
 

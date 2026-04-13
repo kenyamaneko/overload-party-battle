@@ -12,7 +12,7 @@ public class PriorityResolverTests
     public PriorityResolverTests()
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400));
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", cardType: CardTypes.Database, yield: 400, av: 800));
+        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", subtype: "Database", yield: 400, av: 800));
         _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", name: "TestPlatform"));
     }
 

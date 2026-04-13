@@ -112,20 +112,20 @@ public static class FieldHelpers
     }
 
     /// <summary>
-    /// Check card type eligibility for frontend zone.
+    /// Check card eligibility for frontend zone (Compute 全般 + Data の ObjectStorage subtype のみ)。
     /// </summary>
-    public static bool IsFrontendEligible(string cardType)
+    public static bool IsFrontendEligible(string cardType, string? subtype)
     {
-        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML or CardTypes.ObjectStorage;
+        return cardType == CardCategories.Compute
+            || (cardType == CardCategories.Data && subtype == "ObjectStorage");
     }
 
     /// <summary>
-    /// Check card type eligibility for backend zone.
+    /// Check card eligibility for backend zone (Compute と Data 全般)。
     /// </summary>
     public static bool IsBackendEligible(string cardType)
     {
-        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML
-            or CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
+        return cardType is CardCategories.Compute or CardCategories.Data;
     }
 
     /// <summary>
@@ -133,7 +133,8 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsSupportType(string cardType)
     {
-        return cardType is CardTypes.Platform or CardTypes.Reactive or CardTypes.Strategy or CardTypes.Incident or CardTypes.Attachment;
+        return cardType is CardCategories.Platform or CardCategories.Reactive or CardCategories.Strategy
+                        or CardCategories.Incident or CardCategories.Attachment;
     }
 
     /// <summary>
@@ -141,7 +142,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsImmediateType(string cardType)
     {
-        return cardType is CardTypes.Strategy or CardTypes.Incident;
+        return cardType is CardCategories.Strategy or CardCategories.Incident;
     }
 
     /// <summary>
@@ -149,7 +150,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsComputeType(string cardType)
     {
-        return cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML;
+        return cardType == CardCategories.Compute;
     }
 
     /// <summary>
@@ -157,7 +158,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsDataType(string cardType)
     {
-        return cardType is CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
+        return cardType == CardCategories.Data;
     }
 
     /// <summary>

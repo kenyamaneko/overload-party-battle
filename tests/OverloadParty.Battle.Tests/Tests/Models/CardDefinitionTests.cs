@@ -10,23 +10,18 @@ public class CardDefinitionTests
 {
     // ─── IsComputeType ─────────────────────────────────────────
 
-    [Theory]
-    [InlineData("Compute")]
-    [InlineData("Container")]
-    [InlineData("Orchestrator")]
-    [InlineData("Serverless")]
-    [InlineData("AI/ML")]
-    public void IsComputeType_ComputeCards_ReturnsTrue(string cardType)
+    [Fact]
+    public void IsComputeType_ComputeCategory_ReturnsTrue()
     {
-        var card = new CardDefinition { CardType = cardType };
+        var card = new CardDefinition { CardType = "Compute", Subtype = "VM" };
         card.IsComputeType.Should().BeTrue();
     }
 
     [Theory]
-    [InlineData("Database")]
+    [InlineData("Data")]
     [InlineData("Platform")]
     [InlineData("Attachment")]
-    public void IsComputeType_NonComputeCards_ReturnsFalse(string cardType)
+    public void IsComputeType_NonComputeCategory_ReturnsFalse(string cardType)
     {
         var card = new CardDefinition { CardType = cardType };
         card.IsComputeType.Should().BeFalse();
@@ -34,13 +29,10 @@ public class CardDefinitionTests
 
     // ─── IsDataType ────────────────────────────────────────────
 
-    [Theory]
-    [InlineData("Database")]
-    [InlineData("ObjectStorage")]
-    [InlineData("CacheDB")]
-    public void IsDataType_DataCards_ReturnsTrue(string cardType)
+    [Fact]
+    public void IsDataType_DataCategory_ReturnsTrue()
     {
-        var card = new CardDefinition { CardType = cardType };
+        var card = new CardDefinition { CardType = "Data", Subtype = "Database" };
         card.IsDataType.Should().BeTrue();
     }
 
@@ -48,7 +40,7 @@ public class CardDefinitionTests
     [InlineData("Compute")]
     [InlineData("Platform")]
     [InlineData("Strategy")]
-    public void IsDataType_NonDataCards_ReturnsFalse(string cardType)
+    public void IsDataType_NonDataCategory_ReturnsFalse(string cardType)
     {
         var card = new CardDefinition { CardType = cardType };
         card.IsDataType.Should().BeFalse();
@@ -62,7 +54,7 @@ public class CardDefinitionTests
     [InlineData("Strategy")]
     [InlineData("Reactive")]
     [InlineData("Incident")]
-    public void IsSupportType_SupportCards_ReturnsTrue(string cardType)
+    public void IsSupportType_SupportCategory_ReturnsTrue(string cardType)
     {
         var card = new CardDefinition { CardType = cardType };
         card.IsSupportType.Should().BeTrue();
@@ -70,9 +62,8 @@ public class CardDefinitionTests
 
     [Theory]
     [InlineData("Compute")]
-    [InlineData("Database")]
-    [InlineData("Container")]
-    public void IsSupportType_NonSupportCards_ReturnsFalse(string cardType)
+    [InlineData("Data")]
+    public void IsSupportType_NonSupportCategory_ReturnsFalse(string cardType)
     {
         var card = new CardDefinition { CardType = cardType };
         card.IsSupportType.Should().BeFalse();

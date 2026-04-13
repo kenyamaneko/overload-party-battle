@@ -24,16 +24,16 @@ public static class ZoneValidator
     }
 
     /// <summary>
-    /// カードタイプが指定ゾーンに配置可能か判定する。
+    /// カードが指定ゾーンに配置可能か判定する。
     /// スロット占有や attachment の target 有無といったインスタンス固有条件は含まない。
     /// </summary>
-    public static bool IsZoneEligible(string cardType, string zone)
+    public static bool IsZoneEligible(CardDefinition card, string zone)
     {
         return zone switch
         {
-            Zones.Frontend => FieldHelpers.IsFrontendEligible(cardType),
-            Zones.Backend => FieldHelpers.IsBackendEligible(cardType),
-            Zones.Support => FieldHelpers.IsSupportType(cardType),
+            Zones.Frontend => FieldHelpers.IsFrontendEligible(card.CardType, card.Subtype),
+            Zones.Backend => FieldHelpers.IsBackendEligible(card.CardType),
+            Zones.Support => FieldHelpers.IsSupportType(card.CardType),
             _ => false,
         };
     }

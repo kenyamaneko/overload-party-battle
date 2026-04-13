@@ -13,7 +13,7 @@ public class SlotRequestOpsTests
     public SlotRequestOpsTests()
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
-        _cc.Add(TestFactory.DataCard(cardId: "TST-DB01", cardType: "Database"));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-DB01", subtype: "Database"));
     }
 
     private EffectContext MakeContext(BattleGameState? state = null, DeployedResource? target = null,

@@ -187,21 +187,17 @@ public class FieldHelpersTests
     // ─── Zone eligibility ─────────────────────────────────────
 
     /// <summary>
-    /// Frontend: Compute, Container, Orchestrator, Serverless, AI/ML, ObjectStorage
+    /// Frontend: Compute 全般 + Data の ObjectStorage subtype のみ
     /// </summary>
     [Theory]
-    [InlineData("Compute", true)]
-    [InlineData("Container", true)]
-    [InlineData("Orchestrator", true)]
-    [InlineData("Serverless", true)]
-    [InlineData("AI/ML", true)]
-    [InlineData("ObjectStorage", true)]
-    [InlineData("Database", false)]
-    [InlineData("CacheDB", false)]
-    [InlineData("Platform", false)]
-    public void IsFrontendEligible_CorrectTypes(string cardType, bool expected)
+    [InlineData("Compute", null, true)]
+    [InlineData("Data", "ObjectStorage", true)]
+    [InlineData("Data", "Database", false)]
+    [InlineData("Data", "CacheDB", false)]
+    [InlineData("Platform", null, false)]
+    public void IsFrontendEligible_CorrectTypes(string cardType, string? subtype, bool expected)
     {
-        FieldHelpers.IsFrontendEligible(cardType).Should().Be(expected);
+        FieldHelpers.IsFrontendEligible(cardType, subtype).Should().Be(expected);
     }
 
     /// <summary>
@@ -209,9 +205,7 @@ public class FieldHelpersTests
     /// </summary>
     [Theory]
     [InlineData("Compute", true)]
-    [InlineData("Database", true)]
-    [InlineData("ObjectStorage", true)]
-    [InlineData("CacheDB", true)]
+    [InlineData("Data", true)]
     [InlineData("Platform", false)]
     [InlineData("Strategy", false)]
     public void IsBackendEligible_CorrectTypes(string cardType, bool expected)
@@ -223,21 +217,18 @@ public class FieldHelpersTests
 
     [Theory]
     [InlineData("Compute", true)]
-    [InlineData("Container", true)]
-    [InlineData("Orchestrator", true)]
-    [InlineData("Serverless", true)]
-    [InlineData("AI/ML", true)]
-    [InlineData("Database", false)]
+    [InlineData("Data", false)]
+    [InlineData("Platform", false)]
+    [InlineData("Container", false)] // 旧個別 subtype は category ではないため false
     public void IsComputeType_Correct(string cardType, bool expected)
     {
         FieldHelpers.IsComputeType(cardType).Should().Be(expected);
     }
 
     [Theory]
-    [InlineData("Database", true)]
-    [InlineData("ObjectStorage", true)]
-    [InlineData("CacheDB", true)]
+    [InlineData("Data", true)]
     [InlineData("Compute", false)]
+    [InlineData("Database", false)] // 旧個別 subtype は category ではないため false
     public void IsDataType_Correct(string cardType, bool expected)
     {
         FieldHelpers.IsDataType(cardType).Should().Be(expected);

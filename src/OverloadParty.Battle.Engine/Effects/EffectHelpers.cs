@@ -87,19 +87,16 @@ public static class EffectHelpers
         => card => card.CardId == cardId;
 
     /// <summary>
-    /// Returns whether the card type is a database type (Database or CacheDB).
+    /// Effect DSL の card_type フィルタは category 名 (Compute/Data/Platform...) と
+    /// subtype 名 (VM/Container/Database...) を区別せず受け付けるため CardType と
+    /// Subtype の両方に対して dual-match する。
     /// </summary>
-    /// <param name="cardType">Card type string to check.</param>
-    /// <returns>True if the type is a database variant.</returns>
-    public static bool IsDBType(string cardType)
-        => cardType is CardTypes.Database or CardTypes.CacheDB;
+    public static bool MatchesCardType(CardDefinition card, string filterValue)
+        => card.CardType == filterValue || card.Subtype == filterValue;
 
     /// <summary>
-    /// Returns whether the card type is a deployable resource type.
+    /// 任意の filterValues のいずれかに dual-match するか判定。
     /// </summary>
-    /// <param name="cardType">Card type string to check.</param>
-    /// <returns>True if the type is a resource type.</returns>
-    public static bool IsResourceType(string cardType)
-        => cardType is CardTypes.Compute or CardTypes.Container or CardTypes.Orchestrator or CardTypes.Serverless or CardTypes.AIML
-           or CardTypes.Database or CardTypes.ObjectStorage or CardTypes.CacheDB;
+    public static bool MatchesAnyCardType(CardDefinition card, IEnumerable<string> filterValues)
+        => filterValues.Any(v => MatchesCardType(card, v));
 }
