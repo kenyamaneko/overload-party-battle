@@ -8,15 +8,24 @@
 --   - battle は pure engine としてスロット番号 (1/2) のみを扱い、プレイヤー ID を
 --     知らない。人間プレイヤー ↔ スロットのマッピング (game_players) と経験値付与は
 --     gateway が gateway スキーマで所有する。
---   - shared.update_updated_at() は shared スキーマで提供される前提。
---     common の db/schema_postgres.sql が shared.game_config と同じファイルで
---     定義している。
 
 -- =============================================================================
 -- Schemas
 -- =============================================================================
 
 CREATE SCHEMA IF NOT EXISTS battle;
+
+-- =============================================================================
+-- Schema-local helpers
+-- =============================================================================
+
+CREATE OR REPLACE FUNCTION battle.update_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
 -- =============================================================================
 -- 4.1 Game Management (schema: battle)
@@ -37,7 +46,7 @@ CREATE TABLE battle.games (
 );
 
 CREATE INDEX idx_games_status ON battle.games(status, created_at DESC);
-CREATE TRIGGER trg_games_updated_at BEFORE UPDATE ON battle.games FOR EACH ROW EXECUTE FUNCTION shared.update_updated_at();
+CREATE TRIGGER trg_games_updated_at BEFORE UPDATE ON battle.games FOR EACH ROW EXECUTE FUNCTION battle.update_updated_at();
 
 -- 4.1a Game NPC Settings (child of games, NPC 戦のみ。PvP では行なし)
 
@@ -85,7 +94,7 @@ CREATE TABLE battle.game_states (
   next_instance_seq    BIGINT NOT NULL DEFAULT 0,    -- インスタンスID発番用シーケンス
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT now() -- 更新日時
 );
-CREATE TRIGGER trg_game_states_updated_at BEFORE UPDATE ON battle.game_states FOR EACH ROW EXECUTE FUNCTION shared.update_updated_at();
+CREATE TRIGGER trg_game_states_updated_at BEFORE UPDATE ON battle.game_states FOR EACH ROW EXECUTE FUNCTION battle.update_updated_at();
 
 -- Game Actions (child of games, append-only action log)
 

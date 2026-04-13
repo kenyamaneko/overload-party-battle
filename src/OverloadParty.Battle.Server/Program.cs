@@ -1,8 +1,10 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Diagnostics;
 using Npgsql;
 using OverloadParty.Battle.Data;
+using OverloadParty.Battle.Data.Firestore;
 using OverloadParty.Battle.Data.Json;
 using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Data.Pg;
@@ -50,6 +52,15 @@ else
     builder.Services.AddSingleton(dataSource);
     builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
 }
+
+// ─── Game config (Firestore) ────────────────────────────────
+// Required env var even in local mode; the Google SDK auto-routes to the
+// emulator when FIRESTORE_EMULATOR_HOST is set.
+var firestoreProjectId = Environment.GetEnvironmentVariable("FIRESTORE_PROJECT_ID")
+    ?? throw new InvalidOperationException("FIRESTORE_PROJECT_ID not set");
+builder.Services.AddSingleton(FirestoreDb.Create(firestoreProjectId));
+builder.Services.AddSingleton<IGameConfigRepository>(sp =>
+    new FirestoreGameConfigRepository(sp.GetRequiredService<FirestoreDb>()));
 
 // ─── Card cache ─────────────────────────────────────────────
 

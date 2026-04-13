@@ -43,12 +43,31 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+      - name: Set up Java (Firestore emulator runtime)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Set up gcloud (Firestore emulator)
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Install Firestore emulator component
+        run: gcloud components install cloud-firestore-emulator beta --quiet
+      - name: Start Firestore emulator
+        run: |
+          gcloud emulators firestore start --host-port=localhost:9041 >/tmp/firestore.log 2>&1 &
+          for i in {1..30}; do
+            if curl -sf http://localhost:9041 >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo "Firestore emulator failed to start"; cat /tmp/firestore.log; exit 1
       - name: Authenticate NuGet (GitHub Packages)
         run: dotnet nuget update source github --username kenyamaneko --password ${{ secrets.COMMON_PKG_FETCH }} --store-password-in-clear-text
       - name: Run tests
         run: dotnet test tests/OverloadParty.Battle.Tests
         env:
           CARDS_JSON_PATH: ${{ github.workspace }}/cards_gen.json
+          FIRESTORE_EMULATOR_HOST: localhost:9041
+          FIRESTORE_PROJECT_ID: overload-party-test
 
   build-and-push:
     needs: [lint, test]
