@@ -11,11 +11,11 @@ namespace OverloadParty.Battle.Engine.Effects;
 public static class EffectYamlLoader
 {
     // 旧 YAML 互換: lowercase "data"/"compute" を新 category 名にマッピング。
-    // 新 YAML は CardCategories.Data / CardCategories.Compute を直接使う。
+    // 新 YAML は CardTypes.Data / CardTypes.Compute を直接使う。
     private static readonly Dictionary<string, string> LowercaseCategoryAliases = new()
     {
-        ["data"] = CardCategories.Data,
-        ["compute"] = CardCategories.Compute,
+        ["data"] = CardTypes.Data,
+        ["compute"] = CardTypes.Compute,
     };
 
     /// <summary>

@@ -52,7 +52,7 @@ public static class TestFactory
         {
             CardId = cardId,
             CardName = name,
-            CardType = CardCategories.Compute,
+            CardType = CardTypes.Compute,
             Subtype = subtype,
             Faction = faction,
             DeployTurns = deployTurns,
@@ -94,7 +94,7 @@ public static class TestFactory
         {
             CardId = cardId,
             CardName = name,
-            CardType = CardCategories.Data,
+            CardType = CardTypes.Data,
             Subtype = subtype,
             Faction = faction,
             DeployTurns = deployTurns,

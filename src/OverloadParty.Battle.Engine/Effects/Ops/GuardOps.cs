@@ -112,8 +112,8 @@ public class GuardFactionOp(string faction, string? cardType = null) : IEffectOp
         {
             string normalized = ct switch
             {
-                "data" => CardCategories.Data,
-                "compute" => CardCategories.Compute,
+                "data" => CardTypes.Data,
+                "compute" => CardTypes.Compute,
                 _ => ct,
             };
             if (!EffectHelpers.MatchesCardType(card, normalized))

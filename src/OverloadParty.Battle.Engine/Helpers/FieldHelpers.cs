@@ -116,8 +116,8 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsFrontendEligible(string cardType, string? subtype)
     {
-        return cardType == CardCategories.Compute
-            || (cardType == CardCategories.Data && subtype == "ObjectStorage");
+        return cardType == CardTypes.Compute
+            || (cardType == CardTypes.Data && subtype == "ObjectStorage");
     }
 
     /// <summary>
@@ -125,7 +125,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsBackendEligible(string cardType)
     {
-        return cardType is CardCategories.Compute or CardCategories.Data;
+        return cardType is CardTypes.Compute or CardTypes.Data;
     }
 
     /// <summary>
@@ -133,8 +133,8 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsSupportType(string cardType)
     {
-        return cardType is CardCategories.Platform or CardCategories.Reactive or CardCategories.Strategy
-                        or CardCategories.Incident or CardCategories.Attachment;
+        return cardType is CardTypes.Platform or CardTypes.Reactive or CardTypes.Strategy
+                        or CardTypes.Incident or CardTypes.Attachment;
     }
 
     /// <summary>
@@ -142,7 +142,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsImmediateType(string cardType)
     {
-        return cardType is CardCategories.Strategy or CardCategories.Incident;
+        return cardType is CardTypes.Strategy or CardTypes.Incident;
     }
 
     /// <summary>
@@ -150,7 +150,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsComputeType(string cardType)
     {
-        return cardType == CardCategories.Compute;
+        return cardType == CardTypes.Compute;
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public static class FieldHelpers
     /// </summary>
     public static bool IsDataType(string cardType)
     {
-        return cardType == CardCategories.Data;
+        return cardType == CardTypes.Data;
     }
 
     /// <summary>

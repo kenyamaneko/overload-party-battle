@@ -35,18 +35,18 @@ public class CardDefinition
     /// <summary>
     /// IsComputeType はカードタイプが Compute カテゴリに属するかを返します
     /// </summary>
-    public bool IsComputeType => CardType == CardCategories.Compute;
+    public bool IsComputeType => CardType == CardTypes.Compute;
 
     /// <summary>
     /// IsDataType はカードタイプが Data カテゴリに属するかを返します
     /// </summary>
-    public bool IsDataType => CardType == CardCategories.Data;
+    public bool IsDataType => CardType == CardTypes.Data;
 
     /// <summary>
     /// IsSupportType はカードタイプが Support カテゴリに属するかを返します
     /// </summary>
-    public bool IsSupportType => CardType is CardCategories.Platform or CardCategories.Attachment
-                                          or CardCategories.Strategy or CardCategories.Reactive or CardCategories.Incident;
+    public bool IsSupportType => CardType is CardTypes.Platform or CardTypes.Attachment
+                                          or CardTypes.Strategy or CardTypes.Reactive or CardTypes.Incident;
 
     /// <summary>
     /// BaseThroughput はベーススループットを返します（非 Compute カードの場合は 0）

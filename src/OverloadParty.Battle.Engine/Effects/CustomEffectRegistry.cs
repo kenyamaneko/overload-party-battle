@@ -115,7 +115,7 @@ public class CustomEffectRegistry
         }
 
         var targetCard = octx.CardCache.MustGet(target.CardID);
-        if (!targetCard.IsComputeType && targetCard.CardType != CardTypes.AIML)
+        if (!targetCard.IsComputeType)
         {
             return;
         }
