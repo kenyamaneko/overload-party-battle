@@ -237,12 +237,15 @@ jobs:
           node-version: "22"
           registry-url: "https://npm.pkg.github.com"
           scope: "@kenyamaneko"
-      - name: Publish npm
+      - name: Install dependencies (from common)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
+        run: npm install
+      - name: Build & publish npm
         working-directory: packages/game-logic-constants-npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm install
           npm version ${{ needs.detect.outputs.game_logic_constants_npm_version }} --no-git-tag-version
           npm run build
           npm publish
@@ -271,12 +274,15 @@ jobs:
           node-version: "22"
           registry-url: "https://npm.pkg.github.com"
           scope: "@kenyamaneko"
-      - name: Publish npm
+      - name: Install dependencies (from common)
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
+        run: npm install
+      - name: Build & publish npm
         working-directory: packages/game-state-npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          npm install
           npm version ${{ needs.detect.outputs.game_state_npm_version }} --no-git-tag-version
           npm run build
           npm publish

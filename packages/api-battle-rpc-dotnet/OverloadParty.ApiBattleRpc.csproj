@@ -6,6 +6,6 @@
     <PackageId>OverloadParty.ApiBattleRpc</PackageId>
     <Version>0.0.0</Version>
     <Description>Overload Party gateway-battle internal RPC contract (NpcBattleRequest / PvpBattleRequest / GameActionRequest / ActionResult / ActionEvent / BattleDeckCard / GameCreatedResult). Auto-generated from data/models.yaml.</Description>
-    <RepositoryUrl>https://github.com/kenyamaneko/overload-party-common</RepositoryUrl>
+    <RepositoryUrl>https://github.com/kenyamaneko/overload-party-battle</RepositoryUrl>
   </PropertyGroup>
 </Project>
