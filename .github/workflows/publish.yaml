@@ -278,6 +278,8 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
         run: npm install
+      - name: Build Layer 1 (game-state-npm が型定義を参照するため)
+        run: npm run build -w @kenyamaneko/overload-party-game-logic-constants
       - name: Build & publish npm
         working-directory: packages/game-state-npm
         env:
