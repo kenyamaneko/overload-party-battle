@@ -223,48 +223,15 @@ jobs:
           git push origin "packages/api-battle-rpc-dotnet/v${{ needs.detect.outputs.api_battle_rpc_dotnet_version }}"
 
   # ──────────────────────────────────────────────
-  # 5. Publish npm Layer 1 (independent: game-logic-constants-npm)
+  # 5. Publish npm packages (Layer 1 → Layer 2 を単一 job で実行)
   # ──────────────────────────────────────────────
-  publish-game-logic-constants-npm:
-    name: Publish game-logic-constants-npm
+  # workspaces 構成のため、Layer 2 のビルドには Layer 1 の dist が必要。
+  # job を分けると dist が共有されず workaround が必要になるため 1 job に統合。
+  publish-npm:
+    name: Publish npm packages
     needs: [detect, build]
-    if: needs.detect.outputs.game_logic_constants_npm == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@kenyamaneko"
-      - name: Install dependencies (from common)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
-        run: npm install
-      - name: Build & publish npm
-        working-directory: packages/game-logic-constants-npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          npm version ${{ needs.detect.outputs.game_logic_constants_npm_version }} --no-git-tag-version
-          npm run build
-          npm publish
-      - name: Tag
-        run: |
-          git tag "packages/game-logic-constants-npm/v${{ needs.detect.outputs.game_logic_constants_npm_version }}"
-          git push origin "packages/game-logic-constants-npm/v${{ needs.detect.outputs.game_logic_constants_npm_version }}"
-
-  # ──────────────────────────────────────────────
-  # 6. Publish npm Layer 2 (game-state-npm — depends on Layer 1 + common)
-  # ──────────────────────────────────────────────
-  publish-game-state-npm:
-    name: Publish game-state-npm
-    needs:
-      - detect
-      - build
-      - publish-game-logic-constants-npm
     if: |
-      !failure() && !cancelled() &&
+      needs.detect.outputs.game_logic_constants_npm == 'true' ||
       needs.detect.outputs.game_state_npm == 'true'
     runs-on: ubuntu-latest
     steps:
@@ -274,13 +241,33 @@ jobs:
           node-version: "22"
           registry-url: "https://npm.pkg.github.com"
           scope: "@kenyamaneko"
+
       - name: Install dependencies (from common)
         env:
           NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
         run: npm install
-      - name: Build Layer 1 (game-state-npm が型定義を参照するため)
+
+      - name: Publish Layer 1 (game-logic-constants-npm)
+        if: needs.detect.outputs.game_logic_constants_npm == 'true'
+        working-directory: packages/game-logic-constants-npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm version ${{ needs.detect.outputs.game_logic_constants_npm_version }} --no-git-tag-version
+          npm run build
+          npm publish
+      - name: Tag Layer 1
+        if: needs.detect.outputs.game_logic_constants_npm == 'true'
+        run: |
+          git tag "packages/game-logic-constants-npm/v${{ needs.detect.outputs.game_logic_constants_npm_version }}"
+          git push origin "packages/game-logic-constants-npm/v${{ needs.detect.outputs.game_logic_constants_npm_version }}"
+
+      - name: Build Layer 1 if not published (Layer 2 が型定義を参照するため)
+        if: needs.detect.outputs.game_logic_constants_npm != 'true' && needs.detect.outputs.game_state_npm == 'true'
         run: npm run build -w @kenyamaneko/overload-party-game-logic-constants
-      - name: Build & publish npm
+
+      - name: Publish Layer 2 (game-state-npm)
+        if: needs.detect.outputs.game_state_npm == 'true'
         working-directory: packages/game-state-npm
         env:
           NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -288,7 +275,8 @@ jobs:
           npm version ${{ needs.detect.outputs.game_state_npm_version }} --no-git-tag-version
           npm run build
           npm publish
-      - name: Tag
+      - name: Tag Layer 2
+        if: needs.detect.outputs.game_state_npm == 'true'
         run: |
           git tag "packages/game-state-npm/v${{ needs.detect.outputs.game_state_npm_version }}"
           git push origin "packages/game-state-npm/v${{ needs.detect.outputs.game_state_npm_version }}"
