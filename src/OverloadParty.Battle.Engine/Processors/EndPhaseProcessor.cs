@@ -150,10 +150,7 @@ public static class EndPhaseProcessor
 
             totalYield += StatCalculator.CalculateEffectiveInsight(res, field, cc);
 
-            if (card.Elastic && card.ElasticIncrement > 0)
-            {
-                res.ElasticBonus += card.ElasticIncrement;
-            }
+            StatCalculator.ApplyElasticBonus(res, card);
         }
 
         state.SetInsightPool(playerNum, state.GetInsightPool(playerNum) + totalYield);

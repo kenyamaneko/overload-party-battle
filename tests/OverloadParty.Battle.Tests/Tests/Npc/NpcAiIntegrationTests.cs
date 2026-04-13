@@ -1,3 +1,4 @@
+using System.Reflection;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
@@ -22,9 +23,29 @@ public class NpcAiIntegrationTests
         _effects = effects;
         _cc = cc;
 
-        var dir = FindNpcDataDir()
-            ?? throw new FileNotFoundException("NPC data directory not found");
-        _configs = AiConfigLoader.LoadAll(dir);
+        _configs = LoadEmbeddedConfigs();
+    }
+
+    /// <summary>
+    /// NPC YAML はテストアセンブリに埋め込み済み (csproj の &lt;EmbeddedResource&gt;)。
+    /// 物理パスに依存せず CI/ローカル/IDE どこでも同じ挙動にする。
+    /// </summary>
+    private static Dictionary<string, AiConfig> LoadEmbeddedConfigs()
+    {
+        var asm = Assembly.GetExecutingAssembly();
+        var prefix = "NpcAi.";
+        var configs = new Dictionary<string, AiConfig>();
+        foreach (var resourceName in asm.GetManifestResourceNames()
+            .Where(n => n.StartsWith(prefix, StringComparison.Ordinal) && n.EndsWith(".yaml", StringComparison.Ordinal)))
+        {
+            using var stream = asm.GetManifestResourceStream(resourceName)
+                ?? throw new InvalidOperationException($"embedded resource missing: {resourceName}");
+            using var reader = new StreamReader(stream);
+            var yaml = reader.ReadToEnd();
+            var config = AiConfigLoader.LoadFromString(yaml);
+            configs[config.Model] = config;
+        }
+        return configs;
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -438,18 +459,4 @@ public class NpcAiIntegrationTests
             state, myField, oppField, hand, budget, insightPool, _cc, _effects);
     }
 
-    private static string? FindNpcDataDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            var candidate = Path.Combine(dir.FullName, "src", "OverloadParty.Battle.Npc", "Data");
-            if (Directory.Exists(candidate))
-            {
-                return candidate;
-            }
-            dir = dir.Parent;
-        }
-        return null;
-    }
 }

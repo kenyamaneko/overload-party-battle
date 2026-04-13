@@ -26,15 +26,20 @@ draw → yield → main → battle → end → (ActivePlayer切替) → draw ...
 
 **エンドフェーズの詳細手順:**
 
-| 手順 | 処理 | 備考 |
+実装は `EndPhaseProcessor.ProcessEndPhaseLogic` (src/OverloadParty.Battle.Engine/Processors/EndPhaseProcessor.cs) 参照。
+
+| 手順 | 処理 | 実装関数 / 備考 |
 |------|------|------|
-| 1 | 一時効果の終了 | `duration: "this_turn"` の `temporaryEffects` を除去 |
-| 2 | Elastic 値のリセット | Elastic カードのスループット / Yield を base 値に戻す |
-| 3 | Insight生成 | バックエンドの各DB系・ストレージ系リソースが Insight を生成し、Insightプールに加算 |
-| 4 | 手札上限チェック | 手札が **6枚** を超過している場合、サーバーが `discard_prompt` を送信 |
-| 5 | プレイヤーが破棄カードを選択 | クライアントが `discard_hand` で破棄するカードを送信（15秒タイムアウト） |
-| 6 | タイムアウト時の自動処理 | 手札の末尾から自動的に破棄（古い順） |
-| 7 | ターン切り替え | `active_player` を反転し、次のプレイヤーの `draw` フェーズへ |
+| 1 | Passive / OnEndPhase 効果の発火 | `FirePassiveEffects` — フィールドのカードを `DeployOrder` 昇順で走査し、`TriggerType.Passive` / `OnEndPhase` ハンドラを実行 |
+| 2 | 維持費徴収 | `CollectMaintenanceCost` — 全表向きリソースの維持費を合算し budget から減算（Elastic カードは `BaseThroughput/Yield * RankMultiplier + ElasticBonus` を超過した分のみ従量課金） |
+| 3 | Insight 生成 & Elastic ボーナス累積 | `GenerateInsight` — バックエンドの Data 系リソースが `StatCalculator.CalculateEffectiveInsight` で yield を計算し Insight プールに加算。続けて `StatCalculator.ApplyElasticBonus` で `ElasticBonus` を `elasticIncrement` ぶん**累積**（リセットではない。逓減は `EffectiveElasticBonus` が対数スケールで処理） |
+| 4 | 一時効果の終了 | `ExpireTemporaryEffects` — `duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
+| 5 | ターン単位フラグのリセット | `ResetPerTurnFlags` — `HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |
+| 6 | 手札上限チェック | 手札が **6枚** を超過している場合、サーバーが `discard_prompt` を送信（後続 7–8 は破棄完了後に実行）|
+| 7 | プレイヤーが破棄カードを選択 | クライアントが `discard_hand` で破棄するカードを送信（15秒タイムアウト）。タイムアウト時は手札の末尾から自動的に破棄（古い順）|
+| 8 | ターン切り替え | `WinConditionChecker.CheckLaunchFailure` → 問題なければ `TurnManager.SwitchActivePlayer` → 次プレイヤーの `DrawPhaseProcessor.Process` を起動 |
+
+> Note: 旧バージョンのドキュメントには「Elastic 値のリセット」手順が存在したが、実装上 `ElasticBonus` は毎ターン累積する設計（逓減は `StatCalculator.EffectiveElasticBonus` の対数スケーリングで表現）のため、リセットステップは存在しない。
 
 ### 1.2 チェーン解決
 

@@ -31,4 +31,11 @@
     <ProjectReference Include="..\..\src\OverloadParty.Battle.Service\OverloadParty.Battle.Service.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- NPC AI YAML configs: embedded so integration tests run without disk-path discovery -->
+    <EmbeddedResource Include="..\..\src\OverloadParty.Battle.Npc\Data\*.yaml">
+      <LogicalName>NpcAi.%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

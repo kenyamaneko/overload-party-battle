@@ -318,9 +318,7 @@ public class GameService
     private bool ShouldRedactPlayCard(GameEvent evt, long viewerPlayerNum, string cardId)
     {
         if (evt.PlayerNum == viewerPlayerNum) { return false; }
-        if (string.IsNullOrEmpty(cardId)) { return false; }
-        var cardDef = _cardCache.Get(cardId);
-        if (cardDef is null) { return false; }
+        var cardDef = _cardCache.MustGet(cardId);
         return cardDef.CardType == CardTypes.Reactive || cardDef.DeployTurns > 0;
     }
 }

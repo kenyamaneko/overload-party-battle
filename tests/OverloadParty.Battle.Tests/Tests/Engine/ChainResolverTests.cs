@@ -78,8 +78,8 @@ public class ChainResolverTests
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "reactive" });
 
-        // Mark the reactive as resolved
-        state.ChainStack[1].Resolved = true;
+        // Mark the reactive as resolved via public API
+        ChainResolver.MarkResolved(state, chainLevel: 2);
 
         // Should not throw — previous reactive is already resolved
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "activate" });
@@ -148,9 +148,21 @@ public class ChainResolverTests
     {
         var state = TestFactory.MakeGameState();
         ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
-        state.ChainStack[0].Resolved = true;
+        ChainResolver.MarkResolved(state, chainLevel: 1);
 
         ChainResolver.IsChainActive(state).Should().BeFalse();
     }
 
+    // ─── MarkResolved ─────────────────────────────────────────
+
+    [Fact]
+    public void MarkResolved_UnknownChainLevel_Throws()
+    {
+        var state = TestFactory.MakeGameState();
+        ChainResolver.PushToChain(state, new ChainEntry { ActionType = "attack" });
+
+        var act = () => ChainResolver.MarkResolved(state, chainLevel: 99);
+
+        act.Should().Throw<GameRuleException>().WithMessage("*chain level 99*");
+    }
 }

@@ -10,10 +10,10 @@ namespace OverloadParty.Battle.Engine.Effects;
 /// </summary>
 public static class EffectYamlLoader
 {
-    // "data" category expands to these card types
-    private static readonly List<string> DataCardTypes = [CardTypes.Database, CardTypes.CacheDB, CardTypes.ObjectStorage];
+    private const string CardTypeCategoryData = "data";
+    private const string CardTypeCategoryCompute = "compute";
 
-    // "compute" category expands to these card types
+    private static readonly List<string> DataCardTypes = [CardTypes.Database, CardTypes.CacheDB, CardTypes.ObjectStorage];
     private static readonly List<string> ComputeCardTypes = [CardTypes.Compute, CardTypes.Container, CardTypes.Orchestrator, CardTypes.Serverless, CardTypes.AIML];
 
     /// <summary>
@@ -163,7 +163,12 @@ public static class EffectYamlLoader
         // UseEffectProcessor already enforces once-per-turn for activate triggers
         if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Activate)
         {
-            bool perGame = def.UseLimit == "once_per_game";
+            bool perGame = def.UseLimit switch
+            {
+                UseLimits.OncePerGame => true,
+                UseLimits.OncePerTurn => false,
+                _ => throw new InvalidOperationException($"Unknown use_limit: {def.UseLimit}"),
+            };
             ops.Insert(0, new CheckUseLimitOp(perGame));
             ops.Add(new MarkUseLimitOp(perGame));
         }
@@ -227,62 +232,62 @@ public static class EffectYamlLoader
 
         return opName switch
         {
-            "gain_budget" => new GainBudgetOp(
+            EffectOps.GainBudget => new GainBudgetOp(
                 ParsePlayerRef(p.GetProperty("target").GetString()!),
                 BuildAmount(p.GetProperty("amount"))),
 
-            "lose_budget" => new LoseBudgetOp(
+            EffectOps.LoseBudget => new LoseBudgetOp(
                 ParsePlayerRef(p.GetProperty("target").GetString()!),
                 BuildAmount(p.GetProperty("amount"))),
 
-            "deal_damage" => BuildDealDamage(p),
+            EffectOps.DealDamage => BuildDealDamage(p),
 
-            "heal_damage" => new HealDamageOp(
+            EffectOps.HealDamage => new HealDamageOp(
                 BuildSelector(p.GetProperty("selector")),
                 BuildAmount(p.GetProperty("amount"))),
 
-            "destroy_check" => new DestroyCheckOp(
+            EffectOps.DestroyCheck => new DestroyCheckOp(
                 ParsePlayerRef(p.GetProperty("target").GetString()!)),
 
-            "survive_destruction" => new SurviveDestructionOp(
+            EffectOps.SurviveDestruction => new SurviveDestructionOp(
                 p.GetProperty("av").GetInt64()),
 
-            "apply_buff" => BuildApplyBuff(p),
+            EffectOps.ApplyBuff => BuildApplyBuff(p),
 
-            "draw" => new DrawCardsOp(
+            EffectOps.Draw => new DrawCardsOp(
                 p.GetProperty("count").GetInt32()),
 
-            "search_repo" => BuildSearchRepo(p),
+            EffectOps.SearchRepo => BuildSearchRepo(p),
 
-            "add_to_hand" => AddToHandOp.Instance,
+            EffectOps.AddToHand => AddToHandOp.Instance,
 
-            "trash_to_hand" => BuildTrashToHand(p),
+            EffectOps.TrashToHand => BuildTrashToHand(p),
 
-            "deploy_from_hand" => BuildRequestSlotFromHand(p),
+            EffectOps.DeployFromHand => BuildRequestSlotFromHand(p),
 
-            "deploy_from_repo" => BuildRequestSlotFromRepo(p),
+            EffectOps.DeployFromRepo => BuildRequestSlotFromRepo(p),
 
-            "deploy_from_repo_same_card" => new RequestSlotFromRepoSameCardOp(
+            EffectOps.DeployFromRepoSameCard => new RequestSlotFromRepoSameCardOp(
                 p.TryGetProperty("override_av", out var oav) ? oav.GetInt64() : 0),
 
-            "destroy_platform" => new DestroyPlatformOp(),
+            EffectOps.DestroyPlatform => new DestroyPlatformOp(),
 
-            "scale_to_rank" => new ScaleToRankOp(
+            EffectOps.ScaleToRank => new ScaleToRankOp(
                 p.GetProperty("rank").GetString()!),
 
-            "cancel_action" => SetCancelActionOp.Instance,
+            EffectOps.CancelAction => SetCancelActionOp.Instance,
 
-            "reveal_reactive" => new RevealReactiveOp(),
+            EffectOps.RevealReactive => new RevealReactiveOp(),
 
-            "peek_reactive" => new PeekReactiveOp(),
+            EffectOps.PeekReactive => new PeekReactiveOp(),
 
-            "reduce_deploy_turns" => new ReduceDeployTurnsOp(
+            EffectOps.ReduceDeployTurns => new ReduceDeployTurnsOp(
                 BuildAmount(p.GetProperty("amount"))),
 
-            "absorb_insight" => new AbsorbInsightOp(
+            EffectOps.AbsorbInsight => new AbsorbInsightOp(
                 BuildAmount(p.GetProperty("amount"))),
 
-            "gain_insight" => new GainInsightOp(
+            EffectOps.GainInsight => new GainInsightOp(
                 BuildAmount(p.GetProperty("amount"))),
 
             _ => throw new InvalidOperationException($"Unknown op: {opName}"),
@@ -308,7 +313,7 @@ public static class EffectYamlLoader
         var selector = BuildSelector(p.GetProperty("selector"));
         string buff = MapBuffName(p.GetProperty("buff").GetString()!);
         var amount = BuildAmount(p.GetProperty("amount"));
-        string duration = p.TryGetProperty("duration", out var durEl) ? durEl.GetString()! : "permanent";
+        string duration = p.TryGetProperty("duration", out var durEl) ? durEl.GetString()! : EffectDurations.Permanent;
         string? sourceId = p.TryGetProperty("source_id", out var sid) ? sid.GetString() : null;
         string mode = p.TryGetProperty("mode", out var modeEl) ? modeEl.GetString()! : "";
 
@@ -360,10 +365,10 @@ public static class EffectYamlLoader
     {
         if (el.ValueKind == JsonValueKind.Object)
         {
-            string? pick = el.TryGetProperty("pick", out var pk) ? pk.GetString() : "all";
-            if (pick == "choice")
+            string? pick = el.TryGetProperty("pick", out var pk) ? pk.GetString() : SelectorPickModes.All;
+            if (pick == SelectorPickModes.Choice)
             {
-                string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : "self";
+                string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
                 string? zone = el.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
                 string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
                 var cardTypes = ParseCardTypes(el);
@@ -373,7 +378,7 @@ public static class EffectYamlLoader
                     Zone = zone,
                     Faction = faction,
                     CardType = cardTypes is { Count: 1 } ? cardTypes[0] : null,
-                    Owner = owner ?? "self",
+                    Owner = owner ?? PlayerRefs.Self,
                 };
             }
         }
@@ -393,7 +398,7 @@ public static class EffectYamlLoader
             };
         }
 
-        string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : "self";
+        string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
         string? zone = el.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
         string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
         bool excludeSource = el.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
@@ -401,9 +406,9 @@ public static class EffectYamlLoader
 
         ISelector selector = owner switch
         {
-            "self" => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
-            "opponent" => new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
-            "both" => new UnionSelector(
+            PlayerRefs.Self => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
+            PlayerRefs.Opponent => new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
+            PlayerRefs.Both => new UnionSelector(
                 new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
                 new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes }),
             _ => throw new InvalidOperationException($"Unknown selector owner: {owner}"),
@@ -549,13 +554,12 @@ public static class EffectYamlLoader
             bool hasCardType = selectorEl.TryGetProperty("card_type", out _);
             bool hasCardId = selectorEl.TryGetProperty("card_id", out _);
 
-            if (owner == "self" && faction is not null && !hasZone && !hasCardType && !hasCardId)
+            if (owner == PlayerRefs.Self && faction is not null && !hasZone && !hasCardType && !hasCardId)
             {
                 return new RequireFactionCountOp(faction, min);
             }
         }
 
-        // General-purpose count guard
         return BuildResourceCountGuard(selectorEl, min, max, negate);
     }
 
@@ -569,7 +573,7 @@ public static class EffectYamlLoader
 
         if (selectorEl.ValueKind == JsonValueKind.Object)
         {
-            owner = selectorEl.TryGetProperty("owner", out var ow) ? ow.GetString() : "self";
+            owner = selectorEl.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
             zone = selectorEl.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
             faction = selectorEl.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
             cardTypes = ParseCardTypes(selectorEl);
@@ -577,7 +581,7 @@ public static class EffectYamlLoader
         }
 
         return new ResourceCountGuardOp(
-            owner ?? "self", zone, faction, cardTypes, cardIds, min, max, negate);
+            owner ?? PlayerRefs.Self, zone, faction, cardTypes, cardIds, min, max, negate);
     }
 
     private static IEffectOp BuildMatchGuard(JsonElement el, bool negate)
@@ -614,33 +618,44 @@ public static class EffectYamlLoader
 
     private static TriggerType ParseTrigger(string trigger) => trigger switch
     {
-        "deploy" => TriggerType.Deploy,
-        "activate" => TriggerType.Activate,
-        "passive" => TriggerType.OnEndPhase, // 後方互換: passive → OnEndPhase
-        "on_end_phase" => TriggerType.OnEndPhase,
-        "on_field_change" => TriggerType.OnFieldChange,
-        "on_scale_up" => TriggerType.OnScaleUp,
-        "on_attack" => TriggerType.OnAttack,
-        "on_hit" => TriggerType.OnHit,
-        "on_destroy" => TriggerType.OnDestroy,
-        "reactive" => TriggerType.Reactive,
-        "on_enemy_deploy" => TriggerType.OnEnemyDeploy,
+        TriggerTypes.Deploy => TriggerType.Deploy,
+        TriggerTypes.Activate => TriggerType.Activate,
+        TriggerTypes.Passive => TriggerType.OnEndPhase, // 後方互換: passive → OnEndPhase
+        TriggerTypes.OnEndPhase => TriggerType.OnEndPhase,
+        TriggerTypes.OnFieldChange => TriggerType.OnFieldChange,
+        TriggerTypes.OnScaleUp => TriggerType.OnScaleUp,
+        TriggerTypes.OnAttack => TriggerType.OnAttack,
+        TriggerTypes.OnHit => TriggerType.OnHit,
+        TriggerTypes.OnDestroy => TriggerType.OnDestroy,
+        TriggerTypes.Reactive => TriggerType.Reactive,
+        TriggerTypes.OnEnemyDeploy => TriggerType.OnEnemyDeploy,
         _ => throw new InvalidOperationException($"Unknown trigger: {trigger}"),
     };
 
     private static PlayerRef ParsePlayerRef(string s) => s switch
     {
-        "self" => PlayerRef.Self,
-        "opponent" => PlayerRef.Opponent,
-        "both" => PlayerRef.Both,
+        PlayerRefs.Self => PlayerRef.Self,
+        PlayerRefs.Opponent => PlayerRef.Opponent,
+        PlayerRefs.Both => PlayerRef.Both,
         _ => throw new InvalidOperationException($"Unknown player ref: {s}"),
     };
 
+    private static readonly HashSet<string> KnownBuffTypes =
+    [
+        BuffTypes.Tp, BuffTypes.Yield, BuffTypes.Av,
+        BuffTypes.CannotAttack, BuffTypes.IncidentImmune, BuffTypes.IncidentBlock,
+        BuffTypes.IncidentReduction, BuffTypes.Ransomware, BuffTypes.ReservedInstance,
+        BuffTypes.ScaleCostReduction, BuffTypes.DeployDiscount, BuffTypes.MaintenanceReduction,
+        BuffTypes.PendingRevival, BuffTypes.AttackDamageReduction, BuffTypes.CountMultiplier,
+        BuffTypes.SlaPenalty, BuffTypes.SlaPenaltyReduction, BuffTypes.TpSuppressed,
+    ];
+
     private static string MapBuffName(string yamlBuff) => yamlBuff switch
     {
-        "tp" => EffectTypes.BuffTP,
-        "yield" => EffectTypes.BuffYield,
-        _ => yamlBuff,
+        BuffTypes.Tp => EffectTypes.BuffTP,
+        BuffTypes.Yield => EffectTypes.BuffYield,
+        _ when KnownBuffTypes.Contains(yamlBuff) => yamlBuff,
+        _ => throw new InvalidOperationException($"Unknown buff type: {yamlBuff}"),
     };
 
     /// <summary>
@@ -661,8 +676,8 @@ public static class EffectYamlLoader
             string val = ctEl.GetString()!;
             return val switch
             {
-                "data" => new List<string>(DataCardTypes),
-                "compute" => new List<string>(ComputeCardTypes),
+                CardTypeCategoryData => new List<string>(DataCardTypes),
+                CardTypeCategoryCompute => new List<string>(ComputeCardTypes),
                 _ => [val],
             };
         }
@@ -697,23 +712,23 @@ public static class EffectYamlLoader
 
     private static EffectCategory ParseEffectCategory(string s) => s switch
     {
-        "budget_gain" => EffectCategory.BudgetGain,
-        "budget_penalty" => EffectCategory.BudgetPenalty,
-        "insight_absorb" => EffectCategory.InsightAbsorb,
-        "insight_gain" => EffectCategory.InsightGain,
-        "single_damage" => EffectCategory.SingleDamage,
-        "aoe_damage" => EffectCategory.AoEDamage,
-        "buff" => EffectCategory.Buff,
-        "debuff" => EffectCategory.Debuff,
-        "heal" => EffectCategory.Heal,
-        "draw" => EffectCategory.Draw,
-        "search" => EffectCategory.Search,
-        "deploy_free" => EffectCategory.DeployFree,
-        "recover_card" => EffectCategory.RecoverCard,
-        "reveal_reactive" => EffectCategory.RevealReactive,
-        "destroy_platform" => EffectCategory.DestroyPlatform,
-        "cancel_action" => EffectCategory.CancelAction,
-        "survive" => EffectCategory.Survive,
+        EffectCategories.BudgetGain => EffectCategory.BudgetGain,
+        EffectCategories.BudgetPenalty => EffectCategory.BudgetPenalty,
+        EffectCategories.InsightAbsorb => EffectCategory.InsightAbsorb,
+        EffectCategories.InsightGain => EffectCategory.InsightGain,
+        EffectCategories.SingleDamage => EffectCategory.SingleDamage,
+        EffectCategories.AoeDamage => EffectCategory.AoEDamage,
+        EffectCategories.Buff => EffectCategory.Buff,
+        EffectCategories.Debuff => EffectCategory.Debuff,
+        EffectCategories.Heal => EffectCategory.Heal,
+        EffectCategories.Draw => EffectCategory.Draw,
+        EffectCategories.Search => EffectCategory.Search,
+        EffectCategories.DeployFree => EffectCategory.DeployFree,
+        EffectCategories.RecoverCard => EffectCategory.RecoverCard,
+        EffectCategories.RevealReactive => EffectCategory.RevealReactive,
+        EffectCategories.DestroyPlatform => EffectCategory.DestroyPlatform,
+        EffectCategories.CancelAction => EffectCategory.CancelAction,
+        EffectCategories.Survive => EffectCategory.Survive,
         "self_destruct" => EffectCategory.SelfDestruct,
         "cost_reduction" => EffectCategory.CostReduction,
         "defensive" => EffectCategory.Defensive,
@@ -723,10 +738,10 @@ public static class EffectYamlLoader
 
     private static EffectTargetType ParseEffectTargetType(string s) => s switch
     {
-        "none" => EffectTargetType.None,
-        "choice" => EffectTargetType.Choice,
-        "all_opp" => EffectTargetType.AllOpp,
-        "self" => EffectTargetType.Self,
+        EffectTargetTypes.None => EffectTargetType.None,
+        EffectTargetTypes.Choice => EffectTargetType.Choice,
+        EffectTargetTypes.AllOpp => EffectTargetType.AllOpp,
+        EffectTargetTypes.Self => EffectTargetType.Self,
         _ => throw new InvalidOperationException($"Unknown effect target type: {s}"),
     };
 }

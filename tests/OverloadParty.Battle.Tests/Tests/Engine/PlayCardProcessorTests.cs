@@ -46,10 +46,24 @@ public class PlayCardProcessorTests
             Index = 0,
         };
 
-    // ─── 1. Compute card to frontend ─────────────────────────
+    // RULEBOOK §3 / ARCHITECTURE §3: Compute カードは Frontend へデプロイ可能
+    // deployTurns > 0 の間は裏向きで待機 (§4)
 
     [Fact]
-    public void Process_ComputeCardToFrontend_PlacesResourceAndGeneratesEvent()
+    public void PlayCard_ComputeToFrontend_IsDeployed()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
+
+        PlayCardProcessor.Process(
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
+
+        state.Player1Hand.Should().BeEmpty();
+        state.Player1Field.Frontend[0]!.CardID.Should().Be("SH-0001");
+    }
+
+    [Fact]
+    public void PlayCard_ComputeToFrontend_EmitsPlayCardEvent()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
@@ -57,21 +71,25 @@ public class PlayCardProcessorTests
         var result = PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
 
-        state.Player1Hand.Should().BeEmpty();
-        state.Player1Field.Frontend[0].Should().NotBeNull();
-        state.Player1Field.Frontend[0]!.CardID.Should().Be("SH-0001");
-
         result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.PlayCard);
+    }
 
-        // deployTurns=1 → face-down
+    [Fact]
+    public void PlayCard_WithDeployTurns_IsFaceDownDuringDeploy()
+    {
+        // SH-0001 has deployTurns=1 → must wait 1 turn face-down
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
+
+        PlayCardProcessor.Process(
+            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
+
         state.Player1Field.Frontend[0]!.FaceUp.Should().BeFalse();
         state.Player1Field.Frontend[0]!.DeployingTurnsLeft.Should().Be(1);
     }
 
-    // ─── 2. Compute card to backend ──────────────────────────
-
     [Fact]
-    public void Process_ComputeCardToBackend_PlacesResourceInBackend()
+    public void PlayCard_ComputeToBackend_IsDeployed()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
@@ -79,15 +97,13 @@ public class PlayCardProcessorTests
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Backend, 0), _cc, null);
 
-        state.Player1Field.Backend[0].Should().NotBeNull();
         state.Player1Field.Backend[0]!.CardID.Should().Be("SH-0001");
     }
 
-    // ─── 3. Zero deploy turns → face-up ─────────────────────
-
     [Fact]
-    public void Process_ZeroDeployTurns_ResourceIsFaceUp()
+    public void PlayCard_ZeroDeployTurns_IsImmediatelyFaceUp()
     {
+        // Serverless (SH-0002) has deployTurns=0 → face-up immediately (RULEBOOK §4)
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0002" });
 
@@ -98,10 +114,9 @@ public class PlayCardProcessorTests
         state.Player1HasHadActiveResource.Should().BeTrue();
     }
 
-    // ─── 4. Card not in hand → throws ───────────────────────
-
+    // RULEBOOK §3 / ARCHITECTURE §3: 手札に無いカードはプレイ不可
     [Fact]
-    public void Process_CardNotInHand_Throws()
+    public void PlayCard_CardNotInHand_IsRejected()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
 
@@ -111,10 +126,9 @@ public class PlayCardProcessorTests
         act.Should().Throw<GameRuleException>();
     }
 
-    // ─── 5. Occupied slot → throws ──────────────────────────
-
+    // RULEBOOK §3: 既に埋まっているリソーススロットへは配置不可
     [Fact]
-    public void Process_OccupiedSlot_Throws()
+    public void PlayCard_IntoOccupiedResourceSlot_IsRejected()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource();
@@ -126,10 +140,9 @@ public class PlayCardProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*occupied*");
     }
 
-    // ─── 6. Database to frontend → throws ───────────────────
-
+    // RULEBOOK §3: Data カード (Database) は Frontend へ配置不可
     [Fact]
-    public void Process_DatabaseToFrontend_Throws()
+    public void PlayCard_DatabaseToFrontend_IsRejected()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "NT-0009" });
@@ -140,10 +153,9 @@ public class PlayCardProcessorTests
         act.Should().Throw<GameRuleException>();
     }
 
-    // ─── 7. Compute to support → throws ─────────────────────
-
+    // RULEBOOK §3: Compute カードは Support ゾーンへ配置不可
     [Fact]
-    public void Process_ComputeToSupportZone_Throws()
+    public void PlayCard_ComputeToSupport_IsRejected()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
@@ -154,12 +166,11 @@ public class PlayCardProcessorTests
         act.Should().Throw<GameRuleException>();
     }
 
-    // ─── 8. Invalid slot index → throws ─────────────────────
-
+    // Frontend/Backend は SlotsPerZone スロットのみ (0..SlotsPerZone-1)
     [Theory]
     [InlineData(-1)]
     [InlineData(3)]
-    public void Process_InvalidSlotIndex_Throws(int index)
+    public void PlayCard_OutOfRangeSlotIndex_IsRejected(int index)
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
@@ -202,10 +213,9 @@ public class PlayCardProcessorTests
         act.Should().Throw<GameRuleException>();
     }
 
-    // ─── 12. Incident card sets flag ────────────────────────
-
+    // RULEBOOK §3: Incident はターンに1回のみプレイ可 (フラグ管理)
     [Fact]
-    public void Process_IncidentCard_SetsIncidentPlayedFlag()
+    public void PlayCard_Incident_MarksIncidentPlayedThisTurn()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0500" });
@@ -228,10 +238,9 @@ public class PlayCardProcessorTests
         state.Player1Field.Support.ToList().Should().AllSatisfy(s => s.Should().BeNull());
     }
 
-    // ─── 13. Second incident same turn → throws ─────────────
-
+    // RULEBOOK §3: 同一ターン内の2枚目 Incident は拒否
     [Fact]
-    public void Process_SecondIncidentSameTurn_Throws()
+    public void PlayCard_SecondIncidentSameTurn_IsRejected()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0500" });
@@ -317,16 +326,4 @@ public class PlayCardProcessorTests
         state.Player1Trash.Should().Contain(c => c.InstanceID == "old_att");
     }
 
-    [Fact]
-    public void Process_ResourceOccupiedSlot_StillThrows()
-    {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource();
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
-
-        var act = () => PlayCardProcessor.Process(
-            state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*occupied*");
-    }
 }

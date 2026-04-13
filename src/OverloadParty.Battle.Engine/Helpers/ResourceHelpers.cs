@@ -117,14 +117,14 @@ public static class ResourceHelpers
     {
         var validZones = new List<string>();
 
-        if (FieldHelpers.IsFrontendEligible(cardType))
+        if (ZoneValidator.IsZoneEligible(cardType, Zones.Frontend))
         {
-            validZones.AddRange(field.Frontend.EmptySlotIndices().Select(i => $"frontend_{i}"));
+            validZones.AddRange(field.Frontend.EmptySlotIndices().Select(i => $"{Zones.Frontend}_{i}"));
         }
 
-        if (FieldHelpers.IsBackendEligible(cardType))
+        if (ZoneValidator.IsZoneEligible(cardType, Zones.Backend))
         {
-            validZones.AddRange(field.Backend.EmptySlotIndices().Select(i => $"backend_{i}"));
+            validZones.AddRange(field.Backend.EmptySlotIndices().Select(i => $"{Zones.Backend}_{i}"));
         }
 
         return validZones;

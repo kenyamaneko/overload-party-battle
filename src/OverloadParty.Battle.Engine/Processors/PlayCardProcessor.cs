@@ -254,7 +254,7 @@ public static class PlayCardProcessor
         {
             throw new GameRuleException("attachment must be placed in support zone");
         }
-        if (req.Index < 0 || req.Index >= field.Support.Capacity)
+        if (!ZoneValidator.IsValidSlotIndex(field, Zones.Support, req.Index))
         {
             throw new GameRuleException($"invalid support slot index {req.Index}");
         }
@@ -315,44 +315,21 @@ public static class PlayCardProcessor
 
     private static void ValidatePlayPosition(CardDefinition cardDef, Field field, PlayCardRequest req)
     {
-        if (req.Index < 0 || req.Index >= BattleConstants.SlotsPerZone)
+        if (req.Zone is not (Zones.Frontend or Zones.Backend or Zones.Support))
+        {
+            throw new GameRuleException($"unknown zone: {req.Zone}");
+        }
+        if (!ZoneValidator.IsValidSlotIndex(field, req.Zone, req.Index))
         {
             throw new GameRuleException($"invalid slot index {req.Index}");
         }
-
-        switch (req.Zone)
+        if (!ZoneValidator.IsZoneEligible(cardDef.CardType, req.Zone))
         {
-            case Zones.Frontend:
-                if (!FieldHelpers.IsFrontendEligible(cardDef.CardType))
-                {
-                    throw new GameRuleException($"{cardDef.CardType} cannot be placed in frontend");
-                }
-                if (field.Frontend[req.Index] is not null)
-                {
-                    throw new GameRuleException($"frontend slot {req.Index} is occupied");
-                }
-                break;
-
-            case Zones.Backend:
-                if (!FieldHelpers.IsBackendEligible(cardDef.CardType))
-                {
-                    throw new GameRuleException($"{cardDef.CardType} cannot be placed in backend");
-                }
-                if (field.Backend[req.Index] is not null)
-                {
-                    throw new GameRuleException($"backend slot {req.Index} is occupied");
-                }
-                break;
-
-            case Zones.Support:
-                if (!FieldHelpers.IsSupportType(cardDef.CardType))
-                {
-                    throw new GameRuleException($"{cardDef.CardType} cannot be placed in support");
-                }
-                break;
-
-            default:
-                throw new GameRuleException($"unknown zone: {req.Zone}");
+            throw new GameRuleException($"{cardDef.CardType} cannot be placed in {req.Zone}");
+        }
+        if (!ZoneValidator.IsSlotEmpty(field, req.Zone, req.Index))
+        {
+            throw new GameRuleException($"{req.Zone} slot {req.Index} is occupied");
         }
     }
 

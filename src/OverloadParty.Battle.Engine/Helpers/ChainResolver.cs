@@ -54,4 +54,18 @@ public static class ChainResolver
     {
         return state.ChainStack.Any(e => !e.Resolved);
     }
+
+    /// <summary>
+    /// Mark the chain entry at the given 1-indexed chain level as resolved.
+    /// Chain levels are assigned by <see cref="PushToChain"/> starting from 1 (LIFO, RULEBOOK §12).
+    /// </summary>
+    /// <exception cref="GameRuleException">
+    /// thrown when no entry with the given chain level exists on the stack.
+    /// </exception>
+    public static void MarkResolved(BattleGameState state, long chainLevel)
+    {
+        var entry = state.ChainStack.FirstOrDefault(e => e.ChainLevel == chainLevel)
+            ?? throw new GameRuleException($"chain level {chainLevel} not on stack");
+        entry.Resolved = true;
+    }
 }
