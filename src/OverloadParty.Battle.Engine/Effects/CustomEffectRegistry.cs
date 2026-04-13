@@ -95,7 +95,10 @@ public class CustomEffectRegistry
         {
             throw new GameRuleException("Card not found");
         }
-        if (choiceCard.CardType != targetCard.CardType)
+        // 旧 CardType レベル (個別 subtype) での同一性チェックを新スキーマで保つため、
+        // CardType (category) と Subtype 両方の一致を要求する。
+        // 例: Container → Container のみ可 (Orchestrator 等への置換は不可)。
+        if (choiceCard.CardType != targetCard.CardType || choiceCard.Subtype != targetCard.Subtype)
         {
             throw new GameRuleException("Must deploy same type as destroyed card");
         }
@@ -223,7 +226,7 @@ public class CustomEffectRegistry
             {
                 throw new GameRuleException($"Card must be {faction} faction");
             }
-            if (cardTypes is { Count: > 0 } && !cardTypes.Contains(card.CardType))
+            if (cardTypes is { Count: > 0 } && !EffectHelpers.MatchesAnyCardType(card, cardTypes))
             {
                 throw new GameRuleException($"Card type {card.CardType} not allowed");
             }

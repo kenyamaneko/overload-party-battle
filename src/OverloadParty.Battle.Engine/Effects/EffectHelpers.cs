@@ -40,25 +40,6 @@ public static class EffectHelpers
         return field.Backend.Count();
     }
 
-    /// <summary>
-    /// Checks whether a face-up resource of the given card type (and optionally faction) exists on the field.
-    /// </summary>
-    /// <param name="field">The field to scan.</param>
-    /// <param name="cardType">Card type to match.</param>
-    /// <param name="faction">Faction to match, or null/empty for any.</param>
-    /// <param name="cc">Card cache for definition lookups.</param>
-    /// <returns>True if a matching resource exists.</returns>
-    public static bool HasCardTypeOnField(Field field, string cardType, string? faction, ICardCache cc)
-    {
-        return FieldHelpers.AllFaceUpResources(field).Any(r =>
-        {
-            var card = cc.Get(r.CardID);
-            return card is not null
-                && card.CardType == cardType
-                && (faction is null or { Length: 0 } || card.Faction == faction);
-        });
-    }
-
     // --- Filter constructors ---
 
     /// <summary>

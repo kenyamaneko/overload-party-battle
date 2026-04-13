@@ -88,7 +88,7 @@ internal sealed class ImmediateActionStrategy
         }
 
         return config.ImmediateCards.HoldUntil.Any(hold =>
-            (hold.CardType == card.CardType?.ToLowerInvariant() || hold.CardType == card.CardType)
+            OverloadParty.Battle.Engine.Effects.EffectHelpers.MatchesCardType(card, hold.CardType)
             && !GuardChecker.Check(hold.Condition, ctx, _cc));
     }
 

@@ -165,11 +165,11 @@ public static class TargetSelector
 
         if (sel.CardType is not null)
         {
-            resources = resources.Where(r =>
-                (cc.Get(r.CardID)
+            resources = resources.Where(r => OverloadParty.Battle.Engine.Effects.EffectHelpers.MatchesCardType(
+                cc.Get(r.CardID)
                     ?? throw new InvalidOperationException(
-                        $"Card '{r.CardID}' not found in card cache"))
-                .CardType == sel.CardType);
+                        $"Card '{r.CardID}' not found in card cache"),
+                sel.CardType));
         }
 
         if (sel.CardId is not null)

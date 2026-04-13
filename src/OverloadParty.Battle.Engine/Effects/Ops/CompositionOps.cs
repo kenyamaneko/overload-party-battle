@@ -157,7 +157,7 @@ public class ResourceCountGuardOp(
     private bool MatchesCardTypes(string cardID, ICardCache cc)
     {
         if (cardTypes is not { Count: > 0 }) return true;
-        return cardTypes.Contains(cc.MustGet(cardID).CardType);
+        return EffectHelpers.MatchesAnyCardType(cc.MustGet(cardID), cardTypes);
     }
 
     private bool MatchesCardIds(string cardID)
