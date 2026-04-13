@@ -128,6 +128,26 @@ public class BackendScaledAmount(long baseVal, long perBackend, long maxBonus) :
 }
 
 /// <summary>
+/// Effect DSL の ref 文字列で who 側に出現する語彙。
+/// プレイヤー視点の self/opponent (PlayerRefs) とは別概念で、effect の発生元/対象を指す。
+/// </summary>
+public static class RefWho
+{
+    public const string Source = "source";
+    public const string Target = "target";
+}
+
+/// <summary>
+/// Effect DSL の ref 文字列で stat 側に出現する派生語彙。
+/// 基本 stat (tp/yield/av) は <see cref="StatTypes"/> を使用する。
+/// </summary>
+public static class RefStat
+{
+    public const string MaxAv = "max_av";
+    public const string MaxTp = "max_tp";
+}
+
+/// <summary>
 /// Resolves a stat reference with optional multiplier.
 /// Supports: source.yield, source.tp, target.tp, target.max_av, etc.
 /// </summary>
@@ -138,20 +158,20 @@ public class RefAmount(string who, string stat, double multiply = 1.0) : IAmount
     {
         long raw = (who, stat) switch
         {
-            ("source", "yield") => ctx.Source is not null
+            (RefWho.Source, StatTypes.Yield) => ctx.Source is not null
                 ? StatCalculator.CalculateEffectiveInsight(ctx.Source, ctx.MyField, ctx.CardCache) : 0,
-            ("source", "tp") => ctx.Source is not null
+            (RefWho.Source, StatTypes.Tp) => ctx.Source is not null
                 ? StatCalculator.CalculateEffectiveTP(ctx.Source, ctx.MyField, ctx.CardCache) : 0,
-            ("source", "max_av") => ctx.Source?.MaxAV ?? 0,
-            ("source", "av") => ctx.Source?.EffectiveAV ?? 0,
-            ("target", "tp") => ctx.Target is not null
+            (RefWho.Source, RefStat.MaxAv) => ctx.Source?.MaxAV ?? 0,
+            (RefWho.Source, StatTypes.Av) => ctx.Source?.EffectiveAV ?? 0,
+            (RefWho.Source, RefStat.MaxTp) => ctx.Source?.MaxTP ?? 0,
+            (RefWho.Target, StatTypes.Tp) => ctx.Target is not null
                 ? StatCalculator.CalculateEffectiveTP(ctx.Target, ctx.OpponentField, ctx.CardCache) : 0,
-            ("target", "max_av") => ctx.Target?.MaxAV ?? 0,
-            ("target", "av") => ctx.Target?.EffectiveAV ?? 0,
-            ("target", "yield") => ctx.Target is not null
+            (RefWho.Target, StatTypes.Yield) => ctx.Target is not null
                 ? StatCalculator.CalculateEffectiveInsight(ctx.Target, ctx.OpponentField, ctx.CardCache) : 0,
-            ("target", "max_tp") => ctx.Target?.MaxTP ?? 0,
-            ("source", "max_tp") => ctx.Source?.MaxTP ?? 0,
+            (RefWho.Target, RefStat.MaxAv) => ctx.Target?.MaxAV ?? 0,
+            (RefWho.Target, StatTypes.Av) => ctx.Target?.EffectiveAV ?? 0,
+            (RefWho.Target, RefStat.MaxTp) => ctx.Target?.MaxTP ?? 0,
             _ => throw new InvalidOperationException($"Unknown ref: {who}.{stat}"),
         };
 
