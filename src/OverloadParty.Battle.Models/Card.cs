@@ -10,6 +10,11 @@ public class CardDefinition
     public string ResourceLabel { get; set; } = "";
     public string Faction { get; set; } = "";
     public string CardType { get; set; } = "";
+
+    // Compute/Data カテゴリのサブタイプ (VM/Container/Database 等)。それ以外は null。
+    // Phase 2a で追加、現状 battle ロジックは参照しない。Phase 2b で IsComputeType 等の判定側を更新予定。
+    public string? Subtype { get; set; }
+
     public long DeployTurns { get; set; }
     public bool Resizable { get; set; }
     public bool Elastic { get; set; }
