@@ -3,7 +3,7 @@ namespace OverloadParty.Battle.Data.Firestore;
 /// <summary>
 /// Read-only access to the dynamic game_config values stored in Cloud Firestore.
 /// Values are operational tuning knobs (exp rewards, battle limits, etc.) that can
-/// be updated from the GCP console without a redeploy.
+/// be updated from the Google Cloud console without a redeploy.
 /// </summary>
 public interface IGameConfigRepository
 {
