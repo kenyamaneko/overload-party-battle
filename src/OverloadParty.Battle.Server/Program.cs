@@ -46,8 +46,8 @@ if (isLocalDev)
 else
 {
     var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? Environment.GetEnvironmentVariable("DATABASE_URL")
-        ?? throw new InvalidOperationException("DATABASE_URL or ConnectionStrings:DefaultConnection not set");
+        ?? Environment.GetEnvironmentVariable("DATABASE_CONN")
+        ?? throw new InvalidOperationException("DATABASE_CONN or ConnectionStrings:DefaultConnection not set");
     var dataSource = NpgsqlDataSource.Create(connStr);
     builder.Services.AddSingleton(dataSource);
     builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
