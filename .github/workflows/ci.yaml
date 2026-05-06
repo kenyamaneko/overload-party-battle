@@ -34,7 +34,7 @@ jobs:
           private-key: ${{ secrets.CROSS_REPO_DEPS_APP_PRIVATE_KEY }}
           owner: kenyamaneko
       - name: Authenticate NuGet (GitHub Packages)
-        run: dotnet nuget update source github --username x-access-token --password ${{ steps.app-token.outputs.token }} --store-password-in-clear-text
+        run: dotnet nuget update source github --username kenyamaneko --password ${{ steps.app-token.outputs.token }} --store-password-in-clear-text
       - run: dotnet format --verify-no-changes
 
   test:
@@ -75,7 +75,7 @@ jobs:
           done
           echo "Firestore emulator failed to start"; cat /tmp/firestore.log; exit 1
       - name: Authenticate NuGet (GitHub Packages)
-        run: dotnet nuget update source github --username x-access-token --password ${{ steps.app-token.outputs.token }} --store-password-in-clear-text
+        run: dotnet nuget update source github --username kenyamaneko --password ${{ steps.app-token.outputs.token }} --store-password-in-clear-text
       - name: Run tests
         run: dotnet test tests/OverloadParty.Battle.Tests
         env:
