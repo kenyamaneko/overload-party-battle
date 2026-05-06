@@ -26,17 +26,31 @@ jobs:
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
+      - name: Generate Cross-Repo Deps App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CROSS_REPO_DEPS_APP_ID }}
+          private-key: ${{ secrets.CROSS_REPO_DEPS_APP_PRIVATE_KEY }}
+          owner: kenyamaneko
       - name: Authenticate NuGet (GitHub Packages)
-        run: dotnet nuget update source github --username kenyamaneko --password ${{ secrets.COMMON_PKG_FETCH }} --store-password-in-clear-text
+        run: dotnet nuget update source github --username x-access-token --password ${{ steps.app-token.outputs.token }} --store-password-in-clear-text
       - run: dotnet format --verify-no-changes
 
   test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Generate Cross-Repo Deps App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CROSS_REPO_DEPS_APP_ID }}
+          private-key: ${{ secrets.CROSS_REPO_DEPS_APP_PRIVATE_KEY }}
+          owner: kenyamaneko
       - name: Fetch cards_gen.json from common repo
         run: |
-          curl -sSf -H "Authorization: token ${{ secrets.COMMON_CONTENT_FETCH }}" \
+          curl -sSf -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
             -H "Accept: application/vnd.github.raw+json" \
             "https://api.github.com/repos/kenyamaneko/overload-party-common/contents/packages/game-state-dotnet/cache/cards_gen.json" \
             -o cards_gen.json
@@ -61,7 +75,7 @@ jobs:
           done
           echo "Firestore emulator failed to start"; cat /tmp/firestore.log; exit 1
       - name: Authenticate NuGet (GitHub Packages)
-        run: dotnet nuget update source github --username kenyamaneko --password ${{ secrets.COMMON_PKG_FETCH }} --store-password-in-clear-text
+        run: dotnet nuget update source github --username x-access-token --password ${{ steps.app-token.outputs.token }} --store-password-in-clear-text
       - name: Run tests
         run: dotnet test tests/OverloadParty.Battle.Tests
         env:
@@ -76,6 +90,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Generate Cross-Repo Deps App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CROSS_REPO_DEPS_APP_ID }}
+          private-key: ${{ secrets.CROSS_REPO_DEPS_APP_PRIVATE_KEY }}
+          owner: kenyamaneko
+
       - id: auth
         uses: google-github-actions/auth@v2
         with:
@@ -89,6 +111,6 @@ jobs:
       - name: Build and push
         run: |
           IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}
-          docker build --build-arg NUGET_TOKEN=${{ secrets.COMMON_PKG_FETCH }} -t ${IMAGE}:${{ github.sha }} -t ${IMAGE}:latest .
+          docker build --build-arg NUGET_TOKEN=${{ steps.app-token.outputs.token }} -t ${IMAGE}:${{ github.sha }} -t ${IMAGE}:latest .
           docker push ${IMAGE}:${{ github.sha }}
           docker push ${IMAGE}:latest
