@@ -84,14 +84,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate Cross-Repo Deps App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.CROSS_REPO_DEPS_APP_ID }}
-          private-key: ${{ secrets.CROSS_REPO_DEPS_APP_PRIVATE_KEY }}
-          owner: kenyamaneko
-
       - uses: actions/setup-go@v5
         with:
           go-version-file: packages/game-logic-constants-go/go.mod
@@ -132,7 +124,7 @@ jobs:
           npm run build -w @kenyamaneko/overload-party-game-logic-constants
           npm run build -w @kenyamaneko/overload-party-game-state
         env:
-          NODE_AUTH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
 
   # ──────────────────────────────────────────────
   # 3. Publish Go modules (tag only — go get resolves via git tag)
@@ -250,17 +242,9 @@ jobs:
           registry-url: "https://npm.pkg.github.com"
           scope: "@kenyamaneko"
 
-      - name: Generate Cross-Repo Deps App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.CROSS_REPO_DEPS_APP_ID }}
-          private-key: ${{ secrets.CROSS_REPO_DEPS_APP_PRIVATE_KEY }}
-          owner: kenyamaneko
-
       - name: Install dependencies (from common)
         env:
-          NODE_AUTH_TOKEN: ${{ steps.app-token.outputs.token }}
+          NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
         run: npm install
 
       - name: Publish Layer 1 (game-logic-constants-npm)
