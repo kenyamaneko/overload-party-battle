@@ -40,19 +40,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Generate Cross-Repo Deps App token
-        id: app-token
-        uses: actions/create-github-app-token@v1
-        with:
-          app-id: ${{ vars.CROSS_REPO_DEPS_APP_ID }}
-          private-key: ${{ secrets.CROSS_REPO_DEPS_APP_PRIVATE_KEY }}
-          owner: kenyamaneko
-      - name: Fetch cards_gen.json from common repo
-        run: |
-          curl -sSf -H "Authorization: token ${{ steps.app-token.outputs.token }}" \
-            -H "Accept: application/vnd.github.raw+json" \
-            "https://api.github.com/repos/kenyamaneko/overload-party-common/contents/packages/game-state-dotnet/cache/cards_gen.json" \
-            -o cards_gen.json
       - name: Set up .NET
         uses: actions/setup-dotnet@v4
         with:
@@ -76,7 +63,7 @@ jobs:
       - name: Run tests
         run: dotnet test OverloadParty.Battle.slnx
         env:
-          CARDS_JSON_PATH: ${{ github.workspace }}/cards_gen.json
+          CARDS_JSON_PATH: ${{ github.workspace }}/packages/game-state-dotnet/cache/cards_gen.json
           FIRESTORE_EMULATOR_HOST: localhost:9041
           FIRESTORE_PROJECT_ID: overload-party-test
 
