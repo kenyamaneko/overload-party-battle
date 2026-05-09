@@ -55,6 +55,14 @@ def build_view(spec: dict, package: str) -> dict:
             kept[name] = stripped
 
     view["components"]["schemas"] = kept
+
+    # NSwag は DTO-only 生成でも paths を解決するため、別 package の schema を
+    # 参照する path が view に残ると `Could not resolve the path '#/components/schemas/X'`
+    # で fail する。NSwag 出力には paths/operations は不要なので view から除去する。
+    view["paths"] = {}
+    if "components" in view:
+        view["components"].pop("parameters", None)
+
     return view
 
 
