@@ -10,4 +10,9 @@
   <Folder Name="/tests/">
     <Project Path="tests/OverloadParty.Battle.Tests/OverloadParty.Battle.Tests.csproj" />
   </Folder>
+  <Folder Name="/packages/">
+    <Project Path="packages/api-battle-rpc-dotnet/OverloadParty.ApiBattleRpc.csproj" />
+    <Project Path="packages/game-logic-constants-dotnet/OverloadParty.GameLogicConstants.csproj" />
+    <Project Path="packages/game-state-dotnet/OverloadParty.GameState.csproj" />
+  </Folder>
 </Solution>

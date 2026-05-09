@@ -5,7 +5,8 @@
     <Nullable>enable</Nullable>
     <PackageId>OverloadParty.ApiBattleRpc</PackageId>
     <Version>0.0.0</Version>
-    <Description>Overload Party gateway-battle internal RPC contract (NpcBattleRequest / PvpBattleRequest / GameActionRequest / ActionResult / ActionEvent / BattleDeckCard / GameCreatedResult). Auto-generated from data/models.yaml.</Description>
+    <Description>Overload Party gateway-battle internal RPC contract (NpcBattleRequest / PvpBattleRequest / GameActionRequest / ActionResult / ActionEvent / BattleDeckCard / GameCreatedResult). Auto-generated from data/openapi.yaml via NSwag. Distributed only as a sln-internal ProjectReference (no NuGet publish).</Description>
+    <IsPackable>false</IsPackable>
     <RepositoryUrl>https://github.com/kenyamaneko/overload-party-battle</RepositoryUrl>
   </PropertyGroup>
 </Project>

@@ -12,6 +12,8 @@ bin/
 obj/
 .coverage/
 TestResults/
+# Visual Studio auto-generates .sln from .slnx; the canonical solution file is .slnx.
+*.sln
 
 # Node
 node_modules/
@@ -23,3 +25,9 @@ package-lock.json
 CLAUDE.md
 
 # Symlinks (removed: docs was a symlink to common/docs, now a real directory)
+
+# Codegen scratch
+.codegen-views/
+
+# macOS
+.DS_Store

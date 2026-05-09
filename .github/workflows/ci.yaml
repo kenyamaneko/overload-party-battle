@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: read
-  packages: read
   id-token: write
 
 env:
@@ -22,18 +21,25 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - name: Authenticate NuGet (GitHub Packages)
-        run: dotnet nuget update source github --username kenyamaneko --password ${{ secrets.COMMON_PKG_FETCH }} --store-password-in-clear-text
-      - run: dotnet format --verify-no-changes
+      - name: Configure Cloudsmith auth (NuGet)
+        uses: kenyamaneko/overload-party-common/.github/actions/setup-cloudsmith-auth@main
+        with:
+          role: reader
+          formats: "nuget"
+      - name: Verify dotnet format
+        run: dotnet format --verify-no-changes OverloadParty.Battle.slnx
 
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Generate Cross-Repo Deps App token
         id: app-token
         uses: actions/create-github-app-token@v1
@@ -47,55 +53,102 @@ jobs:
             -H "Accept: application/vnd.github.raw+json" \
             "https://api.github.com/repos/kenyamaneko/overload-party-common/contents/packages/game-state-dotnet/cache/cards_gen.json" \
             -o cards_gen.json
-      - uses: actions/setup-dotnet@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
       - name: Set up Java (Firestore emulator runtime)
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
       - name: Set up gcloud (Firestore emulator)
         uses: google-github-actions/setup-gcloud@v2
       - name: Install Firestore emulator component
         run: gcloud components install cloud-firestore-emulator beta --quiet
       - name: Start Firestore emulator
-        run: |
-          gcloud emulators firestore start --host-port=localhost:9041 >/tmp/firestore.log 2>&1 &
-          for i in {1..30}; do
-            if curl -sf http://localhost:9041 >/dev/null; then exit 0; fi
-            sleep 1
-          done
-          echo "Firestore emulator failed to start"; cat /tmp/firestore.log; exit 1
-      - name: Authenticate NuGet (GitHub Packages)
-        run: dotnet nuget update source github --username kenyamaneko --password ${{ secrets.COMMON_PKG_FETCH }} --store-password-in-clear-text
+        run: bash .github/scripts/ci/start-firestore-emulator.sh
+      - name: Configure Cloudsmith auth (NuGet)
+        uses: kenyamaneko/overload-party-common/.github/actions/setup-cloudsmith-auth@main
+        with:
+          role: reader
+          formats: "nuget"
       - name: Run tests
-        run: dotnet test tests/OverloadParty.Battle.Tests
+        run: dotnet test OverloadParty.Battle.slnx
         env:
           CARDS_JSON_PATH: ${{ github.workspace }}/cards_gen.json
           FIRESTORE_EMULATOR_HOST: localhost:9041
           FIRESTORE_PROJECT_ID: overload-party-test
 
+  codegen-sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: packages/api-battle-rpc-go/go.mod
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Set up .NET (NSwag)
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Install NSwag CLI
+        run: dotnet tool install -g NSwag.ConsoleCore
+      - name: Install oapi-codegen
+        run: go install github.com/oapi-codegen/oapi-codegen/v2/cmd/oapi-codegen@v2.7.0
+      - name: Install Python deps
+        run: pip install pyyaml
+      - name: Run codegen
+        run: bash scripts/generate_types.sh
+      - name: Verify no drift
+        run: bash .github/scripts/ci/check-codegen-drift.sh
+
+  spec-diff:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: packages/api-battle-rpc-go/go.mod
+      - name: Install oasdiff
+        run: go install github.com/oasdiff/oasdiff@latest
+      - name: Fetch base ref
+        run: git fetch origin "${{ github.base_ref }}"
+      - name: Detect breaking changes in data/openapi.yaml
+        run: bash .github/scripts/ci/openapi-diff.sh "origin/${{ github.base_ref }}"
+
   build-and-push:
-    needs: [lint, test]
+    needs: [lint, test, codegen-sync]
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - id: auth
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Authenticate to Google Cloud
+        id: auth
         uses: google-github-actions/auth@v2
         with:
           workload_identity_provider: ${{ vars.WIF_PROVIDER }}
           service_account: ${{ vars.CI_SERVICE_ACCOUNT }}
-
-      - uses: google-github-actions/setup-gcloud@v2
-
-      - run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
-
-      - name: Build and push
-        run: |
-          IMAGE=${{ env.REGISTRY }}/${{ env.PROJECT_ID }}/${{ env.REPOSITORY }}/${{ env.IMAGE_NAME }}
-          docker build --build-arg NUGET_TOKEN=${{ secrets.COMMON_PKG_FETCH }} -t ${IMAGE}:${{ github.sha }} -t ${IMAGE}:latest .
-          docker push ${IMAGE}:${{ github.sha }}
-          docker push ${IMAGE}:latest
+      - name: Set up gcloud
+        uses: google-github-actions/setup-gcloud@v2
+      - name: Configure docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }} --quiet
+      - name: Build and push image
+        run: bash .github/scripts/ci/build-and-push-image.sh
+        env:
+          IMAGE_TAG: ${{ github.sha }}

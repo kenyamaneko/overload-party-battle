@@ -1,11 +1,28 @@
 name: Publish Packages
 
+# ADR-034 Phase 2: cross-repo で配布するのは以下のみ。
+#
+#   Go modules (GitHub git protocol で配布):
+#     - packages/game-logic-constants-go
+#     - packages/api-battle-rpc-go
+#
+#   NuGet (Cloudsmith):
+#     - packages/game-logic-constants-dotnet
+#
+#   npm (Cloudsmith):
+#     - packages/game-logic-constants-npm
+#     - packages/game-state-npm
+#
+# api-battle-rpc-dotnet / game-state-dotnet は intra-repo の ProjectReference
+# 専用で NuGet publish しない (battle 自身の sln 内のみで消費される)。
+
 on:
   push:
     branches: [main]
     paths:
       - "packages/**"
       - "scripts/ci/**"
+      - ".github/scripts/publish/**"
   workflow_dispatch:
     inputs:
       bump:
@@ -27,53 +44,38 @@ on:
           - game-logic-constants-go
           - api-battle-rpc-go
           - game-logic-constants-dotnet
-          - game-state-dotnet
-          - api-battle-rpc-dotnet
           - game-logic-constants-npm
           - game-state-npm
 
 permissions:
   contents: write
-  packages: write
+  id-token: write
 
 jobs:
-  # ──────────────────────────────────────────────
-  # 1. Detect changes & compute versions
-  # ──────────────────────────────────────────────
   detect:
     name: Detect changes
     runs-on: ubuntu-latest
     outputs:
       any_changed: ${{ steps.detect.outputs.any_changed }}
-      # Go modules
       game_logic_constants_go: ${{ steps.detect.outputs.game_logic_constants_go }}
       game_logic_constants_go_version: ${{ steps.detect.outputs.game_logic_constants_go_version }}
       api_battle_rpc_go: ${{ steps.detect.outputs.api_battle_rpc_go }}
       api_battle_rpc_go_version: ${{ steps.detect.outputs.api_battle_rpc_go_version }}
-      # C# csproj
       game_logic_constants_dotnet: ${{ steps.detect.outputs.game_logic_constants_dotnet }}
       game_logic_constants_dotnet_version: ${{ steps.detect.outputs.game_logic_constants_dotnet_version }}
-      game_state_dotnet: ${{ steps.detect.outputs.game_state_dotnet }}
-      game_state_dotnet_version: ${{ steps.detect.outputs.game_state_dotnet_version }}
-      api_battle_rpc_dotnet: ${{ steps.detect.outputs.api_battle_rpc_dotnet }}
-      api_battle_rpc_dotnet_version: ${{ steps.detect.outputs.api_battle_rpc_dotnet_version }}
-      # npm packages
       game_logic_constants_npm: ${{ steps.detect.outputs.game_logic_constants_npm }}
       game_logic_constants_npm_version: ${{ steps.detect.outputs.game_logic_constants_npm_version }}
       game_state_npm: ${{ steps.detect.outputs.game_state_npm }}
       game_state_npm_version: ${{ steps.detect.outputs.game_state_npm_version }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
-
       - name: Detect changes and compute versions
         id: detect
         run: bash scripts/ci/detect-changes.sh "${{ inputs.target || 'auto' }}" "${{ inputs.bump || 'patch' }}"
 
-  # ──────────────────────────────────────────────
-  # 2. Build & validate before publishing
-  # ──────────────────────────────────────────────
   build:
     name: Build & validate
     needs: detect
@@ -82,22 +84,25 @@ jobs:
     env:
       GOWORK: "off"
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
           go-version-file: packages/game-logic-constants-go/go.mod
-
-      - uses: actions/setup-dotnet@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-
-      - uses: actions/setup-node@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@kenyamaneko"
-
+      - name: Configure Cloudsmith auth (NuGet + npm)
+        uses: kenyamaneko/overload-party-common/.github/actions/setup-cloudsmith-auth@main
+        with:
+          role: reader
+          formats: "nuget,npm"
       - name: Go vet + build (all modules)
         run: |
           for mod in packages/game-logic-constants-go packages/api-battle-rpc-go; do
@@ -105,178 +110,113 @@ jobs:
             (cd "$mod" && go vet ./... && go build ./...)
             echo "::endgroup::"
           done
-
-      - name: .NET build (all csproj)
-        run: |
-          for pkg in \
-            game-logic-constants-dotnet \
-            game-state-dotnet \
-            api-battle-rpc-dotnet; do
-            echo "::group::dotnet build $pkg"
-            (cd "packages/$pkg" && dotnet build -c Release --nologo -v quiet)
-            echo "::endgroup::"
-          done
-
-      - name: Build npm packages (via workspaces)
+      - name: .NET restore + build (sln)
+        run: dotnet build OverloadParty.Battle.slnx -c Release --nologo -v quiet
+      - name: Build npm packages
         run: |
           npm install
-          # Layer 1 を先にビルド (game-state-npm の tsc が dist を参照するため)
           npm run build -w @kenyamaneko/overload-party-game-logic-constants
           npm run build -w @kenyamaneko/overload-party-game-state
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
 
-  # ──────────────────────────────────────────────
-  # 3. Publish Go modules (tag only — go get resolves via git tag)
-  # ──────────────────────────────────────────────
   publish-go:
     name: Publish Go modules
     needs: [detect, build]
     if: needs.detect.outputs.any_changed == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Tag Go modules
-        run: |
-          declare -A MODULES=(
-            [game-logic-constants-go]="${{ needs.detect.outputs.game_logic_constants_go }}:${{ needs.detect.outputs.game_logic_constants_go_version }}"
-            [api-battle-rpc-go]="${{ needs.detect.outputs.api_battle_rpc_go }}:${{ needs.detect.outputs.api_battle_rpc_go_version }}"
-          )
-          for name in "${!MODULES[@]}"; do
-            IFS=':' read -r changed ver <<< "${MODULES[$name]}"
-            if [ "$changed" = "true" ]; then
-              tag="packages/$name/v$ver"
-              echo "Tagging $tag"
-              git tag "$tag"
-              git push origin "$tag"
-            fi
-          done
+        run: bash .github/scripts/publish/tag-go-modules.sh
+        env:
+          GLC_GO_CHANGED: ${{ needs.detect.outputs.game_logic_constants_go }}
+          GLC_GO_VERSION: ${{ needs.detect.outputs.game_logic_constants_go_version }}
+          ABR_GO_CHANGED: ${{ needs.detect.outputs.api_battle_rpc_go }}
+          ABR_GO_VERSION: ${{ needs.detect.outputs.api_battle_rpc_go_version }}
 
-  # ──────────────────────────────────────────────
-  # 4. Publish C# csproj packages (NuGet)
-  # ──────────────────────────────────────────────
-  publish-game-logic-constants-dotnet:
-    name: Publish game-logic-constants-dotnet
+  publish-dotnet:
+    name: Publish dotnet packages (Cloudsmith)
     needs: [detect, build]
     if: needs.detect.outputs.game_logic_constants_dotnet == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
         with:
           dotnet-version: "10.0.x"
-      - name: Publish NuGet
+      - name: Pack game-logic-constants-dotnet
         working-directory: packages/game-logic-constants-dotnet
-        run: |
-          dotnet pack -c Release -p:Version=${{ needs.detect.outputs.game_logic_constants_dotnet_version }} -o ./nupkg
-          dotnet nuget push ./nupkg/*.nupkg \
-            --source "https://nuget.pkg.github.com/kenyamaneko/index.json" \
-            --api-key ${{ secrets.GITHUB_TOKEN }}
-      - name: Tag
-        run: |
-          git tag "packages/game-logic-constants-dotnet/v${{ needs.detect.outputs.game_logic_constants_dotnet_version }}"
-          git push origin "packages/game-logic-constants-dotnet/v${{ needs.detect.outputs.game_logic_constants_dotnet_version }}"
-
-  publish-game-state-dotnet:
-    name: Publish game-state-dotnet
-    needs: [detect, build]
-    if: needs.detect.outputs.game_state_dotnet == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+        run: dotnet pack -c Release -p:Version=${{ needs.detect.outputs.game_logic_constants_dotnet_version }} -o ./nupkg
+      - name: Publish game-logic-constants-dotnet to Cloudsmith
+        uses: kenyamaneko/overload-party-common/.github/actions/publish-to-cloudsmith@main
         with:
-          dotnet-version: "10.0.x"
-      - name: Publish NuGet
-        working-directory: packages/game-state-dotnet
+          format: nuget
+          package-path: packages/game-logic-constants-dotnet/nupkg/OverloadParty.GameLogicConstants.${{ needs.detect.outputs.game_logic_constants_dotnet_version }}.nupkg
+      - name: Tag game-logic-constants-dotnet
         run: |
-          dotnet pack -c Release -p:Version=${{ needs.detect.outputs.game_state_dotnet_version }} -o ./nupkg
-          dotnet nuget push ./nupkg/*.nupkg \
-            --source "https://nuget.pkg.github.com/kenyamaneko/index.json" \
-            --api-key ${{ secrets.GITHUB_TOKEN }}
-      - name: Tag
-        run: |
-          git tag "packages/game-state-dotnet/v${{ needs.detect.outputs.game_state_dotnet_version }}"
-          git push origin "packages/game-state-dotnet/v${{ needs.detect.outputs.game_state_dotnet_version }}"
+          tag="packages/game-logic-constants-dotnet/v${{ needs.detect.outputs.game_logic_constants_dotnet_version }}"
+          git tag "$tag"
+          git push origin "$tag"
 
-  publish-api-battle-rpc-dotnet:
-    name: Publish api-battle-rpc-dotnet
-    needs: [detect, build]
-    if: needs.detect.outputs.api_battle_rpc_dotnet == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "10.0.x"
-      - name: Publish NuGet
-        working-directory: packages/api-battle-rpc-dotnet
-        run: |
-          dotnet pack -c Release -p:Version=${{ needs.detect.outputs.api_battle_rpc_dotnet_version }} -o ./nupkg
-          dotnet nuget push ./nupkg/*.nupkg \
-            --source "https://nuget.pkg.github.com/kenyamaneko/index.json" \
-            --api-key ${{ secrets.GITHUB_TOKEN }}
-      - name: Tag
-        run: |
-          git tag "packages/api-battle-rpc-dotnet/v${{ needs.detect.outputs.api_battle_rpc_dotnet_version }}"
-          git push origin "packages/api-battle-rpc-dotnet/v${{ needs.detect.outputs.api_battle_rpc_dotnet_version }}"
-
-  # ──────────────────────────────────────────────
-  # 5. Publish npm packages (Layer 1 → Layer 2 を単一 job で実行)
-  # ──────────────────────────────────────────────
-  # workspaces 構成のため、Layer 2 のビルドには Layer 1 の dist が必要。
-  # job を分けると dist が共有されず workaround が必要になるため 1 job に統合。
   publish-npm:
-    name: Publish npm packages
+    name: Publish npm packages (Cloudsmith)
     needs: [detect, build]
     if: |
       needs.detect.outputs.game_logic_constants_npm == 'true' ||
       needs.detect.outputs.game_state_npm == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: "22"
-          registry-url: "https://npm.pkg.github.com"
-          scope: "@kenyamaneko"
-
-      - name: Install dependencies (from common)
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.COMMON_PKG_FETCH }}
+      - name: Configure Cloudsmith auth for npm (reader, for installs)
+        uses: kenyamaneko/overload-party-common/.github/actions/setup-cloudsmith-auth@main
+        with:
+          role: reader
+          formats: "npm"
+      - name: Install dependencies
         run: npm install
-
-      - name: Publish Layer 1 (game-logic-constants-npm)
+      - name: Build & version Layer 1 (game-logic-constants-npm)
         if: needs.detect.outputs.game_logic_constants_npm == 'true'
         working-directory: packages/game-logic-constants-npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm version ${{ needs.detect.outputs.game_logic_constants_npm_version }} --no-git-tag-version
           npm run build
-          npm publish
+      - name: Publish Layer 1 to Cloudsmith
+        if: needs.detect.outputs.game_logic_constants_npm == 'true'
+        uses: kenyamaneko/overload-party-common/.github/actions/publish-to-cloudsmith@main
+        with:
+          format: npm
+          package-path: packages/game-logic-constants-npm
       - name: Tag Layer 1
         if: needs.detect.outputs.game_logic_constants_npm == 'true'
         run: |
-          git tag "packages/game-logic-constants-npm/v${{ needs.detect.outputs.game_logic_constants_npm_version }}"
-          git push origin "packages/game-logic-constants-npm/v${{ needs.detect.outputs.game_logic_constants_npm_version }}"
-
+          tag="packages/game-logic-constants-npm/v${{ needs.detect.outputs.game_logic_constants_npm_version }}"
+          git tag "$tag"
+          git push origin "$tag"
       - name: Build Layer 1 if not published (Layer 2 が型定義を参照するため)
         if: needs.detect.outputs.game_logic_constants_npm != 'true' && needs.detect.outputs.game_state_npm == 'true'
         run: npm run build -w @kenyamaneko/overload-party-game-logic-constants
-
-      - name: Publish Layer 2 (game-state-npm)
+      - name: Build & version Layer 2 (game-state-npm)
         if: needs.detect.outputs.game_state_npm == 'true'
         working-directory: packages/game-state-npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           npm version ${{ needs.detect.outputs.game_state_npm_version }} --no-git-tag-version
           npm run build
-          npm publish
+      - name: Publish Layer 2 to Cloudsmith
+        if: needs.detect.outputs.game_state_npm == 'true'
+        uses: kenyamaneko/overload-party-common/.github/actions/publish-to-cloudsmith@main
+        with:
+          format: npm
+          package-path: packages/game-state-npm
       - name: Tag Layer 2
         if: needs.detect.outputs.game_state_npm == 'true'
         run: |
-          git tag "packages/game-state-npm/v${{ needs.detect.outputs.game_state_npm_version }}"
-          git push origin "packages/game-state-npm/v${{ needs.detect.outputs.game_state_npm_version }}"
+          tag="packages/game-state-npm/v${{ needs.detect.outputs.game_state_npm_version }}"
+          git tag "$tag"
+          git push origin "$tag"

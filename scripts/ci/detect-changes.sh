@@ -2,22 +2,23 @@
 # Detect package changes since last tag and compute next versions for the
 # overload-party-battle repo (ADR-015 Phase 6 — battle-owned publish units).
 #
-# Package list (7 publish units):
+# Package list (5 publish units after ADR-034 Phase 2):
 #
-#   Go modules (2):
+#   Go modules (2 — distributed via GitHub git protocol + go module proxy):
 #     - game-logic-constants-go  (github.com/kenyamaneko/overload-party-battle/packages/game-logic-constants-go)
 #     - api-battle-rpc-go        (github.com/kenyamaneko/overload-party-battle/packages/api-battle-rpc-go)
 #
-#   C# csproj (3 — PackageId は common の旧 ID をそのまま引き継ぐ):
+#   C# csproj (1 — distributed via Cloudsmith NuGet):
 #     - game-logic-constants-dotnet  (OverloadParty.GameLogicConstants)
-#     - game-state-dotnet            (OverloadParty.GameState)
-#     - api-battle-rpc-dotnet        (OverloadParty.ApiBattleRpc)
 #
-#   npm packages (2):
+#   npm packages (2 — distributed via Cloudsmith npm):
 #     - game-logic-constants-npm  (@kenyamaneko/overload-party-game-logic-constants)
 #     - game-state-npm            (@kenyamaneko/overload-party-game-state)
 #
-# Each package has its own tag prefix "packages/{name}/v{version}".
+# api-battle-rpc-dotnet / game-state-dotnet は intra-repo の ProjectReference 専用で
+# NuGet publish しない (battle 自身の sln 内のみで消費される)。
+#
+# Each published package has its own tag prefix "packages/{name}/v{version}".
 
 set -euo pipefail
 
@@ -31,8 +32,6 @@ PACKAGES=(
   "game-logic-constants-go:packages/game-logic-constants-go:packages/game-logic-constants-go/:-"
   "api-battle-rpc-go:packages/api-battle-rpc-go:packages/api-battle-rpc-go/:-"
   "game-logic-constants-dotnet:packages/game-logic-constants-dotnet:packages/game-logic-constants-dotnet/:-"
-  "game-state-dotnet:packages/game-state-dotnet:packages/game-state-dotnet/:-"
-  "api-battle-rpc-dotnet:packages/api-battle-rpc-dotnet:packages/api-battle-rpc-dotnet/:-"
   "game-logic-constants-npm:packages/game-logic-constants-npm:packages/game-logic-constants-npm/:-"
   "game-state-npm:packages/game-state-npm:packages/game-state-npm/:-"
 )

@@ -1,7 +1,7 @@
 {
   "name": "@kenyamaneko/overload-party-game-state",
   "version": "0.0.0",
-  "description": "Overload Party client game state view types (ClientGameState / PlayerView / Field / DeployedResource / EventData / AvailableAction). Auto-generated from data/models.yaml + data/event_schemas.yaml.",
+  "description": "Overload Party client game state view types (ClientGameState / PlayerView / Field / DeployedResource / EventData / AvailableAction). Auto-generated from data/openapi.yaml via openapi-typescript.",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,16 +13,12 @@
     "dist"
   ],
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "registry": "https://npm.cloudsmith.io/keyandnotes/overload-party-npm/"
   },
   "repository": {
     "type": "git",
     "url": "https://github.com/kenyamaneko/overload-party-battle.git",
     "directory": "packages/game-state-npm"
-  },
-  "dependencies": {
-    "@kenyamaneko/overload-party-game-design-constants": "*",
-    "@kenyamaneko/overload-party-game-logic-constants": "*"
   },
   "devDependencies": {
     "typescript": "^5.8.0"

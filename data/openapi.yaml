@@ -1,0 +1,1114 @@
+openapi: 3.0.3
+info:
+  title: overload-party-battle
+  version: 0.1.0
+  description: |
+    Battle service の REST 契約および client が WS 経由で受け取るゲーム状態スナップショット型。
+    本ファイルが SSoT。`packages/api-battle-rpc-go` の Go 型は oapi-codegen が、
+    `packages/api-battle-rpc-dotnet` / `packages/game-state-dotnet` の C# 型は NSwag が、
+    `packages/game-state-npm` の TS 型は openapi-typescript が、本ファイルから生成する。
+
+    ## ネームスペースの分割
+
+    C# 出力は `x-battle-csharp-package` 拡張で 2 つに分配される:
+      - `rpc`  → OverloadParty.ApiBattleRpc (gateway ↔ battle internal REST envelope)
+      - `state` → OverloadParty.GameState (client-visible game-state + WS event payloads)
+
+    Go と TS は 1 パッケージに統合 (`apibattle` / `@kenyamaneko/overload-party-game-state`)。
+
+    ## JSON 命名規約
+
+    - RPC スキーマ (battle ↔ gateway 内部 REST): snake_case (`card_id`, `game_id`)
+    - game-state スキーマ (WS frame, client-facing): camelCase (`gameID`, `currentTurn`)
+    両者ともプロパティ名は wire 形式そのまま記述する。
+
+paths:
+  /health:
+    get:
+      operationId: getHealth
+      summary: ヘルスチェック (ClusterIP 内部のみ)
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+
+  /api/v1/npc/models:
+    get:
+      operationId: listNpcModels
+      summary: NPC モデル一覧を取得
+      responses:
+        "200":
+          description: NPC モデル一覧
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NpcModelsResponse"
+
+  /api/v1/games/npc:
+    post:
+      operationId: createNpcGame
+      summary: NPC 対戦ゲームを作成
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NpcBattleRequest"
+      responses:
+        "200":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameCreatedResult"
+        "400":
+          description: デッキカードが不正、または NPC モデルが存在しない
+
+  /api/v1/games/pvp:
+    post:
+      operationId: createPvpGame
+      summary: PvP ゲームを作成 (Gateway → Battle)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PvpBattleRequest"
+      responses:
+        "200":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameCreatedResult"
+        "400":
+          description: デッキカードが不正
+
+  /api/v1/games/{gameId}/actions:
+    post:
+      operationId: processGameAction
+      summary: ゲームアクションを実行
+      parameters:
+        - $ref: "#/components/parameters/GameIdPath"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GameActionRequest"
+      responses:
+        "200":
+          description: アクション処理成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+        "400":
+          description: ルール違反 (GameRuleException)
+        "500":
+          description: 内部エラー
+
+  /api/v1/games/{gameId}/advance-npc:
+    post:
+      operationId: advanceNpcTurn
+      summary: NPC ターンを進行 (game_enter 後に Gateway が呼び出す)
+      parameters:
+        - $ref: "#/components/parameters/GameIdPath"
+      responses:
+        "200":
+          description: ターン進行成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionResult"
+        "400":
+          description: ルール違反
+        "500":
+          description: 内部エラー
+
+  /api/v1/games/{gameId}/state/{playerNum}:
+    get:
+      operationId: getGameStateForPlayer
+      summary: プレイヤー視点のゲーム状態を取得
+      parameters:
+        - $ref: "#/components/parameters/GameIdPath"
+        - $ref: "#/components/parameters/PlayerNumPath"
+      responses:
+        "200":
+          description: ゲーム状態
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ClientGameState"
+        "500":
+          description: ゲームが存在しないか内部エラー
+
+  /api/v1/games/{gameId}/controls/{playerNum}:
+    get:
+      operationId: getTurnControlsForPlayer
+      summary: ターンコントロール情報を取得
+      parameters:
+        - $ref: "#/components/parameters/GameIdPath"
+        - $ref: "#/components/parameters/PlayerNumPath"
+      responses:
+        "200":
+          description: ターンコントロール情報
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TurnControlsMessage"
+        "500":
+          description: ゲームが存在しないか内部エラー
+
+  /api/v1/games/{gameId}/log:
+    get:
+      operationId: getGameLogJson
+      summary: ゲームログを JSON 形式で取得 (リプレイ用)
+      parameters:
+        - $ref: "#/components/parameters/GameIdPath"
+      responses:
+        "200":
+          description: ログ JSON (構造はバージョン非互換のため自由形式)
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        "404":
+          description: ゲームが見つからない
+
+  /api/v1/games/{gameId}/log/text:
+    get:
+      operationId: getGameLogText
+      summary: ゲームログをテキスト形式で取得
+      parameters:
+        - $ref: "#/components/parameters/GameIdPath"
+      responses:
+        "200":
+          description: ログテキスト
+          content:
+            text/plain:
+              schema:
+                type: string
+        "404":
+          description: ゲームが見つからない
+
+  /api/dev/cards:
+    get:
+      operationId: listDevCards
+      summary: カード定義一覧を取得 (BATTLE_MODE=local でのみ有効)
+      responses:
+        "200":
+          description: カード一覧
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DevCard"
+
+components:
+  parameters:
+    GameIdPath:
+      name: gameId
+      in: path
+      required: true
+      schema:
+        type: string
+        x-go-name: GameID
+    PlayerNumPath:
+      name: playerNum
+      in: path
+      required: true
+      schema:
+        type: integer
+        format: int32
+
+  schemas:
+    # ─── Health ────────────────────────────────────────────────────────
+    HealthResponse:
+      type: object
+      x-battle-csharp-package: rpc
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+
+    # ─── NPC ──────────────────────────────────────────────────────────
+    NpcModelsResponse:
+      type: object
+      x-battle-csharp-package: rpc
+      required: [models]
+      properties:
+        models:
+          type: array
+          items:
+            $ref: "#/components/schemas/NpcModelEntry"
+
+    NpcModelEntry:
+      type: object
+      x-battle-csharp-package: rpc
+      required: [model, faction, difficulty, display_name]
+      properties:
+        model:
+          type: string
+        faction:
+          type: string
+        difficulty:
+          type: string
+        display_name:
+          type: string
+
+    # ─── Battle ↔ Gateway RPC envelope (snake_case wire) ─────────────────
+    BattleDeckCard:
+      type: object
+      description: デッキスナップショット内の 1 枚のカード。
+      x-battle-csharp-package: rpc
+      required: [card_id, art_no]
+      properties:
+        card_id:
+          type: string
+          x-go-name: CardID
+          x-csharp-name: CardID
+        art_no:
+          type: integer
+          format: int64
+          x-go-name: ArtNo
+          x-csharp-name: ArtNo
+
+    GameCreatedResult:
+      type: object
+      description: NPC または PvP ゲーム作成時の battle server からの応答。
+      x-battle-csharp-package: rpc
+      required: [game_id]
+      properties:
+        game_id:
+          type: string
+          x-go-name: GameID
+          x-csharp-name: GameID
+
+    ActionEvent:
+      type: object
+      description: アクション処理後に battle server が emit する 1 件のゲームイベント。
+      x-battle-csharp-package: rpc
+      required: [sequence, event_type, player_num, event_data, state]
+      properties:
+        sequence:
+          type: integer
+          format: int64
+        event_type:
+          type: string
+        player_num:
+          type: integer
+          format: int64
+          nullable: true
+          description: |
+            アクション元のスロット番号 (1 or 2)。system event (turn_start 等) では null。
+        event_data:
+          type: object
+          additionalProperties: true
+          description: |
+            イベント種別固有の payload。Go / C# では opaque な map / JsonElement として扱い、
+            event_type ごとに用意された EventData schema で再 unmarshal する。
+        state:
+          type: object
+          additionalProperties: true
+          description: |
+            イベント直後のゲーム状態スナップショット。`event_data` 同様 opaque。
+
+    ActionResult:
+      type: object
+      description: ゲームアクション処理後に返される結果。
+      x-battle-csharp-package: rpc
+      required: [game_over, winning_player_num, win_reason, npc_pending, events]
+      properties:
+        game_over:
+          type: boolean
+          description: ゲーム終了フラグ
+        winning_player_num:
+          type: integer
+          format: int64
+          description: 勝者プレイヤー番号 (1 or 2、未終了時は 0)
+        win_reason:
+          type: string
+          description: 終了理由 (WinReasons enum の文字列、未終了時は空文字)
+        npc_pending:
+          type: boolean
+          description: |
+            true の場合、Gateway は AdvanceNpcTurn を呼んで次の NPC アクションを取得する必要がある。
+        events:
+          type: array
+          description: このアクションで発生したイベント列。
+          items:
+            $ref: "#/components/schemas/ActionEvent"
+
+    NpcBattleRequest:
+      type: object
+      description: POST /api/v1/games/npc のリクエスト body。
+      x-battle-csharp-package: rpc
+      required: [deck_cards, npc_model]
+      properties:
+        deck_cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/BattleDeckCard"
+        npc_model:
+          type: string
+
+    PvpBattleRequest:
+      type: object
+      description: POST /api/v1/games/pvp のリクエスト body。
+      x-battle-csharp-package: rpc
+      required: [deck1_cards, deck2_cards]
+      properties:
+        deck1_cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/BattleDeckCard"
+        deck2_cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/BattleDeckCard"
+
+    GameActionRequest:
+      type: object
+      description: POST /api/v1/games/{gameId}/actions のリクエスト body。
+      x-battle-csharp-package: rpc
+      required: [player_num, action_type, data]
+      properties:
+        player_num:
+          type: integer
+          format: int64
+        action_type:
+          type: string
+        data:
+          type: object
+          additionalProperties: true
+          description: アクション固有の payload。サーバ側で action_type に応じて再パースされる。
+
+    DevCard:
+      type: object
+      description: 開発用エンドポイント (/api/dev/cards) が返すカード一覧の 1 件。
+      x-battle-csharp-package: rpc
+      required: [cardId, cardName, faction, cardType]
+      properties:
+        cardId:
+          type: string
+          x-go-name: CardID
+          x-csharp-name: CardId
+        cardName:
+          type: string
+        faction:
+          type: string
+        cardType:
+          type: string
+
+    # ─── Game state view (client-facing snapshot, camelCase wire) ──────
+    ClientGameState:
+      type: object
+      description: クライアントに返すゲーム状態スナップショット。
+      x-battle-csharp-package: state
+      required:
+        - gameID
+        - currentTurn
+        - currentPhase
+        - activePlayer
+        - isMyTurn
+        - turnStartedAt
+        - myView
+        - oppView
+      properties:
+        gameID:
+          type: string
+          description: ゲーム ID (ULID)
+          x-go-name: GameID
+          x-csharp-name: GameID
+        currentTurn:
+          type: integer
+          format: int64
+          description: 現在のターン番号
+        currentPhase:
+          type: string
+          description: |
+            現在のフェーズ (`selecting` / `draw` / `yield` / `main` / `battle` / `end`)。
+            game-logic-constants の GamePhase に対応するが OpenAPI 上は string で扱う
+            (定数 SSoT は data/game_logic_constants.yaml で別途維持)。
+        activePlayer:
+          type: integer
+          format: int64
+          description: アクティブプレイヤー番号 (1 or 2)
+        isMyTurn:
+          type: boolean
+          description: 自分のターンか
+        turnStartedAt:
+          type: string
+          format: date-time
+          description: ターン開始日時
+        myView:
+          $ref: "#/components/schemas/PlayerView"
+        oppView:
+          $ref: "#/components/schemas/OpponentView"
+
+    PlayerView:
+      type: object
+      description: 自プレイヤー視点のスナップショット。
+      x-battle-csharp-package: state
+      required:
+        - playerNum
+        - budget
+        - insightPool
+        - timeBank
+        - field
+        - hand
+        - repoCount
+        - trashCount
+        - trash
+      properties:
+        playerNum:
+          type: integer
+          format: int64
+        budget:
+          type: integer
+          format: int64
+        insightPool:
+          type: integer
+          format: int64
+        timeBank:
+          type: integer
+          format: int64
+          description: タイムバンク (秒)
+        field:
+          $ref: "#/components/schemas/Field"
+        hand:
+          type: array
+          items:
+            $ref: "#/components/schemas/UndeployedCard"
+        repoCount:
+          type: integer
+          format: int32
+          description: リポジトリ残り枚数
+        trashCount:
+          type: integer
+          format: int32
+        trash:
+          type: array
+          items:
+            $ref: "#/components/schemas/UndeployedCard"
+        availableActions:
+          type: array
+          description: 実行可能アクション一覧 (アクティブプレイヤーのみ)。
+          items:
+            $ref: "#/components/schemas/AvailableAction"
+
+    OpponentView:
+      type: object
+      description: 相手プレイヤー視点 (情報秘匿適用済み)。
+      x-battle-csharp-package: state
+      required:
+        - playerNum
+        - budget
+        - insightPool
+        - timeBank
+        - field
+        - handCount
+        - repoCount
+        - trashCount
+        - trash
+      properties:
+        playerNum:
+          type: integer
+          format: int64
+        budget:
+          type: integer
+          format: int64
+        insightPool:
+          type: integer
+          format: int64
+        timeBank:
+          type: integer
+          format: int64
+        field:
+          $ref: "#/components/schemas/OpponentField"
+        handCount:
+          type: integer
+          format: int32
+          description: 手札枚数 (内容は非公開)
+        repoCount:
+          type: integer
+          format: int32
+        trashCount:
+          type: integer
+          format: int32
+        trash:
+          type: array
+          items:
+            $ref: "#/components/schemas/UndeployedCard"
+
+    Field:
+      type: object
+      description: 一方のプレイヤーのフィールド全体。
+      x-battle-csharp-package: state
+      required: [frontend, backend, support]
+      properties:
+        frontend:
+          type: array
+          description: フロントゾーン (3 スロット)、空き枠は null。
+          items:
+            $ref: "#/components/schemas/DeployedResource"
+            nullable: true
+        backend:
+          type: array
+          description: バックゾーン (3 スロット)、空き枠は null。
+          items:
+            $ref: "#/components/schemas/DeployedResource"
+            nullable: true
+        support:
+          type: array
+          description: サポートゾーン (3 スロット)、空き枠は null。
+          items:
+            $ref: "#/components/schemas/DeployedSupport"
+            nullable: true
+
+    OpponentField:
+      type: object
+      description: 相手のフィールド (サポートは非公開カード隠蔽)。
+      x-battle-csharp-package: state
+      required: [frontend, backend, support]
+      properties:
+        frontend:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeployedResource"
+            nullable: true
+        backend:
+          type: array
+          items:
+            $ref: "#/components/schemas/DeployedResource"
+            nullable: true
+        support:
+          type: array
+          items:
+            $ref: "#/components/schemas/HiddenDeployedSupport"
+            nullable: true
+
+    DeployedResource:
+      type: object
+      description: フィールドに展開済みのリソースカードインスタンス。
+      x-battle-csharp-package: state
+      required:
+        - instanceID
+        - cardID
+        - artNo
+        - faceUp
+        - deployingTurnsLeft
+        - currentAV
+        - maxAV
+        - damage
+        - temporaryEffects
+        - monetizedAmount
+        - hasAttacked
+        - effectUsedThisTurn
+        - effectUsedThisGame
+        - deployedOnTurn
+        - deployOrder
+        - elasticBonus
+        - lastAttackTurn
+      properties:
+        instanceID:
+          type: string
+          x-go-name: InstanceID
+          x-csharp-name: InstanceID
+        cardID:
+          type: string
+          x-go-name: CardID
+          x-csharp-name: CardID
+        artNo:
+          type: integer
+          format: int64
+        rank:
+          type: string
+          nullable: true
+          description: ランク (S/M/L/XL)。game-design-constants の Rank に対応。
+        instanceFamily:
+          type: string
+          nullable: true
+          description: インスタンスファミリー。game-design-constants の InstanceFamily に対応。
+        faceUp:
+          type: boolean
+        deployingTurnsLeft:
+          type: integer
+          format: int64
+          description: デプロイ残りターン数 (0=アクティブ)
+        currentAV:
+          type: integer
+          format: int64
+          x-go-name: CurrentAV
+          x-csharp-name: CurrentAV
+        maxAV:
+          type: integer
+          format: int64
+          x-go-name: MaxAV
+          x-csharp-name: MaxAV
+        currentTP:
+          type: integer
+          format: int64
+          nullable: true
+          description: 現在のスループット (Compute のみ)
+          x-go-name: CurrentTP
+          x-csharp-name: CurrentTP
+        maxTP:
+          type: integer
+          format: int64
+          nullable: true
+          x-go-name: MaxTP
+          x-csharp-name: MaxTP
+        currentYield:
+          type: integer
+          format: int64
+          nullable: true
+          description: 現在のイールド (Data のみ)
+        maxYield:
+          type: integer
+          format: int64
+          nullable: true
+        damage:
+          type: integer
+          format: int64
+          description: 受けたダメージ量
+        temporaryEffects:
+          type: array
+          items:
+            $ref: "#/components/schemas/TemporaryEffect"
+        monetizedAmount:
+          type: integer
+          format: int64
+          description: 収益化で配分された Insight 量
+        hasAttacked:
+          type: boolean
+        effectUsedThisTurn:
+          type: boolean
+        effectUsedThisGame:
+          type: boolean
+        deployedOnTurn:
+          type: integer
+          format: int64
+        deployOrder:
+          type: integer
+          format: int64
+        elasticBonus:
+          type: integer
+          format: int64
+        lastAttackTurn:
+          type: integer
+          format: int64
+
+    DeployedSupport:
+      type: object
+      description: フィールドに展開済みのサポートカードインスタンス。
+      x-battle-csharp-package: state
+      required:
+        - instanceID
+        - cardID
+        - artNo
+        - faceUp
+        - deployingTurnsLeft
+        - deployOrder
+        - effectUsedThisTurn
+        - effectUsedThisGame
+      properties:
+        instanceID:
+          type: string
+          x-go-name: InstanceID
+          x-csharp-name: InstanceID
+        cardID:
+          type: string
+          x-go-name: CardID
+          x-csharp-name: CardID
+        artNo:
+          type: integer
+          format: int64
+        faceUp:
+          type: boolean
+        deployingTurnsLeft:
+          type: integer
+          format: int64
+        deployOrder:
+          type: integer
+          format: int64
+        effectUsedThisTurn:
+          type: boolean
+        effectUsedThisGame:
+          type: boolean
+        targetInstanceID:
+          type: string
+          nullable: true
+          description: Attachment 対象のインスタンス ID
+          x-go-name: TargetInstanceID
+          x-csharp-name: TargetInstanceID
+
+    HiddenDeployedSupport:
+      type: object
+      description: 表向き情報を隠蔽したサポートインスタンス。
+      x-battle-csharp-package: state
+      required: [instanceID, artNo, faceDown, peeked]
+      properties:
+        instanceID:
+          type: string
+          x-go-name: InstanceID
+          x-csharp-name: InstanceID
+        cardID:
+          type: string
+          nullable: true
+          description: カード ID (表向きの場合のみ含まれる)
+          x-go-name: CardID
+          x-csharp-name: CardID
+        artNo:
+          type: integer
+          format: int64
+        faceDown:
+          type: boolean
+        peeked:
+          type: boolean
+          description: 覗き見されたか
+
+    UndeployedCard:
+      type: object
+      description: 手札・トラッシュ等にあるカード。
+      x-battle-csharp-package: state
+      required: [instanceID, cardID, artNo]
+      properties:
+        instanceID:
+          type: string
+          x-go-name: InstanceID
+          x-csharp-name: InstanceID
+        cardID:
+          type: string
+          x-go-name: CardID
+          x-csharp-name: CardID
+        artNo:
+          type: integer
+          format: int64
+
+    TemporaryEffect:
+      type: object
+      description: カードに付与されている一時効果。
+      x-battle-csharp-package: state
+      required: [effectType, value, duration, sourceID, mode]
+      properties:
+        effectType:
+          type: string
+        value:
+          type: integer
+          format: int64
+        duration:
+          type: string
+          description: 持続期間 (`until_end_of_turn` / `permanent` 等)。
+        sourceID:
+          type: string
+          description: 効果の発生源インスタンス ID
+          x-go-name: SourceID
+          x-csharp-name: SourceID
+        mode:
+          type: string
+          description: バフモード (空文字=flat / `percent`=割合)
+
+    TurnControlsMessage:
+      type: object
+      description: 現在のターン操作可否を表すメッセージ。
+      x-battle-csharp-package: state
+      required: [canEndPhase, discardRequired]
+      properties:
+        canEndPhase:
+          type: boolean
+          description: 現在のフェーズを終了できるか (main / battle フェーズで `true`)
+        discardRequired:
+          type: integer
+          format: int32
+          description: 手札破棄が必要な枚数 (end フェーズで手札 > 6 枚の場合のみ > 0)
+
+    # ─── Variant types: AvailableAction (flat class with type discriminator) ──
+    AvailableAction:
+      type: object
+      description: |
+        プレイヤーが現ターンに実行可能なアクション。`type` discriminator で variant を判別する。
+        各 variant 固有のフィールドは optional。flat shape を維持しているのは既存 C# server / TS client
+        の実装を温存するため (oneOf による正規化は将来検討)。
+      x-battle-csharp-package: state
+      required: [type]
+      properties:
+        type:
+          type: string
+          description: |
+            variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` のいずれか。
+        # play_card variant
+        handInstanceID:
+          type: string
+          x-go-name: HandInstanceID
+          x-csharp-name: HandInstanceID
+        cardID:
+          type: string
+          x-go-name: CardID
+          x-csharp-name: CardID
+        validZones:
+          type: array
+          items:
+            type: string
+        validTargets:
+          type: array
+          items:
+            type: string
+        cost:
+          type: integer
+          format: int32
+        choiceOptions:
+          type: array
+          items:
+            type: string
+        # attack variant
+        sourceInstanceID:
+          type: string
+          x-go-name: SourceInstanceID
+          x-csharp-name: SourceInstanceID
+        # scale_up variant
+        targetRank:
+          type: string
+        instanceFamily:
+          type: string
+        needsFamily:
+          type: boolean
+        # monetize variant
+        remainingCapacity:
+          type: integer
+          format: int64
+        # use_effect variant
+        effectTargetType:
+          type: string
+        requiredCount:
+          type: integer
+          format: int32
+
+    # ─── Event payloads (camelCase wire, per event_schemas.yaml) ─────────
+    # 各 EventType 固有の payload。`ActionEvent.event_data` の中身として serialize される。
+    # C# 側は OverloadParty.GameState 名前空間に IEventData 実装として生成される。
+
+    PlayCardEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [cardId, zone, index]
+      properties:
+        cardId:
+          type: string
+          x-csharp-name: CardId
+          x-go-name: CardId
+        zone:
+          type: string
+        index:
+          type: integer
+          format: int32
+        cancelled:
+          type: boolean
+
+    AttachCardEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [cardId, targetId]
+      properties:
+        cardId:
+          type: string
+          x-csharp-name: CardId
+          x-go-name: CardId
+        targetId:
+          type: string
+          x-csharp-name: TargetId
+          x-go-name: TargetId
+
+    AttackEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [attackerId, targetId, damage, destroyed]
+      properties:
+        attackerId:
+          type: string
+          x-csharp-name: AttackerId
+          x-go-name: AttackerId
+        targetId:
+          type: string
+          x-csharp-name: TargetId
+          x-go-name: TargetId
+        damage:
+          type: integer
+          format: int64
+        destroyed:
+          type: boolean
+        slaPenalty:
+          type: integer
+          format: int64
+        cancelled:
+          type: boolean
+
+    ScaleUpEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [instanceId, targetRank]
+      properties:
+        instanceId:
+          type: string
+          x-csharp-name: InstanceId
+          x-go-name: InstanceId
+        targetRank:
+          type: string
+        instanceFamily:
+          type: string
+
+    MonetizeEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [totalAmount]
+      properties:
+        totalAmount:
+          type: integer
+          format: int64
+
+    DiscardHandEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [discardedCount, discardedIds]
+      properties:
+        discardedCount:
+          type: integer
+          format: int32
+        discardedIds:
+          type: array
+          items:
+            type: string
+
+    UseEffectEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [cardId, sourceId]
+      properties:
+        cardId:
+          type: string
+          x-csharp-name: CardId
+          x-go-name: CardId
+        sourceId:
+          type: string
+          x-csharp-name: SourceId
+          x-go-name: SourceId
+        targetId:
+          type: string
+          x-csharp-name: TargetId
+          x-go-name: TargetId
+
+    PhaseChangeEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [previousPhase, currentPhase]
+      properties:
+        previousPhase:
+          type: string
+        currentPhase:
+          type: string
+
+    PhaseEndEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [phase, needsDiscard]
+      properties:
+        phase:
+          type: string
+        needsDiscard:
+          type: boolean
+
+    TurnEndEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [phase, nextTurn, activePlayer, currentPhase]
+      properties:
+        phase:
+          type: string
+        nextTurn:
+          type: integer
+          format: int64
+        activePlayer:
+          type: integer
+          format: int64
+        currentPhase:
+          type: string
+
+    BattleStartEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [match_type, my_name, my_level, opponent_name, opponent_level]
+      properties:
+        match_type:
+          type: string
+        my_name:
+          type: string
+        my_level:
+          type: integer
+          format: int64
+        opponent_name:
+          type: string
+        opponent_level:
+          type: integer
+          format: int64
+
+    TurnStartEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [turn, is_my_turn]
+      properties:
+        turn:
+          type: integer
+          format: int64
+        is_my_turn:
+          type: boolean
+
+    ReactiveRevealedEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [instanceId, cardId]
+      properties:
+        instanceId:
+          type: string
+          x-csharp-name: InstanceId
+          x-go-name: InstanceId
+        cardId:
+          type: string
+          x-csharp-name: CardId
+          x-go-name: CardId
+
+    SelectSlotEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [cardId, instanceId, zone, index]
+      properties:
+        cardId:
+          type: string
+          x-csharp-name: CardId
+          x-go-name: CardId
+        instanceId:
+          type: string
+          x-csharp-name: InstanceId
+          x-go-name: InstanceId
+        zone:
+          type: string
+        index:
+          type: integer
+          format: int32
+
+    GameOverEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [winnerNum, winReason]
+      properties:
+        winnerNum:
+          type: integer
+          format: int64
+        winReason:
+          type: string
