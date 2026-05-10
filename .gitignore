@@ -29,5 +29,10 @@ CLAUDE.md
 # Codegen scratch
 .codegen-views/
 
+# NSwag 生成ファイルは CI の codegen-sync で都度生成し commit しない。
+# csproj の SDK Style 自動 include で build 時に取り込まれる。
+packages/api-battle-rpc-dotnet/BattleRpc_gen.cs
+packages/game-state-dotnet/GameState_gen.cs
+
 # macOS
 .DS_Store
