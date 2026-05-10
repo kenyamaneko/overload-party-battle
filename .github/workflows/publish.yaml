@@ -39,6 +39,7 @@ jobs:
   detect:
     name: Detect changes
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     outputs:
       any_changed: ${{ steps.detect.outputs.any_changed }}
       game_logic_constants_go: ${{ steps.detect.outputs.game_logic_constants_go }}
@@ -65,6 +66,7 @@ jobs:
     needs: detect
     if: needs.detect.outputs.any_changed == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     env:
       GOWORK: "off"
     steps:
@@ -107,6 +109,7 @@ jobs:
     needs: [detect, build]
     if: needs.detect.outputs.any_changed == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -123,6 +126,7 @@ jobs:
     needs: [detect, build]
     if: needs.detect.outputs.game_logic_constants_dotnet == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -151,6 +155,7 @@ jobs:
       needs.detect.outputs.game_logic_constants_npm == 'true' ||
       needs.detect.outputs.game_state_npm == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
