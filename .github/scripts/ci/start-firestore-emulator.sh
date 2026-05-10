@@ -5,11 +5,11 @@
 set -euo pipefail
 
 LOG=/tmp/firestore.log
-gcloud emulators firestore start --host-port=localhost:9041 >"$LOG" 2>&1 &
+gcloud emulators firestore start --host-port=127.0.0.1:9041 >"$LOG" 2>&1 &
 
 for _ in {1..30}; do
-  if curl -sf http://localhost:9041 >/dev/null; then
-    echo "::notice::Firestore emulator ready on localhost:9041"
+  if curl -sf http://127.0.0.1:9041 >/dev/null; then
+    echo "::notice::Firestore emulator ready on 127.0.0.1:9041"
     exit 0
   fi
   sleep 1

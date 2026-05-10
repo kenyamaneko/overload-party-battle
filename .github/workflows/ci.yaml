@@ -64,7 +64,7 @@ jobs:
         run: dotnet test OverloadParty.Battle.slnx
         env:
           CARDS_JSON_PATH: ${{ github.workspace }}/packages/game-state-dotnet/cache/cards_gen.json
-          FIRESTORE_EMULATOR_HOST: localhost:9041
+          FIRESTORE_EMULATOR_HOST: 127.0.0.1:9041
           FIRESTORE_PROJECT_ID: overload-party-test
 
   codegen-sync:
