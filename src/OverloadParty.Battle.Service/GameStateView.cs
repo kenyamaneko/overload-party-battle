@@ -87,11 +87,13 @@ public static class GameStateView
 
     private static GD.Field MapField(Field field)
     {
+        // Zone<T>.IEnumerable は null スロットを除外するため、ToArray() で
+        // 元の固定容量配列を取り出してから Select する。
         return new GD.Field
         {
-            Frontend = field.Frontend.Select(r => r is null ? null : MapResource(r)).ToList(),
-            Backend = field.Backend.Select(r => r is null ? null : MapResource(r)).ToList(),
-            Support = field.Support.Select(s => s is null ? null : MapSupport(s)).ToList(),
+            Frontend = field.Frontend.ToArray().Select(r => r is null ? null : MapResource(r)).ToList(),
+            Backend = field.Backend.ToArray().Select(r => r is null ? null : MapResource(r)).ToList(),
+            Support = field.Support.ToArray().Select(s => s is null ? null : MapSupport(s)).ToList(),
         };
     }
 
@@ -187,11 +189,13 @@ public static class GameStateView
 
     private static GD.OpponentField BuildOpponentField(Field field, long viewerPlayerNum)
     {
+        // Zone<T>.IEnumerable は null スロットを除外するため、ToArray() で
+        // 固定容量配列を取り出してから Select する。
         return new GD.OpponentField
         {
-            Frontend = field.Frontend.Select(HideResourceIfFaceDown).ToList(),
-            Backend = field.Backend.Select(HideResourceIfFaceDown).ToList(),
-            Support = field.Support.Select(sup =>
+            Frontend = field.Frontend.ToArray().Select(HideResourceIfFaceDown).ToList(),
+            Backend = field.Backend.ToArray().Select(HideResourceIfFaceDown).ToList(),
+            Support = field.Support.ToArray().Select(sup =>
             {
                 if (sup is null) { return null; }
 
@@ -213,10 +217,13 @@ public static class GameStateView
         if (res is null) { return null; }
         if (res.FaceUp) { return MapResource(res); }
 
-        // Hide all stats for face-down (still deploying) resources
+        // Hide all stats for face-down (still deploying) resources.
+        // CardID は required スキーマだが face-down では公開しないため空文字を入れる
+        // (旧コード生成で string のデフォルトが "" だった挙動を維持)。
         return new GD.DeployedResource
         {
             InstanceID = res.InstanceID,
+            CardID = "",
             FaceUp = false,
             DeployingTurnsLeft = res.DeployingTurnsLeft,
         };
