@@ -13,7 +13,11 @@ public class EffectGroupOp(string groupId, IEffectOp[] ops) : IEffectOp
     {
         try
         {
-            foreach (var op in ops) op.Execute(ctx);
+            foreach (var op in ops)
+            {
+                op.Execute(ctx);
+            }
+
             ctx.GroupResults[groupId] = true;
         }
         catch (GameRuleException)
@@ -31,11 +35,17 @@ public class DependentEffectOp(string parentGroupId, IEffectOp[] ops) : IEffectO
 {
     public void Execute(OpContext ctx)
     {
-        if (!ctx.GroupResults.GetValueOrDefault(parentGroupId)) return;
+        if (!ctx.GroupResults.GetValueOrDefault(parentGroupId))
+        {
+            return;
+        }
 
         try
         {
-            foreach (var op in ops) op.Execute(ctx);
+            foreach (var op in ops)
+            {
+                op.Execute(ctx);
+            }
         }
         catch (GameRuleException)
         {
@@ -94,7 +104,11 @@ public class ResourceCountGuardOp(
     {
         int count = CountResources(ctx);
         bool satisfied = count >= min && (max is null || count <= max);
-        if (negate) satisfied = !satisfied;
+        if (negate)
+        {
+            satisfied = !satisfied;
+        }
+
         if (!satisfied)
         {
             throw new GameRuleException($"Resource count guard failed: count={count}, min={min}, max={max}, negate={negate}");
@@ -150,19 +164,31 @@ public class ResourceCountGuardOp(
 
     private bool MatchesFaction(string cardID, ICardCache cc)
     {
-        if (faction is not { Length: > 0 }) return true;
+        if (faction is not { Length: > 0 })
+        {
+            return true;
+        }
+
         return cc.MustGet(cardID).Faction == faction;
     }
 
     private bool MatchesCardTypes(string cardID, ICardCache cc)
     {
-        if (cardTypes is not { Count: > 0 }) return true;
+        if (cardTypes is not { Count: > 0 })
+        {
+            return true;
+        }
+
         return EffectHelpers.MatchesAnyCardType(cc.MustGet(cardID), cardTypes);
     }
 
     private bool MatchesCardIds(string cardID)
     {
-        if (cardIds is not { Count: > 0 }) return true;
+        if (cardIds is not { Count: > 0 })
+        {
+            return true;
+        }
+
         return cardIds.Contains(cardID);
     }
 }

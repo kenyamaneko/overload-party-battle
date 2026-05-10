@@ -23,7 +23,8 @@ public class GuardCheckerTests
             oppField ?? TestFactory.MakeField(),
             hand ?? [],
             budget,
-            _cc) { CurrentTurn = turn };
+            _cc)
+        { CurrentTurn = turn };
     }
 
     // ─── Null condition ─────────────────────────────────────────

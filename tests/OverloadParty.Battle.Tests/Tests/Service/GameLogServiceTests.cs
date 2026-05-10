@@ -44,8 +44,11 @@ public class GameLogServiceTests
             PlayerNum = 1,
             EventData = new AttackEventData
             {
-                AttackerId = "atk_1", TargetId = "def_1",
-                Damage = 600, Destroyed = true, SlaPenalty = 400,
+                AttackerId = "atk_1",
+                TargetId = "def_1",
+                Damage = 600,
+                Destroyed = true,
+                SlaPenalty = 400,
             },
         });
         await _repo.AppendEvent(new GameEvent
@@ -56,7 +59,10 @@ public class GameLogServiceTests
             PlayerNum = null,
             EventData = new TurnEndEventData
             {
-                Phase = "battle", NextTurn = 2, ActivePlayer = 2, CurrentPhase = "draw",
+                Phase = "battle",
+                NextTurn = 2,
+                ActivePlayer = 2,
+                CurrentPhase = "draw",
             },
         });
         await _repo.AppendEvent(new GameEvent
@@ -165,16 +171,19 @@ public class GameLogServiceTests
         {
             ActionTypes.ScaleUp => new ScaleUpEventData
             {
-                InstanceId = "inst_1", TargetRank = "medium",
+                InstanceId = "inst_1",
+                TargetRank = "medium",
             },
             ActionTypes.Monetize => new MonetizeEventData { TotalAmount = 300 },
             ActionTypes.DiscardHand => new DiscardHandEventData
             {
-                DiscardedCount = 2, DiscardedIds = ["i1", "i2"],
+                DiscardedCount = 2,
+                DiscardedIds = ["i1", "i2"],
             },
             EventTypes.PhaseChange => new PhaseChangeEventData
             {
-                PreviousPhase = "main", CurrentPhase = "battle",
+                PreviousPhase = "main",
+                CurrentPhase = "battle",
             },
             _ => throw new InvalidOperationException($"Unhandled event type in test fixture: {eventType}"),
         };

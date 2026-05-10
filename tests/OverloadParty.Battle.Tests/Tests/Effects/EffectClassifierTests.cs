@@ -132,28 +132,28 @@ public class EffectClassifierTests
     // ─── Card Movement / Field Ops / Reactive Control ─────────
 
     [Theory]
-    [InlineData("draw",          EffectCategory.Draw)]
-    [InlineData("search",        EffectCategory.Search)]
-    [InlineData("deployhand",    EffectCategory.DeployFree)]
-    [InlineData("deployrepo",    EffectCategory.DeployFree)]
-    [InlineData("trashtohand",   EffectCategory.RecoverCard)]
-    [InlineData("reveal",        EffectCategory.RevealReactive)]
-    [InlineData("destroyplat",   EffectCategory.DestroyPlatform)]
-    [InlineData("cancel",        EffectCategory.CancelAction)]
-    [InlineData("survive",       EffectCategory.Survive)]
+    [InlineData("draw", EffectCategory.Draw)]
+    [InlineData("search", EffectCategory.Search)]
+    [InlineData("deployhand", EffectCategory.DeployFree)]
+    [InlineData("deployrepo", EffectCategory.DeployFree)]
+    [InlineData("trashtohand", EffectCategory.RecoverCard)]
+    [InlineData("reveal", EffectCategory.RevealReactive)]
+    [InlineData("destroyplat", EffectCategory.DestroyPlatform)]
+    [InlineData("cancel", EffectCategory.CancelAction)]
+    [InlineData("survive", EffectCategory.Survive)]
     public void Classify_SingleOp_HasExpectedCategory(string opKey, EffectCategory expected)
     {
         IEffectOp op = opKey switch
         {
-            "draw"        => new DrawCardsOp(1),
-            "search"      => new SearchRepoOp(),
-            "deployhand"  => new DeployFromHandOp(),
-            "deployrepo"  => new DeployFromRepoOp(),
+            "draw" => new DrawCardsOp(1),
+            "search" => new SearchRepoOp(),
+            "deployhand" => new DeployFromHandOp(),
+            "deployrepo" => new DeployFromRepoOp(),
             "trashtohand" => new TrashToHandOp(),
-            "reveal"      => new RevealReactiveOp(),
+            "reveal" => new RevealReactiveOp(),
             "destroyplat" => new DestroyPlatformOp(),
-            "cancel"      => SetCancelActionOp.Instance,
-            _             => new SurviveDestructionOp(1),
+            "cancel" => SetCancelActionOp.Instance,
+            _ => new SurviveDestructionOp(1),
         };
         var info = EffectClassifier.ClassifyOps([op]);
 

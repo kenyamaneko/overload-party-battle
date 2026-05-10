@@ -29,7 +29,11 @@ public static class EffectYamlLoader
     {
         foreach (var card in cards)
         {
-            if (card.Effects is not { Count: > 0 }) continue;
+            if (card.Effects is not { Count: > 0 })
+            {
+                continue;
+            }
+
             LoadCardEffects(card.CardId, card.Effects, registry, customRegistry);
         }
     }
@@ -607,9 +611,21 @@ public static class EffectYamlLoader
 
         return card =>
         {
-            if (faction is { Length: > 0 } && card.Faction != faction) return false;
-            if (cardTypes is { Count: > 0 } && !EffectHelpers.MatchesAnyCardType(card, cardTypes)) return false;
-            if (cardIds is { Count: > 0 } && !cardIds.Contains(card.CardId)) return false;
+            if (faction is { Length: > 0 } && card.Faction != faction)
+            {
+                return false;
+            }
+
+            if (cardTypes is { Count: > 0 } && !EffectHelpers.MatchesAnyCardType(card, cardTypes))
+            {
+                return false;
+            }
+
+            if (cardIds is { Count: > 0 } && !cardIds.Contains(card.CardId))
+            {
+                return false;
+            }
+
             return true;
         };
     }

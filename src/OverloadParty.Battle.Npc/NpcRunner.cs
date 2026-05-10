@@ -203,11 +203,21 @@ public class NpcRunner
 
     private async Task<bool> IsNpcPending(Game game, OverloadParty.Battle.Engine.ActionResult result, CancellationToken ct)
     {
-        if (result.GameOver is not null) return false;
-        if (result.NeedsSlotSelect) return true;
+        if (result.GameOver is not null)
+        {
+            return false;
+        }
+
+        if (result.NeedsSlotSelect)
+        {
+            return true;
+        }
 
         var state = await _repo.GetGameState(game.GameID, ct);
-        if (state is null) return false;
+        if (state is null)
+        {
+            return false;
+        }
 
         return ResolveNpcAIForPlayer(game, state.ActivePlayer) is not null;
     }

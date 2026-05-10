@@ -29,7 +29,9 @@ public static class PgTestFixture
     {
         var connStr = Environment.GetEnvironmentVariable("TEST_DB_URL");
         if (string.IsNullOrEmpty(connStr))
+        {
             return null;
+        }
 
         var ds = NpgsqlDataSource.Create(connStr);
 

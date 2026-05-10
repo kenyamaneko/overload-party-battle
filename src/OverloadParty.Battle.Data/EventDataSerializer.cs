@@ -22,21 +22,21 @@ public static class EventDataSerializer
 
     private static readonly Dictionary<string, Type> _map = new()
     {
-        [EventTypes.PlayCard]         = typeof(PlayCardEventData),
-        [EventTypes.AttachCard]       = typeof(AttachCardEventData),
-        [EventTypes.Attack]           = typeof(AttackEventData),
-        [EventTypes.ScaleUp]          = typeof(ScaleUpEventData),
-        [EventTypes.Monetize]         = typeof(MonetizeEventData),
-        [EventTypes.DiscardHand]      = typeof(DiscardHandEventData),
-        [EventTypes.UseEffect]        = typeof(UseEffectEventData),
-        [EventTypes.PhaseChange]      = typeof(PhaseChangeEventData),
-        [EventTypes.PhaseEnd]         = typeof(PhaseEndEventData),
-        [EventTypes.TurnEnd]          = typeof(TurnEndEventData),
-        [EventTypes.BattleStart]      = typeof(BattleStartEventData),
-        [EventTypes.TurnStart]        = typeof(TurnStartInternalEventData),
+        [EventTypes.PlayCard] = typeof(PlayCardEventData),
+        [EventTypes.AttachCard] = typeof(AttachCardEventData),
+        [EventTypes.Attack] = typeof(AttackEventData),
+        [EventTypes.ScaleUp] = typeof(ScaleUpEventData),
+        [EventTypes.Monetize] = typeof(MonetizeEventData),
+        [EventTypes.DiscardHand] = typeof(DiscardHandEventData),
+        [EventTypes.UseEffect] = typeof(UseEffectEventData),
+        [EventTypes.PhaseChange] = typeof(PhaseChangeEventData),
+        [EventTypes.PhaseEnd] = typeof(PhaseEndEventData),
+        [EventTypes.TurnEnd] = typeof(TurnEndEventData),
+        [EventTypes.BattleStart] = typeof(BattleStartEventData),
+        [EventTypes.TurnStart] = typeof(TurnStartInternalEventData),
         [EventTypes.ReactiveRevealed] = typeof(ReactiveRevealedEventData),
-        [EventTypes.GameOver]         = typeof(GameOverEventData),
-        [ActionTypes.SelectSlot]      = typeof(SelectSlotEventData),
+        [EventTypes.GameOver] = typeof(GameOverEventData),
+        [ActionTypes.SelectSlot] = typeof(SelectSlotEventData),
     };
 
     /// <summary>Serialize a typed event payload to JSON. Uses the runtime type for polymorphism.</summary>

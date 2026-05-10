@@ -18,10 +18,19 @@ public class FirestoreGameConfigRepositoryTests
     private static async Task<FirestoreDb?> TryCreateDbAsync()
     {
         var host = Environment.GetEnvironmentVariable("FIRESTORE_EMULATOR_HOST");
-        if (string.IsNullOrEmpty(host)) return null;
+        if (string.IsNullOrEmpty(host))
+        {
+            return null;
+        }
 
         await ResetEmulatorAsync(host);
-        return FirestoreDb.Create(ProjectId);
+        // FirestoreDb.Create は FIRESTORE_EMULATOR_HOST を黙示的に読まないので、
+        // EmulatorDetection.EmulatorOnly を明示して emulator 接続を確定させる。
+        return await new FirestoreDbBuilder
+        {
+            ProjectId = ProjectId,
+            EmulatorDetection = Google.Api.Gax.EmulatorDetection.EmulatorOnly,
+        }.BuildAsync();
     }
 
     private static async Task ResetEmulatorAsync(string host)
@@ -36,7 +45,10 @@ public class FirestoreGameConfigRepositoryTests
     public async Task GetInt64Async_returns_seeded_value()
     {
         var db = await TryCreateDbAsync();
-        if (db is null) return;
+        if (db is null)
+        {
+            return;
+        }
 
         await db.Collection("game_config").Document("exp_win").SetAsync(new Dictionary<string, object>
         {
@@ -53,7 +65,10 @@ public class FirestoreGameConfigRepositoryTests
     public async Task GetInt64Async_throws_NotFoundException_when_missing()
     {
         var db = await TryCreateDbAsync();
-        if (db is null) return;
+        if (db is null)
+        {
+            return;
+        }
 
         var repo = new FirestoreGameConfigRepository(db);
 

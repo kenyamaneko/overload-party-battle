@@ -1,0 +1,34 @@
+{
+  "runtime": "Net100",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "../../.codegen-views/openapi.state.yaml"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "namespace": "OverloadParty.GameState",
+      "className": "GameStateClient",
+      "generateClientClasses": false,
+      "generateClientInterfaces": false,
+      "generateExceptionClasses": false,
+      "generateDtoTypes": true,
+      "generateOptionalParameters": false,
+      "generateNullableReferenceTypes": true,
+      "classStyle": "Poco",
+      "jsonLibrary": "SystemTextJson",
+      "anyType": "System.Text.Json.JsonElement",
+      "dateType": "System.DateTimeOffset",
+      "dateTimeType": "System.DateTimeOffset",
+      "arrayType": "System.Collections.Generic.List",
+      "arrayInstanceType": "System.Collections.Generic.List",
+      "dictionaryType": "System.Collections.Generic.Dictionary",
+      "dictionaryInstanceType": "System.Collections.Generic.Dictionary",
+      "generateDataAnnotations": false,
+      "generateImmutableArrayProperties": false,
+      "generateImmutableDictionaryProperties": false,
+      "useBaseUrl": false,
+      "output": "GameState_gen.cs"
+    }
+  }
+}

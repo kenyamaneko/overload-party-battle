@@ -1,23 +1,6 @@
 #!/usr/bin/env bash
-# Detect package changes since last tag and compute next versions for the
-# overload-party-battle repo (ADR-015 Phase 6 — battle-owned publish units).
-#
-# Package list (7 publish units):
-#
-#   Go modules (2):
-#     - game-logic-constants-go  (github.com/kenyamaneko/overload-party-battle/packages/game-logic-constants-go)
-#     - api-battle-rpc-go        (github.com/kenyamaneko/overload-party-battle/packages/api-battle-rpc-go)
-#
-#   C# csproj (3 — PackageId は common の旧 ID をそのまま引き継ぐ):
-#     - game-logic-constants-dotnet  (OverloadParty.GameLogicConstants)
-#     - game-state-dotnet            (OverloadParty.GameState)
-#     - api-battle-rpc-dotnet        (OverloadParty.ApiBattleRpc)
-#
-#   npm packages (2):
-#     - game-logic-constants-npm  (@kenyamaneko/overload-party-game-logic-constants)
-#     - game-state-npm            (@kenyamaneko/overload-party-game-state)
-#
-# Each package has its own tag prefix "packages/{name}/v{version}".
+# 直近のタグからの変更を検出して、各 publish unit の次バージョンを算出する。
+# 各 publish unit は "packages/{name}/v{version}" のタグプレフィックスを持つ。
 
 set -euo pipefail
 
@@ -31,8 +14,6 @@ PACKAGES=(
   "game-logic-constants-go:packages/game-logic-constants-go:packages/game-logic-constants-go/:-"
   "api-battle-rpc-go:packages/api-battle-rpc-go:packages/api-battle-rpc-go/:-"
   "game-logic-constants-dotnet:packages/game-logic-constants-dotnet:packages/game-logic-constants-dotnet/:-"
-  "game-state-dotnet:packages/game-state-dotnet:packages/game-state-dotnet/:-"
-  "api-battle-rpc-dotnet:packages/api-battle-rpc-dotnet:packages/api-battle-rpc-dotnet/:-"
   "game-logic-constants-npm:packages/game-logic-constants-npm:packages/game-logic-constants-npm/:-"
   "game-state-npm:packages/game-state-npm:packages/game-state-npm/:-"
 )

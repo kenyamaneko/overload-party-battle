@@ -175,7 +175,10 @@ public class RefAmount(string who, string stat, double multiply = 1.0) : IAmount
             _ => throw new InvalidOperationException($"Unknown ref: {who}.{stat}"),
         };
 
-        if (multiply == 1.0) return raw;
+        if (multiply == 1.0)
+        {
+            return raw;
+        }
 
         return (long)(raw * multiply);
     }

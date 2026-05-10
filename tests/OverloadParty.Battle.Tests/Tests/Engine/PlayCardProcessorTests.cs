@@ -294,7 +294,10 @@ public class PlayCardProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "old_sup", CardID = "TEST-0200", ArtNo = 0, FaceUp = true,
+            InstanceID = "old_sup",
+            CardID = "TEST-0200",
+            ArtNo = 0,
+            FaceUp = true,
         };
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0200" });
 
@@ -313,7 +316,10 @@ public class PlayCardProcessorTests
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1");
         state.Player1Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "old_att", CardID = "TEST-0300", ArtNo = 0, FaceUp = true,
+            InstanceID = "old_att",
+            CardID = "TEST-0300",
+            ArtNo = 0,
+            FaceUp = true,
             TargetInstanceID = "res_1",
         };
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });

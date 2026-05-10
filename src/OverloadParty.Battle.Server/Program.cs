@@ -249,18 +249,18 @@ api.MapGet("/npc/models", () =>
 // NPC ゲーム作成
 api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
 {
-    var cards = req.DeckCards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
+    var cards = req.DeckCards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
     var game = await gameSvc.StartNPCBattle(cards, req.NpcModel);
-    return Results.Ok(new GameCreatedResult { GameID = game.GameID });
+    return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 
 // PvP ゲーム作成（マッチメイキング後に Gateway が呼び出す）
 api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
 {
-    var p1Cards = req.Deck1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
-    var p2Cards = req.Deck2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardID, ArtNo = c.ArtNo }).ToList();
+    var p1Cards = req.Deck1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
+    var p2Cards = req.Deck2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
     var game = await gameSvc.CreateGameFromMatch(p1Cards, p2Cards);
-    return Results.Ok(new GameCreatedResult { GameID = game.GameID });
+    return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 
 // ゲームアクション
@@ -299,14 +299,22 @@ api.MapGet("/games/{gameId}/controls/{playerNum:int}", async (GameService gameSv
 api.MapGet("/games/{gameId}/log", async (GameLogService logSvc, string gameId) =>
 {
     var log = await logSvc.GetGameLog(gameId);
-    if (log is null) return Results.NotFound(new { error = "game not found" });
+    if (log is null)
+    {
+        return Results.NotFound(new { error = "game not found" });
+    }
+
     return Results.Bytes(logSvc.SerializeToJson(log), "application/json");
 });
 
 api.MapGet("/games/{gameId}/log/text", async (GameLogService logSvc, string gameId) =>
 {
     var text = await logSvc.GetGameLogText(gameId);
-    if (text is null) return Results.NotFound(new { error = "game not found" });
+    if (text is null)
+    {
+        return Results.NotFound(new { error = "game not found" });
+    }
+
     return Results.Text(text, "text/plain");
 });
 
