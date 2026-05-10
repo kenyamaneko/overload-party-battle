@@ -1,12 +1,9 @@
-"""NSwag が出力する snake_case な C# プロパティ名を PascalCase に書き換える。
+"""NSwag が出力する snake_case の C# プロパティ名 (例: ``Card_id``) を
+PascalCase (``CardId``) に書き換える post-process。
 
-NSwag 14.7 / NJsonSchema 11.6 の DefaultCSharpPropertyNameGenerator は
-`card_id` のような snake_case を `Card_id` (先頭だけ大文字、アンダースコアそのまま)
-で出してくることがあり、battle 側 C# コードが想定する PascalCase (`CardId`) と
-食い違う。NSwag のプロパティ名生成器は JSON config から差し替えられないため、
-codegen 後に sed 相当の post-process で固定する。
-
-JsonPropertyName 属性は wire 形式のままなので JSON 互換性は保たれる。
+NSwag のプロパティ名生成器は JSON config から差し替えられないため codegen 後に
+ここで固定する。``[JsonPropertyName]`` は wire 形式のままなので JSON 互換性は
+保たれる。
 """
 
 from __future__ import annotations

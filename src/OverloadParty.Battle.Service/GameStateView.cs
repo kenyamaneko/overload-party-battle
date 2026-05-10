@@ -218,8 +218,7 @@ public static class GameStateView
         if (res.FaceUp) { return MapResource(res); }
 
         // Hide all stats for face-down (still deploying) resources.
-        // CardID は required スキーマだが face-down では公開しないため空文字を入れる
-        // (旧コード生成で string のデフォルトが "" だった挙動を維持)。
+        // CardID は required スキーマだが face-down では公開しないため空文字を入れる。
         return new GD.DeployedResource
         {
             InstanceID = res.InstanceID,
