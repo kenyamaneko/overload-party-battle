@@ -220,3 +220,13 @@ PostgreSQL トランザクションが失敗した場合、クライアントに
 | `monetize` | Main Phase | バックエンドのコンピュート | — | — | Insight Pool 残量 ≥ 分配量、TP上限 |
 | `use_effect` | Main/Battle Phase | 効果を持つカード | 効果の対象 | 効果コスト | 1ターン1回制限 |
 
+## 4. 実装規約
+
+### Card 取得失敗時の fail-fast 戦略
+
+card service からの Card 取得に失敗した場合、リトライせず `Environment.Exit(1)` で即死し、k8s の再起動に任せる。プロセス内のリトライバックオフを実装すると k8s の指数バックオフと二重化するため、cluster 側の再起動戦略を活用する。
+
+### 既存ヘルパーの再利用
+
+フィールド走査には `FieldHelpers.AllFaceUpResources` / `AllResources` / `TargetSelector.FaceUpInZone` を再利用する。同じパターンの for ループを新たに書かない。
+

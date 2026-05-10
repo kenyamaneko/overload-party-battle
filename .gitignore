@@ -22,7 +22,6 @@ package-lock.json
 
 # Claude
 .claude/
-CLAUDE.md
 
 # Symlinks (removed: docs was a symlink to common/docs, now a real directory)
 
