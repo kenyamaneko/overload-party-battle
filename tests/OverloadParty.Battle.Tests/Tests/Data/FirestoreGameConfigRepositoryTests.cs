@@ -24,7 +24,13 @@ public class FirestoreGameConfigRepositoryTests
         }
 
         await ResetEmulatorAsync(host);
-        return FirestoreDb.Create(ProjectId);
+        // FirestoreDb.Create は FIRESTORE_EMULATOR_HOST を黙示的に読まないので、
+        // EmulatorDetection.EmulatorOnly を明示して emulator 接続を確定させる。
+        return await new FirestoreDbBuilder
+        {
+            ProjectId = ProjectId,
+            EmulatorDetection = Google.Api.Gax.EmulatorDetection.EmulatorOnly,
+        }.BuildAsync();
     }
 
     private static async Task ResetEmulatorAsync(string host)
