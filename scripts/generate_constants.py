@@ -1,17 +1,5 @@
 #!/usr/bin/env python3
-"""data/game_logic_constants.yaml から各言語の定数モジュールを生成する。
-
-ADR-034 Phase 2 で API 契約系の SSoT は data/openapi.yaml + oapi-codegen/NSwag/openapi-typescript
-に移行したが、ゲームロジック定数は ADR-034 scope 外として現行の独自 codegen を維持する。
-
-Inputs:
-  - data/game_logic_constants.yaml  (Phase / WinReason / EventType 等)
-
-Outputs:
-  - packages/game-logic-constants-go/constants_gen.go     (package game_logic)
-  - packages/game-logic-constants-dotnet/GameLogicConstants_gen.cs (namespace OverloadParty.GameLogicConstants)
-  - packages/game-logic-constants-npm/src/index.ts
-"""
+"""data/game_logic_constants.yaml から各言語の定数モジュールを生成する。"""
 
 from __future__ import annotations
 

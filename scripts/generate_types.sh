@@ -1,14 +1,6 @@
 #!/usr/bin/env bash
-# generate_types.sh — data/openapi.yaml から各言語の型を再生成する。
-#
-#   - Go (oapi-codegen)            → packages/api-battle-rpc-go/openapi_gen.go
-#   - C# (NSwag) RPC view          → packages/api-battle-rpc-dotnet/BattleRpc_gen.cs
-#   - C# (NSwag) game-state view   → packages/game-state-dotnet/GameState_gen.cs
-#   - TS (openapi-typescript)      → packages/game-state-npm/src/openapi.gen.ts
-#
-# C# は SSoT 単一 yaml を `x-battle-csharp-package` 拡張で 2 ビューに分割してから NSwag に渡す。
-# ゲームロジック定数 (data/game_logic_constants.yaml) は本 ADR scope 外で
-# `python -m overload_party_codegen_tools` 経由の現行 codegen を維持する。
+# data/openapi.yaml から Go / C# / TS の型を再生成し、game_logic_constants.yaml の
+# 定数生成も併走させる。C# は x-battle-csharp-package 拡張で 2 ビューに分割してから NSwag に渡す。
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -51,6 +43,6 @@ npx --yes openapi-typescript@7 \
   --output packages/game-state-npm/src/openapi.gen.ts
 echo "::endgroup::"
 
-echo "::group::Run game-logic-constants codegen (out of scope but kept)"
+echo "::group::Run game-logic-constants codegen"
 python scripts/generate_constants.py
 echo "::endgroup::"

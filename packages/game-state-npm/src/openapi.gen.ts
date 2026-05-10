@@ -294,8 +294,7 @@ export interface components {
             currentTurn: number;
             /**
              * @description 現在のフェーズ (`selecting` / `draw` / `yield` / `main` / `battle` / `end`)。
-             *     game-logic-constants の GamePhase に対応するが OpenAPI 上は string で扱う
-             *     (定数 SSoT は data/game_logic_constants.yaml で別途維持)。
+             *     定数マッピングは data/game_logic_constants.yaml 参照。
              */
             currentPhase: string;
             /**

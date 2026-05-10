@@ -1,8 +1,6 @@
 // Package apibattlerpcserverfake は battle の HTTP 契約を実装する httptest.Server ラッパー。
-// 各 endpoint は Fn field (func callback) で応答を制御し、Fn=nil なら既定値を返す。
-//
-// 用途: gateway やその他 consumer が battle へ HTTP RPC する経路を、テスト時に
-// httptest.Server で差し替えるためのドライバ。
+// 各 endpoint は Fn field (func callback) で応答を制御する。
+// Fn 未設定の endpoint を呼び出すと 500 を返してテスト設定漏れを顕在化させる。
 package apibattlerpcserverfake
 
 import (
@@ -22,28 +20,28 @@ type Server struct {
 	mu  sync.Mutex
 	srv *httptest.Server
 
-	// HealthFn は GET /health の応答を決定する (nil は 200 {"status":"ok"})。
+	// HealthFn は GET /health の応答を決定する。
 	HealthFn func() (int, any)
 
-	// ListNpcModelsFn は GET /api/v1/npc/models の応答を決定する (nil は 200 + 空 models)。
+	// ListNpcModelsFn は GET /api/v1/npc/models の応答を決定する。
 	ListNpcModelsFn func() (int, any)
 
-	// CreateNpcGameFn は POST /api/v1/games/npc の応答を決定する (nil は 200 + 空 GameID)。
+	// CreateNpcGameFn は POST /api/v1/games/npc の応答を決定する。
 	CreateNpcGameFn func(req apibattle.NpcBattleRequest) (int, any)
 
-	// CreatePvpGameFn は POST /api/v1/games/pvp の応答を決定する (nil は 200 + 空 GameID)。
+	// CreatePvpGameFn は POST /api/v1/games/pvp の応答を決定する。
 	CreatePvpGameFn func(req apibattle.PvpBattleRequest) (int, any)
 
-	// ProcessActionFn は POST /api/v1/games/{gameID}/actions の応答を決定する (nil は 200 + 空 ActionResult)。
+	// ProcessActionFn は POST /api/v1/games/{gameID}/actions の応答を決定する。
 	ProcessActionFn func(gameID string, req apibattle.GameActionRequest) (int, any)
 
-	// AdvanceNpcTurnFn は POST /api/v1/games/{gameID}/advance-npc の応答を決定する (nil は 200 + 空 ActionResult)。
+	// AdvanceNpcTurnFn は POST /api/v1/games/{gameID}/advance-npc の応答を決定する。
 	AdvanceNpcTurnFn func(gameID string) (int, any)
 
-	// GetGameStateFn は GET /api/v1/games/{gameID}/state/{playerNum} の応答を決定する (nil は 200 + 空 ClientGameState)。
+	// GetGameStateFn は GET /api/v1/games/{gameID}/state/{playerNum} の応答を決定する。
 	GetGameStateFn func(gameID string, playerNum int) (int, any)
 
-	// GetTurnControlsFn は GET /api/v1/games/{gameID}/controls/{playerNum} の応答を決定する (nil は 200 + 空 TurnControlsMessage)。
+	// GetTurnControlsFn は GET /api/v1/games/{gameID}/controls/{playerNum} の応答を決定する。
 	GetTurnControlsFn func(gameID string, playerNum int) (int, any)
 }
 
@@ -75,7 +73,7 @@ func (s *Server) handleHealth(w http.ResponseWriter, _ *http.Request) {
 	s.mu.Unlock()
 
 	if fn == nil {
-		writeJSON(w, http.StatusOK, apibattle.HealthResponse{Status: "ok"})
+		fnNotSet(w, "HealthFn")
 		return
 	}
 	status, body := fn()
@@ -88,7 +86,7 @@ func (s *Server) handleListNpcModels(w http.ResponseWriter, _ *http.Request) {
 	s.mu.Unlock()
 
 	if fn == nil {
-		writeJSON(w, http.StatusOK, apibattle.NpcModelsResponse{Models: []apibattle.NpcModelEntry{}})
+		fnNotSet(w, "ListNpcModelsFn")
 		return
 	}
 	status, body := fn()
@@ -104,7 +102,7 @@ func (s *Server) handleCreateNpcGame(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 
 	if fn == nil {
-		writeJSON(w, http.StatusOK, apibattle.GameCreatedResult{})
+		fnNotSet(w, "CreateNpcGameFn")
 		return
 	}
 	status, body := fn(req)
@@ -120,7 +118,7 @@ func (s *Server) handleCreatePvpGame(w http.ResponseWriter, r *http.Request) {
 	s.mu.Unlock()
 
 	if fn == nil {
-		writeJSON(w, http.StatusOK, apibattle.GameCreatedResult{})
+		fnNotSet(w, "CreatePvpGameFn")
 		return
 	}
 	status, body := fn(req)
@@ -137,7 +135,7 @@ func (s *Server) handleProcessAction(w http.ResponseWriter, r *http.Request) {
 
 	gameID := r.PathValue("gameID")
 	if fn == nil {
-		writeJSON(w, http.StatusOK, apibattle.ActionResult{Events: []apibattle.ActionEvent{}})
+		fnNotSet(w, "ProcessActionFn")
 		return
 	}
 	status, body := fn(gameID, req)
@@ -151,7 +149,7 @@ func (s *Server) handleAdvanceNpcTurn(w http.ResponseWriter, r *http.Request) {
 
 	gameID := r.PathValue("gameID")
 	if fn == nil {
-		writeJSON(w, http.StatusOK, apibattle.ActionResult{Events: []apibattle.ActionEvent{}})
+		fnNotSet(w, "AdvanceNpcTurnFn")
 		return
 	}
 	status, body := fn(gameID)
@@ -166,7 +164,7 @@ func (s *Server) handleGetGameState(w http.ResponseWriter, r *http.Request) {
 	gameID := r.PathValue("gameID")
 	playerNum := atoiOrZero(r.PathValue("playerNum"))
 	if fn == nil {
-		writeJSON(w, http.StatusOK, apibattle.ClientGameState{})
+		fnNotSet(w, "GetGameStateFn")
 		return
 	}
 	status, body := fn(gameID, playerNum)
@@ -181,11 +179,17 @@ func (s *Server) handleGetTurnControls(w http.ResponseWriter, r *http.Request) {
 	gameID := r.PathValue("gameID")
 	playerNum := atoiOrZero(r.PathValue("playerNum"))
 	if fn == nil {
-		writeJSON(w, http.StatusOK, apibattle.TurnControlsMessage{})
+		fnNotSet(w, "GetTurnControlsFn")
 		return
 	}
 	status, body := fn(gameID, playerNum)
 	writeJSON(w, status, body)
+}
+
+// fnNotSet は Fn 未設定の endpoint が呼ばれたときに 500 を返す。
+// テストでハンドラ設定を忘れた状況を成功扱いせずに即座に顕在化させるため。
+func fnNotSet(w http.ResponseWriter, name string) {
+	http.Error(w, "apibattlerpcserverfake: "+name+" is not set", http.StatusInternalServerError)
 }
 
 func writeJSON(w http.ResponseWriter, status int, body any) {

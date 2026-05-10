@@ -99,8 +99,7 @@ type ClientGameState struct {
 	ActivePlayer int64 `json:"activePlayer"`
 
 	// CurrentPhase 現在のフェーズ (`selecting` / `draw` / `yield` / `main` / `battle` / `end`)。
-	// game-logic-constants の GamePhase に対応するが OpenAPI 上は string で扱う
-	// (定数 SSoT は data/game_logic_constants.yaml で別途維持)。
+	// 定数マッピングは data/game_logic_constants.yaml 参照。
 	CurrentPhase string `json:"currentPhase"`
 
 	// CurrentTurn 現在のターン番号

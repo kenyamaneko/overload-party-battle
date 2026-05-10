@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Build the battle container image and push it to Artifact Registry.
-# Called from .github/workflows/ci.yaml on push to main.
+# battle のコンテナイメージをビルドし Artifact Registry に push する。
 set -euo pipefail
 
 : "${REGISTRY:?REGISTRY env required}"
@@ -12,9 +11,9 @@ set -euo pipefail
 IMAGE="${REGISTRY}/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}"
 
 echo "::group::docker build ${IMAGE}:${IMAGE_TAG}"
-# Cloudsmith repos are public; the Dockerfile's `dotnet restore` reads
-# OverloadParty.GameDesignConstants anonymously over the configured feed in
-# nuget.config. No auth secret is forwarded into the build context.
+# Cloudsmith は public repo なので、Dockerfile 内の dotnet restore は
+# nuget.config の feed に対して匿名アクセスする。ビルドコンテキストに
+# 認証 secret は流していない。
 docker build -t "${IMAGE}:${IMAGE_TAG}" -t "${IMAGE}:latest" .
 echo "::endgroup::"
 

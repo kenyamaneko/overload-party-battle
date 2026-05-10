@@ -1,20 +1,7 @@
-"""data/openapi.yaml を `x-battle-csharp-package` 拡張で 2 つのビューに分割する。
+"""data/openapi.yaml を `x-battle-csharp-package` 拡張で RPC / State の 2 ビューに分割する。
 
-NSwag は単一 spec から単一 .cs を出力するため、battle 側で
-`packages/api-battle-rpc-dotnet` (RPC) と `packages/game-state-dotnet` (state) の
-2 パッケージに分けるには、事前に schema をビュー化する必要がある。
-
-各 schema に `x-battle-csharp-package: rpc | state` を付け、対応するビューだけを
-抽出した OpenAPI document を一時ディレクトリに書き出す。`paths` は両ビュー共通とし
-(NSwag が DTO 生成時に未参照スキーマを drop しないように), 出力先のスキーマ集合だけを
-切り替える。
-
-使い方:
-
-    python scripts/split_openapi_for_dotnet.py \
-        --input data/openapi.yaml \
-        --rpc-out /tmp/openapi.rpc.yaml \
-        --state-out /tmp/openapi.state.yaml
+NSwag は単一 spec から単一 .cs を出力するため、C# 側を 2 パッケージに分けるには
+事前にスキーマをビュー化する必要がある。
 """
 
 from __future__ import annotations

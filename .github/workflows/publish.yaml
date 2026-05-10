@@ -1,21 +1,5 @@
 name: Publish Packages
 
-# ADR-034 Phase 2: cross-repo で配布するのは以下のみ。
-#
-#   Go modules (GitHub git protocol で配布):
-#     - packages/game-logic-constants-go
-#     - packages/api-battle-rpc-go
-#
-#   NuGet (Cloudsmith):
-#     - packages/game-logic-constants-dotnet
-#
-#   npm (Cloudsmith):
-#     - packages/game-logic-constants-npm
-#     - packages/game-state-npm
-#
-# api-battle-rpc-dotnet / game-state-dotnet は intra-repo の ProjectReference
-# 専用で NuGet publish しない (battle 自身の sln 内のみで消費される)。
-
 on:
   push:
     branches: [main]
