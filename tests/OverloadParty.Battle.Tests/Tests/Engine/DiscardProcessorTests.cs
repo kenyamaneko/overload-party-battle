@@ -16,7 +16,7 @@ public class DiscardProcessorTests
     }
 
     private static DiscardHandRequest MakeReq(params string[] ids) =>
-        new() { CardInstanceIDs = [..ids] };
+        new() { CardInstanceIDs = [.. ids] };
 
     private static List<UndeployedCard> MakeHand(int count)
     {

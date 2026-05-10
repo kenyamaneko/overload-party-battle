@@ -299,14 +299,22 @@ api.MapGet("/games/{gameId}/controls/{playerNum:int}", async (GameService gameSv
 api.MapGet("/games/{gameId}/log", async (GameLogService logSvc, string gameId) =>
 {
     var log = await logSvc.GetGameLog(gameId);
-    if (log is null) return Results.NotFound(new { error = "game not found" });
+    if (log is null)
+    {
+        return Results.NotFound(new { error = "game not found" });
+    }
+
     return Results.Bytes(logSvc.SerializeToJson(log), "application/json");
 });
 
 api.MapGet("/games/{gameId}/log/text", async (GameLogService logSvc, string gameId) =>
 {
     var text = await logSvc.GetGameLogText(gameId);
-    if (text is null) return Results.NotFound(new { error = "game not found" });
+    if (text is null)
+    {
+        return Results.NotFound(new { error = "game not found" });
+    }
+
     return Results.Text(text, "text/plain");
 });
 

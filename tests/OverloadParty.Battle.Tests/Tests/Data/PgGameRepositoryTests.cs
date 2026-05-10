@@ -10,7 +10,11 @@ public class PgGameRepositoryTests
 
     private PgGameRepository? TryCreateRepo()
     {
-        if (_ds is null) return null;
+        if (_ds is null)
+        {
+            return null;
+        }
+
         return new PgGameRepository(_ds);
     }
 
@@ -65,7 +69,11 @@ public class PgGameRepositoryTests
     public async Task CreateGame_and_GetGame_roundtrip()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
+
         var (game, state) = MakeFixture();
 
         await repo.CreateGame(game, state);
@@ -83,7 +91,10 @@ public class PgGameRepositoryTests
     public async Task GetGame_returns_null_when_not_found()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
 
         var got = await repo.GetGame("nonexistent-id");
         got.Should().BeNull();
@@ -95,7 +106,11 @@ public class PgGameRepositoryTests
     public async Task GetGameState_roundtrip()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
+
         var (game, state) = MakeFixture();
         await repo.CreateGame(game, state);
 
@@ -118,7 +133,10 @@ public class PgGameRepositoryTests
     public async Task GetGameState_returns_null_when_not_found()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
 
         var got = await repo.GetGameState("nonexistent-id");
         got.Should().BeNull();
@@ -130,7 +148,11 @@ public class PgGameRepositoryTests
     public async Task UpdateGameState_modifies_state_and_increments_version()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
+
         var (game, state) = MakeFixture();
         await repo.CreateGame(game, state);
 
@@ -157,7 +179,10 @@ public class PgGameRepositoryTests
     public async Task UpdateGameState_throws_when_game_not_found()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
 
         var act = () => repo.UpdateGameState("nonexistent", _ => Task.CompletedTask);
         await act.Should().ThrowAsync<InvalidOperationException>();
@@ -169,7 +194,11 @@ public class PgGameRepositoryTests
     public async Task AppendEvent_and_GetEvents_roundtrip()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
+
         var (game, state) = MakeFixture();
         await repo.CreateGame(game, state);
 
@@ -218,7 +247,11 @@ public class PgGameRepositoryTests
     public async Task GetEventCount_returns_correct_count()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
+
         var (game, state) = MakeFixture();
         await repo.CreateGame(game, state);
 
@@ -242,7 +275,11 @@ public class PgGameRepositoryTests
     public async Task FinishGame_updates_status_and_winner()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
+
         var (game, state) = MakeFixture();
         await repo.CreateGame(game, state);
 
@@ -261,7 +298,11 @@ public class PgGameRepositoryTests
     public async Task UpdateGameStatus_changes_status()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
+
         var (game, state) = MakeFixture();
         await repo.CreateGame(game, state);
 
@@ -277,7 +318,11 @@ public class PgGameRepositoryTests
     public async Task GameState_with_field_resources_roundtrips_through_JSONB()
     {
         var repo = TryCreateRepo();
-        if (repo is null) return;
+        if (repo is null)
+        {
+            return;
+        }
+
         var (game, state) = MakeFixture();
 
         // Populate field with resources via Zone indexer

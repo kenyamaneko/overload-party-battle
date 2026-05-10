@@ -20,7 +20,7 @@ public class MonetizeProcessorTests
     }
 
     private static MonetizeRequest MakeReq(params MonetizeDistribution[] dists) =>
-        new() { Distributions = [..dists] };
+        new() { Distributions = [.. dists] };
 
     private static MonetizeDistribution Dist(string instanceId, long amount) =>
         new() { InstanceID = instanceId, Amount = amount };

@@ -138,13 +138,27 @@ public class MarkUseLimitOp(bool perGame) : IEffectOp
     {
         if (perGame)
         {
-            if (ctx.Source is not null) ctx.Source.EffectUsedThisGame = true;
-            if (ctx.SupSource is not null) ctx.SupSource.EffectUsedThisGame = true;
+            if (ctx.Source is not null)
+            {
+                ctx.Source.EffectUsedThisGame = true;
+            }
+
+            if (ctx.SupSource is not null)
+            {
+                ctx.SupSource.EffectUsedThisGame = true;
+            }
         }
         else
         {
-            if (ctx.Source is not null) ctx.Source.EffectUsedThisTurn = true;
-            if (ctx.SupSource is not null) ctx.SupSource.EffectUsedThisTurn = true;
+            if (ctx.Source is not null)
+            {
+                ctx.Source.EffectUsedThisTurn = true;
+            }
+
+            if (ctx.SupSource is not null)
+            {
+                ctx.SupSource.EffectUsedThisTurn = true;
+            }
         }
     }
 }

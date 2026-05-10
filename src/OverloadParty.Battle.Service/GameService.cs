@@ -251,7 +251,10 @@ public class GameService
 
     private async Task<bool> IsActivePlayerNpc(string gameID, Game game, CancellationToken ct)
     {
-        if (game.Npc1Model is null && game.Npc2Model is null) return false;
+        if (game.Npc1Model is null && game.Npc2Model is null)
+        {
+            return false;
+        }
 
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found after ProcessAction");
@@ -262,8 +265,16 @@ public class GameService
     /// <summary>NPC でない側のプレイヤー番号を返す。</summary>
     private static long ResolveHumanPlayerNum(Game game)
     {
-        if (game.Npc1Model is null) return 1;
-        if (game.Npc2Model is null) return 2;
+        if (game.Npc1Model is null)
+        {
+            return 1;
+        }
+
+        if (game.Npc2Model is null)
+        {
+            return 2;
+        }
+
         throw new InvalidOperationException("both players are NPC");
     }
 

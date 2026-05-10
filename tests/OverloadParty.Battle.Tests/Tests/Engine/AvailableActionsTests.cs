@@ -944,7 +944,9 @@ public class AvailableActionsTests
         var myField = TestFactory.MakeField();
         myField.Support[0] = new DeployedSupport
         {
-            InstanceID = "sup_1", CardID = "TEST-0200", DeployingTurnsLeft = 0
+            InstanceID = "sup_1",
+            CardID = "TEST-0200",
+            DeployingTurnsLeft = 0
         };
 
         var actions = AvailableActions.GetAllAvailableActions(
@@ -968,7 +970,9 @@ public class AvailableActionsTests
         var myField = TestFactory.MakeField();
         myField.Support[0] = new DeployedSupport
         {
-            InstanceID = "sup_1", CardID = "TEST-0200", DeployingTurnsLeft = 1
+            InstanceID = "sup_1",
+            CardID = "TEST-0200",
+            DeployingTurnsLeft = 1
         };
 
         var actions = AvailableActions.GetAllAvailableActions(
@@ -991,7 +995,10 @@ public class AvailableActionsTests
         var myField = TestFactory.MakeField();
         myField.Support[0] = new DeployedSupport
         {
-            InstanceID = "sup_1", CardID = "TEST-0200", DeployingTurnsLeft = 0, EffectUsedThisTurn = true
+            InstanceID = "sup_1",
+            CardID = "TEST-0200",
+            DeployingTurnsLeft = 0,
+            EffectUsedThisTurn = true
         };
 
         var actions = AvailableActions.GetAllAvailableActions(

@@ -91,7 +91,10 @@ public class ScaleUpRequest
         get => null;
         set
         {
-            if (value is not null) InstanceID = value;
+            if (value is not null)
+            {
+                InstanceID = value;
+            }
         }
     }
 
@@ -132,7 +135,10 @@ public class MonetizeDistribution
         get => null;
         set
         {
-            if (value is not null) InstanceID = value;
+            if (value is not null)
+            {
+                InstanceID = value;
+            }
         }
     }
 

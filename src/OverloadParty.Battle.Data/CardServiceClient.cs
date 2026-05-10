@@ -33,7 +33,9 @@ public sealed class CardServiceClient : IDisposable
     private CardServiceClient(string baseUrl, HttpClient httpClient, bool ownsHttpClient)
     {
         if (string.IsNullOrWhiteSpace(baseUrl))
+        {
             throw new ArgumentException("baseUrl must not be empty", nameof(baseUrl));
+        }
 
         _http = httpClient;
         _ownsHttpClient = ownsHttpClient;
@@ -47,7 +49,9 @@ public sealed class CardServiceClient : IDisposable
 
         var cards = await response.Content.ReadFromJsonAsync<List<CardDefinition>>(JsonOptions, ct);
         if (cards is null)
+        {
             throw new InvalidOperationException("card service returned null body for /internal/v1/cards");
+        }
 
         return cards;
     }
@@ -55,6 +59,8 @@ public sealed class CardServiceClient : IDisposable
     public void Dispose()
     {
         if (_ownsHttpClient)
+        {
             _http.Dispose();
+        }
     }
 }

@@ -31,7 +31,10 @@ public class GameLogService
     public async Task<GameLogResponse?> GetGameLog(string gameID, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct);
-        if (game is null) return null;
+        if (game is null)
+        {
+            return null;
+        }
 
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found");
@@ -77,7 +80,10 @@ public class GameLogService
     public async Task<string?> GetGameLogText(string gameID, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct);
-        if (game is null) return null;
+        if (game is null)
+        {
+            return null;
+        }
 
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found");
@@ -169,7 +175,9 @@ public class GameLogService
         var cardName = ResolveCardName(d.CardId);
 
         if (d.Cancelled == true)
+        {
             return $"{player} deploy of \"{cardName}\" was cancelled";
+        }
 
         var card = !string.IsNullOrEmpty(d.CardId) ? _cardCache.Get(d.CardId) : null;
         var cost = card?.MaintenanceCost ?? 0;
@@ -186,11 +194,21 @@ public class GameLogService
     private static string DescribeAttack(string player, AttackEventData d)
     {
         if (d.Cancelled == true)
+        {
             return $"{player} attack was cancelled";
+        }
 
         var parts = new List<string> { $"{player} attacked for {d.Damage} damage" };
-        if (d.Destroyed) parts.Add("(destroyed)");
-        if (d.SlaPenalty is { } sla && sla > 0) parts.Add($"[SLA -{sla}]");
+        if (d.Destroyed)
+        {
+            parts.Add("(destroyed)");
+        }
+
+        if (d.SlaPenalty is { } sla && sla > 0)
+        {
+            parts.Add($"[SLA -{sla}]");
+        }
+
         return string.Join(" ", parts);
     }
 
@@ -256,7 +274,11 @@ public class GameLogService
 
     private string ResolveCardName(string? cardId)
     {
-        if (string.IsNullOrEmpty(cardId)) return "???";
+        if (string.IsNullOrEmpty(cardId))
+        {
+            return "???";
+        }
+
         var card = _cardCache.Get(cardId);
         return card?.CardName ?? $"Card#{cardId}";
     }
@@ -269,14 +291,21 @@ public class GameLogService
 
     private static string CapitalizeFirst(string? s)
     {
-        if (string.IsNullOrEmpty(s)) return "";
+        if (string.IsNullOrEmpty(s))
+        {
+            return "";
+        }
+
         return char.ToUpper(s[0]) + s[1..];
     }
 
     private static string FormatDuration(TimeSpan ts)
     {
         if (ts.TotalHours >= 1)
+        {
             return $"{(int)ts.TotalHours}h{ts.Minutes:D2}m{ts.Seconds:D2}s";
+        }
+
         return $"{ts.Minutes}m{ts.Seconds:D2}s";
     }
 }

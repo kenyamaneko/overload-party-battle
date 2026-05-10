@@ -165,7 +165,7 @@ public class AttackProcessorTests
 
     [Theory]
     [InlineData(false, true)]   // attacker face-down
-    [InlineData(true,  false)]  // defender face-down
+    [InlineData(true, false)]  // defender face-down
     public void Process_FaceDown_Throws(bool atkFaceUp, bool defFaceUp)
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -375,7 +375,10 @@ public class AttackProcessorTests
         // Opponent has a support with reactive trigger
         state.Player2Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = false, DeployOrder = 1
+            InstanceID = "sup_1",
+            CardID = "TEST-0200",
+            FaceUp = false,
+            DeployOrder = 1
         };
 
         var effects = new TestEffectRegistry();
@@ -534,7 +537,10 @@ public class AttackProcessorTests
         // Opponent has support but effects are null
         state.Player2Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = false, DeployOrder = 1
+            InstanceID = "sup_1",
+            CardID = "TEST-0200",
+            FaceUp = false,
+            DeployOrder = 1
         };
 
         var result = AttackProcessor.Process(

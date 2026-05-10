@@ -1,11 +1,13 @@
 #!/usr/bin/env bash
-# packages/ 配下の tracked な生成ファイルが data/ と乖離していないかを検証する。
-# CI の codegen ステップ直後に実行し、tracked ファイルに差分があれば fail する。
-# untracked な生成ファイル (.codegen-views や gitignore 対象の NSwag 出力) は対象外。
+# packages/ 配下の生成ファイルが data/ と乖離していないかを検証する。
+# .codegen-views/ は split_openapi_for_dotnet.py が書き出す一時ディレクトリで意図的に未追跡。
 set -euo pipefail
 
-if ! git diff --quiet -- packages/; then
+git status --porcelain -- packages/ | grep -v '^?? \.codegen-views/' >/tmp/drift.txt || true
+
+if [ -s /tmp/drift.txt ]; then
   echo "::error::Generated files drifted from data/. Run scripts/generate_types.sh and commit."
+  cat /tmp/drift.txt
   git --no-pager diff -- packages/ | head -200
   exit 1
 fi

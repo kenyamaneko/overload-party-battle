@@ -285,7 +285,10 @@ public class EndPhaseProcessorTests
         var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1", faceUp: true);
         resource.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = EffectTypes.BuffTP, Value = 200, Duration = "this_turn", SourceID = "test"
+            EffectType = EffectTypes.BuffTP,
+            Value = 200,
+            Duration = "this_turn",
+            SourceID = "test"
         });
         state.Player1Field.Frontend[0] = resource;
 
@@ -329,7 +332,10 @@ public class EndPhaseProcessorTests
 
         state.Player1Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "sup_1", CardID = "TEST-0200", FaceUp = true, EffectUsedThisTurn = true
+            InstanceID = "sup_1",
+            CardID = "TEST-0200",
+            FaceUp = true,
+            EffectUsedThisTurn = true
         };
 
         EndPhaseProcessor.Process(state, _game, 1, _cc);

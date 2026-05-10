@@ -198,7 +198,11 @@ public class ExcludeSourceSelector(ISelector inner) : ISelector
     public List<DeployedResource> Select(OpContext ctx)
     {
         var results = inner.Select(ctx);
-        if (ctx.Source is null) return results;
+        if (ctx.Source is null)
+        {
+            return results;
+        }
+
         return results.Where(r => r.InstanceID != ctx.Source.InstanceID).ToList();
     }
 }
