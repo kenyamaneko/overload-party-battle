@@ -910,6 +910,7 @@ components:
           format: int32
         cancelled:
           type: boolean
+          nullable: true
 
     AttachCardEventData:
       type: object
@@ -946,8 +947,10 @@ components:
         slaPenalty:
           type: integer
           format: int64
+          nullable: true
         cancelled:
           type: boolean
+          nullable: true
 
     ScaleUpEventData:
       type: object

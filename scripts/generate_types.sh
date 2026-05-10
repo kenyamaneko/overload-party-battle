@@ -37,6 +37,12 @@ echo "::group::Generate C# game-state types (NSwag)"
 )
 echo "::endgroup::"
 
+echo "::group::Fix NSwag snake_case property names → PascalCase"
+python scripts/fix_nswag_property_names.py \
+  packages/api-battle-rpc-dotnet/BattleRpc_gen.cs \
+  packages/game-state-dotnet/GameState_gen.cs
+echo "::endgroup::"
+
 echo "::group::Generate TS types (openapi-typescript)"
 npx --yes openapi-typescript@7 \
   data/openapi.yaml \

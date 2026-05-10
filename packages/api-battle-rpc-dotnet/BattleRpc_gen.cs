@@ -78,7 +78,7 @@ namespace OverloadParty.ApiBattleRpc
         public string Difficulty { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("display_name")]
-        public string Display_name { get; set; } = default!;
+        public string DisplayName { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -99,10 +99,10 @@ namespace OverloadParty.ApiBattleRpc
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("card_id")]
-        public string Card_id { get; set; } = default!;
+        public string CardId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("art_no")]
-        public long Art_no { get; set; } = default!;
+        public long ArtNo { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -123,7 +123,7 @@ namespace OverloadParty.ApiBattleRpc
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("game_id")]
-        public string Game_id { get; set; } = default!;
+        public string GameId { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -147,14 +147,14 @@ namespace OverloadParty.ApiBattleRpc
         public long Sequence { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("event_type")]
-        public string Event_type { get; set; } = default!;
+        public string EventType { get; set; } = default!;
 
         /// <summary>
         /// アクション元のスロット番号 (1 or 2)。system event (turn_start 等) では null。
         /// <br/>
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("player_num")]
-        public long? Player_num { get; set; } = default!;
+        public long? PlayerNum { get; set; } = default!;
 
         /// <summary>
         /// イベント種別固有の payload。Go / C# では opaque な map / JsonElement として扱い、
@@ -162,7 +162,7 @@ namespace OverloadParty.ApiBattleRpc
         /// <br/>
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("event_data")]
-        public System.Text.Json.JsonElement Event_data { get; set; } = new System.Text.Json.JsonElement();
+        public System.Text.Json.JsonElement EventData { get; set; } = new System.Text.Json.JsonElement();
 
         /// <summary>
         /// イベント直後のゲーム状態スナップショット。`event_data` 同様 opaque。
@@ -193,26 +193,26 @@ namespace OverloadParty.ApiBattleRpc
         /// ゲーム終了フラグ
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("game_over")]
-        public bool Game_over { get; set; } = default!;
+        public bool GameOver { get; set; } = default!;
 
         /// <summary>
         /// 勝者プレイヤー番号 (1 or 2、未終了時は 0)
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("winning_player_num")]
-        public long Winning_player_num { get; set; } = default!;
+        public long WinningPlayerNum { get; set; } = default!;
 
         /// <summary>
         /// 終了理由 (WinReasons enum の文字列、未終了時は空文字)
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("win_reason")]
-        public string Win_reason { get; set; } = default!;
+        public string WinReason { get; set; } = default!;
 
         /// <summary>
         /// true の場合、Gateway は AdvanceNpcTurn を呼んで次の NPC アクションを取得する必要がある。
         /// <br/>
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("npc_pending")]
-        public bool Npc_pending { get; set; } = default!;
+        public bool NpcPending { get; set; } = default!;
 
         /// <summary>
         /// このアクションで発生したイベント列。
@@ -239,10 +239,10 @@ namespace OverloadParty.ApiBattleRpc
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("deck_cards")]
-        public System.Collections.Generic.List<BattleDeckCard> Deck_cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
+        public System.Collections.Generic.List<BattleDeckCard> DeckCards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
 
         [System.Text.Json.Serialization.JsonPropertyName("npc_model")]
-        public string Npc_model { get; set; } = default!;
+        public string NpcModel { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -263,10 +263,10 @@ namespace OverloadParty.ApiBattleRpc
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("deck1_cards")]
-        public System.Collections.Generic.List<BattleDeckCard> Deck1_cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
+        public System.Collections.Generic.List<BattleDeckCard> Deck1Cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
 
         [System.Text.Json.Serialization.JsonPropertyName("deck2_cards")]
-        public System.Collections.Generic.List<BattleDeckCard> Deck2_cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
+        public System.Collections.Generic.List<BattleDeckCard> Deck2Cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -287,10 +287,10 @@ namespace OverloadParty.ApiBattleRpc
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("player_num")]
-        public long Player_num { get; set; } = default!;
+        public long PlayerNum { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("action_type")]
-        public string Action_type { get; set; } = default!;
+        public string ActionType { get; set; } = default!;
 
         /// <summary>
         /// アクション固有の payload。サーバ側で action_type に応じて再パースされる。

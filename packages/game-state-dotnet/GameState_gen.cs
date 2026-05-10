@@ -633,7 +633,7 @@ namespace OverloadParty.GameState
         public int Index { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("cancelled")]
-        public bool Cancelled { get; set; } = default!;
+        public bool? Cancelled { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -684,10 +684,10 @@ namespace OverloadParty.GameState
         public bool Destroyed { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("slaPenalty")]
-        public long SlaPenalty { get; set; } = default!;
+        public long? SlaPenalty { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("cancelled")]
-        public bool Cancelled { get; set; } = default!;
+        public bool? Cancelled { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -861,19 +861,19 @@ namespace OverloadParty.GameState
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("match_type")]
-        public string Match_type { get; set; } = default!;
+        public string MatchType { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("my_name")]
-        public string My_name { get; set; } = default!;
+        public string MyName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("my_level")]
-        public long My_level { get; set; } = default!;
+        public long MyLevel { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("opponent_name")]
-        public string Opponent_name { get; set; } = default!;
+        public string OpponentName { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("opponent_level")]
-        public long Opponent_level { get; set; } = default!;
+        public long OpponentLevel { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -894,7 +894,7 @@ namespace OverloadParty.GameState
         public long Turn { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("is_my_turn")]
-        public bool Is_my_turn { get; set; } = default!;
+        public bool IsMyTurn { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

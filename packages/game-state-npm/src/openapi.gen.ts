@@ -518,7 +518,7 @@ export interface components {
             zone: string;
             /** Format: int32 */
             index: number;
-            cancelled?: boolean;
+            cancelled?: boolean | null;
         };
         AttachCardEventData: {
             cardId: string;
@@ -531,8 +531,8 @@ export interface components {
             damage: number;
             destroyed: boolean;
             /** Format: int64 */
-            slaPenalty?: number;
-            cancelled?: boolean;
+            slaPenalty?: number | null;
+            cancelled?: boolean | null;
         };
         ScaleUpEventData: {
             instanceId: string;
