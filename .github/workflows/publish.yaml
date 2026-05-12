@@ -38,7 +38,7 @@ permissions:
 jobs:
   detect:
     name: Detect changes
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 10
     outputs:
       any_changed: ${{ steps.detect.outputs.any_changed }}
@@ -65,7 +65,7 @@ jobs:
     name: Build & validate
     needs: detect
     if: needs.detect.outputs.any_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 30
     env:
       GOWORK: "off"
@@ -108,7 +108,7 @@ jobs:
     name: Publish Go modules
     needs: [detect, build]
     if: needs.detect.outputs.any_changed == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -125,7 +125,7 @@ jobs:
     name: Publish dotnet packages (Cloudsmith)
     needs: [detect, build]
     if: needs.detect.outputs.game_logic_constants_dotnet == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -154,7 +154,7 @@ jobs:
     if: |
       needs.detect.outputs.game_logic_constants_npm == 'true' ||
       needs.detect.outputs.game_state_npm == 'true'
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 15
     steps:
       - name: Checkout

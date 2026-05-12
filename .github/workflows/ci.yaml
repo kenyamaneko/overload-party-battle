@@ -35,7 +35,7 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -53,7 +53,7 @@ jobs:
         run: dotnet format --verify-no-changes OverloadParty.Battle.slnx
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -86,7 +86,7 @@ jobs:
           FIRESTORE_PROJECT_ID: overload-party-test
 
   codegen-sync:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -121,7 +121,7 @@ jobs:
   build-and-push:
     needs: [lint, test, codegen-sync]
     if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
+    runs-on: ubicloud-standard-2
     timeout-minutes: 30
     steps:
       - name: Checkout
