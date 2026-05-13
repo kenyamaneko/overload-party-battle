@@ -4,7 +4,17 @@
 package apibattle
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strings"
 	"time"
+
+	"github.com/oapi-codegen/runtime"
 )
 
 // ActionEvent アクション処理後に battle server が emit する 1 件のゲームイベント。
@@ -422,3 +432,1487 @@ type CreatePvpGameJSONRequestBody = PvpBattleRequest
 
 // ProcessGameActionJSONRequestBody defines body for ProcessGameAction for application/json ContentType.
 type ProcessGameActionJSONRequestBody = GameActionRequest
+
+// RequestEditorFn  is the function signature for the RequestEditor callback function
+type RequestEditorFn func(ctx context.Context, req *http.Request) error
+
+// Doer performs HTTP requests.
+//
+// The standard http.Client implements this interface.
+type HttpRequestDoer interface {
+	Do(req *http.Request) (*http.Response, error)
+}
+
+// Client which conforms to the OpenAPI3 specification for this service.
+type Client struct {
+	// The endpoint of the server conforming to this interface, with scheme,
+	// https://api.deepmap.com for example. This can contain a path relative
+	// to the server, such as https://api.deepmap.com/dev-test, and all the
+	// paths in the swagger spec will be appended to the server.
+	Server string
+
+	// Doer for performing requests, typically a *http.Client with any
+	// customized settings, such as certificate chains.
+	Client HttpRequestDoer
+
+	// A list of callbacks for modifying requests which are generated before sending over
+	// the network.
+	RequestEditors []RequestEditorFn
+}
+
+// ClientOption allows setting custom parameters during construction
+type ClientOption func(*Client) error
+
+// Creates a new Client, with reasonable defaults
+func NewClient(server string, opts ...ClientOption) (*Client, error) {
+	// create a client with sane default values
+	client := Client{
+		Server: server,
+	}
+	// mutate client and add all optional params
+	for _, o := range opts {
+		if err := o(&client); err != nil {
+			return nil, err
+		}
+	}
+	// ensure the server URL always has a trailing slash
+	if !strings.HasSuffix(client.Server, "/") {
+		client.Server += "/"
+	}
+	// create httpClient, if not already present
+	if client.Client == nil {
+		client.Client = &http.Client{}
+	}
+	return &client, nil
+}
+
+// WithHTTPClient allows overriding the default Doer, which is
+// automatically created using http.Client. This is useful for tests.
+func WithHTTPClient(doer HttpRequestDoer) ClientOption {
+	return func(c *Client) error {
+		c.Client = doer
+		return nil
+	}
+}
+
+// WithRequestEditorFn allows setting up a callback function, which will be
+// called right before sending the request. This can be used to mutate the request.
+func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
+	return func(c *Client) error {
+		c.RequestEditors = append(c.RequestEditors, fn)
+		return nil
+	}
+}
+
+// The interface specification for the client above.
+type ClientInterface interface {
+	// ListDevCards request
+	ListDevCards(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreateNpcGameWithBody request with any body
+	CreateNpcGameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateNpcGame(ctx context.Context, body CreateNpcGameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// CreatePvpGameWithBody request with any body
+	CreatePvpGameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreatePvpGame(ctx context.Context, body CreatePvpGameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ProcessGameActionWithBody request with any body
+	ProcessGameActionWithBody(ctx context.Context, gameId GameIdPath, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	ProcessGameAction(ctx context.Context, gameId GameIdPath, body ProcessGameActionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// AdvanceNpcTurn request
+	AdvanceNpcTurn(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetTurnControlsForPlayer request
+	GetTurnControlsForPlayer(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetGameLogJson request
+	GetGameLogJson(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetGameLogText request
+	GetGameLogText(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetGameStateForPlayer request
+	GetGameStateForPlayer(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// ListNpcModels request
+	ListNpcModels(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetHealth request
+	GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) ListDevCards(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListDevCardsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateNpcGameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateNpcGameRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateNpcGame(ctx context.Context, body CreateNpcGameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateNpcGameRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePvpGameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePvpGameRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreatePvpGame(ctx context.Context, body CreatePvpGameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreatePvpGameRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ProcessGameActionWithBody(ctx context.Context, gameId GameIdPath, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProcessGameActionRequestWithBody(c.Server, gameId, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ProcessGameAction(ctx context.Context, gameId GameIdPath, body ProcessGameActionJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewProcessGameActionRequest(c.Server, gameId, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) AdvanceNpcTurn(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewAdvanceNpcTurnRequest(c.Server, gameId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetTurnControlsForPlayer(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetTurnControlsForPlayerRequest(c.Server, gameId, playerNum)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetGameLogJson(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetGameLogJsonRequest(c.Server, gameId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetGameLogText(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetGameLogTextRequest(c.Server, gameId)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetGameStateForPlayer(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetGameStateForPlayerRequest(c.Server, gameId, playerNum)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) ListNpcModels(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewListNpcModelsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) GetHealth(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetHealthRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewListDevCardsRequest generates requests for ListDevCards
+func NewListDevCardsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/dev/cards")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewCreateNpcGameRequest calls the generic CreateNpcGame builder with application/json body
+func NewCreateNpcGameRequest(server string, body CreateNpcGameJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateNpcGameRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateNpcGameRequestWithBody generates requests for CreateNpcGame with any type of body
+func NewCreateNpcGameRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/npc")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewCreatePvpGameRequest calls the generic CreatePvpGame builder with application/json body
+func NewCreatePvpGameRequest(server string, body CreatePvpGameJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreatePvpGameRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreatePvpGameRequestWithBody generates requests for CreatePvpGame with any type of body
+func NewCreatePvpGameRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/pvp")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewProcessGameActionRequest calls the generic ProcessGameAction builder with application/json body
+func NewProcessGameActionRequest(server string, gameId GameIdPath, body ProcessGameActionJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewProcessGameActionRequestWithBody(server, gameId, "application/json", bodyReader)
+}
+
+// NewProcessGameActionRequestWithBody generates requests for ProcessGameAction with any type of body
+func NewProcessGameActionRequestWithBody(server string, gameId GameIdPath, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "gameId", gameId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/%s/actions", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewAdvanceNpcTurnRequest generates requests for AdvanceNpcTurn
+func NewAdvanceNpcTurnRequest(server string, gameId GameIdPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "gameId", gameId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/%s/advance-npc", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetTurnControlsForPlayerRequest generates requests for GetTurnControlsForPlayer
+func NewGetTurnControlsForPlayerRequest(server string, gameId GameIdPath, playerNum PlayerNumPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "gameId", gameId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "playerNum", playerNum, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "integer", Format: "int32"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/%s/controls/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetGameLogJsonRequest generates requests for GetGameLogJson
+func NewGetGameLogJsonRequest(server string, gameId GameIdPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "gameId", gameId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/%s/log", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetGameLogTextRequest generates requests for GetGameLogText
+func NewGetGameLogTextRequest(server string, gameId GameIdPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "gameId", gameId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/%s/log/text", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetGameStateForPlayerRequest generates requests for GetGameStateForPlayer
+func NewGetGameStateForPlayerRequest(server string, gameId GameIdPath, playerNum PlayerNumPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "gameId", gameId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	var pathParam1 string
+
+	pathParam1, err = runtime.StyleParamWithOptions("simple", false, "playerNum", playerNum, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "integer", Format: "int32"})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/%s/state/%s", pathParam0, pathParam1)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewListNpcModelsRequest generates requests for ListNpcModels
+func NewListNpcModelsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/npc/models")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetHealthRequest generates requests for GetHealth
+func NewGetHealthRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/health")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+func (c *Client) applyEditors(ctx context.Context, req *http.Request, additionalEditors []RequestEditorFn) error {
+	for _, r := range c.RequestEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	for _, r := range additionalEditors {
+		if err := r(ctx, req); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ClientWithResponses builds on ClientInterface to offer response payloads
+type ClientWithResponses struct {
+	ClientInterface
+}
+
+// NewClientWithResponses creates a new ClientWithResponses, which wraps
+// Client with return type handling
+func NewClientWithResponses(server string, opts ...ClientOption) (*ClientWithResponses, error) {
+	client, err := NewClient(server, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return &ClientWithResponses{client}, nil
+}
+
+// WithBaseURL overrides the baseURL.
+func WithBaseURL(baseURL string) ClientOption {
+	return func(c *Client) error {
+		newBaseURL, err := url.Parse(baseURL)
+		if err != nil {
+			return err
+		}
+		c.Server = newBaseURL.String()
+		return nil
+	}
+}
+
+// ClientWithResponsesInterface is the interface specification for the client with responses above.
+type ClientWithResponsesInterface interface {
+	// ListDevCardsWithResponse request
+	ListDevCardsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListDevCardsResponse, error)
+
+	// CreateNpcGameWithBodyWithResponse request with any body
+	CreateNpcGameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateNpcGameResponse, error)
+
+	CreateNpcGameWithResponse(ctx context.Context, body CreateNpcGameJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateNpcGameResponse, error)
+
+	// CreatePvpGameWithBodyWithResponse request with any body
+	CreatePvpGameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePvpGameResponse, error)
+
+	CreatePvpGameWithResponse(ctx context.Context, body CreatePvpGameJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePvpGameResponse, error)
+
+	// ProcessGameActionWithBodyWithResponse request with any body
+	ProcessGameActionWithBodyWithResponse(ctx context.Context, gameId GameIdPath, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProcessGameActionResponse, error)
+
+	ProcessGameActionWithResponse(ctx context.Context, gameId GameIdPath, body ProcessGameActionJSONRequestBody, reqEditors ...RequestEditorFn) (*ProcessGameActionResponse, error)
+
+	// AdvanceNpcTurnWithResponse request
+	AdvanceNpcTurnWithResponse(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*AdvanceNpcTurnResponse, error)
+
+	// GetTurnControlsForPlayerWithResponse request
+	GetTurnControlsForPlayerWithResponse(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*GetTurnControlsForPlayerResponse, error)
+
+	// GetGameLogJsonWithResponse request
+	GetGameLogJsonWithResponse(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*GetGameLogJsonResponse, error)
+
+	// GetGameLogTextWithResponse request
+	GetGameLogTextWithResponse(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*GetGameLogTextResponse, error)
+
+	// GetGameStateForPlayerWithResponse request
+	GetGameStateForPlayerWithResponse(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*GetGameStateForPlayerResponse, error)
+
+	// ListNpcModelsWithResponse request
+	ListNpcModelsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListNpcModelsResponse, error)
+
+	// GetHealthWithResponse request
+	GetHealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthResponse, error)
+}
+
+type ListDevCardsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]DevCard
+}
+
+// Status returns HTTPResponse.Status
+func (r ListDevCardsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListDevCardsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListDevCardsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateNpcGameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *GameCreatedResult
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateNpcGameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateNpcGameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateNpcGameResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreatePvpGameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *GameCreatedResult
+}
+
+// Status returns HTTPResponse.Status
+func (r CreatePvpGameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreatePvpGameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreatePvpGameResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ProcessGameActionResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ActionResult
+}
+
+// Status returns HTTPResponse.Status
+func (r ProcessGameActionResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ProcessGameActionResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ProcessGameActionResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type AdvanceNpcTurnResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ActionResult
+}
+
+// Status returns HTTPResponse.Status
+func (r AdvanceNpcTurnResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r AdvanceNpcTurnResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r AdvanceNpcTurnResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetTurnControlsForPlayerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *TurnControlsMessage
+}
+
+// Status returns HTTPResponse.Status
+func (r GetTurnControlsForPlayerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetTurnControlsForPlayerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetTurnControlsForPlayerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetGameLogJsonResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GetGameLogJsonResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetGameLogJsonResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetGameLogJsonResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetGameLogTextResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetGameLogTextResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetGameLogTextResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetGameLogTextResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetGameStateForPlayerResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *ClientGameState
+}
+
+// Status returns HTTPResponse.Status
+func (r GetGameStateForPlayerResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetGameStateForPlayerResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetGameStateForPlayerResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type ListNpcModelsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *NpcModelsResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r ListNpcModelsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r ListNpcModelsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r ListNpcModelsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type GetHealthResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *HealthResponse
+}
+
+// Status returns HTTPResponse.Status
+func (r GetHealthResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetHealthResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetHealthResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// ListDevCardsWithResponse request returning *ListDevCardsResponse
+func (c *ClientWithResponses) ListDevCardsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListDevCardsResponse, error) {
+	rsp, err := c.ListDevCards(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListDevCardsResponse(rsp)
+}
+
+// CreateNpcGameWithBodyWithResponse request with arbitrary body returning *CreateNpcGameResponse
+func (c *ClientWithResponses) CreateNpcGameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateNpcGameResponse, error) {
+	rsp, err := c.CreateNpcGameWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateNpcGameResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateNpcGameWithResponse(ctx context.Context, body CreateNpcGameJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateNpcGameResponse, error) {
+	rsp, err := c.CreateNpcGame(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateNpcGameResponse(rsp)
+}
+
+// CreatePvpGameWithBodyWithResponse request with arbitrary body returning *CreatePvpGameResponse
+func (c *ClientWithResponses) CreatePvpGameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreatePvpGameResponse, error) {
+	rsp, err := c.CreatePvpGameWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePvpGameResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreatePvpGameWithResponse(ctx context.Context, body CreatePvpGameJSONRequestBody, reqEditors ...RequestEditorFn) (*CreatePvpGameResponse, error) {
+	rsp, err := c.CreatePvpGame(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreatePvpGameResponse(rsp)
+}
+
+// ProcessGameActionWithBodyWithResponse request with arbitrary body returning *ProcessGameActionResponse
+func (c *ClientWithResponses) ProcessGameActionWithBodyWithResponse(ctx context.Context, gameId GameIdPath, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*ProcessGameActionResponse, error) {
+	rsp, err := c.ProcessGameActionWithBody(ctx, gameId, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProcessGameActionResponse(rsp)
+}
+
+func (c *ClientWithResponses) ProcessGameActionWithResponse(ctx context.Context, gameId GameIdPath, body ProcessGameActionJSONRequestBody, reqEditors ...RequestEditorFn) (*ProcessGameActionResponse, error) {
+	rsp, err := c.ProcessGameAction(ctx, gameId, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseProcessGameActionResponse(rsp)
+}
+
+// AdvanceNpcTurnWithResponse request returning *AdvanceNpcTurnResponse
+func (c *ClientWithResponses) AdvanceNpcTurnWithResponse(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*AdvanceNpcTurnResponse, error) {
+	rsp, err := c.AdvanceNpcTurn(ctx, gameId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseAdvanceNpcTurnResponse(rsp)
+}
+
+// GetTurnControlsForPlayerWithResponse request returning *GetTurnControlsForPlayerResponse
+func (c *ClientWithResponses) GetTurnControlsForPlayerWithResponse(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*GetTurnControlsForPlayerResponse, error) {
+	rsp, err := c.GetTurnControlsForPlayer(ctx, gameId, playerNum, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetTurnControlsForPlayerResponse(rsp)
+}
+
+// GetGameLogJsonWithResponse request returning *GetGameLogJsonResponse
+func (c *ClientWithResponses) GetGameLogJsonWithResponse(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*GetGameLogJsonResponse, error) {
+	rsp, err := c.GetGameLogJson(ctx, gameId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetGameLogJsonResponse(rsp)
+}
+
+// GetGameLogTextWithResponse request returning *GetGameLogTextResponse
+func (c *ClientWithResponses) GetGameLogTextWithResponse(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*GetGameLogTextResponse, error) {
+	rsp, err := c.GetGameLogText(ctx, gameId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetGameLogTextResponse(rsp)
+}
+
+// GetGameStateForPlayerWithResponse request returning *GetGameStateForPlayerResponse
+func (c *ClientWithResponses) GetGameStateForPlayerWithResponse(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*GetGameStateForPlayerResponse, error) {
+	rsp, err := c.GetGameStateForPlayer(ctx, gameId, playerNum, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetGameStateForPlayerResponse(rsp)
+}
+
+// ListNpcModelsWithResponse request returning *ListNpcModelsResponse
+func (c *ClientWithResponses) ListNpcModelsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListNpcModelsResponse, error) {
+	rsp, err := c.ListNpcModels(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseListNpcModelsResponse(rsp)
+}
+
+// GetHealthWithResponse request returning *GetHealthResponse
+func (c *ClientWithResponses) GetHealthWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetHealthResponse, error) {
+	rsp, err := c.GetHealth(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetHealthResponse(rsp)
+}
+
+// ParseListDevCardsResponse parses an HTTP response from a ListDevCardsWithResponse call
+func ParseListDevCardsResponse(rsp *http.Response) (*ListDevCardsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListDevCardsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []DevCard
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateNpcGameResponse parses an HTTP response from a CreateNpcGameWithResponse call
+func ParseCreateNpcGameResponse(rsp *http.Response) (*CreateNpcGameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateNpcGameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GameCreatedResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreatePvpGameResponse parses an HTTP response from a CreatePvpGameWithResponse call
+func ParseCreatePvpGameResponse(rsp *http.Response) (*CreatePvpGameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreatePvpGameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GameCreatedResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseProcessGameActionResponse parses an HTTP response from a ProcessGameActionWithResponse call
+func ParseProcessGameActionResponse(rsp *http.Response) (*ProcessGameActionResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ProcessGameActionResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ActionResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseAdvanceNpcTurnResponse parses an HTTP response from a AdvanceNpcTurnWithResponse call
+func ParseAdvanceNpcTurnResponse(rsp *http.Response) (*AdvanceNpcTurnResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &AdvanceNpcTurnResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ActionResult
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetTurnControlsForPlayerResponse parses an HTTP response from a GetTurnControlsForPlayerWithResponse call
+func ParseGetTurnControlsForPlayerResponse(rsp *http.Response) (*GetTurnControlsForPlayerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetTurnControlsForPlayerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest TurnControlsMessage
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetGameLogJsonResponse parses an HTTP response from a GetGameLogJsonWithResponse call
+func ParseGetGameLogJsonResponse(rsp *http.Response) (*GetGameLogJsonResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetGameLogJsonResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetGameLogTextResponse parses an HTTP response from a GetGameLogTextWithResponse call
+func ParseGetGameLogTextResponse(rsp *http.Response) (*GetGameLogTextResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetGameLogTextResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGetGameStateForPlayerResponse parses an HTTP response from a GetGameStateForPlayerWithResponse call
+func ParseGetGameStateForPlayerResponse(rsp *http.Response) (*GetGameStateForPlayerResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetGameStateForPlayerResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest ClientGameState
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseListNpcModelsResponse parses an HTTP response from a ListNpcModelsWithResponse call
+func ParseListNpcModelsResponse(rsp *http.Response) (*ListNpcModelsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &ListNpcModelsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest NpcModelsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseGetHealthResponse parses an HTTP response from a GetHealthWithResponse call
+func ParseGetHealthResponse(rsp *http.Response) (*GetHealthResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetHealthResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest HealthResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
