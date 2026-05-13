@@ -15,6 +15,7 @@ public class MockGameRepository : IGameRepository
     private readonly Dictionary<string, BattleGameState> _states = new();
     private readonly Dictionary<string, BattleGameState> _initialStates = new();
     private readonly Dictionary<string, List<GameEvent>> _events = new();
+    private readonly Dictionary<string, List<PlayerSummarySnapshot>> _playerSummaries = new();
 
     public Task CreateGame(Game game, BattleGameState state, CancellationToken ct = default)
     {
@@ -126,4 +127,25 @@ public class MockGameRepository : IGameRepository
         }
     }
 
+    public Task SavePlayerSummaries(string gameID, IReadOnlyList<PlayerSummarySnapshot> summaries, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            _playerSummaries[gameID] = summaries.Select(s => new PlayerSummarySnapshot
+            {
+                PlayerNum = s.PlayerNum,
+                Name = s.Name,
+                Level = s.Level,
+            }).ToList();
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<List<PlayerSummarySnapshot>> GetPlayerSummaries(string gameID, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            return Task.FromResult(_playerSummaries.GetValueOrDefault(gameID) ?? []);
+        }
+    }
 }

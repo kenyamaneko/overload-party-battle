@@ -68,10 +68,13 @@ public class GameService
 
     /// <summary>
     /// Creates a new PvP game from matchmaking parameters (called by Gateway).
+    /// 対戦当時の player display 情報 (name / level) を battle が永続化する。account
+    /// に同期依存せず、引数として渡された snapshot をそのまま信頼して保存する。
     /// </summary>
     public async Task<Game> CreateGameFromMatch(
         List<DeckSnapshotCard> player1Cards,
         List<DeckSnapshotCard> player2Cards,
+        IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
         CancellationToken ct = default)
     {
         var deck1 = new DeckSnapshot { Cards = player1Cards };
@@ -82,6 +85,8 @@ public class GameService
         var gameID = await _engine.CreateNewGame(
             deck1, deck2, firstPlayer,
             engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
+
+        await _gameRepo.SavePlayerSummaries(gameID, playerSummaries, ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
@@ -296,7 +301,15 @@ public class GameService
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found");
 
-        return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
+        var clientState = GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
+        var summaries = await _gameRepo.GetPlayerSummaries(gameID, ct);
+        clientState.Players = summaries.Select(s => new OverloadParty.GameState.PlayerSummary
+        {
+            PlayerNum = s.PlayerNum,
+            Name = s.Name,
+            Level = s.Level,
+        }).ToList();
+        return clientState;
     }
 
     /// <summary>

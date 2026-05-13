@@ -79,6 +79,53 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("oppView")]
         public OpponentView OppView { get; set; } = new OpponentView();
 
+        /// <summary>
+        /// 対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
+        /// <br/>ClientGameState 内では各 player の name / level を myView/oppView と独立に
+        /// <br/>参照できるようにする。
+        /// <br/>
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("players")]
+        public System.Collections.Generic.List<PlayerSummary> Players { get; set; } = new System.Collections.Generic.List<PlayerSummary>();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// 対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
+    /// <br/>ClientGameState.players[] の要素として client へ pass-through される。
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PlayerSummary
+    {
+
+        /// <summary>
+        /// スロット番号 (1 or 2)
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("playerNum")]
+        public long PlayerNum { get; set; } = default!;
+
+        /// <summary>
+        /// 表示名 snapshot
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = default!;
+
+        /// <summary>
+        /// level snapshot
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("level")]
+        public long Level { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

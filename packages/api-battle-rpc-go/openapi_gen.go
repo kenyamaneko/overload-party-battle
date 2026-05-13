@@ -127,6 +127,11 @@ type ClientGameState struct {
 	// OppView 相手プレイヤー視点 (情報秘匿適用済み)。
 	OppView OpponentView `json:"oppView"`
 
+	// Players 対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
+	// ClientGameState 内では各 player の name / level を myView/oppView と独立に
+	// 参照できるようにする。
+	Players []PlayerSummary `json:"players"`
+
 	// TurnStartedAt ターン開始日時
 	TurnStartedAt time.Time `json:"turnStartedAt"`
 }
@@ -319,6 +324,19 @@ type PlayCardEventData struct {
 	Zone      string `json:"zone"`
 }
 
+// PlayerSummary 対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
+// ClientGameState.players[] の要素として client へ pass-through される。
+type PlayerSummary struct {
+	// Level level snapshot
+	Level int64 `json:"level"`
+
+	// Name 表示名 snapshot
+	Name string `json:"name"`
+
+	// PlayerNum スロット番号 (1 or 2)
+	PlayerNum int64 `json:"playerNum"`
+}
+
 // PlayerView 自プレイヤー視点のスナップショット。
 type PlayerView struct {
 	// AvailableActions 実行可能アクション一覧 (アクティブプレイヤーのみ)。
@@ -344,6 +362,23 @@ type PlayerView struct {
 type PvpBattleRequest struct {
 	Deck1Cards []BattleDeckCard `json:"deck1_cards"`
 	Deck2Cards []BattleDeckCard `json:"deck2_cards"`
+
+	// Players 対戦者 2 名分の display 情報 snapshot (match 成立時点の値)。
+	// battle は account に依存せず、渡された値をそのまま player_summary に永続化する。
+	Players []PvpPlayerSummary `json:"players"`
+}
+
+// PvpPlayerSummary CreatePvP request 内で渡される player の display 情報 snapshot。battle 側は
+// account に lookup せず、渡された値をそのまま player_summary に永続化する。
+type PvpPlayerSummary struct {
+	// Level level snapshot
+	Level int64 `json:"level"`
+
+	// Name 表示名 snapshot
+	Name string `json:"name"`
+
+	// PlayerNum スロット番号 (1 or 2)
+	PlayerNum int64 `json:"player_num"`
 }
 
 // ReactiveRevealedEventData defines model for ReactiveRevealedEventData.

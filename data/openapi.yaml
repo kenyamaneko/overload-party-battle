@@ -363,7 +363,7 @@ components:
       type: object
       description: POST /api/v1/games/pvp のリクエスト body。
       x-battle-csharp-package: rpc
-      required: [deck1_cards, deck2_cards]
+      required: [deck1_cards, deck2_cards, players]
       properties:
         deck1_cards:
           type: array
@@ -373,6 +373,35 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BattleDeckCard"
+        players:
+          type: array
+          description: |
+            対戦者 2 名分の display 情報 snapshot (match 成立時点の値)。
+            battle は account に依存せず、渡された値をそのまま player_summary に永続化する。
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/PvpPlayerSummary"
+
+    PvpPlayerSummary:
+      type: object
+      description: |
+        CreatePvP request 内で渡される player の display 情報 snapshot。battle 側は
+        account に lookup せず、渡された値をそのまま player_summary に永続化する。
+      x-battle-csharp-package: rpc
+      required: [player_num, name, level]
+      properties:
+        player_num:
+          type: integer
+          format: int64
+          description: スロット番号 (1 or 2)
+        name:
+          type: string
+          description: 表示名 snapshot
+        level:
+          type: integer
+          format: int64
+          description: level snapshot
 
     GameActionRequest:
       type: object
@@ -421,6 +450,7 @@ components:
         - turnStartedAt
         - myView
         - oppView
+        - players
       properties:
         gameID:
           type: string
@@ -451,6 +481,36 @@ components:
           $ref: "#/components/schemas/PlayerView"
         oppView:
           $ref: "#/components/schemas/OpponentView"
+        players:
+          type: array
+          description: |
+            対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
+            ClientGameState 内では各 player の name / level を myView/oppView と独立に
+            参照できるようにする。
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/PlayerSummary"
+
+    PlayerSummary:
+      type: object
+      description: |
+        対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
+        ClientGameState.players[] の要素として client へ pass-through される。
+      x-battle-csharp-package: state
+      required: [playerNum, name, level]
+      properties:
+        playerNum:
+          type: integer
+          format: int64
+          description: スロット番号 (1 or 2)
+        name:
+          type: string
+          description: 表示名 snapshot
+        level:
+          type: integer
+          format: int64
+          description: level snapshot
 
     PlayerView:
       type: object

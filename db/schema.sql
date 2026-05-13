@@ -57,6 +57,19 @@ CREATE TABLE battle.game_npcs (
   PRIMARY KEY (game_id, player_num)
 );
 
+-- 4.1c Player Summary (child of games, match 成立時の player 表示情報 snapshot)
+-- 対戦履歴に「対戦当時の display 情報」を保持する。battle は player_id を知らず、
+-- 引数として渡された name / level を信頼してそのまま永続化する (account 同期依存なし)。
+
+CREATE TABLE battle.player_summary (
+  game_id      VARCHAR(26) NOT NULL REFERENCES battle.games(game_id) ON DELETE CASCADE,
+  player_num   SMALLINT NOT NULL,                     -- 1 or 2
+  name         TEXT NOT NULL,                         -- match 成立時点の display 名 snapshot
+  level        INT NOT NULL,                          -- match 成立時点の level snapshot
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  PRIMARY KEY (game_id, player_num)
+);
+
 -- 4.1b Game Decks (child of games, 常に 2 行)
 
 CREATE TABLE battle.game_decks (

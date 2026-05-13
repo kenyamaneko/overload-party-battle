@@ -268,6 +268,52 @@ namespace OverloadParty.ApiBattleRpc
         [System.Text.Json.Serialization.JsonPropertyName("deck2_cards")]
         public System.Collections.Generic.List<BattleDeckCard> Deck2Cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
 
+        /// <summary>
+        /// 対戦者 2 名分の display 情報 snapshot (match 成立時点の値)。
+        /// <br/>battle は account に依存せず、渡された値をそのまま player_summary に永続化する。
+        /// <br/>
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("players")]
+        public System.Collections.Generic.List<PvpPlayerSummary> Players { get; set; } = new System.Collections.Generic.List<PvpPlayerSummary>();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// CreatePvP request 内で渡される player の display 情報 snapshot。battle 側は
+    /// <br/>account に lookup せず、渡された値をそのまま player_summary に永続化する。
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PvpPlayerSummary
+    {
+
+        /// <summary>
+        /// スロット番号 (1 or 2)
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("player_num")]
+        public long PlayerNum { get; set; } = default!;
+
+        /// <summary>
+        /// 表示名 snapshot
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = default!;
+
+        /// <summary>
+        /// level snapshot
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("level")]
+        public long Level { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

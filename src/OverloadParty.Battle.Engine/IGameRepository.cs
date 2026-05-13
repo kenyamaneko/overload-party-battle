@@ -62,4 +62,14 @@ public interface IGameRepository
     /// <param name="gameID">The game ID.</param>
     Task<BattleGameState?> GetInitialState(string gameID, CancellationToken ct = default);
 
+    /// <summary>
+    /// 対戦者 2 名分の player display スナップショットを永続化する。
+    /// 外部から渡された name / level を信頼してそのまま保存する (account 同期依存なし)。
+    /// </summary>
+    Task SavePlayerSummaries(string gameID, IReadOnlyList<PlayerSummarySnapshot> summaries, CancellationToken ct = default);
+
+    /// <summary>
+    /// 指定 game の player display スナップショットを返す。存在しない (NPC 戦等) 場合は空リスト。
+    /// </summary>
+    Task<List<PlayerSummarySnapshot>> GetPlayerSummaries(string gameID, CancellationToken ct = default);
 }

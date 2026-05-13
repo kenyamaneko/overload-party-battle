@@ -39,13 +39,19 @@ public class GameServiceTests
             .ToList();
     }
 
+    private static readonly List<PlayerSummarySnapshot> DefaultPlayerSummaries =
+    [
+        new() { PlayerNum = 1, Name = "p1", Level = 1 },
+        new() { PlayerNum = 2, Name = "p2", Level = 1 },
+    ];
+
     // ─── CreateGameFromMatch ─────────────────────────────────
 
     [Fact]
     public async Task CreateGameFromMatch_CreatesGame_WithCorrectStatus()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         game.Should().NotBeNull();
         game.Status.Should().Be(GameStatus.Playing);
@@ -53,10 +59,28 @@ public class GameServiceTests
     }
 
     [Fact]
+    public async Task CreateGameFromMatch_PersistsPlayerSummaries()
+    {
+        var cards = MakePlayerCards();
+        var summaries = new List<PlayerSummarySnapshot>
+        {
+            new() { PlayerNum = 1, Name = "alice", Level = 7 },
+            new() { PlayerNum = 2, Name = "bob", Level = 12 },
+        };
+
+        var game = await _svc.CreateGameFromMatch(cards, cards, summaries);
+
+        var persisted = await _repo.GetPlayerSummaries(game.GameID);
+        persisted.Should().HaveCount(2);
+        persisted.Should().Contain(s => s.PlayerNum == 1 && s.Name == "alice" && s.Level == 7);
+        persisted.Should().Contain(s => s.PlayerNum == 2 && s.Name == "bob" && s.Level == 12);
+    }
+
+    [Fact]
     public async Task CreateGameFromMatch_InitializesState_InMainPhase()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         state.Should().NotBeNull();
@@ -69,7 +93,7 @@ public class GameServiceTests
     public async Task CreateGameFromMatch_PlayersHaveInitialBudget()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         state!.Player1Budget.Should().Be(BattleConstants.InitialBudget);
@@ -114,7 +138,7 @@ public class GameServiceTests
     public async Task ProcessAction_PlayCard_ReturnsStateWithResult()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         var cardToPlay = state!.GetHand(state.ActivePlayer).First();
@@ -137,7 +161,7 @@ public class GameServiceTests
     public async Task ProcessAction_Forfeit_ReturnsGameOver()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -152,7 +176,7 @@ public class GameServiceTests
     public async Task ProcessAction_EndPhase_ReturnsValidState()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         state!.CurrentPhase.Should().Be(Phase.Main);
@@ -168,7 +192,7 @@ public class GameServiceTests
     public async Task ProcessAction_PvpGame_NpcPendingAlwaysFalse()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -182,7 +206,7 @@ public class GameServiceTests
     public async Task ProcessAction_TurnStartEvent_ContainsIsMyTurn()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -203,7 +227,7 @@ public class GameServiceTests
     public async Task GetGameStateForPlayer_ReturnsClientState()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var clientState = await _svc.GetGameStateForPlayer(game.GameID, 1);
 
@@ -227,7 +251,7 @@ public class GameServiceTests
     public async Task GetTurnControlsForPlayer_ActivePlayer_ReturnsControls()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -241,7 +265,7 @@ public class GameServiceTests
     public async Task GetTurnControlsForPlayer_InactivePlayer_ReturnsNull()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards);
+        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         long inactivePlayerNum = state!.ActivePlayer == 1 ? 2 : 1;

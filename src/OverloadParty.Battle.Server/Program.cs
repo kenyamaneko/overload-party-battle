@@ -259,7 +259,8 @@ api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
 {
     var p1Cards = req.Deck1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
     var p2Cards = req.Deck2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
-    var game = await gameSvc.CreateGameFromMatch(p1Cards, p2Cards);
+    var summaries = req.Players.Select(p => new PlayerSummarySnapshot { PlayerNum = p.PlayerNum, Name = p.Name, Level = p.Level }).ToList();
+    var game = await gameSvc.CreateGameFromMatch(p1Cards, p2Cards, summaries);
     return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 
