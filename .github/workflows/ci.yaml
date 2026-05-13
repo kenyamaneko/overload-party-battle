@@ -69,7 +69,7 @@ jobs:
         env:
           CARDS_JSON_PATH: ${{ github.workspace }}/packages/game-state-dotnet/cache/cards_gen.json
           FIRESTORE_EMULATOR_HOST: 127.0.0.1:9041
-          FIRESTORE_PROJECT_ID: overload-party-test
+          GOOGLE_CLOUD_PROJECT_ID: overload-party-test
 
   codegen-sync:
     runs-on: ubicloud-standard-2
