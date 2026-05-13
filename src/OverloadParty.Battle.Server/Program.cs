@@ -56,9 +56,9 @@ else
 // ─── Game config (Firestore) ────────────────────────────────
 // Required env var even in local mode; the Google SDK auto-routes to the
 // emulator when FIRESTORE_EMULATOR_HOST is set.
-var firestoreProjectId = Environment.GetEnvironmentVariable("FIRESTORE_PROJECT_ID")
-    ?? throw new InvalidOperationException("FIRESTORE_PROJECT_ID not set");
-builder.Services.AddSingleton(FirestoreDb.Create(firestoreProjectId));
+var googleCloudProjectId = Environment.GetEnvironmentVariable("GOOGLE_CLOUD_PROJECT_ID")
+    ?? throw new InvalidOperationException("GOOGLE_CLOUD_PROJECT_ID not set");
+builder.Services.AddSingleton(FirestoreDb.Create(googleCloudProjectId));
 builder.Services.AddSingleton<IGameConfigRepository>(sp =>
     new FirestoreGameConfigRepository(sp.GetRequiredService<FirestoreDb>()));
 
