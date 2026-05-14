@@ -272,8 +272,6 @@ public static class TestFactory
             Player2Budget = p2Budget,
             Player1TimeBank = 480,
             Player2TimeBank = 480,
-            // production では GameInitializer / TurnManager で必ず UtcNow が設定される。
-            // test fixture も同等の前提を満たさないと GameStateView の DateTimeOffset 変換で throw する。
             TurnStartedAt = DateTime.UtcNow,
             NextInstanceSeq = 1,
         };
