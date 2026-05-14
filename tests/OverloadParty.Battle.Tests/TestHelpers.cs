@@ -272,6 +272,7 @@ public static class TestFactory
             Player2Budget = p2Budget,
             Player1TimeBank = 480,
             Player2TimeBank = 480,
+            TurnStartedAt = DateTime.UtcNow,
             NextInstanceSeq = 1,
         };
     }
