@@ -244,6 +244,12 @@ namespace OverloadParty.ApiBattleRpc
         [System.Text.Json.Serialization.JsonPropertyName("npc_model")]
         public string NpcModel { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("player1_summary")]
+        public PlayerSummaryRequest Player1Summary { get; set; } = new PlayerSummaryRequest();
+
+        [System.Text.Json.Serialization.JsonPropertyName("player2_summary")]
+        public PlayerSummaryRequest Player2Summary { get; set; } = new PlayerSummaryRequest();
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -267,6 +273,45 @@ namespace OverloadParty.ApiBattleRpc
 
         [System.Text.Json.Serialization.JsonPropertyName("deck2_cards")]
         public System.Collections.Generic.List<BattleDeckCard> Deck2Cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
+
+        [System.Text.Json.Serialization.JsonPropertyName("player1_summary")]
+        public PlayerSummaryRequest Player1Summary { get; set; } = new PlayerSummaryRequest();
+
+        [System.Text.Json.Serialization.JsonPropertyName("player2_summary")]
+        public PlayerSummaryRequest Player2Summary { get; set; } = new PlayerSummaryRequest();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+    /// <br/>battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+    /// <br/>永続化する。NPC のように level を持たない player では level は null となる。
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PlayerSummaryRequest
+    {
+
+        /// <summary>
+        /// 表示名 snapshot
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = default!;
+
+        /// <summary>
+        /// level snapshot (NPC など level を持たない player では null)
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("level")]
+        public long? Level { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

@@ -250,7 +250,12 @@ api.MapGet("/npc/models", () =>
 api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
 {
     var cards = req.DeckCards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
-    var game = await gameSvc.StartNPCBattle(cards, req.NpcModel);
+    var summaries = new List<PlayerSummarySnapshot>
+    {
+        new() { PlayerNum = 1, Name = req.Player1Summary.Name, Level = req.Player1Summary.Level },
+        new() { PlayerNum = 2, Name = req.Player2Summary.Name, Level = req.Player2Summary.Level },
+    };
+    var game = await gameSvc.StartNPCBattle(cards, req.NpcModel, summaries);
     return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 
@@ -259,7 +264,12 @@ api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
 {
     var p1Cards = req.Deck1Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
     var p2Cards = req.Deck2Cards.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList();
-    var game = await gameSvc.CreateGameFromMatch(p1Cards, p2Cards);
+    var summaries = new List<PlayerSummarySnapshot>
+    {
+        new() { PlayerNum = 1, Name = req.Player1Summary.Name, Level = req.Player1Summary.Level },
+        new() { PlayerNum = 2, Name = req.Player2Summary.Name, Level = req.Player2Summary.Level },
+    };
+    var game = await gameSvc.CreateGameFromMatch(p1Cards, p2Cards, summaries);
     return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 

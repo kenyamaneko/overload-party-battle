@@ -421,4 +421,44 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };
     }
 
+    public async Task SavePlayerSummaries(string gameID, IReadOnlyList<PlayerSummarySnapshot> summaries, CancellationToken ct = default)
+    {
+        await using var conn = await ds.OpenConnectionAsync(ct);
+        await using var tx = await conn.BeginTransactionAsync(ct);
+        foreach (var s in summaries)
+        {
+            await using var cmd = new NpgsqlCommand(@"
+                INSERT INTO player_summary (game_id, player_num, name, level)
+                VALUES ($1, $2, $3, $4)", conn, tx);
+            cmd.Parameters.AddWithValue(gameID);
+            cmd.Parameters.AddWithValue((short)s.PlayerNum);
+            cmd.Parameters.AddWithValue(s.Name);
+            cmd.Parameters.AddWithValue((object?)(s.Level is { } lv ? (int)lv : null) ?? DBNull.Value);
+            await cmd.ExecuteNonQueryAsync(ct);
+        }
+        await tx.CommitAsync(ct);
+    }
+
+    public async Task<List<PlayerSummarySnapshot>> GetPlayerSummaries(string gameID, CancellationToken ct = default)
+    {
+        await using var conn = await ds.OpenConnectionAsync(ct);
+        await using var cmd = new NpgsqlCommand(@"
+            SELECT player_num, name, level
+            FROM player_summary
+            WHERE game_id = $1
+            ORDER BY player_num", conn);
+        cmd.Parameters.AddWithValue(gameID);
+        var result = new List<PlayerSummarySnapshot>();
+        await using var reader = await cmd.ExecuteReaderAsync(ct);
+        while (await reader.ReadAsync(ct))
+        {
+            result.Add(new PlayerSummarySnapshot
+            {
+                PlayerNum = reader.GetInt16(0),
+                Name = reader.GetString(1),
+                Level = reader.IsDBNull(2) ? null : reader.GetInt32(2),
+            });
+        }
+        return result;
+    }
 }

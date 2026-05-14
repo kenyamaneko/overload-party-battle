@@ -68,10 +68,13 @@ public class GameService
 
     /// <summary>
     /// Creates a new PvP game from matchmaking parameters (called by Gateway).
+    /// 対戦当時の player display 情報 (name / level) を battle が永続化する。account
+    /// に同期依存せず、引数として渡された snapshot をそのまま信頼して保存する。
     /// </summary>
     public async Task<Game> CreateGameFromMatch(
         List<DeckSnapshotCard> player1Cards,
         List<DeckSnapshotCard> player2Cards,
+        IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
         CancellationToken ct = default)
     {
         var deck1 = new DeckSnapshot { Cards = player1Cards };
@@ -83,6 +86,8 @@ public class GameService
             deck1, deck2, firstPlayer,
             engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
 
+        await _gameRepo.SavePlayerSummaries(gameID, playerSummaries, ct);
+
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
 
@@ -92,9 +97,12 @@ public class GameService
 
     /// <summary>
     /// Creates a new NPC game with fully initialized state.
+    /// 対戦当時の player summary (人間 player と NPC) を player_summary に永続化する。
+    /// NPC summary は caller (gateway) が npc_model の display_name から組み立てて渡す。
     /// </summary>
     public async Task<Game> StartNPCBattle(
         List<DeckSnapshotCard> playerCards, string npcModel,
+        IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
         CancellationToken ct = default)
     {
         if (!playerCards.Any())
@@ -121,6 +129,8 @@ public class GameService
             deck1, deck2, firstPlayer,
             npc2Model: npcModel,
             engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
+
+        await _gameRepo.SavePlayerSummaries(gameID, playerSummaries, ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
@@ -296,7 +306,22 @@ public class GameService
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found");
 
-        return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
+        var clientState = GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
+        var summaries = await _gameRepo.GetPlayerSummaries(gameID, ct);
+        clientState.Player1Summary = BuildClientPlayerSummary(summaries, playerNum: 1);
+        clientState.Player2Summary = BuildClientPlayerSummary(summaries, playerNum: 2);
+        return clientState;
+    }
+
+    private static OverloadParty.GameState.PlayerSummary BuildClientPlayerSummary(
+        List<PlayerSummarySnapshot> summaries, long playerNum)
+    {
+        var s = summaries.First(x => x.PlayerNum == playerNum);
+        return new OverloadParty.GameState.PlayerSummary
+        {
+            Name = s.Name,
+            Level = s.Level,
+        };
     }
 
     /// <summary>

@@ -79,6 +79,45 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("oppView")]
         public OpponentView OppView { get; set; } = new OpponentView();
 
+        [System.Text.Json.Serialization.JsonPropertyName("player1Summary")]
+        public PlayerSummary Player1Summary { get; set; } = new PlayerSummary();
+
+        [System.Text.Json.Serialization.JsonPropertyName("player2Summary")]
+        public PlayerSummary Player2Summary { get; set; } = new PlayerSummary();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
+    /// <br/>ClientGameState.player1Summary / player2Summary として client に pass-through される。
+    /// <br/>NPC のように level を持たない player では level は null となる。
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PlayerSummary
+    {
+
+        /// <summary>
+        /// 表示名 snapshot
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("name")]
+        public string Name { get; set; } = default!;
+
+        /// <summary>
+        /// level snapshot (NPC など level を持たない player では null)
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("level")]
+        public long? Level { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

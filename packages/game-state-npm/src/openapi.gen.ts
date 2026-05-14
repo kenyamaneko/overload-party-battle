@@ -260,11 +260,29 @@ export interface components {
         NpcBattleRequest: {
             deck_cards: components["schemas"]["BattleDeckCard"][];
             npc_model: string;
+            player1_summary: components["schemas"]["PlayerSummaryRequest"];
+            player2_summary: components["schemas"]["PlayerSummaryRequest"];
         };
         /** @description POST /api/v1/games/pvp のリクエスト body。 */
         PvpBattleRequest: {
             deck1_cards: components["schemas"]["BattleDeckCard"][];
             deck2_cards: components["schemas"]["BattleDeckCard"][];
+            player1_summary: components["schemas"]["PlayerSummaryRequest"];
+            player2_summary: components["schemas"]["PlayerSummaryRequest"];
+        };
+        /**
+         * @description CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+         *     battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+         *     永続化する。NPC のように level を持たない player では level は null となる。
+         */
+        PlayerSummaryRequest: {
+            /** @description 表示名 snapshot */
+            name: string;
+            /**
+             * Format: int64
+             * @description level snapshot (NPC など level を持たない player では null)
+             */
+            level?: number | null;
         };
         /** @description POST /api/v1/games/{gameId}/actions のリクエスト body。 */
         GameActionRequest: {
@@ -311,6 +329,22 @@ export interface components {
             turnStartedAt: string;
             myView: components["schemas"]["PlayerView"];
             oppView: components["schemas"]["OpponentView"];
+            player1Summary: components["schemas"]["PlayerSummary"];
+            player2Summary: components["schemas"]["PlayerSummary"];
+        };
+        /**
+         * @description 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
+         *     ClientGameState.player1Summary / player2Summary として client に pass-through される。
+         *     NPC のように level を持たない player では level は null となる。
+         */
+        PlayerSummary: {
+            /** @description 表示名 snapshot */
+            name: string;
+            /**
+             * Format: int64
+             * @description level snapshot (NPC など level を持たない player では null)
+             */
+            level?: number | null;
         };
         /** @description 自プレイヤー視点のスナップショット。 */
         PlayerView: {

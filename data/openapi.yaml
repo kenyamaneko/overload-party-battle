@@ -350,7 +350,7 @@ components:
       type: object
       description: POST /api/v1/games/npc のリクエスト body。
       x-battle-csharp-package: rpc
-      required: [deck_cards, npc_model]
+      required: [deck_cards, npc_model, player1_summary, player2_summary]
       properties:
         deck_cards:
           type: array
@@ -358,12 +358,16 @@ components:
             $ref: "#/components/schemas/BattleDeckCard"
         npc_model:
           type: string
+        player1_summary:
+          $ref: "#/components/schemas/PlayerSummaryRequest"
+        player2_summary:
+          $ref: "#/components/schemas/PlayerSummaryRequest"
 
     PvpBattleRequest:
       type: object
       description: POST /api/v1/games/pvp のリクエスト body。
       x-battle-csharp-package: rpc
-      required: [deck1_cards, deck2_cards]
+      required: [deck1_cards, deck2_cards, player1_summary, player2_summary]
       properties:
         deck1_cards:
           type: array
@@ -373,6 +377,28 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/BattleDeckCard"
+        player1_summary:
+          $ref: "#/components/schemas/PlayerSummaryRequest"
+        player2_summary:
+          $ref: "#/components/schemas/PlayerSummaryRequest"
+
+    PlayerSummaryRequest:
+      type: object
+      description: |
+        CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+        battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+        永続化する。NPC のように level を持たない player では level は null となる。
+      x-battle-csharp-package: rpc
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: 表示名 snapshot
+        level:
+          type: integer
+          format: int64
+          nullable: true
+          description: level snapshot (NPC など level を持たない player では null)
 
     GameActionRequest:
       type: object
@@ -421,6 +447,8 @@ components:
         - turnStartedAt
         - myView
         - oppView
+        - player1Summary
+        - player2Summary
       properties:
         gameID:
           type: string
@@ -451,6 +479,28 @@ components:
           $ref: "#/components/schemas/PlayerView"
         oppView:
           $ref: "#/components/schemas/OpponentView"
+        player1Summary:
+          $ref: "#/components/schemas/PlayerSummary"
+        player2Summary:
+          $ref: "#/components/schemas/PlayerSummary"
+
+    PlayerSummary:
+      type: object
+      description: |
+        対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
+        ClientGameState.player1Summary / player2Summary として client に pass-through される。
+        NPC のように level を持たない player では level は null となる。
+      x-battle-csharp-package: state
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: 表示名 snapshot
+        level:
+          type: integer
+          format: int64
+          nullable: true
+          description: level snapshot (NPC など level を持たない player では null)
 
     PlayerView:
       type: object

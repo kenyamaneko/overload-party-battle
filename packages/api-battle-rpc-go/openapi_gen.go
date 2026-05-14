@@ -127,6 +127,16 @@ type ClientGameState struct {
 	// OppView 相手プレイヤー視点 (情報秘匿適用済み)。
 	OppView OpponentView `json:"oppView"`
 
+	// Player1Summary 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
+	// ClientGameState.player1Summary / player2Summary として client に pass-through される。
+	// NPC のように level を持たない player では level は null となる。
+	Player1Summary PlayerSummary `json:"player1Summary"`
+
+	// Player2Summary 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
+	// ClientGameState.player1Summary / player2Summary として client に pass-through される。
+	// NPC のように level を持たない player では level は null となる。
+	Player2Summary PlayerSummary `json:"player2Summary"`
+
 	// TurnStartedAt ターン開始日時
 	TurnStartedAt time.Time `json:"turnStartedAt"`
 }
@@ -260,6 +270,16 @@ type MonetizeEventData struct {
 type NpcBattleRequest struct {
 	DeckCards []BattleDeckCard `json:"deck_cards"`
 	NpcModel  string           `json:"npc_model"`
+
+	// Player1Summary CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+	// battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+	// 永続化する。NPC のように level を持たない player では level は null となる。
+	Player1Summary PlayerSummaryRequest `json:"player1_summary"`
+
+	// Player2Summary CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+	// battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+	// 永続化する。NPC のように level を持たない player では level は null となる。
+	Player2Summary PlayerSummaryRequest `json:"player2_summary"`
 }
 
 // NpcModelEntry defines model for NpcModelEntry.
@@ -319,6 +339,28 @@ type PlayCardEventData struct {
 	Zone      string `json:"zone"`
 }
 
+// PlayerSummary 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
+// ClientGameState.player1Summary / player2Summary として client に pass-through される。
+// NPC のように level を持たない player では level は null となる。
+type PlayerSummary struct {
+	// Level level snapshot (NPC など level を持たない player では null)
+	Level *int64 `json:"level,omitempty"`
+
+	// Name 表示名 snapshot
+	Name string `json:"name"`
+}
+
+// PlayerSummaryRequest CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+// battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+// 永続化する。NPC のように level を持たない player では level は null となる。
+type PlayerSummaryRequest struct {
+	// Level level snapshot (NPC など level を持たない player では null)
+	Level *int64 `json:"level,omitempty"`
+
+	// Name 表示名 snapshot
+	Name string `json:"name"`
+}
+
 // PlayerView 自プレイヤー視点のスナップショット。
 type PlayerView struct {
 	// AvailableActions 実行可能アクション一覧 (アクティブプレイヤーのみ)。
@@ -344,6 +386,16 @@ type PlayerView struct {
 type PvpBattleRequest struct {
 	Deck1Cards []BattleDeckCard `json:"deck1_cards"`
 	Deck2Cards []BattleDeckCard `json:"deck2_cards"`
+
+	// Player1Summary CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+	// battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+	// 永続化する。NPC のように level を持たない player では level は null となる。
+	Player1Summary PlayerSummaryRequest `json:"player1_summary"`
+
+	// Player2Summary CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+	// battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+	// 永続化する。NPC のように level を持たない player では level は null となる。
+	Player2Summary PlayerSummaryRequest `json:"player2_summary"`
 }
 
 // ReactiveRevealedEventData defines model for ReactiveRevealedEventData.
