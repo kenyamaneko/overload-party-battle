@@ -45,6 +45,12 @@ public class GameServiceTests
         new() { PlayerNum = 2, Name = "p2", Level = 1 },
     ];
 
+    private static readonly List<PlayerSummarySnapshot> NpcPlayerSummaries =
+    [
+        new() { PlayerNum = 1, Name = "p1", Level = 1 },
+        new() { PlayerNum = 2, Name = "SHE 配達員", Level = null },
+    ];
+
     // ─── CreateGameFromMatch ─────────────────────────────────
 
     [Fact]
@@ -106,7 +112,7 @@ public class GameServiceTests
     public async Task StartNPCBattle_CreatesGame_WithNpcPlayer()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.StartNPCBattle(cards, Factions.SHE);
+        var game = await _svc.StartNPCBattle(cards, Factions.SHE, NpcPlayerSummaries);
 
         game.Should().NotBeNull();
         game.Npc2Model.Should().NotBeNull();
@@ -116,7 +122,7 @@ public class GameServiceTests
     [Fact]
     public async Task StartNPCBattle_EmptyDeck_Throws()
     {
-        var act = () => _svc.StartNPCBattle([], "SHE-easy");
+        var act = () => _svc.StartNPCBattle([], "SHE-easy", NpcPlayerSummaries);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*empty*");
@@ -126,7 +132,7 @@ public class GameServiceTests
     public async Task StartNPCBattle_UnknownFaction_Throws()
     {
         var cards = MakePlayerCards();
-        var act = () => _svc.StartNPCBattle(cards, "unknown_faction");
+        var act = () => _svc.StartNPCBattle(cards, "unknown_faction", NpcPlayerSummaries);
 
         await act.Should().ThrowAsync<GameRuleException>()
             .WithMessage("*No AI config found*");

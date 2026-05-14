@@ -79,14 +79,11 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("oppView")]
         public OpponentView OppView { get; set; } = new OpponentView();
 
-        /// <summary>
-        /// 対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
-        /// <br/>ClientGameState 内では各 player の name / level を myView/oppView と独立に
-        /// <br/>参照できるようにする。
-        /// <br/>
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("players")]
-        public System.Collections.Generic.List<PlayerSummary> Players { get; set; } = new System.Collections.Generic.List<PlayerSummary>();
+        [System.Text.Json.Serialization.JsonPropertyName("player1Summary")]
+        public PlayerSummary Player1Summary { get; set; } = new PlayerSummary();
+
+        [System.Text.Json.Serialization.JsonPropertyName("player2Summary")]
+        public PlayerSummary Player2Summary { get; set; } = new PlayerSummary();
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -100,19 +97,14 @@ namespace OverloadParty.GameState
     }
 
     /// <summary>
-    /// 対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
-    /// <br/>ClientGameState.players[] の要素として client へ pass-through される。
+    /// 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
+    /// <br/>ClientGameState.player1Summary / player2Summary として client に pass-through される。
+    /// <br/>NPC のように level を持たない player では level は null となる。
     /// <br/>
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PlayerSummary
     {
-
-        /// <summary>
-        /// スロット番号 (1 or 2)
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("playerNum")]
-        public long PlayerNum { get; set; } = default!;
 
         /// <summary>
         /// 表示名 snapshot
@@ -121,10 +113,10 @@ namespace OverloadParty.GameState
         public string Name { get; set; } = default!;
 
         /// <summary>
-        /// level snapshot
+        /// level snapshot (NPC など level を持たない player では null)
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("level")]
-        public long Level { get; set; } = default!;
+        public long? Level { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

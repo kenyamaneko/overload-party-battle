@@ -191,7 +191,7 @@ public class NpcEventStateTests
         for (int i = 0; i < 20; i++)
         {
             var cards = MakePlayerCards("SH-0001");
-            var game = await _svc.StartNPCBattle(cards, "SHE-easy");
+            var game = await _svc.StartNPCBattle(cards, "SHE-easy", NpcPlayerSummaries);
             var state = await _repo.GetGameState(game.GameID);
             if (state!.ActivePlayer == 1)
             {
@@ -234,7 +234,7 @@ public class NpcEventStateTests
     private async Task<GameActionResult> RunNpcTurn()
     {
         var cards = MakePlayerCards("SH-0001");
-        var game = await _svc.StartNPCBattle(cards, "SHE-easy");
+        var game = await _svc.StartNPCBattle(cards, "SHE-easy", NpcPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -265,6 +265,12 @@ public class NpcEventStateTests
             .Select(_ => new DeckSnapshotCard { CardId = cardId })
             .ToList();
     }
+
+    private static readonly List<PlayerSummarySnapshot> NpcPlayerSummaries =
+    [
+        new() { PlayerNum = 1, Name = "p1", Level = 1 },
+        new() { PlayerNum = 2, Name = "SHE 配達員", Level = null },
+    ];
 
     private static string? FindNpcDataDir()
     {

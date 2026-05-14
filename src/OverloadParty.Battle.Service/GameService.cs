@@ -97,9 +97,12 @@ public class GameService
 
     /// <summary>
     /// Creates a new NPC game with fully initialized state.
+    /// 対戦当時の player summary (人間 player と NPC) を player_summary に永続化する。
+    /// NPC summary は caller (gateway) が npc_model の display_name から組み立てて渡す。
     /// </summary>
     public async Task<Game> StartNPCBattle(
         List<DeckSnapshotCard> playerCards, string npcModel,
+        IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
         CancellationToken ct = default)
     {
         if (!playerCards.Any())
@@ -126,6 +129,8 @@ public class GameService
             deck1, deck2, firstPlayer,
             npc2Model: npcModel,
             engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
+
+        await _gameRepo.SavePlayerSummaries(gameID, playerSummaries, ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new InvalidOperationException($"created game {gameID} not found");
@@ -303,13 +308,20 @@ public class GameService
 
         var clientState = GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
         var summaries = await _gameRepo.GetPlayerSummaries(gameID, ct);
-        clientState.Players = summaries.Select(s => new OverloadParty.GameState.PlayerSummary
+        clientState.Player1Summary = BuildClientPlayerSummary(summaries, playerNum: 1);
+        clientState.Player2Summary = BuildClientPlayerSummary(summaries, playerNum: 2);
+        return clientState;
+    }
+
+    private static OverloadParty.GameState.PlayerSummary BuildClientPlayerSummary(
+        List<PlayerSummarySnapshot> summaries, long playerNum)
+    {
+        var s = summaries.First(x => x.PlayerNum == playerNum);
+        return new OverloadParty.GameState.PlayerSummary
         {
-            PlayerNum = s.PlayerNum,
             Name = s.Name,
             Level = s.Level,
-        }).ToList();
-        return clientState;
+        };
     }
 
     /// <summary>

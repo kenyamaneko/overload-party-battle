@@ -244,6 +244,12 @@ namespace OverloadParty.ApiBattleRpc
         [System.Text.Json.Serialization.JsonPropertyName("npc_model")]
         public string NpcModel { get; set; } = default!;
 
+        [System.Text.Json.Serialization.JsonPropertyName("player1_summary")]
+        public PlayerSummaryRequest Player1Summary { get; set; } = new PlayerSummaryRequest();
+
+        [System.Text.Json.Serialization.JsonPropertyName("player2_summary")]
+        public PlayerSummaryRequest Player2Summary { get; set; } = new PlayerSummaryRequest();
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -268,13 +274,11 @@ namespace OverloadParty.ApiBattleRpc
         [System.Text.Json.Serialization.JsonPropertyName("deck2_cards")]
         public System.Collections.Generic.List<BattleDeckCard> Deck2Cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
 
-        /// <summary>
-        /// 対戦者 2 名分の display 情報 snapshot (match 成立時点の値)。
-        /// <br/>battle は account に依存せず、渡された値をそのまま player_summary に永続化する。
-        /// <br/>
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("players")]
-        public System.Collections.Generic.List<PvpPlayerSummary> Players { get; set; } = new System.Collections.Generic.List<PvpPlayerSummary>();
+        [System.Text.Json.Serialization.JsonPropertyName("player1_summary")]
+        public PlayerSummaryRequest Player1Summary { get; set; } = new PlayerSummaryRequest();
+
+        [System.Text.Json.Serialization.JsonPropertyName("player2_summary")]
+        public PlayerSummaryRequest Player2Summary { get; set; } = new PlayerSummaryRequest();
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -288,19 +292,14 @@ namespace OverloadParty.ApiBattleRpc
     }
 
     /// <summary>
-    /// CreatePvP request 内で渡される player の display 情報 snapshot。battle 側は
-    /// <br/>account に lookup せず、渡された値をそのまま player_summary に永続化する。
+    /// CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+    /// <br/>battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+    /// <br/>永続化する。NPC のように level を持たない player では level は null となる。
     /// <br/>
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class PvpPlayerSummary
+    public partial class PlayerSummaryRequest
     {
-
-        /// <summary>
-        /// スロット番号 (1 or 2)
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("player_num")]
-        public long PlayerNum { get; set; } = default!;
 
         /// <summary>
         /// 表示名 snapshot
@@ -309,10 +308,10 @@ namespace OverloadParty.ApiBattleRpc
         public string Name { get; set; } = default!;
 
         /// <summary>
-        /// level snapshot
+        /// level snapshot (NPC など level を持たない player では null)
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("level")]
-        public long Level { get; set; } = default!;
+        public long? Level { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

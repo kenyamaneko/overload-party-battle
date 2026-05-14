@@ -260,34 +260,29 @@ export interface components {
         NpcBattleRequest: {
             deck_cards: components["schemas"]["BattleDeckCard"][];
             npc_model: string;
+            player1_summary: components["schemas"]["PlayerSummaryRequest"];
+            player2_summary: components["schemas"]["PlayerSummaryRequest"];
         };
         /** @description POST /api/v1/games/pvp のリクエスト body。 */
         PvpBattleRequest: {
             deck1_cards: components["schemas"]["BattleDeckCard"][];
             deck2_cards: components["schemas"]["BattleDeckCard"][];
-            /**
-             * @description 対戦者 2 名分の display 情報 snapshot (match 成立時点の値)。
-             *     battle は account に依存せず、渡された値をそのまま player_summary に永続化する。
-             */
-            players: components["schemas"]["PvpPlayerSummary"][];
+            player1_summary: components["schemas"]["PlayerSummaryRequest"];
+            player2_summary: components["schemas"]["PlayerSummaryRequest"];
         };
         /**
-         * @description CreatePvP request 内で渡される player の display 情報 snapshot。battle 側は
-         *     account に lookup せず、渡された値をそのまま player_summary に永続化する。
+         * @description CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+         *     battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+         *     永続化する。NPC のように level を持たない player では level は null となる。
          */
-        PvpPlayerSummary: {
-            /**
-             * Format: int64
-             * @description スロット番号 (1 or 2)
-             */
-            player_num: number;
+        PlayerSummaryRequest: {
             /** @description 表示名 snapshot */
             name: string;
             /**
              * Format: int64
-             * @description level snapshot
+             * @description level snapshot (NPC など level を持たない player では null)
              */
-            level: number;
+            level?: number | null;
         };
         /** @description POST /api/v1/games/{gameId}/actions のリクエスト body。 */
         GameActionRequest: {
@@ -334,30 +329,22 @@ export interface components {
             turnStartedAt: string;
             myView: components["schemas"]["PlayerView"];
             oppView: components["schemas"]["OpponentView"];
-            /**
-             * @description 対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
-             *     ClientGameState 内では各 player の name / level を myView/oppView と独立に
-             *     参照できるようにする。
-             */
-            players: components["schemas"]["PlayerSummary"][];
+            player1Summary: components["schemas"]["PlayerSummary"];
+            player2Summary: components["schemas"]["PlayerSummary"];
         };
         /**
-         * @description 対戦当時の player 表示情報 snapshot (match 成立時点の値、試合中不変)。
-         *     ClientGameState.players[] の要素として client へ pass-through される。
+         * @description 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
+         *     ClientGameState.player1Summary / player2Summary として client に pass-through される。
+         *     NPC のように level を持たない player では level は null となる。
          */
         PlayerSummary: {
-            /**
-             * Format: int64
-             * @description スロット番号 (1 or 2)
-             */
-            playerNum: number;
             /** @description 表示名 snapshot */
             name: string;
             /**
              * Format: int64
-             * @description level snapshot
+             * @description level snapshot (NPC など level を持たない player では null)
              */
-            level: number;
+            level?: number | null;
         };
         /** @description 自プレイヤー視点のスナップショット。 */
         PlayerView: {

@@ -433,7 +433,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             cmd.Parameters.AddWithValue(gameID);
             cmd.Parameters.AddWithValue((short)s.PlayerNum);
             cmd.Parameters.AddWithValue(s.Name);
-            cmd.Parameters.AddWithValue((int)s.Level);
+            cmd.Parameters.AddWithValue((object?)(s.Level is { } lv ? (int)lv : null) ?? DBNull.Value);
             await cmd.ExecuteNonQueryAsync(ct);
         }
         await tx.CommitAsync(ct);
@@ -456,7 +456,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             {
                 PlayerNum = reader.GetInt16(0),
                 Name = reader.GetString(1),
-                Level = reader.GetInt32(2),
+                Level = reader.IsDBNull(2) ? null : reader.GetInt32(2),
             });
         }
         return result;
