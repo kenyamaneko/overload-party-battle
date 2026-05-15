@@ -302,6 +302,30 @@ public class PriorityResolverTests
         pri.Should().Be(90);
     }
 
+    // ─── SelectTarget ───────────────────────────────────────────
+
+    [Fact]
+    public void SelectTarget_throws_when_no_category_has_a_resolvable_spec()
+    {
+        var ctx = MakeCtx();
+        var info = new EffectInfo().WithCategory(EffectCategory.BudgetGain);
+
+        var act = () => PriorityResolver.SelectTarget(info, ctx, new TargetSelectionConfig(), _cc);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact]
+    public void SelectTarget_throws_when_category_spec_is_unconfigured()
+    {
+        var ctx = MakeCtx();
+        var info = new EffectInfo().WithCategory(EffectCategory.SingleDamage);
+
+        var act = () => PriorityResolver.SelectTarget(info, ctx, new TargetSelectionConfig(), _cc);
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
     // ─── Test doubles ───────────────────────────────────────────
 
     private class NullEffectRegistry : IEffectRegistry
