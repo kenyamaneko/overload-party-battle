@@ -2,6 +2,7 @@ global using OverloadParty.GameDesignConstants;
 global using OverloadParty.GameLogicConstants;
 global using OverloadParty.GameState;
 global using OverloadParty.ApiBattleRpc;
+global using OverloadParty.Battle.Engine.Ports;
 global using Field = OverloadParty.Battle.Models.Field;
 global using DeployedResource = OverloadParty.Battle.Models.DeployedResource;
 global using DeployedSupport = OverloadParty.Battle.Models.DeployedSupport;

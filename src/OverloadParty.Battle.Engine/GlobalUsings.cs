@@ -2,6 +2,7 @@ global using OverloadParty.GameDesignConstants;
 global using OverloadParty.GameLogicConstants;
 global using OverloadParty.GameState;
 global using OverloadParty.Battle.Engine.Helpers;
+global using OverloadParty.Battle.Engine.Ports;
 global using CardTypes = OverloadParty.GameDesignConstants.CardTypes;
 global using GameStatus = OverloadParty.Battle.Models.GameStatus;
 global using Field = OverloadParty.Battle.Models.Field;
