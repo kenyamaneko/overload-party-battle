@@ -1,8 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Data.Json;
+namespace OverloadParty.Battle.Models.Json;
 
 /// <summary>
 /// Serializes/deserializes Zone&lt;T&gt; as a fixed-length nullable array

@@ -1,13 +1,19 @@
 using System.Text.Json;
-using OverloadParty.Battle.Data.Json;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Models.Json;
 
 namespace OverloadParty.Battle.Tests.Fakes;
 
 /// <summary>IGameRepository のインメモリ test double。</summary>
 public class FakeGameRepository : IGameRepository
 {
+    // Zone<T> は固定長配列表現の converter がないと round-trip しないため、ディープコピー用 options に追加する。
+    private static readonly JsonSerializerOptions DeepCopyOptions = new()
+    {
+        Converters = { new ZoneJsonConverterFactory() },
+    };
+
     private readonly Lock _lock = new();
     private readonly Dictionary<string, Game> _games = new();
     private readonly Dictionary<string, BattleGameState> _states = new();
@@ -22,8 +28,8 @@ public class FakeGameRepository : IGameRepository
             _games[game.GameID] = game;
             _states[game.GameID] = state;
             // 初期スナップショットを保持するため JSON ラウンドトリップでディープコピー
-            var json = JsonSerializer.Serialize(state, DbJsonOptions.Default);
-            _initialStates[game.GameID] = JsonSerializer.Deserialize<BattleGameState>(json, DbJsonOptions.Default)!;
+            var json = JsonSerializer.Serialize(state, DeepCopyOptions);
+            _initialStates[game.GameID] = JsonSerializer.Deserialize<BattleGameState>(json, DeepCopyOptions)!;
             _events[game.GameID] = [];
         }
         return Task.CompletedTask;

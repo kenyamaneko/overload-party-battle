@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using OverloadParty.Battle.Models.Json;
 
 namespace OverloadParty.Battle.Data.Json;
 
