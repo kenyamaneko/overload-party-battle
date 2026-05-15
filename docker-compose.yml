@@ -1,0 +1,23 @@
+# ローカル動作確認用の PostgreSQL。
+# テストでは Testcontainers が別途コンテナを起動するため、
+# 本 compose はあくまで `make run` (cmd/server) のローカル動作確認用。
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: battle
+      POSTGRES_PASSWORD: battle
+      POSTGRES_DB: battle
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - battle_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U battle"]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+volumes:
+  battle_pgdata:

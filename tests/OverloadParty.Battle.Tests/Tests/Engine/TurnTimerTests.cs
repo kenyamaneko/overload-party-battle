@@ -1,7 +1,7 @@
-using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
@@ -139,7 +139,7 @@ public class TurnTimerTests
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
-        var repo = new MockGameRepository();
+        var repo = new FakeGameRepository();
         var engine = new GameEngine(repo, cc);
         var deck = TestFactory.MakeDeck("SH-0001");
 
@@ -177,7 +177,7 @@ public class TurnTimerTests
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
-        var repo = new MockGameRepository();
+        var repo = new FakeGameRepository();
         var engine = new GameEngine(repo, cc);
         var deck = TestFactory.MakeDeck("SH-0001");
 

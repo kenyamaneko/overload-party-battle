@@ -1,4 +1,4 @@
-.PHONY: build run test test-integration test-coverage clean restore update-common help
+.PHONY: build run test test-coverage clean restore update-common db-up db-down db-reset help
 
 # ─── Config ──────────────────────────────────────────────
 SLN     := OverloadParty.Battle.slnx
@@ -15,26 +15,30 @@ restore:  ## Restore NuGet packages
 build:  ## Build the solution
 	dotnet build $(SLN)
 
+# ─── DB ──────────────────────────────────────────────────
+db-up:  ## Start local Postgres (docker compose)
+	docker compose up -d postgres
+
+db-down:  ## Stop local Postgres
+	docker compose down
+
+db-reset:  ## Drop volume and recreate DB
+	docker compose down -v
+	docker compose up -d postgres
+
 # ─── Run ─────────────────────────────────────────────────
 PORT ?= 9002
 
-run:  ## Run local dev server (port 9002, in-memory mock repos)
+run: db-up  ## Run local dev server (port 9002, compose Postgres 接続)
 	@lsof -ti :$(PORT) | xargs kill -9 2>/dev/null || true
-	ASPNETCORE_ENVIRONMENT=Development BATTLE_MODE=local \
+	ASPNETCORE_ENVIRONMENT=Development \
+	DATABASE_CONN="Host=localhost;Port=5432;Database=battle;Username=battle;Password=battle;Search Path=battle" \
 	CARDS_JSON_PATH=$(COMMON_DIR)/packages/game-state-dotnet/cache/cards_gen.json \
 		dotnet run --project $(SERVER)
 
 # ─── Test ────────────────────────────────────────────────
-TEST_DB_URL ?= Host=localhost;Port=5433;Database=testdb;Username=testuser;Password=testpass
-COMPOSE_TEST := $(COMMON_DIR)/db/docker-compose.test.yml
-
-test:  ## Run all tests (unit only, DB tests skipped)
+test:  ## Run all tests (Testcontainers; requires Docker running)
 	dotnet test $(TESTS)
-
-test-integration:  ## Run tests including DB integration (starts container automatically)
-	docker compose -f $(COMPOSE_TEST) up -d --wait
-	TEST_DB_URL="$(TEST_DB_URL)" dotnet test $(TESTS) || (docker compose -f $(COMPOSE_TEST) down; exit 1)
-	docker compose -f $(COMPOSE_TEST) down
 
 test-coverage:  ## Run tests with code coverage report
 	dotnet test $(TESTS) --collect:"XPlat Code Coverage" --results-directory .coverage

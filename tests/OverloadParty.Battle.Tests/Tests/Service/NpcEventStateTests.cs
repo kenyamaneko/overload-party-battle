@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging;
-using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 using OverloadParty.Battle.Service;
+using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Service;
 
@@ -14,7 +14,7 @@ namespace OverloadParty.Battle.Tests.Service;
 /// </summary>
 public class NpcEventStateTests
 {
-    private readonly MockGameRepository _repo = new();
+    private readonly FakeGameRepository _repo = new();
     private readonly GameService _svc;
     private readonly ICardCache _cc;
 

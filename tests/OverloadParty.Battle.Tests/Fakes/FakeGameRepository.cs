@@ -3,12 +3,10 @@ using OverloadParty.Battle.Data.Json;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Data.Mock;
+namespace OverloadParty.Battle.Tests.Fakes;
 
-/// <summary>
-/// MockGameRepository はローカル開発用のインメモリゲームリポジトリです
-/// </summary>
-public class MockGameRepository : IGameRepository
+/// <summary>IGameRepository のインメモリ test double。</summary>
+public class FakeGameRepository : IGameRepository
 {
     private readonly Lock _lock = new();
     private readonly Dictionary<string, Game> _games = new();

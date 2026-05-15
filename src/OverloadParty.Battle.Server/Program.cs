@@ -6,7 +6,6 @@ using Npgsql;
 using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Data.Firestore;
 using OverloadParty.Battle.Data.Json;
-using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Data.Pg;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
@@ -21,9 +20,8 @@ using ActionResult = OverloadParty.ApiBattleRpc.ActionResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 動作モードを決定
-var isLocalDev = builder.Environment.IsDevelopment()
-    || Environment.GetEnvironmentVariable("BATTLE_MODE") == "local";
+// ローカル開発モード判定。クラウド環境 (dev/stg/prod) は ASPNETCORE_ENVIRONMENT 未設定 = Production で動くため false。
+var isLocalDev = builder.Environment.IsDevelopment();
 
 builder.Services.AddLogging();
 
@@ -38,20 +36,12 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 // ─── Data layer ─────────────────────────────────────────────
 
-if (isLocalDev)
-{
-    var mockGameRepo = new MockGameRepository();
-    builder.Services.AddSingleton<IGameRepository>(mockGameRepo);
-}
-else
-{
-    var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? Environment.GetEnvironmentVariable("DATABASE_CONN")
-        ?? throw new InvalidOperationException("DATABASE_CONN or ConnectionStrings:DefaultConnection not set");
-    var dataSource = NpgsqlDataSource.Create(connStr);
-    builder.Services.AddSingleton(dataSource);
-    builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
-}
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("DATABASE_CONN")
+    ?? throw new InvalidOperationException("DATABASE_CONN or ConnectionStrings:DefaultConnection not set");
+var dataSource = NpgsqlDataSource.Create(connStr);
+builder.Services.AddSingleton(dataSource);
+builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
 
 // ─── Game config (Firestore) ────────────────────────────────
 // Required env var even in local mode; the Google SDK auto-routes to the
@@ -328,7 +318,7 @@ api.MapGet("/games/{gameId}/log/text", async (GameLogService logSvc, string game
     return Results.Text(text, "text/plain");
 });
 
-// 開発用 REST API エンドポイント（ローカルモードのみ）
+// 開発用 REST API エンドポイント（ローカル開発モードのみ）
 if (isLocalDev)
 {
     app.MapGet("/api/dev/cards", (ICardCache cc) =>
