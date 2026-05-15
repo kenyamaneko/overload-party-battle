@@ -202,24 +202,24 @@ public static class PriorityResolver
     /// </summary>
     public static string? SelectTarget(EffectInfo info, DecisionContext ctx, TargetSelectionConfig targets, ICardCache cc)
     {
-        if (info.HasCategory(EffectCategory.SingleDamage) && targets.SingleDamage is not null)
+        if (info.HasCategory(EffectCategory.SingleDamage))
         {
-            return TargetSelector.Resolve(targets.SingleDamage, ctx.Field, ctx.OppField, cc);
+            return ResolveCategoryTarget(EffectCategory.SingleDamage, targets.SingleDamage, ctx, cc);
         }
 
-        if (info.HasCategory(EffectCategory.Debuff) && targets.Debuff is not null)
+        if (info.HasCategory(EffectCategory.Debuff))
         {
-            return TargetSelector.Resolve(targets.Debuff, ctx.Field, ctx.OppField, cc);
+            return ResolveCategoryTarget(EffectCategory.Debuff, targets.Debuff, ctx, cc);
         }
 
-        if (info.HasCategory(EffectCategory.Heal) && targets.Heal is not null)
+        if (info.HasCategory(EffectCategory.Heal))
         {
-            return TargetSelector.Resolve(targets.Heal, ctx.Field, ctx.OppField, cc);
+            return ResolveCategoryTarget(EffectCategory.Heal, targets.Heal, ctx, cc);
         }
 
-        if (info.HasCategory(EffectCategory.Buff) && targets.Buff is not null)
+        if (info.HasCategory(EffectCategory.Buff))
         {
-            return TargetSelector.Resolve(targets.Buff, ctx.Field, ctx.OppField, cc);
+            return ResolveCategoryTarget(EffectCategory.Buff, targets.Buff, ctx, cc);
         }
 
         if (info.HasCategory(EffectCategory.DestroyPlatform))
@@ -227,8 +227,21 @@ public static class PriorityResolver
             return TargetSelector.FirstPlatformId(ctx.OppField, cc);
         }
 
-        return targets.Attack is not null
-            ? TargetSelector.Resolve(targets.Attack, ctx.Field, ctx.OppField, cc)
-            : null;
+        throw new InvalidOperationException(
+            $"SelectTarget: effect categories [{string.Join(", ", info.Categories)}] have no resolvable target spec");
+    }
+
+    /// <summary>
+    /// Resolves a target via the category's configured TargetSpec.
+    /// </summary>
+    private static string? ResolveCategoryTarget(
+        EffectCategory category, TargetSpec? spec, DecisionContext ctx, ICardCache cc)
+    {
+        if (spec is null)
+        {
+            throw new InvalidOperationException(
+                $"SelectTarget: category {category} has no target spec configured");
+        }
+        return TargetSelector.Resolve(spec, ctx.Field, ctx.OppField, cc);
     }
 }
