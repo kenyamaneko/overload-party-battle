@@ -230,7 +230,36 @@ card service からの Card 取得に失敗した場合、リトライせず `En
 
 フィールド走査には `FieldHelpers.AllFaceUpResources` / `AllResources` / `TargetSelector.FaceUpInZone` を再利用する。同じパターンの for ループを新たに書かない。
 
-### csproj 依存の集約
+---
 
-共通依存は最浅の csproj に一度だけ宣言し、transitive resolution で各層へ伝播させる。各 csproj が同じ依存を再列挙しない。追加・削除箇所とバージョン指定を 1 箇所に保ち、層をまたいだ同期漏れを防ぐ。
+## 5. csproj 境界と責務
+
+Battle サービスは複数の csproj に分割し、各プロジェクトの責務と依存方向を境界として固定する。責務違反 (domain logic が外界に依存する等) がビルド時に検出できる状態を保つ。
+
+### 各 csproj の責務
+
+| プロジェクト | 担うもの |
+|---|---|
+| Models | ゲームに共通する値オブジェクトと列挙 |
+| Engine | ゲームの domain logic と、外界へ要求する port の宣言 |
+| Npc | NPC の思考戦略 |
+| Data | port を満たす adapter (永続化・外部サービス接続) |
+| Service | ユースケースの組み立て |
+| Server | composition root と HTTP / WebSocket の入口 |
+
+### 依存の方向
+
+依存は Server → (Service / Data / Npc) → Engine → Models の一方向に流れる。Engine は domain logic を担い、外界 (DB・HTTP・外部サービス) を知らずに Models のみへ依存する。Engine が外界に求める操作は Engine 自身が port として宣言し、その実体は Data が adapter として与える。依存を一方向に保つことで、domain logic を外界の都合から切り離して変更・テストできる。
+
+### port の置き場所
+
+port — Engine が外界に要求する操作の interface — は `Engine/Ports/` 配下に置く。port は Engine が宣言した外界への要求であり Engine に閉じているため、別プロジェクトへ切り出さず Engine 内に置く。domain logic と同じ階層に混在させず `Ports/` に分離することで、両者の性質の違いを構造で示す。
+
+### 依存の集約
+
+共通依存は最浅の csproj に一度だけ宣言し、transitive resolution で各層へ伝播させる。各 csproj が同じ依存を再列挙しないことで、依存の追加・削除を 1 箇所に閉じ、層をまたいだ同期漏れを防ぐ。
+
+### composition root
+
+Server は composition root として各層の concrete を組み立て、依存を注入する。Server が直接参照するのは自身が組み立てる concrete に限り、transitive で解決できる中間層は再列挙しない。これにより Server が組み立てる concrete が参照リストから読み取れ、Server が domain logic を直接呼び始める変更は境界の diff として現れる。
 
