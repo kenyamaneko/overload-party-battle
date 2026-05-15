@@ -181,7 +181,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** カード定義一覧を取得 (ASPNETCORE_ENVIRONMENT=Development でのみ有効) */
+        /** カード定義一覧を取得 (ローカル開発モードでのみ有効) */
         get: operations["listDevCards"];
         put?: never;
         post?: never;

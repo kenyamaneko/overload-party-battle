@@ -20,7 +20,8 @@ using ActionResult = OverloadParty.ApiBattleRpc.ActionResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var isDevelopment = builder.Environment.IsDevelopment();
+// ローカル開発モード判定。クラウド環境 (dev/stg/prod) は ASPNETCORE_ENVIRONMENT 未設定 = Production で動くため false。
+var isLocalDev = builder.Environment.IsDevelopment();
 
 builder.Services.AddLogging();
 
@@ -116,7 +117,7 @@ var app = builder.Build();
 
 // Local dev keeps the JSON file path so offline development doesn't require the card service
 // running. Everything else (k8s, CI) must hit the card service.
-var localCardsPath = isDevelopment ? Environment.GetEnvironmentVariable("CARDS_JSON_PATH") : null;
+var localCardsPath = isLocalDev ? Environment.GetEnvironmentVariable("CARDS_JSON_PATH") : null;
 
 if (!string.IsNullOrEmpty(localCardsPath))
 {
@@ -162,7 +163,7 @@ else
 // ─── Middleware ──────────────────────────────────────────────
 
 // 開発用 CORS
-if (isDevelopment)
+if (isLocalDev)
 {
     app.Use(async (context, next) =>
     {
@@ -317,8 +318,8 @@ api.MapGet("/games/{gameId}/log/text", async (GameLogService logSvc, string game
     return Results.Text(text, "text/plain");
 });
 
-// 開発用 REST API エンドポイント（Development 環境のみ）
-if (isDevelopment)
+// 開発用 REST API エンドポイント（ローカル開発モードのみ）
+if (isLocalDev)
 {
     app.MapGet("/api/dev/cards", (ICardCache cc) =>
         Results.Ok(cc.All().Values.Select(c => new { c.CardId, c.CardName, c.Faction, c.CardType })));
@@ -327,8 +328,8 @@ if (isDevelopment)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "9002";
 app.Urls.Add($"http://0.0.0.0:{port}");
 
-app.Logger.LogInformation("Battle server starting on port {Port} (env={Env})",
-    port, builder.Environment.EnvironmentName);
+app.Logger.LogInformation("Battle server starting on port {Port} (mode={Mode})",
+    port, isLocalDev ? "local" : "production");
 
 app.Run();
 

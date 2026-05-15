@@ -48,7 +48,7 @@ Battle (このサービス, :9002)
 
 | 変数名 | デフォルト | 説明 |
 |---|---|---|
-| `CARDS_JSON_PATH` | *(空)* | `ASPNETCORE_ENVIRONMENT=Development` 時のみ。card service の代わりにこの JSON ファイルからカード定義を読み込む |
+| `CARDS_JSON_PATH` | *(空)* | ローカル開発モード（`ASPNETCORE_ENVIRONMENT=Development`）時のみ。card service の代わりにこの JSON ファイルからカード定義を読み込む |
 | `NPC_AI_CONFIG_DIR` | `src/OverloadParty.Battle.Npc/Data` | NPC AI 設定 YAML ディレクトリ |
 
 ## 公開パッケージ

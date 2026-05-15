@@ -199,7 +199,7 @@ paths:
   /api/dev/cards:
     get:
       operationId: listDevCards
-      summary: カード定義一覧を取得 (ASPNETCORE_ENVIRONMENT=Development でのみ有効)
+      summary: カード定義一覧を取得 (ローカル開発モードでのみ有効)
       responses:
         "200":
           description: カード一覧
