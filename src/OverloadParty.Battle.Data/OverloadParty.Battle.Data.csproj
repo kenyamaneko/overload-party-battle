@@ -8,8 +8,6 @@
   <ItemGroup>
     <PackageReference Include="Google.Cloud.Firestore" Version="3.10.0" />
     <PackageReference Include="Npgsql" Version="10.0.1" />
-    <ProjectReference Include="..\..\packages\game-logic-constants-dotnet\OverloadParty.GameLogicConstants.csproj" />
-    <ProjectReference Include="..\..\packages\game-state-dotnet\OverloadParty.GameState.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
