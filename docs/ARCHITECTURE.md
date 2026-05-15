@@ -230,3 +230,7 @@ card service からの Card 取得に失敗した場合、リトライせず `En
 
 フィールド走査には `FieldHelpers.AllFaceUpResources` / `AllResources` / `TargetSelector.FaceUpInZone` を再利用する。同じパターンの for ループを新たに書かない。
 
+### csproj 依存の集約
+
+共通依存は最浅の csproj に一度だけ宣言し、transitive resolution で各層へ伝播させる。各 csproj が同じ依存を再列挙しない。追加・削除箇所とバージョン指定を 1 箇所に保ち、層をまたいだ同期漏れを防ぐ。
+

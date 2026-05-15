@@ -15,9 +15,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="OverloadParty.GameDesignConstants" Version="0.1.3" />
-    <ProjectReference Include="..\..\packages\game-logic-constants-dotnet\OverloadParty.GameLogicConstants.csproj" />
-    <ProjectReference Include="..\..\packages\game-state-dotnet\OverloadParty.GameState.csproj" />
     <ProjectReference Include="..\..\packages\api-battle-rpc-dotnet\OverloadParty.ApiBattleRpc.csproj" />
   </ItemGroup>
 
