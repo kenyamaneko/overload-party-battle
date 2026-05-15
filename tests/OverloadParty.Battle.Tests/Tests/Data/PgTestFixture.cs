@@ -1,48 +1,51 @@
 using Npgsql;
+using Testcontainers.PostgreSql;
 
 namespace OverloadParty.Battle.Tests.Data;
 
-/// <summary>
-/// Shared helper for PostgreSQL integration tests.
-/// Tests are skipped when TEST_DB_URL is not set.
-/// Start the container with:
-///   docker compose -f ../overload-party-common/db/docker-compose.test.yml up -d
-/// Then run tests with:
-///   TEST_DB_URL="Host=localhost;Port=5433;Database=testdb;Username=testuser;Password=testpass" dotnet test
-/// </summary>
-public static class PgTestFixture
+/// <summary>Testcontainers ベースの Postgres を共有 xUnit fixture として提供する。</summary>
+public class PgTestFixture : IAsyncLifetime
 {
-    private static readonly string[] TruncateTables =
-    [
-        "game_events", "game_states", "games",
-    ];
+    private readonly PostgreSqlContainer _container = new PostgreSqlBuilder()
+        .WithImage("postgres:16-alpine")
+        .Build();
 
-    private static readonly Lazy<NpgsqlDataSource?> _lazyDs = new(InitDataSource);
+    private NpgsqlDataSource? _dataSource;
 
-    /// <summary>
-    /// Returns the shared NpgsqlDataSource, or null if TEST_DB_URL is not set.
-    /// Tables are truncated once on first access.
-    /// </summary>
-    public static NpgsqlDataSource? DataSource => _lazyDs.Value;
+    public NpgsqlDataSource DataSource =>
+        _dataSource ?? throw new InvalidOperationException("DataSource accessed before InitializeAsync");
 
-    private static NpgsqlDataSource? InitDataSource()
+    public async Task InitializeAsync()
     {
-        var connStr = Environment.GetEnvironmentVariable("TEST_DB_URL");
-        if (string.IsNullOrEmpty(connStr))
+        await _container.StartAsync();
+
+        var csb = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
         {
-            return null;
-        }
+            // PgGameRepository の未修飾テーブル参照を battle スキーマで解決させる。
+            SearchPath = "battle",
+        };
+        _dataSource = NpgsqlDataSource.Create(csb.ConnectionString);
 
-        var ds = NpgsqlDataSource.Create(connStr);
-
-        // Truncate tables for isolation (runs once)
-        using var conn = ds.OpenConnection();
-        foreach (var table in TruncateTables)
-        {
-            using var cmd = new NpgsqlCommand($"TRUNCATE {table} CASCADE", conn);
-            cmd.ExecuteNonQuery();
-        }
-
-        return ds;
+        var schemaPath = Path.Combine(AppContext.BaseDirectory, "db", "schema.sql");
+        var schemaSql = await File.ReadAllTextAsync(schemaPath);
+        await using var conn = await _dataSource.OpenConnectionAsync();
+        await using var cmd = new NpgsqlCommand(schemaSql, conn);
+        await cmd.ExecuteNonQueryAsync();
     }
+
+    public async Task DisposeAsync()
+    {
+        if (_dataSource is not null)
+        {
+            await _dataSource.DisposeAsync();
+        }
+        await _container.DisposeAsync();
+    }
+}
+
+/// <summary>Postgres コンテナを共有するテスト群の collection 定義。</summary>
+[CollectionDefinition(Name)]
+public class PgTestCollection : ICollectionFixture<PgTestFixture>
+{
+    public const string Name = "Postgres";
 }

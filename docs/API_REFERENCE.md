@@ -206,8 +206,8 @@ NPC のターンを進行させる。NPC 戦で `game_enter` 後に Gateway が�
 
 ---
 
-## 開発用エンドポイント（ローカルモードのみ）
+## 開発用エンドポイント（Development 環境のみ）
 
 ### `GET /api/dev/cards`
 
-カードキャッシュの一覧を返す。`BATTLE_MODE=local` 時のみ有効。
+カードキャッシュの一覧を返す。`ASPNETCORE_ENVIRONMENT=Development` 時のみ有効。

@@ -6,7 +6,6 @@ using Npgsql;
 using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Data.Firestore;
 using OverloadParty.Battle.Data.Json;
-using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Data.Pg;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
@@ -21,9 +20,7 @@ using ActionResult = OverloadParty.ApiBattleRpc.ActionResult;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 動作モードを決定
-var isLocalDev = builder.Environment.IsDevelopment()
-    || Environment.GetEnvironmentVariable("BATTLE_MODE") == "local";
+var isDevelopment = builder.Environment.IsDevelopment();
 
 builder.Services.AddLogging();
 
@@ -38,20 +35,12 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 // ─── Data layer ─────────────────────────────────────────────
 
-if (isLocalDev)
-{
-    var mockGameRepo = new MockGameRepository();
-    builder.Services.AddSingleton<IGameRepository>(mockGameRepo);
-}
-else
-{
-    var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
-        ?? Environment.GetEnvironmentVariable("DATABASE_CONN")
-        ?? throw new InvalidOperationException("DATABASE_CONN or ConnectionStrings:DefaultConnection not set");
-    var dataSource = NpgsqlDataSource.Create(connStr);
-    builder.Services.AddSingleton(dataSource);
-    builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
-}
+var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? Environment.GetEnvironmentVariable("DATABASE_CONN")
+    ?? throw new InvalidOperationException("DATABASE_CONN or ConnectionStrings:DefaultConnection not set");
+var dataSource = NpgsqlDataSource.Create(connStr);
+builder.Services.AddSingleton(dataSource);
+builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
 
 // ─── Game config (Firestore) ────────────────────────────────
 // Required env var even in local mode; the Google SDK auto-routes to the
@@ -127,7 +116,7 @@ var app = builder.Build();
 
 // Local dev keeps the JSON file path so offline development doesn't require the card service
 // running. Everything else (k8s, CI) must hit the card service.
-var localCardsPath = isLocalDev ? Environment.GetEnvironmentVariable("CARDS_JSON_PATH") : null;
+var localCardsPath = isDevelopment ? Environment.GetEnvironmentVariable("CARDS_JSON_PATH") : null;
 
 if (!string.IsNullOrEmpty(localCardsPath))
 {
@@ -173,7 +162,7 @@ else
 // ─── Middleware ──────────────────────────────────────────────
 
 // 開発用 CORS
-if (isLocalDev)
+if (isDevelopment)
 {
     app.Use(async (context, next) =>
     {
@@ -328,8 +317,8 @@ api.MapGet("/games/{gameId}/log/text", async (GameLogService logSvc, string game
     return Results.Text(text, "text/plain");
 });
 
-// 開発用 REST API エンドポイント（ローカルモードのみ）
-if (isLocalDev)
+// 開発用 REST API エンドポイント（Development 環境のみ）
+if (isDevelopment)
 {
     app.MapGet("/api/dev/cards", (ICardCache cc) =>
         Results.Ok(cc.All().Values.Select(c => new { c.CardId, c.CardName, c.Faction, c.CardType })));
@@ -338,8 +327,8 @@ if (isLocalDev)
 var port = Environment.GetEnvironmentVariable("PORT") ?? "9002";
 app.Urls.Add($"http://0.0.0.0:{port}");
 
-app.Logger.LogInformation("Battle server starting on port {Port} (mode={Mode})",
-    port, isLocalDev ? "local" : "production");
+app.Logger.LogInformation("Battle server starting on port {Port} (env={Env})",
+    port, builder.Environment.EnvironmentName);
 
 app.Run();
 

@@ -1,16 +1,16 @@
 using Microsoft.Extensions.Logging;
-using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
 using OverloadParty.Battle.Service;
+using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Service;
 
 public class GameServiceTests
 {
-    private readonly MockGameRepository _repo = new();
+    private readonly FakeGameRepository _repo = new();
     private readonly TestCardCache _cc = new();
     private readonly GameEngine _engine;
     private readonly GameService _svc;

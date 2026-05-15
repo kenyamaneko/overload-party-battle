@@ -1,13 +1,13 @@
-using OverloadParty.Battle.Data.Mock;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
 public class GameEngineTests
 {
-    private readonly MockGameRepository _repo = new();
+    private readonly FakeGameRepository _repo = new();
     private readonly TestCardCache _cc = new();
     private readonly GameEngine _engine;
 
@@ -86,7 +86,7 @@ public class GameEngineTests
 
         result.Should().BeNull("no game-over expected");
 
-        // Re-read state (UpdateGameState mutates in place for MockGameRepository)
+        // Re-read state (UpdateGameState mutates in place for FakeGameRepository)
         state.Player1Hand.Should().HaveCount(handBefore + 1);
         state.Player1Repository.Should().HaveCount(repoBefore - 1);
         state.CurrentPhase.Should().Be(Phase.Main);
