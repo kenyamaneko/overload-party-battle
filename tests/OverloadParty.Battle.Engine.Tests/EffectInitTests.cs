@@ -1,4 +1,3 @@
-using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Effects.Ops;
@@ -12,7 +11,7 @@ namespace OverloadParty.Battle.Tests.Effects;
 public class EffectRegistrationTests
 {
     private readonly EffectRegistry _registry;
-    private readonly CardCache _cardCache;
+    private readonly ICardCache _cardCache;
     private readonly Game _game;
 
     public EffectRegistrationTests()

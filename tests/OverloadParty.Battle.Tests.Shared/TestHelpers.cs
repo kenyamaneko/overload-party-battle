@@ -1,7 +1,6 @@
 using System.Text.Json;
-using OverloadParty.Battle.Data;
-using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Ports;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests;
@@ -311,28 +310,32 @@ public static class TestFactory
 /// </summary>
 public static class TestEffectSetup
 {
-    private static readonly Lazy<(EffectRegistry Registry, CardCache CardCache)> _cached = new(Build);
+    private static readonly Lazy<(EffectRegistry Registry, ICardCache CardCache)> _cached = new(Build);
 
     /// <summary>
-    /// Returns a shared (EffectRegistry, CardCache) built from embedded card data.
+    /// Returns a shared (EffectRegistry, ICardCache) built from embedded card data.
     /// </summary>
-    public static (EffectRegistry Registry, CardCache CardCache) Get() => _cached.Value;
+    public static (EffectRegistry Registry, ICardCache CardCache) Get() => _cached.Value;
 
-    private static (EffectRegistry, CardCache) Build()
+    private static (EffectRegistry, ICardCache) Build()
     {
         var cardsPath = Environment.GetEnvironmentVariable("CARDS_JSON_PATH")
             ?? FindCardsJson()
             ?? throw new FileNotFoundException(
                 "cards_gen.json not found. Set CARDS_JSON_PATH or run generate_from_yaml.py in the common repo.");
 
-        var cardCache = new CardCache();
         var cards = JsonSerializer.Deserialize<List<CardDefinition>>(
             File.ReadAllText(cardsPath), new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
                 PropertyNameCaseInsensitive = true,
             })!;
-        cardCache.LoadFromList(cards);
+
+        var cardCache = new TestCardCache();
+        foreach (var card in cards)
+        {
+            cardCache.Add(card);
+        }
 
         var registry = new EffectRegistry();
         var customEffects = new CustomEffectRegistry();
@@ -356,36 +359,5 @@ public static class TestEffectSetup
             dir = dir.Parent;
         }
         return null;
-    }
-}
-
-/// <summary>
-/// Simple in-memory IEffectRegistry for tests.
-/// </summary>
-public class TestEffectRegistry : IEffectRegistry
-{
-    private readonly Dictionary<(string, TriggerType), EffectHandler> _handlers = new();
-
-    public void Register(string cardId, TriggerType trigger, EffectHandler handler)
-        => _handlers[(cardId, trigger)] = handler;
-
-    public EffectHandler? Get(string cardId, TriggerType trigger)
-        => _handlers.GetValueOrDefault((cardId, trigger));
-
-    public bool Has(string cardId, TriggerType trigger)
-        => _handlers.ContainsKey((cardId, trigger));
-
-    public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger) => null;
-    public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
-    public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
-    public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
-}
-
-internal static class EffectInfoTestExtensions
-{
-    public static EffectInfo WithCategory(this EffectInfo info, EffectCategory cat)
-    {
-        info.Categories.Add(cat);
-        return info;
     }
 }
