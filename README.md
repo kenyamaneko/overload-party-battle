@@ -36,7 +36,7 @@ Battle (このサービス, :9002)
 | 変数名 | デフォルト | 説明 |
 |---|---|---|
 | `PORT` | `9002` | リッスンポート |
-| `DATABASE_URL` / `ConnectionStrings__DefaultConnection` | *(本番必須)* | PostgreSQL 接続文字列 (`battle` スキーマ) |
+| `DATABASE_CONN` / `ConnectionStrings__DefaultConnection` | *(本番必須)* | PostgreSQL 接続文字列 (`battle` スキーマ) |
 
 **ConfigMap (サービス URL):**
 
