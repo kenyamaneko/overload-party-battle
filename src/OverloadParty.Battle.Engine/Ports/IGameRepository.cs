@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Engine;
+namespace OverloadParty.Battle.Engine.Ports;
 
 /// <summary>
 /// Action data to be atomically appended within an UpdateGameState transaction.

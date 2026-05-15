@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Engine;
+namespace OverloadParty.Battle.Engine.Ports;
 
 /// <summary>
 /// Provides read-only access to card definitions.
