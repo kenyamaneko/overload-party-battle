@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\OverloadParty.Battle.Models\OverloadParty.Battle.Models.csproj" />
-    <ProjectReference Include="..\OverloadParty.Battle.Engine\OverloadParty.Battle.Engine.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Service\OverloadParty.Battle.Service.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Data\OverloadParty.Battle.Data.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Npc\OverloadParty.Battle.Npc.csproj" />
