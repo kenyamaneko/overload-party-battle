@@ -3,7 +3,6 @@
 # ─── Config ──────────────────────────────────────────────
 SLN     := OverloadParty.Battle.slnx
 SERVER  := src/OverloadParty.Battle.Server
-TESTS   := tests/OverloadParty.Battle.Tests
 
 # ─── Common Repo ─────────────────────────────────────────
 COMMON_DIR  ?= $(CURDIR)/../overload-party-common
@@ -38,10 +37,10 @@ run: db-up  ## Run local dev server (port 9002, compose Postgres 接続)
 
 # ─── Test ────────────────────────────────────────────────
 test:  ## Run all tests (Testcontainers; requires Docker running)
-	dotnet test $(TESTS)
+	dotnet test $(SLN)
 
 test-coverage:  ## Run tests with code coverage report
-	dotnet test $(TESTS) --collect:"XPlat Code Coverage" --results-directory .coverage
+	dotnet test $(SLN) --collect:"XPlat Code Coverage" --results-directory .coverage
 
 # ─── Dependencies ───────────────────────────────────────
 GENERATED_PKGS := OverloadParty.GameDesignConstants OverloadParty.GameLogicConstants OverloadParty.GameState OverloadParty.ApiBattleRpc

@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <InternalsVisibleTo Include="OverloadParty.Battle.Tests" />
+    <InternalsVisibleTo Include="OverloadParty.Battle.Engine.Tests" />
   </ItemGroup>
 
 </Project>

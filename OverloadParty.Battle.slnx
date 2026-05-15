@@ -7,12 +7,17 @@
     <Project Path="src/OverloadParty.Battle.Server/OverloadParty.Battle.Server.csproj" />
     <Project Path="src/OverloadParty.Battle.Service/OverloadParty.Battle.Service.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/OverloadParty.Battle.Tests/OverloadParty.Battle.Tests.csproj" />
-  </Folder>
   <Folder Name="/packages/">
     <Project Path="packages/api-battle-rpc-dotnet/OverloadParty.ApiBattleRpc.csproj" />
     <Project Path="packages/game-logic-constants-dotnet/OverloadParty.GameLogicConstants.csproj" />
     <Project Path="packages/game-state-dotnet/OverloadParty.GameState.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/OverloadParty.Battle.Data.Tests/OverloadParty.Battle.Data.Tests.csproj" />
+    <Project Path="tests/OverloadParty.Battle.Engine.Tests/OverloadParty.Battle.Engine.Tests.csproj" />
+    <Project Path="tests/OverloadParty.Battle.Models.Tests/OverloadParty.Battle.Models.Tests.csproj" />
+    <Project Path="tests/OverloadParty.Battle.Npc.Tests/OverloadParty.Battle.Npc.Tests.csproj" />
+    <Project Path="tests/OverloadParty.Battle.Service.Tests/OverloadParty.Battle.Service.Tests.csproj" />
+    <Project Path="tests/OverloadParty.Battle.Tests.Shared/OverloadParty.Battle.Tests.Shared.csproj" />
   </Folder>
 </Solution>
