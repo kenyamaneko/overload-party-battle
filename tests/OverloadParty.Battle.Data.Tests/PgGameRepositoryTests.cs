@@ -81,6 +81,21 @@ public class PgGameRepositoryTests
     }
 
     [Fact]
+    public async Task CreateGame_with_npc_restores_npc_model_via_game_npcs_join()
+    {
+        var repo = CreateRepo();
+        var (game, state) = MakeFixture();
+        game.Npc1Model = "SHE-easy";
+
+        await repo.CreateGame(game, state);
+
+        var got = await repo.GetGame(game.GameID);
+        got.Should().NotBeNull();
+        got!.Npc1Model.Should().Be("SHE-easy");
+        got.Npc2Model.Should().BeNull();
+    }
+
+    [Fact]
     public async Task GetGame_returns_null_when_not_found()
     {
         var repo = CreateRepo();
