@@ -62,7 +62,7 @@ public static class UseEffectProcessor
                   ?? FieldHelpers.FindResourceByID(state.GetField(state.OpponentOf(playerNum)), targetId);
         }
 
-        var handler = effects.Get(card.CardId, TriggerType.Activate)!;
+        var handler = effects.Get(card.CardId, TriggerType.Ignition)!;
         var ctx = new EffectContext
         {
             State = state,
@@ -72,6 +72,7 @@ public static class UseEffectProcessor
             Target = target,
             CardCache = cc,
             ChoiceData = req.ChoiceData,
+            Effects = effects,
         };
 
         var result = handler(ctx);
@@ -101,12 +102,12 @@ public static class UseEffectProcessor
     {
         var card = cc.MustGet(support.CardID);
 
-        if (!effects.Has(card.CardId, TriggerType.Activate))
+        if (!effects.Has(card.CardId, TriggerType.Ignition))
         {
-            throw new GameRuleException($"support card {card.CardId} has no activate effect");
+            throw new GameRuleException($"support card {card.CardId} has no ignition effect");
         }
 
-        var handler = effects.Get(card.CardId, TriggerType.Activate)!;
+        var handler = effects.Get(card.CardId, TriggerType.Ignition)!;
         var ctx = new EffectContext
         {
             State = state,
@@ -115,6 +116,7 @@ public static class UseEffectProcessor
             SupSource = support,
             CardCache = cc,
             ChoiceData = req.ChoiceData,
+            Effects = effects,
         };
 
         var result = handler(ctx);
@@ -141,9 +143,9 @@ public static class UseEffectProcessor
     {
         var card = cc.MustGet(source.CardID);
 
-        if (!effects.Has(card.CardId, TriggerType.Activate))
+        if (!effects.Has(card.CardId, TriggerType.Ignition))
         {
-            throw new GameRuleException($"card {card.CardId} has no activate effect");
+            throw new GameRuleException($"card {card.CardId} has no ignition effect");
         }
         if (source.EffectUsedThisTurn)
         {

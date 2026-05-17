@@ -166,8 +166,8 @@ public static class EffectYamlLoader
             }
         }
 
-        // UseEffectProcessor already enforces once-per-turn for activate triggers
-        if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Activate)
+        // UseEffectProcessor already enforces once-per-turn for ignition triggers
+        if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Ignition)
         {
             bool perGame = def.UseLimit switch
             {
@@ -511,7 +511,64 @@ public static class EffectYamlLoader
             return GuardNotSelfOp.Instance;
         }
 
+        if (el.TryGetProperty("event_owner", out var ownerEl))
+        {
+            bool isSelf = ownerEl.GetString() switch
+            {
+                PlayerRefs.Self => true,
+                PlayerRefs.Opponent => false,
+                _ => throw new InvalidOperationException($"Unknown event_owner: {ownerEl.GetString()}"),
+            };
+            IEffectOp op = new GuardEventOwnerOp(isSelf);
+            return negate ? new NegateGuardOp(op) : op;
+        }
+
+        if (el.TryGetProperty("incident", out var incidentEl))
+        {
+            var cardIds = ParseCardIds(incidentEl)
+                ?? throw new InvalidOperationException("incident guard requires card_id");
+            IEffectOp op = new GuardIncidentOp(cardIds);
+            return negate ? new NegateGuardOp(op) : op;
+        }
+
+        if (el.TryGetProperty("attacker", out var attackerEl))
+        {
+            return BuildAttackerGuard(attackerEl, negate);
+        }
+
+        if (el.TryGetProperty("lethal", out var lethalEl)
+            && lethalEl.ValueKind == JsonValueKind.True)
+        {
+            return negate ? new NegateGuardOp(GuardLethalOp.Instance) : GuardLethalOp.Instance;
+        }
+
+        if (el.TryGetProperty("equip_host_is_target", out var equipEl)
+            && equipEl.ValueKind == JsonValueKind.True)
+        {
+            return negate
+                ? new NegateGuardOp(GuardEquipHostIsTargetOp.Instance)
+                : GuardEquipHostIsTargetOp.Instance;
+        }
+
         throw new InvalidOperationException($"Unknown guard type: {el}");
+    }
+
+    private static IEffectOp BuildAttackerGuard(JsonElement el, bool negate)
+    {
+        bool? ownerIsOpponent = el.TryGetProperty("owner", out var ow)
+            ? ow.GetString() switch
+            {
+                PlayerRefs.Self => false,
+                PlayerRefs.Opponent => true,
+                _ => throw new InvalidOperationException($"Unknown attacker owner: {ow.GetString()}"),
+            }
+            : null;
+        string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
+        var cardTypes = ParseCardTypes(el);
+        string? cardType = cardTypes is { Count: > 0 } ? cardTypes[0] : null;
+
+        IEffectOp op = new GuardAttackerOp(ownerIsOpponent, faction, cardType);
+        return negate ? new NegateGuardOp(op) : op;
     }
 
     private static IEffectOp BuildStatGuard(JsonElement el, bool negate)
@@ -593,9 +650,9 @@ public static class EffectYamlLoader
     private static IEffectOp BuildMatchGuard(JsonElement el, bool negate)
     {
         string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
-        string? cardType = el.TryGetProperty("card_type", out var ct) ? ct.GetString() : null;
+        var cardTypes = ParseCardTypes(el);
 
-        IEffectOp op = new GuardFactionOp(faction ?? "", cardType);
+        IEffectOp op = new GuardFactionOp(faction ?? "", cardTypes);
         return negate ? new NegateGuardOp(op) : op;
     }
 
@@ -636,8 +693,8 @@ public static class EffectYamlLoader
 
     private static TriggerType ParseTrigger(string trigger) => trigger switch
     {
-        TriggerTypes.Deploy => TriggerType.Deploy,
-        TriggerTypes.Activate => TriggerType.Activate,
+        TriggerTypes.OnDeploy => TriggerType.OnDeploy,
+        TriggerTypes.Ignition => TriggerType.Ignition,
         TriggerTypes.Passive => TriggerType.OnEndPhase, // 後方互換: passive → OnEndPhase
         TriggerTypes.OnEndPhase => TriggerType.OnEndPhase,
         TriggerTypes.OnFieldChange => TriggerType.OnFieldChange,
@@ -645,8 +702,9 @@ public static class EffectYamlLoader
         TriggerTypes.OnAttack => TriggerType.OnAttack,
         TriggerTypes.OnHit => TriggerType.OnHit,
         TriggerTypes.OnDestroy => TriggerType.OnDestroy,
-        TriggerTypes.Reactive => TriggerType.Reactive,
-        TriggerTypes.OnEnemyDeploy => TriggerType.OnEnemyDeploy,
+        TriggerTypes.OnAttackDeclared => TriggerType.OnAttackDeclared,
+        TriggerTypes.OnIncident => TriggerType.OnIncident,
+        TriggerTypes.OnDamaged => TriggerType.OnDamaged,
         _ => throw new InvalidOperationException($"Unknown trigger: {trigger}"),
     };
 

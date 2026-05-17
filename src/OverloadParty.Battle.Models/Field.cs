@@ -105,18 +105,3 @@ public class AwaitingSlotSelect
     public DeployedResource Resource { get; set; } = null!;
     public List<string> ValidZones { get; set; } = [];
 }
-
-/// <summary>
-/// ChainEntry はチェインスタック内の 1 エントリを表現します
-/// </summary>
-public class ChainEntry
-{
-    public long ChainLevel { get; set; }
-    public string ActionType { get; set; } = "";
-    public string SourcePlayerID { get; set; } = "";
-    public string SourceInstanceID { get; set; } = "";
-    public string TargetInstanceID { get; set; } = "";
-    public long TargetChainLevel { get; set; }
-    public Dictionary<string, object>? EffectData { get; set; }
-    public bool Resolved { get; set; }
-}

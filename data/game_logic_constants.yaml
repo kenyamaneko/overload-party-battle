@@ -70,8 +70,8 @@ effect_durations:
 - next_turn
 
 trigger_types:
-- deploy
-- activate
+- on_deploy
+- ignition
 - passive
 - on_end_phase
 - on_field_change
@@ -79,8 +79,9 @@ trigger_types:
 - on_attack
 - on_hit
 - on_destroy
-- reactive
-- on_enemy_deploy
+- on_attack_declared
+- on_incident
+- on_damaged
 
 effect_ops:
 - gain_budget

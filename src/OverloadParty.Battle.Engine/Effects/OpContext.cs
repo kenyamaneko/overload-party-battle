@@ -80,9 +80,42 @@ public class OpContext
     public Dictionary<string, object>? ChoiceData => Ctx.ChoiceData;
 
     /// <summary>
+    /// Player number that caused the triggering event, if event-driven.
+    /// </summary>
+    public long? EventOwnerNum => Ctx.EventOwnerNum;
+
+    /// <summary>Attack-declaring resource for on_attack_declared events (same as Source).</summary>
+    public DeployedResource? Attacker => Ctx.Source;
+
+    /// <summary>Incident card used in an on_incident event, if any.</summary>
+    public CardDefinition? IncidentCard => Ctx.IncidentCard;
+
+    /// <summary>Attack damage of an on_attack_declared event, if any.</summary>
+    public long? EventDamage => Ctx.EventDamage;
+
+    /// <summary>Effect registry, available when ops need to fire nested triggers.</summary>
+    public IEffectRegistry? Effects => Ctx.Effects;
+
+    /// <summary>
     /// Add an event to the result.
     /// </summary>
     public void AddEvent(GameEvent evt) => Result.Events.Add(evt);
+
+    /// <summary>
+    /// Resolves which player owns the given resource, or null when it is on no field.
+    /// </summary>
+    public long? OwnerOf(DeployedResource resource)
+    {
+        if (FieldHelpers.FindResourceByID(MyField, resource.InstanceID) is not null)
+        {
+            return PlayerNum;
+        }
+        if (FieldHelpers.FindResourceByID(OpponentField, resource.InstanceID) is not null)
+        {
+            return OpponentNum;
+        }
+        return null;
+    }
 
     /// <summary>
     /// Mark this action as cancelled (for reactive effects).

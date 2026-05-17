@@ -270,7 +270,7 @@ public class PriorityResolverTests
         var effects = new NullEffectRegistry();
 
         var (_, use, _) = PriorityResolver.Evaluate(
-            "UNKNOWN", TriggerType.Activate, ctx, config, effects, _cc);
+            "UNKNOWN", TriggerType.Ignition, ctx, config, effects, _cc);
 
         use.Should().BeFalse();
     }
@@ -279,7 +279,7 @@ public class PriorityResolverTests
     public void Evaluate_WithEffect_ReturnsConfigPriority()
     {
         var reg = new StubEffectRegistry();
-        reg.SetEffectInfo("SH-0009", TriggerType.Activate, new EffectInfo
+        reg.SetEffectInfo("SH-0009", TriggerType.Ignition, new EffectInfo
         {
             TargetType = EffectTargetType.None,
         }.WithCategory(EffectCategory.BudgetGain));
@@ -296,7 +296,7 @@ public class PriorityResolverTests
         });
 
         var (pri, use, _) = PriorityResolver.Evaluate(
-            "SH-0009", TriggerType.Activate, ctx, config, reg, _cc);
+            "SH-0009", TriggerType.Ignition, ctx, config, reg, _cc);
 
         use.Should().BeTrue();
         pri.Should().Be(90);

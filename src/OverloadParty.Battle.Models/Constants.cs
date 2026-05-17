@@ -13,7 +13,6 @@ public static class BattleConstants
     public const int SlotsPerZone = 3;
 
     public const int MaxTurns = 30;
-    public const int MaxChainLevel = 3;
     public const int LaunchFailureTurn = 3;
 
     /// <summary>

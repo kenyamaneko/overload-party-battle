@@ -75,8 +75,8 @@ public static class EffectDurations
 
 public static class TriggerTypes
 {
-    public const string Deploy = "deploy";
-    public const string Activate = "activate";
+    public const string OnDeploy = "on_deploy";
+    public const string Ignition = "ignition";
     public const string Passive = "passive";
     public const string OnEndPhase = "on_end_phase";
     public const string OnFieldChange = "on_field_change";
@@ -84,8 +84,9 @@ public static class TriggerTypes
     public const string OnAttack = "on_attack";
     public const string OnHit = "on_hit";
     public const string OnDestroy = "on_destroy";
-    public const string Reactive = "reactive";
-    public const string OnEnemyDeploy = "on_enemy_deploy";
+    public const string OnAttackDeclared = "on_attack_declared";
+    public const string OnIncident = "on_incident";
+    public const string OnDamaged = "on_damaged";
 }
 
 public static class EffectOps

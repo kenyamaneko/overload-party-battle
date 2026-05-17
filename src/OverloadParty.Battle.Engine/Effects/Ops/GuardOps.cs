@@ -82,15 +82,15 @@ public class RequireOpponentBackendOp : IEffectOp
 }
 
 /// <summary>
-/// Verifies target matches a specific faction and optionally card type.
+/// Verifies target matches a specific faction and optionally one of several card types.
 /// </summary>
-public class GuardFactionOp(string faction, string? cardType = null) : IEffectOp
+public class GuardFactionOp(string faction, IReadOnlyList<string>? cardTypes = null) : IEffectOp
 {
     /// <summary>Required faction.</summary>
     public string Faction => faction;
 
-    /// <summary>Required card type category, or null for any.</summary>
-    public string? CardType => cardType;
+    /// <summary>Accepted card types, or null for any.</summary>
+    public IReadOnlyList<string>? CardTypes => cardTypes;
 
     /// <inheritdoc />
     public void Execute(OpContext ctx)
@@ -105,20 +105,20 @@ public class GuardFactionOp(string faction, string? cardType = null) : IEffectOp
         {
             throw new GameRuleException($"Target is not {faction} faction");
         }
-        // ct は category (Compute/Data/Platform...) または subtype (VM/Container/Database...)
+        // 各値は category (Compute/Data/Platform...) または subtype (VM/Container/Database...)
         // どちらでも受け付けるため dual-match。"data"/"compute" lowercase は EffectYamlLoader が
         // category 名にエイリアスする想定だが、念のため受け付ける。
-        if (cardType is { Length: > 0 } ct)
+        if (cardTypes is { Count: > 0 })
         {
-            string normalized = ct switch
+            var normalized = cardTypes.Select(ct => ct switch
             {
-                "data" => CardTypes.Data,
-                "compute" => CardTypes.Compute,
+                "data" => OverloadParty.GameDesignConstants.CardTypes.Data,
+                "compute" => OverloadParty.GameDesignConstants.CardTypes.Compute,
                 _ => ct,
-            };
-            if (!EffectHelpers.MatchesCardType(card, normalized))
+            }).ToList();
+            if (!EffectHelpers.MatchesAnyCardType(card, normalized))
             {
-                throw new GameRuleException($"Target is not {ct} type");
+                throw new GameRuleException($"Target is not one of {string.Join("/", cardTypes)} type");
             }
         }
     }
@@ -164,6 +164,152 @@ public class GuardTargetAVOp(long maxAV) : IEffectOp
         if (ctx.Target.EffectiveAV > maxAV)
         {
             throw new GameRuleException($"Target AV {ctx.Target.EffectiveAV} exceeds max {maxAV}");
+        }
+    }
+}
+
+/// <summary>
+/// Verifies the player who caused the triggering event is self or opponent of the card holder.
+/// </summary>
+public class GuardEventOwnerOp(bool isSelf) : IEffectOp
+{
+    /// <summary>True when the event owner must be the card holder; false for the opponent.</summary>
+    public bool IsSelf => isSelf;
+
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (ctx.EventOwnerNum is not { } owner)
+        {
+            throw new GameRuleException("No event owner");
+        }
+        bool ownerIsSelf = owner == ctx.PlayerNum;
+        if (ownerIsSelf != isSelf)
+        {
+            throw new GameRuleException(
+                $"Event owner is {(ownerIsSelf ? "self" : "opponent")}, expected {(isSelf ? "self" : "opponent")}");
+        }
+    }
+}
+
+/// <summary>
+/// Verifies the incident card used in an on_incident event is one of the given card IDs.
+/// </summary>
+public class GuardIncidentOp(IReadOnlyList<string> cardIds) : IEffectOp
+{
+    /// <summary>Card IDs the triggering incident must match one of.</summary>
+    public IReadOnlyList<string> CardIds => cardIds;
+
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (ctx.IncidentCard is not { } incident)
+        {
+            throw new GameRuleException("No incident in context");
+        }
+        if (!cardIds.Contains(incident.CardId))
+        {
+            throw new GameRuleException($"Incident {incident.CardId} not in allowed set");
+        }
+    }
+}
+
+/// <summary>
+/// Verifies the attack-declaring resource matches owner / faction / card type.
+/// </summary>
+public class GuardAttackerOp(bool? ownerIsOpponent, string? faction, string? cardType) : IEffectOp
+{
+    /// <summary>When set, whether the attacker must belong to the opponent of the card holder.</summary>
+    public bool? OwnerIsOpponent => ownerIsOpponent;
+
+    /// <summary>Required attacker faction, or null for any.</summary>
+    public string? Faction => faction;
+
+    /// <summary>Required attacker card type, or null for any.</summary>
+    public string? CardType => cardType;
+
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (ctx.Attacker is not { } attacker)
+        {
+            throw new GameRuleException("No attacker in context");
+        }
+
+        if (ownerIsOpponent is { } expectOpponent)
+        {
+            if (ctx.EventOwnerNum is not { } owner)
+            {
+                throw new GameRuleException("No event owner for attacker guard");
+            }
+            bool isOpponent = owner != ctx.PlayerNum;
+            if (isOpponent != expectOpponent)
+            {
+                throw new GameRuleException("Attacker owner mismatch");
+            }
+        }
+
+        var card = ctx.CardCache.MustGet(attacker.CardID);
+        if (faction is { Length: > 0 } && card.Faction != faction)
+        {
+            throw new GameRuleException($"Attacker is not {faction} faction");
+        }
+        if (cardType is { Length: > 0 } ct && !EffectHelpers.MatchesCardType(card, ct))
+        {
+            throw new GameRuleException($"Attacker is not {ct} type");
+        }
+    }
+}
+
+/// <summary>
+/// Verifies the declared attack damage is at or above the target's current effective AV (lethal).
+/// </summary>
+public class GuardLethalOp : IEffectOp
+{
+    /// <summary>Shared singleton instance.</summary>
+    public static readonly GuardLethalOp Instance = new();
+
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (ctx.Target is null)
+        {
+            throw new GameRuleException("No target for lethal guard");
+        }
+        if (ctx.EventDamage is not { } damage)
+        {
+            throw new GameRuleException("No attack damage in context");
+        }
+        if (damage < ctx.Target.EffectiveAV)
+        {
+            throw new GameRuleException(
+                $"Attack damage {damage} below target AV {ctx.Target.EffectiveAV}");
+        }
+    }
+}
+
+/// <summary>
+/// Verifies this Attachment's equip host is the resource targeted by the triggering event.
+/// </summary>
+public class GuardEquipHostIsTargetOp : IEffectOp
+{
+    /// <summary>Shared singleton instance.</summary>
+    public static readonly GuardEquipHostIsTargetOp Instance = new();
+
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (ctx.SupSource?.TargetInstanceID is not { } hostId)
+        {
+            throw new GameRuleException("Source is not an attachment with an equip host");
+        }
+        if (ctx.Target is null)
+        {
+            throw new GameRuleException("No event target");
+        }
+        if (hostId != ctx.Target.InstanceID)
+        {
+            throw new GameRuleException("Equip host is not the event target");
         }
     }
 }

@@ -61,7 +61,6 @@ public class BattleGameState
     public bool Player2HasHadActiveResource { get; set; }
 
     // 共有状態
-    public List<ChainEntry> ChainStack { get; set; } = [];
     public long? CurrentActionTimer { get; set; }
     public DateTime TurnStartedAt { get; set; }
     public long NextInstanceSeq { get; set; }

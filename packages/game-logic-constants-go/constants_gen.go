@@ -75,8 +75,8 @@ const (
 
 // Trigger types.
 const (
-	TriggerTypeDeploy = "deploy"
-	TriggerTypeActivate = "activate"
+	TriggerTypeOnDeploy = "on_deploy"
+	TriggerTypeIgnition = "ignition"
 	TriggerTypePassive = "passive"
 	TriggerTypeOnEndPhase = "on_end_phase"
 	TriggerTypeOnFieldChange = "on_field_change"
@@ -84,8 +84,9 @@ const (
 	TriggerTypeOnAttack = "on_attack"
 	TriggerTypeOnHit = "on_hit"
 	TriggerTypeOnDestroy = "on_destroy"
-	TriggerTypeReactive = "reactive"
-	TriggerTypeOnEnemyDeploy = "on_enemy_deploy"
+	TriggerTypeOnAttackDeclared = "on_attack_declared"
+	TriggerTypeOnIncident = "on_incident"
+	TriggerTypeOnDamaged = "on_damaged"
 )
 
 // Effect operations.

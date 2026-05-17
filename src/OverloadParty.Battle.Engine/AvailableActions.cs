@@ -171,7 +171,7 @@ public static class AvailableActions
         {
             if (effects is not null)
             {
-                var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
+                var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Ignition);
                 if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { return null; }
             }
 
@@ -201,7 +201,7 @@ public static class AvailableActions
     {
         if (effects is null) { return true; }
 
-        var ops = effects.GetOps(cardId, TriggerType.Activate);
+        var ops = effects.GetOps(cardId, TriggerType.Ignition);
         if (ops is null) { return true; }
 
         var trashOp = ops.OfType<TrashToHandOp>().FirstOrDefault();
@@ -370,10 +370,10 @@ public static class AvailableActions
             if (FieldHelpers.HasTemporaryEffect(resource, EffectTypes.CannotOperate)) { continue; }
 
             var card = cc.MustGet(resource.CardID);
-            if (!effects.Has(card.CardId, TriggerType.Activate)) { continue; }
+            if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
 
             // budget 条件を満たさなければ除外
-            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
+            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Ignition);
             if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
 
             var action = new AvailableAction
@@ -393,10 +393,10 @@ public static class AvailableActions
             if (support.EffectUsedThisTurn) { continue; }
 
             var card = cc.MustGet(support.CardID);
-            if (!effects.Has(card.CardId, TriggerType.Activate)) { continue; }
+            if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
 
             // budget 条件を満たさなければ除外
-            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Activate);
+            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Ignition);
             if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
 
             var action = new AvailableAction

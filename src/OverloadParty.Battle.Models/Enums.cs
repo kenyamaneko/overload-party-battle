@@ -95,14 +95,15 @@ public enum ActionType
 /// </summary>
 public enum TriggerType
 {
-    Deploy,
-    Activate,
+    OnDeploy,
+    Ignition,
     Passive,
     OnAttack,
     OnHit,
     OnDestroy,
-    Reactive,
-    OnEnemyDeploy,
+    OnAttackDeclared,
+    OnIncident,
+    OnDamaged,
     OnEndPhase,
     OnFieldChange,
     OnScaleUp

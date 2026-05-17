@@ -29,7 +29,7 @@ internal sealed class ActivateEffectStrategy
             {
                 var cardId = ActionFilter.ResolveCardIdForInstance(a.SourceInstanceID!, ctx.Field);
                 var (pri, use, choiceData) = PriorityResolver.Evaluate(
-                    cardId, TriggerType.Activate, ctx, activeConfig, _effects, _cc);
+                    cardId, TriggerType.Ignition, ctx, activeConfig, _effects, _cc);
                 return (Action: a, CardId: cardId, Priority: pri, Use: use, ChoiceData: choiceData);
             })
             .Where(x => x.Use)
@@ -76,7 +76,7 @@ internal sealed class ActivateEffectStrategy
         string cardId, List<string> validTargets, DecisionContext ctx, AiConfig activeConfig)
     {
         var validSet = new HashSet<string>(validTargets);
-        var info = _effects.GetEffectInfo(cardId, TriggerType.Activate);
+        var info = _effects.GetEffectInfo(cardId, TriggerType.Ignition);
         if (info is not null)
         {
             var target = PriorityResolver.SelectTarget(info, ctx, activeConfig.TargetSelection, _cc);

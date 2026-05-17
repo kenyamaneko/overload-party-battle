@@ -103,7 +103,6 @@ CREATE TABLE battle.game_states (
   player2_repository   JSONB NOT NULL,               -- Player 2 リポジトリ（山札）
   player2_trash        JSONB NOT NULL,               -- Player 2 トラッシュ
   player2_time_bank    BIGINT NOT NULL,              -- Player 2 残り時間
-  chain_stack          JSONB,                        -- 現在積まれているチェーンスタック
   current_action_timer BIGINT,                       -- アクションタイマー
   next_instance_seq    BIGINT NOT NULL DEFAULT 0,    -- インスタンスID発番用シーケンス
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT now() -- 更新日時

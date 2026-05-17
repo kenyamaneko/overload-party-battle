@@ -45,6 +45,23 @@ public class EffectContext
 
     /// <summary>Player choice data for branching effects.</summary>
     public Dictionary<string, object>? ChoiceData { get; init; }
+
+    /// <summary>
+    /// Player number that caused the triggering event (deployer / attack declarer /
+    /// incident user). Null when the trigger is not event-driven.
+    /// </summary>
+    public long? EventOwnerNum { get; init; }
+
+    /// <summary>Incident card definition for <c>on_incident</c> triggers, if any.</summary>
+    public CardDefinition? IncidentCard { get; init; }
+
+    /// <summary>Attack damage of an <c>on_attack_declared</c> event, if any.</summary>
+    public long? EventDamage { get; init; }
+
+    /// <summary>
+    /// Effect registry, available when ops need to fire nested triggers (e.g. on_damaged).
+    /// </summary>
+    public IEffectRegistry? Effects { get; init; }
 }
 
 /// <summary>

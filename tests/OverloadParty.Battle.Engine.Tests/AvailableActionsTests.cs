@@ -854,7 +854,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SH-0009", TriggerType.Activate,
+        registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
@@ -893,7 +893,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SH-0009", TriggerType.Activate,
+        registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
@@ -915,7 +915,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SH-0009", TriggerType.Activate,
+        registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
@@ -937,7 +937,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TEST-0200", TriggerType.Activate,
+        registry.RegisterComposed("TEST-0200", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
@@ -963,7 +963,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TEST-0200", TriggerType.Activate,
+        registry.RegisterComposed("TEST-0200", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
@@ -988,7 +988,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TEST-0200", TriggerType.Activate,
+        registry.RegisterComposed("TEST-0200", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
@@ -1015,7 +1015,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SH-0009", TriggerType.Activate,
+        registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
@@ -1037,7 +1037,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SH-0009", TriggerType.Activate,
+        registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new RequireBudgetOp(400),
             new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)));
 
@@ -1058,7 +1058,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SH-0009", TriggerType.Activate,
+        registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new RequireBudgetOp(400),
             new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)));
 
@@ -1079,7 +1079,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "NT-0026", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("NT-0026", TriggerType.Activate,
+        registry.RegisterComposed("NT-0026", TriggerType.Ignition,
             new RequireMaxBudgetOp(1000),
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(900)));
 
@@ -1100,7 +1100,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "NT-0026", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("NT-0026", TriggerType.Activate,
+        registry.RegisterComposed("NT-0026", TriggerType.Ignition,
             new RequireMaxBudgetOp(1000),
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(900)));
 
@@ -1121,7 +1121,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "TK-0008", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TK-0008", TriggerType.Activate,
+        registry.RegisterComposed("TK-0008", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 0);
@@ -1143,7 +1143,7 @@ public class AvailableActionsTests
         cc.Add(new CardDefinition { CardId = "SL-0004", CardName = "S", CardType = CardTypes.Strategy });
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SL-0004", TriggerType.Activate,
+        registry.RegisterComposed("SL-0004", TriggerType.Ignition,
             new RequireBudgetOp(500),
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)));
 
@@ -1163,7 +1163,7 @@ public class AvailableActionsTests
         cc.Add(new CardDefinition { CardId = "SL-0004", CardName = "S", CardType = CardTypes.Strategy });
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SL-0004", TriggerType.Activate,
+        registry.RegisterComposed("SL-0004", TriggerType.Ignition,
             new RequireBudgetOp(500),
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)));
 
@@ -1183,7 +1183,7 @@ public class AvailableActionsTests
         cc.Add(new CardDefinition { CardId = "SL-0015", CardName = "I", CardType = CardTypes.Incident });
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SL-0015", TriggerType.Activate,
+        registry.RegisterComposed("SL-0015", TriggerType.Ignition,
             new RequireBudgetOp(300),
             new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)));
 
@@ -1509,7 +1509,7 @@ public class AvailableActionsTests
         cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("SH-0009", TriggerType.Activate,
+        registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);

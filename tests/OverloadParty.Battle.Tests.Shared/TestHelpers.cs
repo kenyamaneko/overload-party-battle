@@ -205,6 +205,22 @@ public static class TestFactory
         };
     }
 
+    /// <summary>
+    /// Create a Reactive card (single-use support that flips face-up and trashes when it fires).
+    /// </summary>
+    public static CardDefinition ReactiveCard(
+        string cardId = "TST-0400",
+        string name = "TestReactive")
+    {
+        return new CardDefinition
+        {
+            CardId = cardId,
+            CardName = name,
+            CardType = "Reactive",
+            DeployTurns = 0,
+        };
+    }
+
     // ─── Resource Instance Builder ────────────────────────────
 
     public static DeployedResource MakeResource(

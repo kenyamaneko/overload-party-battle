@@ -101,16 +101,22 @@ public static class PlayCardProcessor
 
         var instanceID = ctx.State.NextInstanceID();
 
+        var events = new List<GameEvent>();
+        bool incidentCancelled = false;
+
         if (cardDef.CardType == CardTypes.Incident)
         {
             ctx.State.SetIncidentPlayedThisTurn(ctx.PlayerNum, true);
+
+            // インシデント使用に反応する on_incident を発火（本体 ops より前）。
+            var (cancelled, reactiveEvents) = FireOnIncident(ctx, cardDef);
+            events.AddRange(reactiveEvents);
+            incidentCancelled = cancelled;
         }
 
-        var events = new List<GameEvent>();
-
-        if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Activate) == true)
+        if (!incidentCancelled && ctx.Effects?.Has(cardDef.CardId, TriggerType.Ignition) == true)
         {
-            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Activate)!;
+            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Ignition)!;
             var effectCtx = new EffectContext
             {
                 State = ctx.State,
@@ -118,6 +124,7 @@ public static class PlayCardProcessor
                 PlayerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 ChoiceData = req.ChoiceData,
+                Effects = ctx.Effects,
             };
             var effectResult = handler(effectCtx);
             events.AddRange(effectResult.Events);
@@ -135,6 +142,7 @@ public static class PlayCardProcessor
                 CardId = handCard.CardID,
                 Zone = "",
                 Index = -1,
+                Cancelled = incidentCancelled ? true : null,
             },
         });
 
@@ -163,20 +171,10 @@ public static class PlayCardProcessor
 
         field.Support[req.Index] = support;
 
-        if (support.DeployingTurnsLeft <= 0
-            && ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
+        // カウントダウンなしで稼働した Support の ETB を発火（on_deploy 2 段解決）。
+        if (support.DeployingTurnsLeft <= 0)
         {
-            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;
-            var effectCtx = new EffectContext
-            {
-                State = ctx.State,
-                Game = ctx.Game,
-                PlayerNum = ctx.PlayerNum,
-                SupSource = support,
-                CardCache = ctx.CC,
-            };
-            var effectResult = handler(effectCtx);
-            events.AddRange(effectResult.Events);
+            events.AddRange(FireOnDeployForSupport(ctx, support));
         }
 
         FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
@@ -190,11 +188,6 @@ public static class PlayCardProcessor
         var resource = ResourceHelpers.CreateDeployedResource(cardDef, ctx.State.NextInstanceID(), ctx.State.CurrentTurn, handCard.ArtNo);
         resource.DeployOrder = deployOrder;
 
-        if (resource.FaceUp)
-        {
-            ctx.State.SetHasHadActiveResource(ctx.PlayerNum, true);
-        }
-
         if (req.Zone == Zones.Frontend)
         {
             field.Frontend[req.Index] = resource;
@@ -204,32 +197,25 @@ public static class PlayCardProcessor
             field.Backend[req.Index] = resource;
         }
 
-        // デプロイリアクティブを発動（相手の OnEnemyDeploy トリガー）
-        var (cancelled, reactiveEvents) = FireDeployReactives(ctx, resource);
-        events.AddRange(reactiveEvents);
+        // deploy_turns > 0 のリソースは裏向きセット段階であり on_deploy event ではない。
+        // カウントダウン完了時に DrawPhaseProcessor が発火する。
+        if (resource.DeployingTurnsLeft > 0)
+        {
+            FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
+            return false;
+        }
+
+        ctx.State.SetHasHadActiveResource(ctx.PlayerNum, true);
+
+        // on_deploy 2 段解決: 監視ウォッチャー → キャンセルされなければ ETB。
+        var (cancelled, deployEvents) = FireOnDeployForResource(ctx, resource);
+        events.AddRange(deployEvents);
 
         if (cancelled)
         {
             FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
             CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, resource.InstanceID, resource.ArtNo);
             return true;
-        }
-
-        // リソース自体のデプロイトリガーを発動
-        if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
-        {
-            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;
-            var effectCtx = new EffectContext
-            {
-                State = ctx.State,
-                Game = ctx.Game,
-                PlayerNum = ctx.PlayerNum,
-                Source = resource,
-                CardCache = ctx.CC,
-                ChoiceData = req.ChoiceData,
-            };
-            var effectResult = handler(effectCtx);
-            events.AddRange(effectResult.Events);
         }
 
         FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
@@ -264,7 +250,7 @@ public static class PlayCardProcessor
         }
 
         var attachInstanceID = ctx.State.NextInstanceID();
-        field.Support[req.Index] = new DeployedSupport
+        var attachment = new DeployedSupport
         {
             InstanceID = attachInstanceID,
             CardID = cardDef.CardId,
@@ -273,24 +259,28 @@ public static class PlayCardProcessor
             DeployOrder = ctx.State.NextDeployOrder(),
             FaceUp = true,
         };
+        field.Support[req.Index] = attachment;
 
         hand.RemoveAt(handIdx);
 
         var events = new List<GameEvent>();
 
-        // アタッチメントのデプロイトリガーを発動
-        if (ctx.Effects?.Has(cardDef.CardId, TriggerType.Deploy) == true)
+        // アタッチメントの ETB を発火（on_deploy）。
+        if (ctx.Effects?.Has(cardDef.CardId, TriggerType.OnDeploy) == true)
         {
-            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Deploy)!;
+            var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.OnDeploy)!;
             var effectCtx = new EffectContext
             {
                 State = ctx.State,
                 Game = ctx.Game,
                 PlayerNum = ctx.PlayerNum,
                 Source = target,
+                SupSource = attachment,
                 Target = target,
+                EventOwnerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 ChoiceData = req.ChoiceData,
+                Effects = ctx.Effects,
             };
             var effectResult = handler(effectCtx);
             events.AddRange(effectResult.Events);
@@ -333,41 +323,161 @@ public static class PlayCardProcessor
         }
     }
 
-    private static (bool Cancelled, List<GameEvent> Events) FireDeployReactives(
+    /// <summary>
+    /// Fires on_deploy for a deployed resource: stage 1 monitor watchers, then stage 2 ETB.
+    /// </summary>
+    private static (bool Cancelled, List<GameEvent> Events) FireOnDeployForResource(
         PlayContext ctx, DeployedResource deployed)
     {
         if (ctx.Effects is null) { return (false, []); }
 
-        var opponentNum = ctx.State.OpponentOf(ctx.PlayerNum);
-        var oppField = ctx.State.GetField(opponentNum);
-        var allEvents = new List<GameEvent>();
+        var events = new List<GameEvent>();
 
-        // リアクティブは1つだけ発動する（セットが最も早いもの）
-        var reactive = FieldHelpers.AllSupports(oppField)
-            .Where(s => ctx.Effects.Has(s.CardID, TriggerType.OnEnemyDeploy))
-            .MinBy(s => s.DeployOrder);
+        var (cancelled, watcherEvents) = FireDeployWatchers(ctx, deployed, supSource: null);
+        events.AddRange(watcherEvents);
 
-        if (reactive is null) { return (false, allEvents); }
+        if (cancelled) { return (true, events); }
 
-        var handler = ctx.Effects.Get(reactive.CardID, TriggerType.OnEnemyDeploy)!;
-        var effectCtx = new EffectContext
+        // Stage 2: デプロイ元自身の ETB。
+        if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
         {
-            State = ctx.State,
-            Game = ctx.Game,
-            PlayerNum = opponentNum,
-            SupSource = reactive,
-            Target = deployed,
-            CardCache = ctx.CC,
-        };
+            var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;
+            var result = handler(new EffectContext
+            {
+                State = ctx.State,
+                Game = ctx.Game,
+                PlayerNum = ctx.PlayerNum,
+                Source = deployed,
+                Target = deployed,
+                EventOwnerNum = ctx.PlayerNum,
+                CardCache = ctx.CC,
+                Effects = ctx.Effects,
+            });
+            events.AddRange(result.Events);
+        }
 
-        var result = handler(effectCtx);
-        allEvents.AddRange(result.Events);
+        return (false, events);
+    }
 
-        // 発動時に表向きにしてからトラッシュへ送る
-        reactive.FaceUp = true;
-        FieldHelpers.RemoveSupportFromField(oppField, reactive.InstanceID);
-        CardMoveHelpers.AddToTrash(ctx.State, opponentNum, reactive.CardID, reactive.InstanceID, reactive.ArtNo);
+    /// <summary>
+    /// Fires on_deploy for a deployed support: stage 1 monitor watchers, then stage 2 ETB.
+    /// </summary>
+    private static List<GameEvent> FireOnDeployForSupport(PlayContext ctx, DeployedSupport deployed)
+    {
+        if (ctx.Effects is null) { return []; }
 
-        return (result.CancelAction, allEvents);
+        var events = new List<GameEvent>();
+
+        var (cancelled, watcherEvents) = FireDeployWatchers(ctx, deployedResource: null, deployed);
+        events.AddRange(watcherEvents);
+
+        if (cancelled) { return events; }
+
+        if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
+        {
+            var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;
+            var result = handler(new EffectContext
+            {
+                State = ctx.State,
+                Game = ctx.Game,
+                PlayerNum = ctx.PlayerNum,
+                SupSource = deployed,
+                EventOwnerNum = ctx.PlayerNum,
+                CardCache = ctx.CC,
+                Effects = ctx.Effects,
+            });
+            events.AddRange(result.Events);
+        }
+
+        return events;
+    }
+
+    /// <summary>
+    /// Stage 1 of on_deploy: fires deploy-monitor watchers in the opponent's support zone.
+    /// </summary>
+    private static (bool Cancelled, List<GameEvent> Events) FireDeployWatchers(
+        PlayContext ctx, DeployedResource? deployedResource, DeployedSupport? supSource)
+    {
+        if (ctx.Effects is null) { return (false, []); }
+
+        var watcherNum = ctx.State.OpponentOf(ctx.PlayerNum);
+        var watcherField = ctx.State.GetField(watcherNum);
+
+        var candidates = FieldHelpers.AllSupports(watcherField)
+            .Select(s => new EventTriggerCandidate
+            {
+                CardId = s.CardID, DeployOrder = s.DeployOrder, Support = s, OwnerNum = watcherNum,
+            })
+            .ToList();
+
+        return EventTriggerFiring.Fire(
+            ctx.State, ctx.Effects, ctx.CC, TriggerType.OnDeploy, candidates,
+            candidate => new EffectContext
+            {
+                State = ctx.State,
+                Game = ctx.Game,
+                PlayerNum = watcherNum,
+                SupSource = candidate.Support,
+                Source = deployedResource,
+                Target = deployedResource,
+                EventOwnerNum = ctx.PlayerNum,
+                CardCache = ctx.CC,
+                Effects = ctx.Effects,
+            });
+    }
+
+    /// <summary>
+    /// Fires on_incident across the support zones and field resources of both players.
+    /// </summary>
+    private static (bool Cancelled, List<GameEvent> Events) FireOnIncident(
+        PlayContext ctx, CardDefinition incidentCard)
+    {
+        if (ctx.Effects is null) { return (false, []); }
+
+        var allEvents = new List<GameEvent>();
+        bool cancelled = false;
+
+        foreach (long ownerNum in new[] { ctx.PlayerNum, ctx.State.OpponentOf(ctx.PlayerNum) })
+        {
+            var field = ctx.State.GetField(ownerNum);
+            var candidates = new List<EventTriggerCandidate>();
+
+            foreach (var sup in FieldHelpers.AllSupports(field))
+            {
+                candidates.Add(new EventTriggerCandidate
+                {
+                    CardId = sup.CardID, DeployOrder = sup.DeployOrder, Support = sup, OwnerNum = ownerNum,
+                });
+            }
+            foreach (var res in FieldHelpers.AllFaceUpResources(field))
+            {
+                candidates.Add(new EventTriggerCandidate
+                {
+                    CardId = res.CardID, DeployOrder = res.DeployOrder, Resource = res, OwnerNum = ownerNum,
+                });
+            }
+
+            long owner = ownerNum;
+            var (zoneCancelled, events) = EventTriggerFiring.Fire(
+                ctx.State, ctx.Effects, ctx.CC, TriggerType.OnIncident, candidates,
+                candidate => new EffectContext
+                {
+                    State = ctx.State,
+                    Game = ctx.Game,
+                    PlayerNum = owner,
+                    Source = candidate.Resource,
+                    SupSource = candidate.Support,
+                    Target = candidate.Resource,
+                    EventOwnerNum = ctx.PlayerNum,
+                    IncidentCard = incidentCard,
+                    CardCache = ctx.CC,
+                    Effects = ctx.Effects,
+                });
+
+            allEvents.AddRange(events);
+            cancelled |= zoneCancelled;
+        }
+
+        return (cancelled, allEvents);
     }
 }

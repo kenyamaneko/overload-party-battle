@@ -23,7 +23,7 @@ public class UseEffectProcessorTests
     {
         bool handlerCalled = false;
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Activate, ctx =>
+        reg.Register("SH-0001", TriggerType.Ignition, ctx =>
         {
             handlerCalled = true;
             return new EffectResult();
@@ -44,7 +44,7 @@ public class UseEffectProcessorTests
     public void Process_ResourceEffect_GeneratesActivateEvent()
     {
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Activate, _ => new EffectResult());
+        reg.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
@@ -66,14 +66,14 @@ public class UseEffectProcessorTests
         var req = new UseEffectRequest { InstanceID = "r_1" };
         var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-        act.Should().Throw<GameRuleException>().WithMessage("*no activate effect*");
+        act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
     }
 
     [Fact]
     public void Process_EffectAlreadyUsedThisTurn_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Activate, _ => new EffectResult());
+        reg.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
         var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
@@ -90,7 +90,7 @@ public class UseEffectProcessorTests
     public void Process_CannotOperateEffect_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Activate, _ => new EffectResult());
+        reg.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
         var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
@@ -113,7 +113,7 @@ public class UseEffectProcessorTests
     public void Process_ResourceNotFound_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Activate, _ => new EffectResult());
+        reg.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
         // Nothing on the field
@@ -143,7 +143,7 @@ public class UseEffectProcessorTests
     {
         DeployedResource? capturedTarget = null;
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Activate, ctx =>
+        reg.Register("SH-0001", TriggerType.Ignition, ctx =>
         {
             capturedTarget = ctx.Target;
             return new EffectResult();
@@ -167,7 +167,7 @@ public class UseEffectProcessorTests
     {
         DeployedResource? capturedTarget = null;
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Activate, ctx =>
+        reg.Register("SH-0001", TriggerType.Ignition, ctx =>
         {
             capturedTarget = ctx.Target;
             return new EffectResult();
@@ -192,7 +192,7 @@ public class UseEffectProcessorTests
     {
         bool handlerCalled = false;
         var reg = new EffectRegistry();
-        reg.Register("TEST-0200", TriggerType.Activate, ctx =>
+        reg.Register("TEST-0200", TriggerType.Ignition, ctx =>
         {
             handlerCalled = true;
             return new EffectResult();
@@ -230,14 +230,14 @@ public class UseEffectProcessorTests
         var req = new UseEffectRequest { InstanceID = "sup_1" };
         var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-        act.Should().Throw<GameRuleException>().WithMessage("*no activate effect*");
+        act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
     }
 
     [Fact]
     public void Process_SupportEffect_GeneratesActivateEvent()
     {
         var reg = new EffectRegistry();
-        reg.Register("TEST-0200", TriggerType.Activate, _ => new EffectResult());
+        reg.Register("TEST-0200", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
         state.Player1Field.Support[0] = new DeployedSupport

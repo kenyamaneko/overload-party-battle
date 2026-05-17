@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Helpers;
 
@@ -7,6 +8,62 @@ namespace OverloadParty.Battle.Engine.Helpers;
 /// </summary>
 public static class ResourceHelpers
 {
+    /// <summary>
+    /// リソースにダメージを適用し、適用後に on_damaged トリガーを発火する単一チョークポイント。
+    /// </summary>
+    public static List<GameEvent> ApplyDamage(
+        BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects,
+        DeployedResource resource, long ownerNum, long amount)
+    {
+        resource.Damage += amount;
+        return FireOnDamaged(state, game, cc, effects, resource, ownerNum);
+    }
+
+    /// <summary>
+    /// 被ダメージリソースの所有者フィールド（リソース＋サポートゾーン）を走査して on_damaged を発火する。
+    /// </summary>
+    private static List<GameEvent> FireOnDamaged(
+        BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects,
+        DeployedResource damaged, long ownerNum)
+    {
+        if (effects is null) { return []; }
+
+        var ownerField = state.GetField(ownerNum);
+        var candidates = new List<EventTriggerCandidate>();
+
+        foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
+        {
+            candidates.Add(new EventTriggerCandidate
+            {
+                CardId = res.CardID, DeployOrder = res.DeployOrder, Resource = res, OwnerNum = ownerNum,
+            });
+        }
+        foreach (var sup in FieldHelpers.AllSupports(ownerField))
+        {
+            candidates.Add(new EventTriggerCandidate
+            {
+                CardId = sup.CardID, DeployOrder = sup.DeployOrder, Support = sup, OwnerNum = ownerNum,
+            });
+        }
+
+        var (_, events) = EventTriggerFiring.Fire(
+            state, effects, cc, TriggerType.OnDamaged, candidates,
+            candidate => new EffectContext
+            {
+                State = state,
+                Game = game,
+                PlayerNum = ownerNum,
+                Source = candidate.Resource,
+                SupSource = candidate.Support,
+                Target = damaged,
+                EventOwnerNum = ownerNum,
+                CardCache = cc,
+                Effects = effects,
+            });
+
+        return events;
+    }
+
     /// <summary>
     /// カード定義からリソースインスタンスを生成する。
     /// </summary>
