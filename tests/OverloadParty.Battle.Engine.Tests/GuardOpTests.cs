@@ -21,11 +21,17 @@ public class GuardOpTests
         _cc.Add(TestFactory.DataCard(cardId: "SHE-DB", faction: "SHE", subtype: "Database"));
         _cc.Add(new CardDefinition
         {
-            CardId = "INC-A", CardName = "IncidentA", CardType = CardTypes.Incident, DeployTurns = 0,
+            CardId = "INC-A",
+            CardName = "IncidentA",
+            CardType = CardTypes.Incident,
+            DeployTurns = 0,
         });
         _cc.Add(new CardDefinition
         {
-            CardId = "INC-B", CardName = "IncidentB", CardType = CardTypes.Incident, DeployTurns = 0,
+            CardId = "INC-B",
+            CardName = "IncidentB",
+            CardType = CardTypes.Incident,
+            DeployTurns = 0,
         });
     }
 

@@ -201,7 +201,10 @@ public static class AttackProcessor
         var candidates = FieldHelpers.AllSupports(defenderField)
             .Select(s => new EventTriggerCandidate
             {
-                CardId = s.CardID, DeployOrder = s.DeployOrder, Support = s, OwnerNum = defenderNum,
+                CardId = s.CardID,
+                DeployOrder = s.DeployOrder,
+                Support = s,
+                OwnerNum = defenderNum,
             })
             .ToList();
 
@@ -238,8 +241,10 @@ public static class AttackProcessor
         {
             candidates.Add(new EventTriggerCandidate
             {
-                CardId = destroyed.CardID, DeployOrder = destroyed.DeployOrder,
-                Resource = destroyed, OwnerNum = ownerNum,
+                CardId = destroyed.CardID,
+                DeployOrder = destroyed.DeployOrder,
+                Resource = destroyed,
+                OwnerNum = ownerNum,
             });
         }
 
@@ -248,7 +253,10 @@ public static class AttackProcessor
             if (res.InstanceID == destroyed.InstanceID) { continue; }
             candidates.Add(new EventTriggerCandidate
             {
-                CardId = res.CardID, DeployOrder = res.DeployOrder, Resource = res, OwnerNum = ownerNum,
+                CardId = res.CardID,
+                DeployOrder = res.DeployOrder,
+                Resource = res,
+                OwnerNum = ownerNum,
             });
         }
 
@@ -257,7 +265,10 @@ public static class AttackProcessor
         {
             candidates.Add(new EventTriggerCandidate
             {
-                CardId = sup.CardID, DeployOrder = sup.DeployOrder, Support = sup, OwnerNum = ownerNum,
+                CardId = sup.CardID,
+                DeployOrder = sup.DeployOrder,
+                Support = sup,
+                OwnerNum = ownerNum,
             });
         }
 

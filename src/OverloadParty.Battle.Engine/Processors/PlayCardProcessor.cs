@@ -406,7 +406,10 @@ public static class PlayCardProcessor
         var candidates = FieldHelpers.AllSupports(watcherField)
             .Select(s => new EventTriggerCandidate
             {
-                CardId = s.CardID, DeployOrder = s.DeployOrder, Support = s, OwnerNum = watcherNum,
+                CardId = s.CardID,
+                DeployOrder = s.DeployOrder,
+                Support = s,
+                OwnerNum = watcherNum,
             })
             .ToList();
 
@@ -446,14 +449,20 @@ public static class PlayCardProcessor
             {
                 candidates.Add(new EventTriggerCandidate
                 {
-                    CardId = sup.CardID, DeployOrder = sup.DeployOrder, Support = sup, OwnerNum = ownerNum,
+                    CardId = sup.CardID,
+                    DeployOrder = sup.DeployOrder,
+                    Support = sup,
+                    OwnerNum = ownerNum,
                 });
             }
             foreach (var res in FieldHelpers.AllFaceUpResources(field))
             {
                 candidates.Add(new EventTriggerCandidate
                 {
-                    CardId = res.CardID, DeployOrder = res.DeployOrder, Resource = res, OwnerNum = ownerNum,
+                    CardId = res.CardID,
+                    DeployOrder = res.DeployOrder,
+                    Resource = res,
+                    OwnerNum = ownerNum,
                 });
             }
 

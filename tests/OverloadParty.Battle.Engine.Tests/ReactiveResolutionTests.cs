@@ -25,7 +25,10 @@ public class ReactiveResolutionTests
         _cc.Add(TestFactory.PlatformCard(cardId: "PLATFORM"));
         _cc.Add(new CardDefinition
         {
-            CardId = "INCIDENT", CardName = "TestIncident", CardType = CardTypes.Incident, DeployTurns = 0,
+            CardId = "INCIDENT",
+            CardName = "TestIncident",
+            CardType = CardTypes.Incident,
+            DeployTurns = 0,
         });
     }
 
@@ -93,7 +96,10 @@ public class ReactiveResolutionTests
             cardId: "DEF", instanceId: "def", faceUp: true, maxAV: 100, currentAV: 100);
         state.Player2Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "watcher", CardID = "REACT-A", FaceUp = false, DeployOrder = 1,
+            InstanceID = "watcher",
+            CardID = "REACT-A",
+            FaceUp = false,
+            DeployOrder = 1,
         };
 
         bool fired = false;
@@ -114,7 +120,9 @@ public class ReactiveResolutionTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h", CardID = "DEPLOYED" });
         state.Player2Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "watcher", CardID = "REACT-A", DeployOrder = 1,
+            InstanceID = "watcher",
+            CardID = "REACT-A",
+            DeployOrder = 1,
         };
 
         var order = new List<string>();
@@ -134,7 +142,9 @@ public class ReactiveResolutionTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h", CardID = "DEPLOYED" });
         state.Player2Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "watcher", CardID = "REACT-A", DeployOrder = 1,
+            InstanceID = "watcher",
+            CardID = "REACT-A",
+            DeployOrder = 1,
         };
 
         bool etbFired = false;
@@ -176,7 +186,9 @@ public class ReactiveResolutionTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h", CardID = "INCIDENT" });
         state.Player2Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "blocker", CardID = "REACT-A", DeployOrder = 1,
+            InstanceID = "blocker",
+            CardID = "REACT-A",
+            DeployOrder = 1,
         };
 
         bool incidentBodyFired = false;
@@ -206,7 +218,9 @@ public class ReactiveResolutionTests
             cardId: "DEF", instanceId: "def", faceUp: true, maxAV: 1400, currentAV: 1400);
         state.Player2Field.Support[0] = new DeployedSupport
         {
-            InstanceID = "watcher", CardID = "REACT-A", DeployOrder = 1,
+            InstanceID = "watcher",
+            CardID = "REACT-A",
+            DeployOrder = 1,
         };
 
         long observedDamage = -1;

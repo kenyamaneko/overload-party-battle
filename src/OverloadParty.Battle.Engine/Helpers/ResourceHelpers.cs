@@ -35,14 +35,20 @@ public static class ResourceHelpers
         {
             candidates.Add(new EventTriggerCandidate
             {
-                CardId = res.CardID, DeployOrder = res.DeployOrder, Resource = res, OwnerNum = ownerNum,
+                CardId = res.CardID,
+                DeployOrder = res.DeployOrder,
+                Resource = res,
+                OwnerNum = ownerNum,
             });
         }
         foreach (var sup in FieldHelpers.AllSupports(ownerField))
         {
             candidates.Add(new EventTriggerCandidate
             {
-                CardId = sup.CardID, DeployOrder = sup.DeployOrder, Support = sup, OwnerNum = ownerNum,
+                CardId = sup.CardID,
+                DeployOrder = sup.DeployOrder,
+                Support = sup,
+                OwnerNum = ownerNum,
             });
         }
 
