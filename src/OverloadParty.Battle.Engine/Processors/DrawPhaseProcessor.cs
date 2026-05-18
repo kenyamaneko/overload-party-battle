@@ -73,7 +73,7 @@ public static class DrawPhaseProcessor
     }
 
     /// <summary>
-    /// Fires the on_deploy ETB for a card that became active when its deploy countdown completed.
+    /// デプロイのカウントダウン完了で稼働したカード自身の on_deploy 効果を発火します。
     /// </summary>
     static void FireOnDeploy(
         BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects,

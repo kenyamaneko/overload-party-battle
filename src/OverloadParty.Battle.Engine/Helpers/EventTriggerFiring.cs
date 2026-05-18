@@ -4,37 +4,33 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
-/// A card eligible to react to an event, identified by its carrier instance and card ID.
+/// event に反応しうるカード。担い手のインスタンスと card ID で識別します。
 /// </summary>
 public sealed class EventTriggerCandidate
 {
-    /// <summary>Card ID used to look up the effect handler.</summary>
+    /// <summary>効果ハンドラの参照に使う card ID。</summary>
     public required string CardId { get; init; }
 
-    /// <summary>Deploy order of the carrier; lowest reacts first.</summary>
+    /// <summary>担い手の DeployOrder。小さいものが先に反応する。</summary>
     public required long DeployOrder { get; init; }
 
-    /// <summary>Resource carrier when the reacting card is a field resource.</summary>
+    /// <summary>反応カードがフィールド上リソースのときの担い手。</summary>
     public DeployedResource? Resource { get; init; }
 
-    /// <summary>Support carrier when the reacting card sits in the support zone.</summary>
+    /// <summary>反応カードがサポートゾーンにあるときの担い手。</summary>
     public DeployedSupport? Support { get; init; }
 
-    /// <summary>Owner of the carrier, used to resolve the consumed Reactive's trash pile.</summary>
+    /// <summary>担い手の所有プレイヤー番号。</summary>
     public required long OwnerNum { get; init; }
 }
 
 /// <summary>
-/// Fires an event-driven trigger across a scan range, applying the single-Reactive rule:
-/// among card_type == Reactive carriers, only the earliest one whose effect resolves fires,
-/// and it is flipped face-up then sent to trash. Platform / Attachment / Compute carriers
-/// are persistent watchers and each fire on every event.
+/// event 駆動トリガーを走査範囲の候補に対して発火します。
 /// </summary>
 public static class EventTriggerFiring
 {
     /// <summary>
-    /// Fires the given trigger for all candidates. Returns the collected events and whether
-    /// the triggering action was cancelled by any reacting effect.
+    /// 候補にトリガーを発火し、収集イベントとアクションがキャンセルされたかを返します。
     /// </summary>
     public static (bool Cancelled, List<GameEvent> Events) Fire(
         BattleGameState state,
@@ -58,7 +54,6 @@ public static class EventTriggerFiring
         {
             bool isReactive = cc.MustGet(candidate.CardId).CardType == CardTypes.Reactive;
 
-            // 1 event につき発動する Reactive は最も早い 1 枚のみ。
             if (isReactive && reactiveFired) { continue; }
 
             var handler = effects.Get(candidate.CardId, trigger)!;
@@ -84,7 +79,7 @@ public static class EventTriggerFiring
     }
 
     /// <summary>
-    /// Flips a fired Reactive face-up and moves it to its owner's trash pile.
+    /// 発動した Reactive を表向きにして所有者のトラッシュへ送ります。
     /// </summary>
     private static void ConsumeReactive(BattleGameState state, EventTriggerCandidate candidate)
     {

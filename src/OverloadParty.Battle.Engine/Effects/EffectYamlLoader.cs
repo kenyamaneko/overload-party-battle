@@ -482,41 +482,42 @@ public static class EffectYamlLoader
     // Guard builder
     // ================================================================
 
-    private static IEffectOp BuildGuard(JsonElement el)
+    private static IEffectOp BuildGuard(JsonElement element)
     {
-        bool negate = el.TryGetProperty("negate", out var negEl)
+        // ガードの negate: true フラグ。指定時はガードの判定結果を反転する。
+        bool negate = element.TryGetProperty("negate", out var negEl)
             && negEl.ValueKind == JsonValueKind.True;
 
-        if (el.TryGetProperty("stat", out var statEl))
+        if (element.TryGetProperty("stat", out var statEl))
         {
             return BuildStatGuard(statEl, negate);
         }
 
-        if (el.TryGetProperty("count", out var countEl))
+        if (element.TryGetProperty("count", out var countEl))
         {
             return BuildCountGuard(countEl, negate);
         }
 
-        if (el.TryGetProperty("match", out var matchEl))
+        if (element.TryGetProperty("match", out var matchEl))
         {
             return BuildMatchGuard(matchEl, negate);
         }
 
-        if (el.TryGetProperty("not_same", out var notSameEl))
+        if (element.TryGetProperty("not_same", out var notSameEl))
         {
             var (a, b) = ParseResourceRefPair(notSameEl);
             IEffectOp op = new GuardNotSameOp(a, b);
             return negate ? new NegateGuardOp(op) : op;
         }
 
-        if (el.TryGetProperty("same", out var sameEl))
+        if (element.TryGetProperty("same", out var sameEl))
         {
             var (a, b) = ParseResourceRefPair(sameEl);
             IEffectOp op = new GuardSameOp(a, b);
             return negate ? new NegateGuardOp(op) : op;
         }
 
-        if (el.TryGetProperty("event_owner", out var ownerEl))
+        if (element.TryGetProperty("event_owner", out var ownerEl))
         {
             bool isSelf = ownerEl.GetString() switch
             {
@@ -528,13 +529,13 @@ public static class EffectYamlLoader
             return negate ? new NegateGuardOp(op) : op;
         }
 
-        if (el.TryGetProperty("lethal", out var lethalEl)
+        if (element.TryGetProperty("lethal", out var lethalEl)
             && lethalEl.ValueKind == JsonValueKind.True)
         {
             return negate ? new NegateGuardOp(GuardLethalOp.Instance) : GuardLethalOp.Instance;
         }
 
-        throw new InvalidOperationException($"Unknown guard type: {el}");
+        throw new InvalidOperationException($"Unknown guard type: {element}");
     }
 
     private static (ResourceRef A, ResourceRef B) ParseResourceRefPair(JsonElement el)

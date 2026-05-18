@@ -18,7 +18,7 @@ export type EventType = (typeof EVENT_TYPES)[number];
 export const EFFECT_DURATIONS = ["this_turn", "until_next_turn_end", "until_next_own_turn_end", "while_on_field", "permanent", "next_turn"] as const;
 export type EffectDuration = (typeof EFFECT_DURATIONS)[number];
 
-export const TRIGGER_TYPES = ["on_deploy", "ignition", "passive", "on_end_phase", "on_field_change", "on_scale_up", "on_attack", "on_hit", "on_destroy", "on_attack_declared", "on_incident", "on_damaged"] as const;
+export const TRIGGER_TYPES = ["ignition", "passive", "on_deploy", "on_end_phase", "on_field_change", "on_scale_up", "on_attack", "on_attack_declared", "on_hit", "on_destroy", "on_damaged", "on_incident"] as const;
 export type TriggerType = (typeof TRIGGER_TYPES)[number];
 
 export const EFFECT_OPS = ["gain_budget", "lose_budget", "deal_damage", "heal_damage", "destroy_check", "survive_destruction", "apply_buff", "draw", "search_repo", "add_to_hand", "trash_to_hand", "deploy_from_hand", "deploy_from_repo", "deploy_from_repo_same_card", "destroy_platform", "scale_to_rank", "cancel_action", "reveal_reactive", "peek_reactive", "reduce_deploy_turns", "absorb_insight", "gain_insight"] as const;

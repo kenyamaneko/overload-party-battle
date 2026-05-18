@@ -128,15 +128,15 @@ public class ReactiveResolutionTests
         var order = new List<string>();
         var effects = new TestEffectRegistry();
         effects.Register("REACT-A", TriggerType.OnDeploy, _ => { order.Add("watcher"); return new EffectResult(); });
-        effects.Register("DEPLOYED", TriggerType.OnDeploy, _ => { order.Add("etb"); return new EffectResult(); });
+        effects.Register("DEPLOYED", TriggerType.OnDeploy, _ => { order.Add("deploy-self"); return new EffectResult(); });
 
         PlayCardProcessor.Process(state, _game, 1, PlayReq("h", Zones.Frontend, 0), _cc, effects);
 
-        order.Should().Equal("watcher", "etb");
+        order.Should().Equal("watcher", "deploy-self");
     }
 
     [Fact]
-    public void OnDeploy_CancelledByWatcher_SkipsEtbAndTrashesResource()
+    public void OnDeploy_CancelledByWatcher_SkipsDeployEffectAndTrashesResource()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h", CardID = "DEPLOYED" });
@@ -147,14 +147,14 @@ public class ReactiveResolutionTests
             DeployOrder = 1,
         };
 
-        bool etbFired = false;
+        bool deployEffectFired = false;
         var effects = new TestEffectRegistry();
         effects.Register("REACT-A", TriggerType.OnDeploy, _ => new EffectResult { CancelAction = true });
-        effects.Register("DEPLOYED", TriggerType.OnDeploy, _ => { etbFired = true; return new EffectResult(); });
+        effects.Register("DEPLOYED", TriggerType.OnDeploy, _ => { deployEffectFired = true; return new EffectResult(); });
 
         PlayCardProcessor.Process(state, _game, 1, PlayReq("h", Zones.Frontend, 0), _cc, effects);
 
-        etbFired.Should().BeFalse("a cancelled deploy never reaches the ETB stage");
+        deployEffectFired.Should().BeFalse("a cancelled deploy never runs the deployed card's own effect");
         state.Player1Field.Frontend[0].Should().BeNull("a cancelled deploy removes the resource");
         state.Player1Trash.Should().Contain(c => c.CardID == "DEPLOYED");
     }

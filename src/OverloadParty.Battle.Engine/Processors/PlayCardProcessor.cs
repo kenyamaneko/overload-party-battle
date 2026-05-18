@@ -171,7 +171,7 @@ public static class PlayCardProcessor
 
         field.Support[req.Index] = support;
 
-        // カウントダウンなしで稼働した Support の ETB を発火（on_deploy 2 段解決）。
+        // カウントダウンなしで稼働した Support 自身の効果を発火（on_deploy 2 段解決）。
         if (support.DeployingTurnsLeft <= 0)
         {
             events.AddRange(FireOnDeployForSupport(ctx, support));
@@ -207,7 +207,7 @@ public static class PlayCardProcessor
 
         ctx.State.SetHasHadActiveResource(ctx.PlayerNum, true);
 
-        // on_deploy 2 段解決: 監視ウォッチャー → キャンセルされなければ ETB。
+        // on_deploy 2 段解決: 監視ウォッチャー → キャンセルされなければデプロイされたカード自身の効果。
         var (cancelled, deployEvents) = FireOnDeployForResource(ctx, resource);
         events.AddRange(deployEvents);
 
@@ -265,7 +265,7 @@ public static class PlayCardProcessor
 
         var events = new List<GameEvent>();
 
-        // アタッチメントの ETB を発火（on_deploy）。
+        // アタッチメント自身の効果を発火（on_deploy）。
         if (ctx.Effects?.Has(cardDef.CardId, TriggerType.OnDeploy) == true)
         {
             var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.OnDeploy)!;
@@ -324,7 +324,7 @@ public static class PlayCardProcessor
     }
 
     /// <summary>
-    /// Fires on_deploy for a deployed resource: stage 1 monitor watchers, then stage 2 ETB.
+    /// Fires on_deploy for a deployed resource: stage 1 monitor watchers, then stage 2 the deployed card's own effect.
     /// </summary>
     private static (bool Cancelled, List<GameEvent> Events) FireOnDeployForResource(
         PlayContext ctx, DeployedResource deployed)
@@ -338,7 +338,7 @@ public static class PlayCardProcessor
 
         if (cancelled) { return (true, events); }
 
-        // Stage 2: デプロイ元自身の ETB。
+        // Stage 2: デプロイされたカード自身の効果。
         if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
         {
             var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;
@@ -360,7 +360,7 @@ public static class PlayCardProcessor
     }
 
     /// <summary>
-    /// Fires on_deploy for a deployed support: stage 1 monitor watchers, then stage 2 ETB.
+    /// Fires on_deploy for a deployed support: stage 1 monitor watchers, then stage 2 the deployed card's own effect.
     /// </summary>
     private static List<GameEvent> FireOnDeployForSupport(PlayContext ctx, DeployedSupport deployed)
     {

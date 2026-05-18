@@ -70,18 +70,18 @@ effect_durations:
 - next_turn
 
 trigger_types:
-- on_deploy
 - ignition
 - passive
+- on_deploy
 - on_end_phase
 - on_field_change
 - on_scale_up
 - on_attack
+- on_attack_declared
 - on_hit
 - on_destroy
-- on_attack_declared
-- on_incident
 - on_damaged
+- on_incident
 
 effect_ops:
 - gain_budget

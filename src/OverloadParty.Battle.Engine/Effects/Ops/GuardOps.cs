@@ -82,23 +82,22 @@ public class RequireOpponentBackendOp : IEffectOp
 }
 
 /// <summary>
-/// Identifies which resource or card a guard inspects.
+/// guard が検査するリソースまたはカードの指定先。
 /// </summary>
 public enum MatchSelector
 {
-    /// <summary>The effect's target resource.</summary>
+    /// <summary>効果の対象リソース。</summary>
     Target,
 
-    /// <summary>The card that raised the triggering event (e.g. the incident card).</summary>
+    /// <summary>トリガー event を発生させたカード（インシデントカード等）。</summary>
     EventCard,
 
-    /// <summary>The attack-declaring resource of an on_attack_declared event.</summary>
+    /// <summary>on_attack_declared で攻撃を宣言したリソース。</summary>
     Attacker,
 }
 
 /// <summary>
-/// Verifies the resource or card identified by a selector matches the given
-/// faction / card type / card id / owner criteria.
+/// セレクタが指すリソース／カードが faction / card type / card id / owner の条件に一致するか検証します。
 /// </summary>
 public class GuardMatchOp(
     MatchSelector selector,
@@ -162,8 +161,8 @@ public class GuardMatchOp(
         {
             throw new GameRuleException($"No event owner for {selector} match guard");
         }
-        bool isOpponent = owner != ctx.PlayerNum;
-        if (isOpponent != expectOpponent)
+        bool actualIsOpponent = owner != ctx.PlayerNum;
+        if (actualIsOpponent != expectOpponent)
         {
             throw new GameRuleException($"{selector} owner mismatch");
         }
@@ -171,26 +170,26 @@ public class GuardMatchOp(
 }
 
 /// <summary>
-/// Identifies a resource referenced by a reference-comparison guard (same / not_same).
+/// 参照比較 guard（same / not_same）が指すリソースの指定先。
 /// </summary>
 public enum ResourceRef
 {
-    /// <summary>The card that triggered the effect.</summary>
+    /// <summary>効果のソースリソース。</summary>
     Source,
 
-    /// <summary>The effect's target resource.</summary>
+    /// <summary>効果の対象リソース。</summary>
     Target,
 
-    /// <summary>The resource an Attachment source is equipped to.</summary>
+    /// <summary>Attachment ソースの装備先リソース。</summary>
     EquipHost,
 }
 
 /// <summary>
-/// Resolves the instance ID of a <see cref="ResourceRef"/> within a pipeline context.
+/// パイプライン context 内で <see cref="ResourceRef"/> のインスタンス ID を解決します。
 /// </summary>
 internal static class ResourceRefResolver
 {
-    /// <summary>Resolves the instance ID of the given reference, throwing when it is unavailable.</summary>
+    /// <summary>指定参照のインスタンス ID を解決します。解決できないときは例外を投げます。</summary>
     public static string Resolve(ResourceRef refKind, OpContext ctx) => refKind switch
     {
         ResourceRef.Source => (ctx.Source
@@ -204,14 +203,14 @@ internal static class ResourceRefResolver
 }
 
 /// <summary>
-/// Verifies two referenced resources are the same instance.
+/// 2 つの参照が同一インスタンスか検証します。
 /// </summary>
 public class GuardSameOp(ResourceRef a, ResourceRef b) : IEffectOp
 {
-    /// <summary>First reference being compared.</summary>
+    /// <summary>比較する 1 つ目の参照。</summary>
     public ResourceRef A => a;
 
-    /// <summary>Second reference being compared.</summary>
+    /// <summary>比較する 2 つ目の参照。</summary>
     public ResourceRef B => b;
 
     /// <inheritdoc />
@@ -225,14 +224,14 @@ public class GuardSameOp(ResourceRef a, ResourceRef b) : IEffectOp
 }
 
 /// <summary>
-/// Verifies two referenced resources are different instances.
+/// 2 つの参照が別インスタンスか検証します。
 /// </summary>
 public class GuardNotSameOp(ResourceRef a, ResourceRef b) : IEffectOp
 {
-    /// <summary>First reference being compared.</summary>
+    /// <summary>比較する 1 つ目の参照。</summary>
     public ResourceRef A => a;
 
-    /// <summary>Second reference being compared.</summary>
+    /// <summary>比較する 2 つ目の参照。</summary>
     public ResourceRef B => b;
 
     /// <inheritdoc />
@@ -268,11 +267,13 @@ public class GuardTargetAVOp(long maxAV) : IEffectOp
 }
 
 /// <summary>
-/// Verifies the player who caused the triggering event is self or opponent of the card holder.
+/// トリガーとなった event を起こしたプレイヤーが、カード保有者自身か相手かを検証します
 /// </summary>
 public class GuardEventOwnerOp(bool isSelf) : IEffectOp
 {
-    /// <summary>True when the event owner must be the card holder; false for the opponent.</summary>
+    /// <summary>
+    /// true なら event を起こしたのがカード保有者自身であることを要求し、false なら相手であることを要求します
+    /// </summary>
     public bool IsSelf => isSelf;
 
     /// <inheritdoc />
@@ -292,7 +293,7 @@ public class GuardEventOwnerOp(bool isSelf) : IEffectOp
 }
 
 /// <summary>
-/// Verifies the declared attack damage is at or above the target's current effective AV (lethal).
+/// 宣言された攻撃ダメージが対象の現在の実効 AV 以上（致死）か検証します。
 /// </summary>
 public class GuardLethalOp : IEffectOp
 {

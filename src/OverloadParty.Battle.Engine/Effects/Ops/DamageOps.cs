@@ -24,19 +24,18 @@ public class DealDamageOp(ISelector sel, IAmountResolver value) : IEffectOp
 }
 
 /// <summary>
-/// Routes resource damage through the on_damaged choke point inside an effect pipeline.
+/// エフェクト処理におけるリソースへのダメージ適用と on_damaged 発火の集約点です
 /// </summary>
 internal static class DamageApplication
 {
     /// <summary>
-    /// Applies damage to a resource and fires on_damaged, collecting nested events.
+    /// リソースにダメージを与え、on_damaged を発火します
     /// </summary>
     public static void Apply(OpContext ctx, DeployedResource target, long amount)
     {
         long? owner = ctx.OwnerOf(target);
         if (owner is null)
         {
-            // フィールド上に無いリソース（既に除去済み等）には on_damaged を発火しない。
             target.Damage += amount;
             return;
         }
