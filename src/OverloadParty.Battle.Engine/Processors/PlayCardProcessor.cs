@@ -324,7 +324,7 @@ public static class PlayCardProcessor
     }
 
     /// <summary>
-    /// Fires on_deploy for a deployed resource: stage 1 monitor watchers, then stage 2 the deployed card's own effect.
+    /// デプロイされたリソースの on_deploy を発火します。
     /// </summary>
     private static (bool Cancelled, List<GameEvent> Events) FireOnDeployForResource(
         PlayContext ctx, DeployedResource deployed)
@@ -360,7 +360,7 @@ public static class PlayCardProcessor
     }
 
     /// <summary>
-    /// Fires on_deploy for a deployed support: stage 1 monitor watchers, then stage 2 the deployed card's own effect.
+    /// デプロイされたサポートカードの on_deploy を発火します。
     /// </summary>
     private static List<GameEvent> FireOnDeployForSupport(PlayContext ctx, DeployedSupport deployed)
     {
