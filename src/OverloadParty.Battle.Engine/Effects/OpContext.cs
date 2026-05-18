@@ -90,6 +90,9 @@ public class OpContext
     /// <summary>Incident card used in an on_incident event, if any.</summary>
     public CardDefinition? IncidentCard => Ctx.IncidentCard;
 
+    /// <summary>The card that raised the triggering event (the incident card for on_incident).</summary>
+    public CardDefinition? EventCard => Ctx.IncidentCard;
+
     /// <summary>Attack damage of an on_attack_declared event, if any.</summary>
     public long? EventDamage => Ctx.EventDamage;
 

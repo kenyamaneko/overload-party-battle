@@ -82,66 +82,165 @@ public class RequireOpponentBackendOp : IEffectOp
 }
 
 /// <summary>
-/// Verifies target matches a specific faction and optionally one of several card types.
+/// Identifies which resource or card a guard inspects.
 /// </summary>
-public class GuardFactionOp(string faction, IReadOnlyList<string>? cardTypes = null) : IEffectOp
+public enum MatchSelector
 {
-    /// <summary>Required faction.</summary>
-    public string Faction => faction;
+    /// <summary>The effect's target resource.</summary>
+    Target,
+
+    /// <summary>The card that raised the triggering event (e.g. the incident card).</summary>
+    EventCard,
+
+    /// <summary>The attack-declaring resource of an on_attack_declared event.</summary>
+    Attacker,
+}
+
+/// <summary>
+/// Verifies the resource or card identified by a selector matches the given
+/// faction / card type / card id / owner criteria.
+/// </summary>
+public class GuardMatchOp(
+    MatchSelector selector,
+    string? faction = null,
+    IReadOnlyList<string>? cardTypes = null,
+    IReadOnlyList<string>? cardIds = null,
+    bool? ownerIsOpponent = null) : IEffectOp
+{
+    /// <summary>The subject the guard inspects.</summary>
+    public MatchSelector Selector => selector;
+
+    /// <summary>Required faction, or null for any.</summary>
+    public string? Faction => faction;
 
     /// <summary>Accepted card types, or null for any.</summary>
     public IReadOnlyList<string>? CardTypes => cardTypes;
 
+    /// <summary>Accepted card IDs, or null for any.</summary>
+    public IReadOnlyList<string>? CardIds => cardIds;
+
+    /// <summary>When set, whether the subject must belong to the card holder's opponent.</summary>
+    public bool? OwnerIsOpponent => ownerIsOpponent;
+
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        if (ctx.Target is null)
-        {
-            throw new GameRuleException("No target");
-        }
+        var card = ResolveCard(ctx);
 
-        var card = ctx.CardCache.MustGet(ctx.Target.CardID);
-        if (faction.Length > 0 && card.Faction != faction)
+        if (faction is { Length: > 0 } && card.Faction != faction)
         {
-            throw new GameRuleException($"Target is not {faction} faction");
+            throw new GameRuleException($"{selector} is not {faction} faction");
         }
-        // 各値は category (Compute/Data/Platform...) または subtype (VM/Container/Database...)
-        // どちらでも受け付けるため dual-match。"data"/"compute" lowercase は EffectYamlLoader が
-        // category 名にエイリアスする想定だが、念のため受け付ける。
-        if (cardTypes is { Count: > 0 })
+        if (cardTypes is { Count: > 0 } && !EffectHelpers.MatchesAnyCardType(card, cardTypes))
         {
-            var normalized = cardTypes.Select(ct => ct switch
-            {
-                "data" => OverloadParty.GameDesignConstants.CardTypes.Data,
-                "compute" => OverloadParty.GameDesignConstants.CardTypes.Compute,
-                _ => ct,
-            }).ToList();
-            if (!EffectHelpers.MatchesAnyCardType(card, normalized))
-            {
-                throw new GameRuleException($"Target is not one of {string.Join("/", cardTypes)} type");
-            }
+            throw new GameRuleException($"{selector} is not one of {string.Join("/", cardTypes)} type");
+        }
+        if (cardIds is { Count: > 0 } && !cardIds.Contains(card.CardId))
+        {
+            throw new GameRuleException($"{selector} card id {card.CardId} not in allowed set");
+        }
+        if (ownerIsOpponent is { } expectOpponent)
+        {
+            CheckOwner(ctx, expectOpponent);
+        }
+    }
+
+    private CardDefinition ResolveCard(OpContext ctx) => selector switch
+    {
+        MatchSelector.Target => ctx.CardCache.MustGet(
+            (ctx.Target ?? throw new GameRuleException("No target")).CardID),
+        MatchSelector.EventCard => ctx.EventCard
+            ?? throw new GameRuleException("No event card in context"),
+        MatchSelector.Attacker => ctx.CardCache.MustGet(
+            (ctx.Attacker ?? throw new GameRuleException("No attacker in context")).CardID),
+        _ => throw new GameRuleException($"Unsupported match selector: {selector}"),
+    };
+
+    private void CheckOwner(OpContext ctx, bool expectOpponent)
+    {
+        if (ctx.EventOwnerNum is not { } owner)
+        {
+            throw new GameRuleException($"No event owner for {selector} match guard");
+        }
+        bool isOpponent = owner != ctx.PlayerNum;
+        if (isOpponent != expectOpponent)
+        {
+            throw new GameRuleException($"{selector} owner mismatch");
         }
     }
 }
 
 /// <summary>
-/// Verifies target is not the same instance as source.
+/// Identifies a resource referenced by a reference-comparison guard (same / not_same).
 /// </summary>
-public class GuardNotSelfOp : IEffectOp
+public enum ResourceRef
 {
-    /// <summary>Shared singleton instance.</summary>
-    public static readonly GuardNotSelfOp Instance = new();
+    /// <summary>The card that triggered the effect.</summary>
+    Source,
+
+    /// <summary>The effect's target resource.</summary>
+    Target,
+
+    /// <summary>The resource an Attachment source is equipped to.</summary>
+    EquipHost,
+}
+
+/// <summary>
+/// Resolves the instance ID of a <see cref="ResourceRef"/> within a pipeline context.
+/// </summary>
+internal static class ResourceRefResolver
+{
+    /// <summary>Resolves the instance ID of the given reference, throwing when it is unavailable.</summary>
+    public static string Resolve(ResourceRef refKind, OpContext ctx) => refKind switch
+    {
+        ResourceRef.Source => (ctx.Source
+            ?? throw new GameRuleException("No source for reference guard")).InstanceID,
+        ResourceRef.Target => (ctx.Target
+            ?? throw new GameRuleException("No target for reference guard")).InstanceID,
+        ResourceRef.EquipHost => ctx.SupSource?.TargetInstanceID
+            ?? throw new GameRuleException("Source is not an attachment with an equip host"),
+        _ => throw new GameRuleException($"Unsupported resource reference: {refKind}"),
+    };
+}
+
+/// <summary>
+/// Verifies two referenced resources are the same instance.
+/// </summary>
+public class GuardSameOp(ResourceRef a, ResourceRef b) : IEffectOp
+{
+    /// <summary>First reference being compared.</summary>
+    public ResourceRef A => a;
+
+    /// <summary>Second reference being compared.</summary>
+    public ResourceRef B => b;
 
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        if (ctx.Source is null || ctx.Target is null)
+        if (ResourceRefResolver.Resolve(a, ctx) != ResourceRefResolver.Resolve(b, ctx))
         {
-            throw new GameRuleException("Source or target missing");
+            throw new GameRuleException($"{a} and {b} must be the same resource");
         }
-        if (ctx.Source.InstanceID == ctx.Target.InstanceID)
+    }
+}
+
+/// <summary>
+/// Verifies two referenced resources are different instances.
+/// </summary>
+public class GuardNotSameOp(ResourceRef a, ResourceRef b) : IEffectOp
+{
+    /// <summary>First reference being compared.</summary>
+    public ResourceRef A => a;
+
+    /// <summary>Second reference being compared.</summary>
+    public ResourceRef B => b;
+
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (ResourceRefResolver.Resolve(a, ctx) == ResourceRefResolver.Resolve(b, ctx))
         {
-            throw new GameRuleException("Target must be different from source");
+            throw new GameRuleException($"{a} and {b} must be different resources");
         }
     }
 }
@@ -193,75 +292,6 @@ public class GuardEventOwnerOp(bool isSelf) : IEffectOp
 }
 
 /// <summary>
-/// Verifies the incident card used in an on_incident event is one of the given card IDs.
-/// </summary>
-public class GuardIncidentOp(IReadOnlyList<string> cardIds) : IEffectOp
-{
-    /// <summary>Card IDs the triggering incident must match one of.</summary>
-    public IReadOnlyList<string> CardIds => cardIds;
-
-    /// <inheritdoc />
-    public void Execute(OpContext ctx)
-    {
-        if (ctx.IncidentCard is not { } incident)
-        {
-            throw new GameRuleException("No incident in context");
-        }
-        if (!cardIds.Contains(incident.CardId))
-        {
-            throw new GameRuleException($"Incident {incident.CardId} not in allowed set");
-        }
-    }
-}
-
-/// <summary>
-/// Verifies the attack-declaring resource matches owner / faction / card type.
-/// </summary>
-public class GuardAttackerOp(bool? ownerIsOpponent, string? faction, string? cardType) : IEffectOp
-{
-    /// <summary>When set, whether the attacker must belong to the opponent of the card holder.</summary>
-    public bool? OwnerIsOpponent => ownerIsOpponent;
-
-    /// <summary>Required attacker faction, or null for any.</summary>
-    public string? Faction => faction;
-
-    /// <summary>Required attacker card type, or null for any.</summary>
-    public string? CardType => cardType;
-
-    /// <inheritdoc />
-    public void Execute(OpContext ctx)
-    {
-        if (ctx.Attacker is not { } attacker)
-        {
-            throw new GameRuleException("No attacker in context");
-        }
-
-        if (ownerIsOpponent is { } expectOpponent)
-        {
-            if (ctx.EventOwnerNum is not { } owner)
-            {
-                throw new GameRuleException("No event owner for attacker guard");
-            }
-            bool isOpponent = owner != ctx.PlayerNum;
-            if (isOpponent != expectOpponent)
-            {
-                throw new GameRuleException("Attacker owner mismatch");
-            }
-        }
-
-        var card = ctx.CardCache.MustGet(attacker.CardID);
-        if (faction is { Length: > 0 } && card.Faction != faction)
-        {
-            throw new GameRuleException($"Attacker is not {faction} faction");
-        }
-        if (cardType is { Length: > 0 } ct && !EffectHelpers.MatchesCardType(card, ct))
-        {
-            throw new GameRuleException($"Attacker is not {ct} type");
-        }
-    }
-}
-
-/// <summary>
 /// Verifies the declared attack damage is at or above the target's current effective AV (lethal).
 /// </summary>
 public class GuardLethalOp : IEffectOp
@@ -284,32 +314,6 @@ public class GuardLethalOp : IEffectOp
         {
             throw new GameRuleException(
                 $"Attack damage {damage} below target AV {ctx.Target.EffectiveAV}");
-        }
-    }
-}
-
-/// <summary>
-/// Verifies this Attachment's equip host is the resource targeted by the triggering event.
-/// </summary>
-public class GuardEquipHostIsTargetOp : IEffectOp
-{
-    /// <summary>Shared singleton instance.</summary>
-    public static readonly GuardEquipHostIsTargetOp Instance = new();
-
-    /// <inheritdoc />
-    public void Execute(OpContext ctx)
-    {
-        if (ctx.SupSource?.TargetInstanceID is not { } hostId)
-        {
-            throw new GameRuleException("Source is not an attachment with an equip host");
-        }
-        if (ctx.Target is null)
-        {
-            throw new GameRuleException("No event target");
-        }
-        if (hostId != ctx.Target.InstanceID)
-        {
-            throw new GameRuleException("Equip host is not the event target");
         }
     }
 }

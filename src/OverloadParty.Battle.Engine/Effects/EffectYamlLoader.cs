@@ -504,11 +504,16 @@ public static class EffectYamlLoader
 
         if (el.TryGetProperty("not_same", out var notSameEl))
         {
-            if (negate)
-            {
-                throw new InvalidOperationException("negate on not_same is not supported");
-            }
-            return GuardNotSelfOp.Instance;
+            var (a, b) = ParseResourceRefPair(notSameEl);
+            IEffectOp op = new GuardNotSameOp(a, b);
+            return negate ? new NegateGuardOp(op) : op;
+        }
+
+        if (el.TryGetProperty("same", out var sameEl))
+        {
+            var (a, b) = ParseResourceRefPair(sameEl);
+            IEffectOp op = new GuardSameOp(a, b);
+            return negate ? new NegateGuardOp(op) : op;
         }
 
         if (el.TryGetProperty("event_owner", out var ownerEl))
@@ -523,53 +528,29 @@ public static class EffectYamlLoader
             return negate ? new NegateGuardOp(op) : op;
         }
 
-        if (el.TryGetProperty("incident", out var incidentEl))
-        {
-            var cardIds = ParseCardIds(incidentEl)
-                ?? throw new InvalidOperationException("incident guard requires card_id");
-            IEffectOp op = new GuardIncidentOp(cardIds);
-            return negate ? new NegateGuardOp(op) : op;
-        }
-
-        if (el.TryGetProperty("attacker", out var attackerEl))
-        {
-            return BuildAttackerGuard(attackerEl, negate);
-        }
-
         if (el.TryGetProperty("lethal", out var lethalEl)
             && lethalEl.ValueKind == JsonValueKind.True)
         {
             return negate ? new NegateGuardOp(GuardLethalOp.Instance) : GuardLethalOp.Instance;
         }
 
-        if (el.TryGetProperty("equip_host_is_target", out var equipEl)
-            && equipEl.ValueKind == JsonValueKind.True)
-        {
-            return negate
-                ? new NegateGuardOp(GuardEquipHostIsTargetOp.Instance)
-                : GuardEquipHostIsTargetOp.Instance;
-        }
-
         throw new InvalidOperationException($"Unknown guard type: {el}");
     }
 
-    private static IEffectOp BuildAttackerGuard(JsonElement el, bool negate)
+    private static (ResourceRef A, ResourceRef B) ParseResourceRefPair(JsonElement el)
     {
-        bool? ownerIsOpponent = el.TryGetProperty("owner", out var ow)
-            ? ow.GetString() switch
-            {
-                PlayerRefs.Self => false,
-                PlayerRefs.Opponent => true,
-                _ => throw new InvalidOperationException($"Unknown attacker owner: {ow.GetString()}"),
-            }
-            : null;
-        string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
-        var cardTypes = ParseCardTypes(el);
-        string? cardType = cardTypes is { Count: > 0 } ? cardTypes[0] : null;
-
-        IEffectOp op = new GuardAttackerOp(ownerIsOpponent, faction, cardType);
-        return negate ? new NegateGuardOp(op) : op;
+        var a = ParseResourceRef(el.GetProperty("a").GetString()!);
+        var b = ParseResourceRef(el.GetProperty("b").GetString()!);
+        return (a, b);
     }
+
+    private static ResourceRef ParseResourceRef(string s) => s switch
+    {
+        "source" => ResourceRef.Source,
+        "target" => ResourceRef.Target,
+        "equip_host" => ResourceRef.EquipHost,
+        _ => throw new InvalidOperationException($"Unknown resource reference: {s}"),
+    };
 
     private static IEffectOp BuildStatGuard(JsonElement el, bool negate)
     {
@@ -649,12 +630,30 @@ public static class EffectYamlLoader
 
     private static IEffectOp BuildMatchGuard(JsonElement el, bool negate)
     {
+        var selector = ParseMatchSelector(el.GetProperty("selector").GetString()!);
         string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
         var cardTypes = ParseCardTypes(el);
+        var cardIds = ParseCardIds(el);
+        bool? ownerIsOpponent = el.TryGetProperty("owner", out var ow)
+            ? ow.GetString() switch
+            {
+                PlayerRefs.Self => false,
+                PlayerRefs.Opponent => true,
+                _ => throw new InvalidOperationException($"Unknown match owner: {ow.GetString()}"),
+            }
+            : null;
 
-        IEffectOp op = new GuardFactionOp(faction ?? "", cardTypes);
+        IEffectOp op = new GuardMatchOp(selector, faction, cardTypes, cardIds, ownerIsOpponent);
         return negate ? new NegateGuardOp(op) : op;
     }
+
+    private static MatchSelector ParseMatchSelector(string s) => s switch
+    {
+        "target" => MatchSelector.Target,
+        "event_card" => MatchSelector.EventCard,
+        "attacker" => MatchSelector.Attacker,
+        _ => throw new InvalidOperationException($"Unknown match selector: {s}"),
+    };
 
     // ================================================================
     // Card filter builder (for deploy_from_repo / deploy_from_hand)

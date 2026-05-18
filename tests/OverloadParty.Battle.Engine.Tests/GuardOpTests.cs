@@ -79,44 +79,91 @@ public class GuardOpTests
     public void EventOwner_Self_PassesWhenEventOwnerIsSelf()
         => ShouldPass(new GuardEventOwnerOp(isSelf: true), Ctx(playerNum: 1, eventOwnerNum: 1));
 
-    // ─── incident ───────────────────────────────────────────────
+    // ─── match: event_card selector ─────────────────────────────
 
     [Fact]
-    public void Incident_PassesWhenIncidentCardIdMatches()
-        => ShouldPass(new GuardIncidentOp(["INC-A", "INC-B"]), Ctx(incidentCard: _cc.MustGet("INC-A")));
+    public void MatchEventCard_PassesWhenEventCardIdMatches()
+        => ShouldPass(
+            new GuardMatchOp(MatchSelector.EventCard, cardIds: ["INC-A", "INC-B"]),
+            Ctx(incidentCard: _cc.MustGet("INC-A")));
 
     [Fact]
-    public void Incident_FailsWhenIncidentCardIdNotInSet()
-        => ShouldFail(new GuardIncidentOp(["INC-B"]), Ctx(incidentCard: _cc.MustGet("INC-A")));
+    public void MatchEventCard_FailsWhenEventCardIdNotInSet()
+        => ShouldFail(
+            new GuardMatchOp(MatchSelector.EventCard, cardIds: ["INC-B"]),
+            Ctx(incidentCard: _cc.MustGet("INC-A")));
 
     [Fact]
-    public void Incident_FailsWhenNoIncidentInContext()
-        => ShouldFail(new GuardIncidentOp(["INC-A"]), Ctx());
+    public void MatchEventCard_FailsWhenNoEventCardInContext()
+        => ShouldFail(
+            new GuardMatchOp(MatchSelector.EventCard, cardIds: ["INC-A"]),
+            Ctx());
 
-    // ─── attacker ───────────────────────────────────────────────
+    // ─── match: attacker selector ───────────────────────────────
 
     [Fact]
-    public void Attacker_FactionMatch_PassesWhenAttackerFactionMatches()
+    public void MatchAttacker_FactionMatch_PassesWhenAttackerFactionMatches()
     {
         var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
-        ShouldPass(new GuardAttackerOp(ownerIsOpponent: null, faction: "Tenki", cardType: null),
+        ShouldPass(
+            new GuardMatchOp(MatchSelector.Attacker, faction: "Tenki"),
             Ctx(source: attacker));
     }
 
     [Fact]
-    public void Attacker_FactionMatch_FailsWhenAttackerFactionDiffers()
+    public void MatchAttacker_FactionMatch_FailsWhenAttackerFactionDiffers()
     {
         var attacker = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "atk");
-        ShouldFail(new GuardAttackerOp(ownerIsOpponent: null, faction: "Tenki", cardType: null),
+        ShouldFail(
+            new GuardMatchOp(MatchSelector.Attacker, faction: "Tenki"),
             Ctx(source: attacker));
     }
 
     [Fact]
-    public void Attacker_Owner_PassesWhenAttackerBelongsToOpponent()
+    public void MatchAttacker_Owner_PassesWhenAttackerBelongsToOpponent()
     {
         var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
-        ShouldPass(new GuardAttackerOp(ownerIsOpponent: true, faction: null, cardType: null),
+        ShouldPass(
+            new GuardMatchOp(MatchSelector.Attacker, ownerIsOpponent: true),
             Ctx(playerNum: 1, source: attacker, eventOwnerNum: 2));
+    }
+
+    [Fact]
+    public void MatchAttacker_Owner_FailsWhenAttackerBelongsToSelf()
+    {
+        var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
+        ShouldFail(
+            new GuardMatchOp(MatchSelector.Attacker, ownerIsOpponent: true),
+            Ctx(playerNum: 1, source: attacker, eventOwnerNum: 1));
+    }
+
+    // ─── match: target selector ─────────────────────────────────
+
+    [Fact]
+    public void MatchTarget_FactionAndCardTypeList_PassesWhenTargetMatchesAnyType()
+    {
+        var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
+        ShouldPass(
+            new GuardMatchOp(MatchSelector.Target, faction: "SHE", cardTypes: ["Compute", "Data"]),
+            Ctx(target: target));
+    }
+
+    [Fact]
+    public void MatchTarget_FactionAndCardTypeList_FailsWhenTargetMatchesNoType()
+    {
+        var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
+        ShouldFail(
+            new GuardMatchOp(MatchSelector.Target, faction: "SHE", cardTypes: ["Compute"]),
+            Ctx(target: target));
+    }
+
+    [Fact]
+    public void MatchTarget_Faction_FailsWhenTargetFactionDiffers()
+    {
+        var target = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "def");
+        ShouldFail(
+            new GuardMatchOp(MatchSelector.Target, faction: "SHE"),
+            Ctx(target: target));
     }
 
     // ─── lethal ─────────────────────────────────────────────────
@@ -135,37 +182,55 @@ public class GuardOpTests
         ShouldFail(GuardLethalOp.Instance, Ctx(target: target, eventDamage: 799));
     }
 
-    // ─── equip_host_is_target ───────────────────────────────────
+    // ─── same: target / equip_host ──────────────────────────────
 
     [Fact]
-    public void EquipHostIsTarget_PassesWhenAttachmentHostIsEventTarget()
+    public void Same_TargetAndEquipHost_PassesWhenAttachmentHostIsEventTarget()
     {
         var host = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "host");
         var attachment = new DeployedSupport { InstanceID = "att", CardID = "SHE-VM", TargetInstanceID = "host" };
-        ShouldPass(GuardEquipHostIsTargetOp.Instance, Ctx(target: host, supSource: attachment));
+        ShouldPass(
+            new GuardSameOp(ResourceRef.Target, ResourceRef.EquipHost),
+            Ctx(target: host, supSource: attachment));
     }
 
     [Fact]
-    public void EquipHostIsTarget_FailsWhenAttachmentHostIsNotEventTarget()
+    public void Same_TargetAndEquipHost_FailsWhenAttachmentHostIsNotEventTarget()
     {
         var other = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "other");
         var attachment = new DeployedSupport { InstanceID = "att", CardID = "SHE-VM", TargetInstanceID = "host" };
-        ShouldFail(GuardEquipHostIsTargetOp.Instance, Ctx(target: other, supSource: attachment));
-    }
-
-    // ─── match guard with card_type list ────────────────────────
-
-    [Fact]
-    public void MatchGuard_CardTypeList_PassesWhenTargetMatchesAnyType()
-    {
-        var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
-        ShouldPass(new GuardFactionOp("SHE", ["Compute", "Data"]), Ctx(target: target));
+        ShouldFail(
+            new GuardSameOp(ResourceRef.Target, ResourceRef.EquipHost),
+            Ctx(target: other, supSource: attachment));
     }
 
     [Fact]
-    public void MatchGuard_CardTypeList_FailsWhenTargetMatchesNoType()
+    public void Same_FailsWhenSourceIsNotAnAttachment()
     {
-        var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
-        ShouldFail(new GuardFactionOp("SHE", ["Compute"]), Ctx(target: target));
+        var host = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "host");
+        ShouldFail(
+            new GuardSameOp(ResourceRef.Target, ResourceRef.EquipHost),
+            Ctx(target: host));
+    }
+
+    // ─── not_same: source / target ──────────────────────────────
+
+    [Fact]
+    public void NotSame_SourceAndTarget_PassesWhenDifferentResources()
+    {
+        var source = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "src");
+        var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "tgt");
+        ShouldPass(
+            new GuardNotSameOp(ResourceRef.Source, ResourceRef.Target),
+            Ctx(source: source, target: target));
+    }
+
+    [Fact]
+    public void NotSame_SourceAndTarget_FailsWhenSameResource()
+    {
+        var self = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "self");
+        ShouldFail(
+            new GuardNotSameOp(ResourceRef.Source, ResourceRef.Target),
+            Ctx(source: self, target: self));
     }
 }

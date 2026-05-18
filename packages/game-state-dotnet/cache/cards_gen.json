@@ -948,7 +948,8 @@
         "trigger": "on_attack_declared",
         "guard": [
           {
-            "attacker": {
+            "match": {
+              "selector": "attacker",
               "owner": "opponent",
               "faction": "Tenki"
             }
@@ -1718,7 +1719,8 @@
             "event_owner": "opponent"
           },
           {
-            "incident": {
+            "match": {
+              "selector": "event_card",
               "card_id": [
                 "NT-0013",
                 "NT-0014"
@@ -1823,12 +1825,16 @@
             "event_owner": "opponent"
           },
           {
-            "incident": {
+            "match": {
+              "selector": "event_card",
               "card_id": "NT-0014"
             }
           },
           {
-            "equip_host_is_target": true
+            "same": {
+              "a": "target",
+              "b": "equip_host"
+            }
           }
         ],
         "ops": [
@@ -3469,7 +3475,8 @@
             "event_owner": "opponent"
           },
           {
-            "incident": {
+            "match": {
+              "selector": "event_card",
               "card_id": [
                 "NT-0013",
                 "NT-0014"
@@ -3577,12 +3584,16 @@
             "event_owner": "opponent"
           },
           {
-            "incident": {
+            "match": {
+              "selector": "event_card",
               "card_id": "NT-0014"
             }
           },
           {
-            "equip_host_is_target": true
+            "same": {
+              "a": "target",
+              "b": "equip_host"
+            }
           }
         ],
         "ops": [
@@ -4289,7 +4300,8 @@
             "event_owner": "opponent"
           },
           {
-            "incident": {
+            "match": {
+              "selector": "event_card",
               "card_id": [
                 "NT-0013",
                 "NT-0014"
