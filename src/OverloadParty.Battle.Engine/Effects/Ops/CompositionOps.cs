@@ -67,26 +67,6 @@ public class MarkGroupSucceededOp(string groupId) : IEffectOp
 }
 
 /// <summary>
-/// Inverts a guard op: succeeds when the inner op throws GameRuleException,
-/// and throws when the inner op succeeds.
-/// </summary>
-public class NegateGuardOp(IEffectOp inner) : IEffectOp
-{
-    public void Execute(OpContext ctx)
-    {
-        try
-        {
-            inner.Execute(ctx);
-        }
-        catch (GameRuleException)
-        {
-            return; // 内部が失敗 → 否定ガードは通過
-        }
-        throw new GameRuleException("Negated guard: inner condition was true");
-    }
-}
-
-/// <summary>
 /// General-purpose resource count guard. Counts resources (including support zone)
 /// matching the given criteria and fails if the count doesn't meet the minimum.
 /// </summary>

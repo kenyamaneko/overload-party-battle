@@ -318,3 +318,23 @@ public class GuardLethalOp : IEffectOp
         }
     }
 }
+
+/// <summary>
+/// 内側の guard op の判定結果を反転します。
+/// </summary>
+public class NegateGuardOp(IEffectOp inner) : IEffectOp
+{
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        try
+        {
+            inner.Execute(ctx);
+        }
+        catch (GameRuleException)
+        {
+            return; // 内部が失敗 → 否定ガードは通過
+        }
+        throw new GameRuleException("Negated guard: inner condition was true");
+    }
+}
