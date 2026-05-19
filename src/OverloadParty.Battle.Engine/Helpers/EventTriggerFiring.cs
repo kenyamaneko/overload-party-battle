@@ -22,6 +22,39 @@ public sealed class EventTriggerCandidate
 
     /// <summary>担い手の所有プレイヤー番号。</summary>
     public required long OwnerNum { get; init; }
+
+    /// <summary>1 イベントにつき最大 1 枚だけ発火し、発火後に消費される使い切りトリガーか。</summary>
+    public required bool OneShot { get; init; }
+
+    /// <summary>サポートゾーンのカードから候補を生成します。</summary>
+    /// <param name="support">サポートゾーンの担い手。</param>
+    /// <param name="ownerNum">担い手の所有プレイヤー番号。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <returns>生成した候補。</returns>
+    public static EventTriggerCandidate ForSupport(DeployedSupport support, long ownerNum, ICardCache cc) =>
+        new()
+        {
+            CardId = support.CardID,
+            DeployOrder = support.DeployOrder,
+            Support = support,
+            OwnerNum = ownerNum,
+            OneShot = cc.MustGet(support.CardID).CardType == CardTypes.Reactive,
+        };
+
+    /// <summary>フィールド上リソースから候補を生成します。</summary>
+    /// <param name="resource">フィールド上の担い手。</param>
+    /// <param name="ownerNum">担い手の所有プレイヤー番号。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <returns>生成した候補。</returns>
+    public static EventTriggerCandidate ForResource(DeployedResource resource, long ownerNum, ICardCache cc) =>
+        new()
+        {
+            CardId = resource.CardID,
+            DeployOrder = resource.DeployOrder,
+            Resource = resource,
+            OwnerNum = ownerNum,
+            OneShot = cc.MustGet(resource.CardID).CardType == CardTypes.Reactive,
+        };
 }
 
 /// <summary>
@@ -32,13 +65,20 @@ public static class EventTriggerFiring
     /// <summary>
     /// 候補にトリガーを発火し、収集イベントとアクションがキャンセルされたかを返します。
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <param name="trigger">発火するトリガー種別。</param>
+    /// <param name="candidates">走査対象の候補。</param>
+    /// <param name="buildContext">候補ごとに効果実行コンテキストを組み立てる関数。</param>
+    /// <param name="consumeOneShot">使い切りトリガーが発火したとき担い手を消費する処理。</param>
+    /// <returns>アクションがキャンセルされたかと、収集したイベント。</returns>
     public static (bool Cancelled, List<GameEvent> Events) Fire(
         BattleGameState state,
         IEffectRegistry effects,
-        ICardCache cc,
         TriggerType trigger,
         IReadOnlyList<EventTriggerCandidate> candidates,
-        Func<EventTriggerCandidate, EffectContext> buildContext)
+        Func<EventTriggerCandidate, EffectContext> buildContext,
+        Action<BattleGameState, EventTriggerCandidate> consumeOneShot)
     {
         var events = new List<GameEvent>();
         bool cancelled = false;
@@ -48,54 +88,32 @@ public static class EventTriggerFiring
             .OrderBy(c => c.DeployOrder)
             .ToList();
 
-        bool reactiveFired = false;
+        bool oneShotFired = false;
 
         foreach (var candidate in eligible)
         {
-            bool isReactive = cc.MustGet(candidate.CardId).CardType == CardTypes.Reactive;
-
-            if (isReactive && reactiveFired) { continue; }
+            // 使い切りトリガーは 1 イベントにつき 1 枚しか発火しない。
+            if (candidate.OneShot && oneShotFired) { continue; }
 
             var handler = effects.Get(candidate.CardId, trigger)!;
             var result = handler(buildContext(candidate));
 
             if (result.GuardFailed)
             {
-                // ガード不成立の Reactive は発動扱いにせず（使い切らない）、次の候補へ。
+                // ガード不成立の使い切りトリガーは発動扱いにせず（消費しない）、次の候補へ。
                 continue;
             }
 
             events.AddRange(result.Events);
             cancelled |= result.CancelAction;
 
-            if (isReactive)
+            if (candidate.OneShot)
             {
-                reactiveFired = true;
-                ConsumeReactive(state, candidate);
+                oneShotFired = true;
+                consumeOneShot(state, candidate);
             }
         }
 
         return (cancelled, events);
-    }
-
-    /// <summary>
-    /// 発動した Reactive を表向きにして所有者のトラッシュへ送ります。
-    /// </summary>
-    private static void ConsumeReactive(BattleGameState state, EventTriggerCandidate candidate)
-    {
-        if (candidate.Support is { } support)
-        {
-            support.FaceUp = true;
-            FieldHelpers.RemoveSupportFromField(state.GetField(candidate.OwnerNum), support.InstanceID);
-            CardMoveHelpers.AddToTrash(state, candidate.OwnerNum, support.CardID, support.InstanceID, support.ArtNo);
-            return;
-        }
-
-        if (candidate.Resource is { } resource)
-        {
-            resource.FaceUp = true;
-            FieldHelpers.RemoveResourceFromField(state.GetField(candidate.OwnerNum), resource.InstanceID);
-            CardMoveHelpers.AddToTrash(state, candidate.OwnerNum, resource.CardID, resource.InstanceID, resource.ArtNo);
-        }
     }
 }

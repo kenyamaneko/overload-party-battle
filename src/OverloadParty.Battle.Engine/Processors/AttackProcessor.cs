@@ -199,17 +199,11 @@ public static class AttackProcessor
         if (effects is null) { return (false, []); }
 
         var candidates = FieldHelpers.AllSupports(defenderField)
-            .Select(s => new EventTriggerCandidate
-            {
-                CardId = s.CardID,
-                DeployOrder = s.DeployOrder,
-                Support = s,
-                OwnerNum = defenderNum,
-            })
+            .Select(s => EventTriggerCandidate.ForSupport(s, defenderNum, cc))
             .ToList();
 
         return EventTriggerFiring.Fire(
-            state, effects, cc, TriggerType.OnAttackDeclared, candidates,
+            state, effects, TriggerType.OnAttackDeclared, candidates,
             candidate => new EffectContext
             {
                 State = state,
@@ -222,7 +216,8 @@ public static class AttackProcessor
                 EventDamage = damage,
                 CardCache = cc,
                 Effects = effects,
-            });
+            },
+            ReactiveCard.Consume);
     }
 
     /// <summary>
@@ -239,41 +234,23 @@ public static class AttackProcessor
 
         if (effects.Has(destroyed.CardID, TriggerType.OnDestroy))
         {
-            candidates.Add(new EventTriggerCandidate
-            {
-                CardId = destroyed.CardID,
-                DeployOrder = destroyed.DeployOrder,
-                Resource = destroyed,
-                OwnerNum = ownerNum,
-            });
+            candidates.Add(EventTriggerCandidate.ForResource(destroyed, ownerNum, cc));
         }
 
         foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
         {
             if (res.InstanceID == destroyed.InstanceID) { continue; }
-            candidates.Add(new EventTriggerCandidate
-            {
-                CardId = res.CardID,
-                DeployOrder = res.DeployOrder,
-                Resource = res,
-                OwnerNum = ownerNum,
-            });
+            candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum, cc));
         }
 
         // サポートゾーンの伏せ Reactive も on_destroy の走査対象。
         foreach (var sup in FieldHelpers.AllSupports(ownerField))
         {
-            candidates.Add(new EventTriggerCandidate
-            {
-                CardId = sup.CardID,
-                DeployOrder = sup.DeployOrder,
-                Support = sup,
-                OwnerNum = ownerNum,
-            });
+            candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum, cc));
         }
 
         var (_, events) = EventTriggerFiring.Fire(
-            state, effects, cc, TriggerType.OnDestroy, candidates,
+            state, effects, TriggerType.OnDestroy, candidates,
             candidate => new EffectContext
             {
                 State = state,
@@ -285,7 +262,8 @@ public static class AttackProcessor
                 EventOwnerNum = ownerNum,
                 CardCache = cc,
                 Effects = effects,
-            });
+            },
+            ReactiveCard.Consume);
 
         return events;
     }

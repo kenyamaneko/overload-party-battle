@@ -33,27 +33,15 @@ public static class ResourceHelpers
 
         foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
         {
-            candidates.Add(new EventTriggerCandidate
-            {
-                CardId = res.CardID,
-                DeployOrder = res.DeployOrder,
-                Resource = res,
-                OwnerNum = ownerNum,
-            });
+            candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum, cc));
         }
         foreach (var sup in FieldHelpers.AllSupports(ownerField))
         {
-            candidates.Add(new EventTriggerCandidate
-            {
-                CardId = sup.CardID,
-                DeployOrder = sup.DeployOrder,
-                Support = sup,
-                OwnerNum = ownerNum,
-            });
+            candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum, cc));
         }
 
         var (_, events) = EventTriggerFiring.Fire(
-            state, effects, cc, TriggerType.OnDamaged, candidates,
+            state, effects, TriggerType.OnDamaged, candidates,
             candidate => new EffectContext
             {
                 State = state,
@@ -65,7 +53,8 @@ public static class ResourceHelpers
                 EventOwnerNum = ownerNum,
                 CardCache = cc,
                 Effects = effects,
-            });
+            },
+            ReactiveCard.Consume);
 
         return events;
     }

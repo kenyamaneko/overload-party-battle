@@ -8,6 +8,7 @@ namespace OverloadParty.Battle.Engine.Processors;
 /// </summary>
 public static class PlayCardProcessor
 {
+    /// <summary>カードプレイ処理で各メソッドへ引き回す処理コンテキスト。</summary>
     private record PlayContext(
         BattleGameState State, Game Game, long PlayerNum,
         ICardCache CC, IEffectRegistry? Effects);
@@ -207,7 +208,8 @@ public static class PlayCardProcessor
 
         ctx.State.SetHasHadActiveResource(ctx.PlayerNum, true);
 
-        // on_deploy 2 段解決: 監視ウォッチャー → キャンセルされなければデプロイされたカード自身の効果。
+        // 相手の on_deploy 誘発はデプロイをキャンセルしうるため先に解決し、
+        // キャンセルされなかった場合のみデプロイされたカード自身の効果を走らせる（2 段解決）。
         var (cancelled, deployEvents) = FireOnDeployForResource(ctx, resource);
         events.AddRange(deployEvents);
 
@@ -265,7 +267,7 @@ public static class PlayCardProcessor
 
         var events = new List<GameEvent>();
 
-        // アタッチメント自身の効果を発火（on_deploy）。
+        // アタッチメントは装備された時点が自身のデプロイにあたるため、ここで自身の on_deploy 効果を発火する。
         if (ctx.Effects?.Has(cardDef.CardId, TriggerType.OnDeploy) == true)
         {
             var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.OnDeploy)!;
@@ -326,6 +328,9 @@ public static class PlayCardProcessor
     /// <summary>
     /// デプロイされたリソースの on_deploy を発火します。
     /// </summary>
+    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
+    /// <param name="deployed">デプロイされたリソース。</param>
+    /// <returns>デプロイがキャンセルされたかと、発火したイベント。</returns>
     private static (bool Cancelled, List<GameEvent> Events) FireOnDeployForResource(
         PlayContext ctx, DeployedResource deployed)
     {
@@ -333,8 +338,8 @@ public static class PlayCardProcessor
 
         var events = new List<GameEvent>();
 
-        var (cancelled, watcherEvents) = FireDeployWatchers(ctx, deployed, supSource: null);
-        events.AddRange(watcherEvents);
+        var (cancelled, triggerEvents) = FireOnDeployTriggers(ctx, deployed, supSource: null);
+        events.AddRange(triggerEvents);
 
         if (cancelled) { return (true, events); }
 
@@ -362,14 +367,17 @@ public static class PlayCardProcessor
     /// <summary>
     /// デプロイされたサポートカードの on_deploy を発火します。
     /// </summary>
+    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
+    /// <param name="deployed">デプロイされたサポートカード。</param>
+    /// <returns>発火したイベント。</returns>
     private static List<GameEvent> FireOnDeployForSupport(PlayContext ctx, DeployedSupport deployed)
     {
         if (ctx.Effects is null) { return []; }
 
         var events = new List<GameEvent>();
 
-        var (cancelled, watcherEvents) = FireDeployWatchers(ctx, deployedResource: null, deployed);
-        events.AddRange(watcherEvents);
+        var (cancelled, triggerEvents) = FireOnDeployTriggers(ctx, deployedResource: null, deployed);
+        events.AddRange(triggerEvents);
 
         if (cancelled) { return events; }
 
@@ -393,45 +401,47 @@ public static class PlayCardProcessor
     }
 
     /// <summary>
-    /// on_deploy の Stage 1 として相手サポートゾーンの監視ウォッチャーを発火します
+    /// on_deploy の Stage 1 として相手サポートゾーンの誘発を発火します
     /// </summary>
-    private static (bool Cancelled, List<GameEvent> Events) FireDeployWatchers(
+    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
+    /// <param name="deployedResource">デプロイされたリソース（サポートカードのデプロイ時は null）。</param>
+    /// <param name="supSource">デプロイされたサポートカード（リソースのデプロイ時は null）。</param>
+    /// <returns>デプロイがキャンセルされたかと、発火したイベント。</returns>
+    private static (bool Cancelled, List<GameEvent> Events) FireOnDeployTriggers(
         PlayContext ctx, DeployedResource? deployedResource, DeployedSupport? supSource)
     {
         if (ctx.Effects is null) { return (false, []); }
 
-        var watcherNum = ctx.State.OpponentOf(ctx.PlayerNum);
-        var watcherField = ctx.State.GetField(watcherNum);
+        var opponentNum = ctx.State.OpponentOf(ctx.PlayerNum);
+        var opponentField = ctx.State.GetField(opponentNum);
 
-        var candidates = FieldHelpers.AllSupports(watcherField)
-            .Select(s => new EventTriggerCandidate
-            {
-                CardId = s.CardID,
-                DeployOrder = s.DeployOrder,
-                Support = s,
-                OwnerNum = watcherNum,
-            })
+        var candidates = FieldHelpers.AllSupports(opponentField)
+            .Select(s => EventTriggerCandidate.ForSupport(s, opponentNum, ctx.CC))
             .ToList();
 
         return EventTriggerFiring.Fire(
-            ctx.State, ctx.Effects, ctx.CC, TriggerType.OnDeploy, candidates,
+            ctx.State, ctx.Effects, TriggerType.OnDeploy, candidates,
             candidate => new EffectContext
             {
                 State = ctx.State,
                 Game = ctx.Game,
-                PlayerNum = watcherNum,
+                PlayerNum = opponentNum,
                 SupSource = candidate.Support,
                 Source = deployedResource,
                 Target = deployedResource,
                 EventOwnerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 Effects = ctx.Effects,
-            });
+            },
+            ReactiveCard.Consume);
     }
 
     /// <summary>
     /// 両プレイヤーのサポートゾーンとフィールドリソースの on_incident を発火します
     /// </summary>
+    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
+    /// <param name="incidentCard">使用されたインシデントカードの定義。</param>
+    /// <returns>アクションがキャンセルされたかと、発火したイベント。</returns>
     private static (bool Cancelled, List<GameEvent> Events) FireOnIncident(
         PlayContext ctx, CardDefinition incidentCard)
     {
@@ -447,33 +457,20 @@ public static class PlayCardProcessor
 
             foreach (var sup in FieldHelpers.AllSupports(field))
             {
-                candidates.Add(new EventTriggerCandidate
-                {
-                    CardId = sup.CardID,
-                    DeployOrder = sup.DeployOrder,
-                    Support = sup,
-                    OwnerNum = ownerNum,
-                });
+                candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum, ctx.CC));
             }
             foreach (var res in FieldHelpers.AllFaceUpResources(field))
             {
-                candidates.Add(new EventTriggerCandidate
-                {
-                    CardId = res.CardID,
-                    DeployOrder = res.DeployOrder,
-                    Resource = res,
-                    OwnerNum = ownerNum,
-                });
+                candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum, ctx.CC));
             }
 
-            long owner = ownerNum;
             var (zoneCancelled, events) = EventTriggerFiring.Fire(
-                ctx.State, ctx.Effects, ctx.CC, TriggerType.OnIncident, candidates,
+                ctx.State, ctx.Effects, TriggerType.OnIncident, candidates,
                 candidate => new EffectContext
                 {
                     State = ctx.State,
                     Game = ctx.Game,
-                    PlayerNum = owner,
+                    PlayerNum = ownerNum,
                     Source = candidate.Resource,
                     SupSource = candidate.Support,
                     Target = candidate.Resource,
@@ -481,7 +478,8 @@ public static class PlayCardProcessor
                     IncidentCard = incidentCard,
                     CardCache = ctx.CC,
                     Effects = ctx.Effects,
-                });
+                },
+                ReactiveCard.Consume);
 
             allEvents.AddRange(events);
             cancelled |= zoneCancelled;
