@@ -7,14 +7,14 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Tests.Engine;
 
 /// <summary>
-/// イベント駆動トリガーのリアクティブ解決モデルが仕様どおり動くことを検証します
+/// イベント駆動トリガーの解決モデルが仕様どおり動くことを検証します
 /// </summary>
-public class ReactiveResolutionTests
+public class EventTriggerResolutionTests
 {
     private readonly TestCardCache _cc = new();
     private readonly Game _game = TestFactory.MakeGame();
 
-    public ReactiveResolutionTests()
+    public EventTriggerResolutionTests()
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "ATK", tp: 600, av: 1400, deployTurns: 0));
         _cc.Add(TestFactory.ComputeCard(cardId: "DEF", tp: 600, av: 1400, deployTurns: 0));
