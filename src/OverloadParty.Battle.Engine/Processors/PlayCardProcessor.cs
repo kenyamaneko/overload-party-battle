@@ -109,7 +109,7 @@ public static class PlayCardProcessor
         {
             ctx.State.SetIncidentPlayedThisTurn(ctx.PlayerNum, true);
 
-            // インシデント使用に反応する on_incident を発火（本体 ops より前）。
+            // リアクティブで本体（Ignition）をキャンセルしうるため、本体より先に解決する。
             var (cancelled, reactiveEvents) = FireOnIncident(ctx, cardDef);
             events.AddRange(reactiveEvents);
             incidentCancelled = cancelled;
@@ -198,8 +198,7 @@ public static class PlayCardProcessor
             field.Backend[req.Index] = resource;
         }
 
-        // deploy_turns > 0 のリソースは裏向きセット段階であり on_deploy event ではない。
-        // カウントダウン完了時に DrawPhaseProcessor が発火する。
+        // 表向きになった時点で on_deploy を発動する仕様のため、デプロイ中はスキップ（実際の発動は DrawPhaseProcessor）。
         if (resource.DeployingTurnsLeft > 0)
         {
             FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
