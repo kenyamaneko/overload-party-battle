@@ -199,11 +199,11 @@ public static class AttackProcessor
         if (effects is null) { return (false, []); }
 
         var candidates = FieldHelpers.AllSupports(defenderField)
-            .Select(s => EventTriggerCandidate.ForSupport(s, defenderNum, cc))
+            .Select(s => EventTriggerCandidate.ForSupport(s, defenderNum))
             .ToList();
 
         return EventTriggerFiring.Fire(
-            state, effects, TriggerType.OnAttackDeclared, candidates,
+            state, effects, cc, TriggerType.OnAttackDeclared, candidates,
             candidate => new EffectContext
             {
                 State = state,
@@ -216,8 +216,7 @@ public static class AttackProcessor
                 EventDamage = damage,
                 CardCache = cc,
                 Effects = effects,
-            },
-            ReactiveCard.Consume);
+            });
     }
 
     /// <summary>
@@ -234,23 +233,23 @@ public static class AttackProcessor
 
         if (effects.Has(destroyed.CardID, TriggerType.OnDestroy))
         {
-            candidates.Add(EventTriggerCandidate.ForResource(destroyed, ownerNum, cc));
+            candidates.Add(EventTriggerCandidate.ForResource(destroyed, ownerNum));
         }
 
         foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
         {
             if (res.InstanceID == destroyed.InstanceID) { continue; }
-            candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum, cc));
+            candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum));
         }
 
         // サポートゾーンの伏せ Reactive も on_destroy の走査対象。
         foreach (var sup in FieldHelpers.AllSupports(ownerField))
         {
-            candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum, cc));
+            candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum));
         }
 
         var (_, events) = EventTriggerFiring.Fire(
-            state, effects, TriggerType.OnDestroy, candidates,
+            state, effects, cc, TriggerType.OnDestroy, candidates,
             candidate => new EffectContext
             {
                 State = state,
@@ -262,8 +261,7 @@ public static class AttackProcessor
                 EventOwnerNum = ownerNum,
                 CardCache = cc,
                 Effects = effects,
-            },
-            ReactiveCard.Consume);
+            });
 
         return events;
     }

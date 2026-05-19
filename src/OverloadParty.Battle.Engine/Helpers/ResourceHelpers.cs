@@ -33,15 +33,15 @@ public static class ResourceHelpers
 
         foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
         {
-            candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum, cc));
+            candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum));
         }
         foreach (var sup in FieldHelpers.AllSupports(ownerField))
         {
-            candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum, cc));
+            candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum));
         }
 
         var (_, events) = EventTriggerFiring.Fire(
-            state, effects, TriggerType.OnDamaged, candidates,
+            state, effects, cc, TriggerType.OnDamaged, candidates,
             candidate => new EffectContext
             {
                 State = state,
@@ -53,8 +53,7 @@ public static class ResourceHelpers
                 EventOwnerNum = ownerNum,
                 CardCache = cc,
                 Effects = effects,
-            },
-            ReactiveCard.Consume);
+            });
 
         return events;
     }

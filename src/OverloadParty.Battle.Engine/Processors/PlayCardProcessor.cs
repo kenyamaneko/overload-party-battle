@@ -416,11 +416,11 @@ public static class PlayCardProcessor
         var opponentField = ctx.State.GetField(opponentNum);
 
         var candidates = FieldHelpers.AllSupports(opponentField)
-            .Select(s => EventTriggerCandidate.ForSupport(s, opponentNum, ctx.CC))
+            .Select(s => EventTriggerCandidate.ForSupport(s, opponentNum))
             .ToList();
 
         return EventTriggerFiring.Fire(
-            ctx.State, ctx.Effects, TriggerType.OnDeploy, candidates,
+            ctx.State, ctx.Effects, ctx.CC, TriggerType.OnDeploy, candidates,
             candidate => new EffectContext
             {
                 State = ctx.State,
@@ -432,8 +432,7 @@ public static class PlayCardProcessor
                 EventOwnerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 Effects = ctx.Effects,
-            },
-            ReactiveCard.Consume);
+            });
     }
 
     /// <summary>
@@ -457,15 +456,15 @@ public static class PlayCardProcessor
 
             foreach (var sup in FieldHelpers.AllSupports(field))
             {
-                candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum, ctx.CC));
+                candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum));
             }
             foreach (var res in FieldHelpers.AllFaceUpResources(field))
             {
-                candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum, ctx.CC));
+                candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum));
             }
 
             var (zoneCancelled, events) = EventTriggerFiring.Fire(
-                ctx.State, ctx.Effects, TriggerType.OnIncident, candidates,
+                ctx.State, ctx.Effects, ctx.CC, TriggerType.OnIncident, candidates,
                 candidate => new EffectContext
                 {
                     State = ctx.State,
@@ -478,8 +477,7 @@ public static class PlayCardProcessor
                     IncidentCard = incidentCard,
                     CardCache = ctx.CC,
                     Effects = ctx.Effects,
-                },
-                ReactiveCard.Consume);
+                });
 
             allEvents.AddRange(events);
             cancelled |= zoneCancelled;
