@@ -189,7 +189,7 @@ public static class AttackProcessor
     }
 
     /// <summary>
-    /// Fires on_attack_declared reactions on the defender's support zone before damage is applied.
+    /// ダメージ適用前に防御側サポートゾーンの on_attack_declared を発火します
     /// </summary>
     private static (bool Cancelled, List<GameEvent> Events) FireOnAttackDeclared(
         BattleGameState state, Game game, long attackerNum, long defenderNum, Field defenderField,
@@ -226,7 +226,7 @@ public static class AttackProcessor
     }
 
     /// <summary>
-    /// Fires on_destroy reactions across the owner's field resources and support zone.
+    /// 所有者のフィールドリソースとサポートゾーンの on_destroy を発火します
     /// </summary>
     private static List<GameEvent> FireOnDestroy(
         BattleGameState state, Game game, long ownerNum,

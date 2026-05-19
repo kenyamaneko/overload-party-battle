@@ -6,8 +6,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Tests.Engine;
 
 /// <summary>
-/// Verifies the ADR-044 guard ops: each guard either passes silently or throws
-/// <see cref="GameRuleException"/> (which the composer surfaces as GuardFailed).
+/// ガード op が条件を満たすときは通過し、満たさないときは例外を投げることを検証します
 /// </summary>
 public class GuardOpTests
 {

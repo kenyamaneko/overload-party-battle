@@ -206,7 +206,7 @@ public static class TestFactory
     }
 
     /// <summary>
-    /// Create a Reactive card (single-use support that flips face-up and trashes when it fires).
+    /// Reactive カードを生成します
     /// </summary>
     public static CardDefinition ReactiveCard(
         string cardId = "TST-0400",

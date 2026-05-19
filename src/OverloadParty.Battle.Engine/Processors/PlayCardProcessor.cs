@@ -393,7 +393,7 @@ public static class PlayCardProcessor
     }
 
     /// <summary>
-    /// Stage 1 of on_deploy: fires deploy-monitor watchers in the opponent's support zone.
+    /// on_deploy の Stage 1 として相手サポートゾーンの監視ウォッチャーを発火します
     /// </summary>
     private static (bool Cancelled, List<GameEvent> Events) FireDeployWatchers(
         PlayContext ctx, DeployedResource? deployedResource, DeployedSupport? supSource)
@@ -430,7 +430,7 @@ public static class PlayCardProcessor
     }
 
     /// <summary>
-    /// Fires on_incident across the support zones and field resources of both players.
+    /// 両プレイヤーのサポートゾーンとフィールドリソースの on_incident を発火します
     /// </summary>
     private static (bool Cancelled, List<GameEvent> Events) FireOnIncident(
         PlayContext ctx, CardDefinition incidentCard)

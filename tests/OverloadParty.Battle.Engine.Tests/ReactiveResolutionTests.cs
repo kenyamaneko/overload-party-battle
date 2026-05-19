@@ -7,8 +7,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Tests.Engine;
 
 /// <summary>
-/// Verifies the ADR-044 reactive resolution model: event-unit triggers, the single-Reactive
-/// rule, on_deploy two-stage resolution, on_incident / on_damaged firing, and new guard ops.
+/// イベント駆動トリガーのリアクティブ解決モデルが仕様どおり動くことを検証します
 /// </summary>
 public class ReactiveResolutionTests
 {

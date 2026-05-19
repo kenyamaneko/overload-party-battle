@@ -79,24 +79,22 @@ public class OpContext
     /// </summary>
     public Dictionary<string, object>? ChoiceData => Ctx.ChoiceData;
 
-    /// <summary>
-    /// Player number that caused the triggering event, if event-driven.
-    /// </summary>
+    /// <summary>トリガーとなったイベントを起こしたプレイヤー番号</summary>
     public long? EventOwnerNum => Ctx.EventOwnerNum;
 
-    /// <summary>Attack-declaring resource for on_attack_declared events (same as Source).</summary>
+    /// <summary>on_attack_declared イベントで攻撃を宣言したリソース</summary>
     public DeployedResource? Attacker => Ctx.Source;
 
-    /// <summary>Incident card used in an on_incident event, if any.</summary>
+    /// <summary>on_incident イベントで使用されたインシデントカード</summary>
     public CardDefinition? IncidentCard => Ctx.IncidentCard;
 
-    /// <summary>The card that raised the triggering event (the incident card for on_incident).</summary>
+    /// <summary>トリガーとなったイベントを起こしたカード</summary>
     public CardDefinition? EventCard => Ctx.IncidentCard;
 
-    /// <summary>Attack damage of an on_attack_declared event, if any.</summary>
+    /// <summary>on_attack_declared イベントの攻撃ダメージ</summary>
     public long? EventDamage => Ctx.EventDamage;
 
-    /// <summary>Effect registry, available when ops need to fire nested triggers.</summary>
+    /// <summary>入れ子のトリガー発火に使うエフェクトレジストリ</summary>
     public IEffectRegistry? Effects => Ctx.Effects;
 
     /// <summary>
@@ -104,9 +102,7 @@ public class OpContext
     /// </summary>
     public void AddEvent(GameEvent evt) => Result.Events.Add(evt);
 
-    /// <summary>
-    /// Resolves which player owns the given resource, or null when it is on no field.
-    /// </summary>
+    /// <summary>指定したリソースを所有するプレイヤー番号を返します</summary>
     public long? OwnerOf(DeployedResource resource)
     {
         if (FieldHelpers.FindResourceByID(MyField, resource.InstanceID) is not null)
