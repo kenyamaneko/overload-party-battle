@@ -102,12 +102,19 @@ public static class EventTriggerFiring
             if (result.GuardFailed) { continue; }
 
             events.AddRange(result.Events);
-            cancelled |= result.CancelAction;
 
             if (reactive is not null)
             {
                 reactiveActivated = true;
                 ReactiveCard.Consume(state, reactive, candidate.OwnerNum);
+            }
+
+            // アクションがキャンセルされたら、同じイベントを契機とする後続の効果は発火しない。
+            // キャンセルでアクションが「発生しなかった」扱いになり、後続効果は発動契機を失う。
+            if (result.CancelAction)
+            {
+                cancelled = true;
+                break;
             }
         }
 
