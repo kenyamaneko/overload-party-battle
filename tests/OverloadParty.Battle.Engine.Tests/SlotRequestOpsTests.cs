@@ -20,7 +20,8 @@ public class SlotRequestOpsTests
         Dictionary<string, object>? choiceData = null)
     {
         state ??= TestFactory.MakeGameState();
-        return new EffectContext {
+        return new EffectContext
+        {
             State = state,
             Game = _game,
             PlayerNum = 1,

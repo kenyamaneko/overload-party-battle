@@ -12,7 +12,8 @@ public class FieldOpTests
 
     private OpContext MakeOpContext(BattleGameState state, long playerNum)
     {
-        var ctx = new EffectContext {
+        var ctx = new EffectContext
+        {
             State = state,
             Game = _game,
             PlayerNum = playerNum,

@@ -19,7 +19,8 @@ public class TrashToHandOpTests
 
     private EffectContext MakeContext(BattleGameState state, Dictionary<string, object>? choiceData = null)
     {
-        return new EffectContext {
+        return new EffectContext
+        {
             State = state,
             Game = _game,
             PlayerNum = 1,

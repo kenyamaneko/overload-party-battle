@@ -321,7 +321,8 @@ public class EffectRegistrationTests
 
         var handler = _registry.Get("TK-0025", TriggerType.OnDeploy)
             ?? throw new InvalidOperationException("TK-0025 OnDeploy handler not registered");
-        var ctx = new EffectContext {
+        var ctx = new EffectContext
+        {
             State = state,
             Game = _game,
             PlayerNum = 1,
@@ -361,7 +362,8 @@ public class EffectRegistrationTests
         // Fire an incident that deals 500 damage
         var selector = new FixedSelector([resource]);
         var op = new IncidentDamageOp(selector, new StaticAmount(500));
-        var opCtx = new OpContext(new EffectContext {
+        var opCtx = new OpContext(new EffectContext
+        {
             State = state,
             Game = _game,
             PlayerNum = 1,
@@ -381,7 +383,8 @@ public class EffectRegistrationTests
         var handler = _registry.Get(cardId, trigger)
             ?? throw new InvalidOperationException($"{cardId} {trigger} handler not registered");
 
-        var ctx = new EffectContext {
+        var ctx = new EffectContext
+        {
             State = state,
             Game = _game,
             PlayerNum = playerNum,

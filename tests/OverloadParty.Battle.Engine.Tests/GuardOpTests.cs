@@ -43,7 +43,8 @@ public class GuardOpTests
         CardDefinition? incidentCard = null,
         long? eventDamage = null)
     {
-        return new OpContext(new EffectContext {
+        return new OpContext(new EffectContext
+        {
             State = TestFactory.MakeGameState(),
             Game = _game,
             PlayerNum = playerNum,

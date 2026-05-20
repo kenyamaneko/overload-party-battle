@@ -158,7 +158,8 @@ public class ComplianceAuditEffectTests
         var handler = _registry.Get(CardId, TriggerType.Ignition)
             ?? throw new InvalidOperationException("Card #112 handler not registered");
 
-        var ctx = new EffectContext {
+        var ctx = new EffectContext
+        {
             State = state,
             Game = _game,
             PlayerNum = playerNum,
