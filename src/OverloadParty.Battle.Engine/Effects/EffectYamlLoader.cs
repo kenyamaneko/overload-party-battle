@@ -589,8 +589,10 @@ public static class EffectYamlLoader
     private static IEffectOp BuildCountGuard(JsonElement element)
     {
         var selectorElement = element.GetProperty("selector");
-        int min = element.GetInt32Or("min", 1);
         int? max = element.GetInt32OrNull("max");
+        // max のみ指定 = 「n 体以下」を意図しており 0 体も成立させたい。両方省略 = 「n 体以上」
+        // の慣用で「とにかく 1 体は居ること」の暗黙仕様を保つため min=1 を残す。
+        int min = element.GetInt32OrNull("min") ?? (max is not null ? 0 : 1);
 
         // NPC classifier 互換のため、faction 限定の count guard は RequireFactionCountOp に集約する。
         // 反転 (negate) は外側 BuildGuard が NegateGuardOp で被せるため、ここでは関与しない。
