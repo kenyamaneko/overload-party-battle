@@ -102,12 +102,20 @@ public static class EventTriggerFiring
             if (result.GuardFailed) { continue; }
 
             events.AddRange(result.Events);
-            cancelled |= result.CancelAction;
 
             if (reactive is not null)
             {
                 reactiveActivated = true;
                 ReactiveCard.Consume(state, reactive, candidate.OwnerNum);
+            }
+
+            // アクションがキャンセルされたら後続候補は発火しない。
+            // 後続トリガーは「同じアクションを契機に発動する」ので、その契機が無効化されたら
+            // 発動対象を失う (TCG 一般の counter / negate semantics)。
+            if (result.CancelAction)
+            {
+                cancelled = true;
+                break;
             }
         }
 
