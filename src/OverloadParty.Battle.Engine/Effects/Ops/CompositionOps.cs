@@ -9,6 +9,8 @@ namespace OverloadParty.Battle.Engine.Effects.Ops;
 /// </summary>
 public class EffectGroupOp(string groupId, IEffectOp[] ops) : IEffectOp
 {
+    /// <summary>グループの op を順次実行し、成否を <see cref="OpContext.GroupResults"/> に記録します。</summary>
+    /// <param name="ctx">パイプライン実行コンテキスト。</param>
     public void Execute(OpContext ctx)
     {
         try
@@ -33,6 +35,8 @@ public class EffectGroupOp(string groupId, IEffectOp[] ops) : IEffectOp
 /// </summary>
 public class DependentEffectOp(string parentGroupId, IEffectOp[] ops) : IEffectOp
 {
+    /// <summary>親グループが成功している場合に限り従属 op を実行します。</summary>
+    /// <param name="ctx">パイプライン実行コンテキスト。</param>
     public void Execute(OpContext ctx)
     {
         if (!ctx.GroupResults.GetValueOrDefault(parentGroupId))
@@ -60,6 +64,8 @@ public class DependentEffectOp(string parentGroupId, IEffectOp[] ops) : IEffectO
 /// </summary>
 public class MarkGroupSucceededOp(string groupId) : IEffectOp
 {
+    /// <summary>指定グループの成功を <see cref="OpContext.GroupResults"/> に記録します。</summary>
+    /// <param name="ctx">パイプライン実行コンテキスト。</param>
     public void Execute(OpContext ctx)
     {
         ctx.GroupResults[groupId] = true;

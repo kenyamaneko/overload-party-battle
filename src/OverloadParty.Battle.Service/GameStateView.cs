@@ -13,6 +13,13 @@ namespace OverloadParty.Battle.Service;
 /// </summary>
 public static class GameStateView
 {
+    /// <summary>指定プレイヤー視点の情報秘匿済み ClientGameState を組み立てる。</summary>
+    /// <param name="state">エンジン内部のゲーム状態。</param>
+    /// <param name="game">対象 Game。</param>
+    /// <param name="playerNum">視点となるプレイヤー番号。</param>
+    /// <param name="cc">カード定義の参照元キャッシュ。</param>
+    /// <param name="effects">効果レジストリ。null の場合は操作可能アクションを計算しない。</param>
+    /// <returns>視点プレイヤー向けの ClientGameState。</returns>
     public static GD.ClientGameState Build(
         BattleGameState state, Game game, long playerNum,
         ICardCache cc, IEffectRegistry? effects)

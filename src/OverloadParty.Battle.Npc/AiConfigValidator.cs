@@ -10,6 +10,11 @@ namespace OverloadParty.Battle.Npc;
 /// </summary>
 public static class AiConfigValidator
 {
+    /// <summary>
+    /// AI 設定とカード定義の整合性を検証します。
+    /// </summary>
+    /// <param name="config">検証対象の AI 設定。</param>
+    /// <param name="cc">カード定義の参照元。</param>
     public static void Validate(AiConfig config, ICardCache cc)
     {
         var deckCardIds = config.Deck

@@ -357,6 +357,10 @@ public static class ActionDataDeserializer
         PropertyNameCaseInsensitive = true,
     };
 
+    /// <summary>アクション種別に応じて JSON ペイロードを対応するリクエスト型へデシリアライズする。</summary>
+    /// <param name="actionType">アクション種別。</param>
+    /// <param name="data">アクションのペイロード JSON。</param>
+    /// <returns>アクション種別に対応するリクエストオブジェクト。</returns>
     public static object Deserialize(ActionType actionType, JsonElement data) => actionType switch
     {
         ActionType.PlayCard => data.Deserialize<PlayCardRequest>(JsonOpts)!,

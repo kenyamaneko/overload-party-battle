@@ -15,6 +15,7 @@ public static class DrawPhaseProcessor
     /// <param name="state">The current game state.</param>
     /// <param name="game">The game metadata.</param>
     /// <param name="cc">The card definition cache.</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <returns>A game-over result if a win condition is met; otherwise <c>null</c>.</returns>
     public static GameOverResult? Process(BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects = null)
     {

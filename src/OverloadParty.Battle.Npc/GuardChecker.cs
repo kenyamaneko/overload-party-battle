@@ -9,6 +9,13 @@ namespace OverloadParty.Battle.Npc;
 /// </summary>
 public static class GuardChecker
 {
+    /// <summary>
+    /// 単一条件の成立を判定します。
+    /// </summary>
+    /// <param name="cond">判定対象の条件定義。null は常に成立扱い。</param>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>条件が成立するなら true。</returns>
     public static bool Check(ConditionDef? cond, DecisionContext ctx, ICardCache cc)
     {
         if (cond is null)
@@ -31,6 +38,13 @@ public static class GuardChecker
         return true;
     }
 
+    /// <summary>
+    /// 全条件の同時成立を判定します。
+    /// </summary>
+    /// <param name="conditions">判定対象の条件定義列。null / 空は常に成立扱い。</param>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>全条件が成立するなら true。</returns>
     public static bool CheckAll(List<ConditionDef>? conditions, DecisionContext ctx, ICardCache cc)
     {
         if (conditions is null || conditions.Count == 0)
@@ -41,6 +55,13 @@ public static class GuardChecker
         return conditions.All(c => Check(c, ctx, cc));
     }
 
+    /// <summary>
+    /// ゲーム進行フェーズ条件 (ターン数下限 + 個数条件) の成立を判定します。
+    /// </summary>
+    /// <param name="cond">判定対象のフェーズ条件。</param>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>フェーズ条件が成立するなら true。</returns>
     public static bool CheckPhaseCondition(PhaseCondition cond, DecisionContext ctx, ICardCache cc)
     {
         if (cond.TurnMin is not null && ctx.CurrentTurn < cond.TurnMin.Value)

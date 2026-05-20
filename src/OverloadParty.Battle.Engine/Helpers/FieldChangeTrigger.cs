@@ -12,6 +12,10 @@ public static class FieldChangeTrigger
     /// <summary>
     /// Fires OnFieldChange for all eligible cards on both players' fields.
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
     public static void Fire(
         BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects)
     {

@@ -14,6 +14,9 @@ public static class StatCalculator
     /// Logarithmic diminishing returns for elastic bonus.
     /// Formula: scale * ln(1 + rawBonus / scale)
     /// </summary>
+    /// <param name="rawBonus">逓減前のエラスティックボーナス値。</param>
+    /// <param name="scale">逓減関数のスケール係数。</param>
+    /// <returns>対数逓減後の実効エラスティックボーナス。</returns>
     public static long EffectiveElasticBonus(long rawBonus, long scale)
     {
         if (rawBonus <= 0 || scale <= 0) { return rawBonus; }
@@ -24,6 +27,10 @@ public static class StatCalculator
     /// <summary>
     /// Calculate effective throughput for a resource, including all bonuses.
     /// </summary>
+    /// <param name="instance">対象リソース。</param>
+    /// <param name="field">リソースが置かれているフィールド。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <returns>各種ボーナスを含む実効スループット。</returns>
     public static long CalculateEffectiveTP(DeployedResource instance, Field field, ICardCache cc)
     {
         if (FieldHelpers.HasTemporaryEffect(instance, EffectTypes.TPSuppressed)) { return 0; }
@@ -63,6 +70,10 @@ public static class StatCalculator
     /// <summary>
     /// Calculate effective yield for a resource, including all bonuses.
     /// </summary>
+    /// <param name="instance">対象リソース。</param>
+    /// <param name="field">リソースが置かれているフィールド。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <returns>各種ボーナスを含む実効イールド。</returns>
     public static long CalculateEffectiveInsight(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
@@ -99,6 +110,10 @@ public static class StatCalculator
     /// <summary>
     /// Calculate max AV for a resource, including all bonuses.
     /// </summary>
+    /// <param name="instance">対象リソース。</param>
+    /// <param name="field">リソースが置かれているフィールド。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <returns>各種ボーナスを含む最大可用性。</returns>
     public static long CalculateMaxAV(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
@@ -119,6 +134,9 @@ public static class StatCalculator
     /// <summary>
     /// Recalculate MaxTP after scale-up (non-elastic cards only).
     /// </summary>
+    /// <param name="resource">対象リソース。</param>
+    /// <param name="card">対象のカード定義。</param>
+    /// <returns>スケールアップ後の最大スループット。</returns>
     public static long RecalculateMaxTP(DeployedResource resource, CardDefinition card)
     {
         if (card.ComputeStats is null) { return 0; }
@@ -138,6 +156,9 @@ public static class StatCalculator
     /// <summary>
     /// Recalculate MaxYield after scale-up (non-elastic cards only).
     /// </summary>
+    /// <param name="resource">対象リソース。</param>
+    /// <param name="card">対象のカード定義。</param>
+    /// <returns>スケールアップ後の最大イールド。</returns>
     public static long RecalculateMaxYield(DeployedResource resource, CardDefinition card)
     {
         if (card.DataStats is null) { return 0; }
@@ -157,6 +178,8 @@ public static class StatCalculator
     /// <summary>
     /// Apply elastic bonus increment to a resource.
     /// </summary>
+    /// <param name="resource">対象リソース。</param>
+    /// <param name="card">対象のカード定義。</param>
     public static void ApplyElasticBonus(DeployedResource resource, CardDefinition card)
     {
         if (card.Elastic && card.ElasticIncrement > 0)
@@ -167,5 +190,6 @@ public static class StatCalculator
 
     /// <summary>Truncates a floating-point value to a long integer (floor towards zero).</summary>
     /// <param name="val">The value to truncate.</param>
+    /// <returns>切り捨て後の long 値。</returns>
     public static long Truncate(double val) => (long)val;
 }

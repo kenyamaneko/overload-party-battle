@@ -84,6 +84,8 @@ public class EffectInfo
     /// <returns>True if the category is present.</returns>
     public bool HasCategory(EffectCategory cat) => Categories.Contains(cat);
 
+    /// <summary>カテゴリを未登録ならリストに追加します。</summary>
+    /// <param name="cat">追加するカテゴリ。</param>
     internal void AddCategory(EffectCategory cat)
     {
         if (!HasCategory(cat))
@@ -92,6 +94,8 @@ public class EffectInfo
         }
     }
 
+    /// <summary>別の <see cref="EffectInfo"/> のカテゴリとターゲット情報を取り込みます。</summary>
+    /// <param name="other">取り込み元の分類結果。</param>
     internal void MergeCategories(EffectInfo other)
     {
         foreach (var cat in other.Categories)

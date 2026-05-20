@@ -11,6 +11,9 @@ public static class TargetSelector
     /// <summary>
     /// Returns the instanceID of the resource with the lowest effective AV.
     /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <param name="zone">フロントエンド / バックエンドの絞り込み。null なら両方。</param>
+    /// <returns>該当リソースの InstanceID。なければ null。</returns>
     public static string? WeakestInZone(Field field, string? zone)
     {
         return FaceUpInZone(field, zone)
@@ -21,6 +24,10 @@ public static class TargetSelector
     /// <summary>
     /// Returns the instanceID of the resource with the highest TP or Yield.
     /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <param name="zone">フロントエンド / バックエンドの絞り込み。null なら両方。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>該当リソースの InstanceID。なければ null。</returns>
     public static string? StrongestInZone(Field field, string? zone, ICardCache cc)
     {
         return FaceUpInZone(field, zone)
@@ -31,6 +38,8 @@ public static class TargetSelector
     /// <summary>
     /// Returns the instanceID of the own resource with the most damage.
     /// </summary>
+    /// <param name="field">自分のフィールド。</param>
+    /// <returns>該当リソースの InstanceID。なければ null。</returns>
     public static string? MostDamagedOwn(Field field)
     {
         return FieldHelpers.AllFaceUpResources(field)
@@ -39,26 +48,53 @@ public static class TargetSelector
             ?.InstanceID;
     }
 
+    /// <summary>
+    /// フィールド上の表向きリソース数を返します。
+    /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <returns>表向きリソースの総数。</returns>
     public static int CountAllResources(Field field)
     {
         return FieldHelpers.AllFaceUpResources(field).Count;
     }
 
+    /// <summary>
+    /// 指定ゾーンの表向きリソース数を返します。
+    /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <param name="zone">フロントエンド / バックエンドの絞り込み。null なら両方。</param>
+    /// <returns>該当ゾーンの表向きリソース数。</returns>
     public static int CountResourcesInZone(Field field, string? zone)
     {
         return FaceUpInZone(field, zone).Count();
     }
 
+    /// <summary>
+    /// フィールド上にダメージを受けたリソースが存在するか判定します。
+    /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <returns>1 体でも被ダメージ中なら true。</returns>
     public static bool HasDamagedResource(Field field)
     {
         return FieldHelpers.AllFaceUpResources(field).Any(r => r.Damage > 0);
     }
 
+    /// <summary>
+    /// サポートゾーンに裏向きのカードが存在するか判定します。
+    /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <returns>裏向きのサポートカードが 1 枚でもあれば true。</returns>
     public static bool HasFaceDownSupport(Field field)
     {
         return field.Support.Any(s => !s.FaceUp);
     }
 
+    /// <summary>
+    /// サポートゾーンにプラットフォームが存在するか判定します。
+    /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>プラットフォームが 1 枚でもあれば true。</returns>
     public static bool HasPlatform(Field field, ICardCache cc)
     {
         return field.Support
@@ -67,6 +103,12 @@ public static class TargetSelector
                 .CardType == CardTypes.Platform);
     }
 
+    /// <summary>
+    /// サポートゾーン最初のプラットフォームの InstanceID を返します。
+    /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>該当プラットフォームの InstanceID。なければ null。</returns>
     public static string? FirstPlatformId(Field field, ICardCache cc)
     {
         return field.Support
@@ -76,6 +118,12 @@ public static class TargetSelector
             ?.InstanceID;
     }
 
+    /// <summary>
+    /// リソースの強さを表すスコア (スループット or イールド) を返します。
+    /// </summary>
+    /// <param name="r">対象リソース。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>スループット or イールド値。</returns>
     public static long ResourceValue(DeployedResource r, ICardCache cc)
     {
         if (r.CurrentTP is > 0)
@@ -97,6 +145,11 @@ public static class TargetSelector
     /// Resolves a single target from a TargetSpec. Uses the selector to filter
     /// resources, then orders by the order_by stat and picks the first result.
     /// </summary>
+    /// <param name="spec">ターゲット仕様。</param>
+    /// <param name="selfField">自分のフィールド。</param>
+    /// <param name="oppField">相手のフィールド。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>解決したターゲットの InstanceID。該当なしなら null。</returns>
     public static string? Resolve(TargetSpec spec, Field selfField, Field oppField, ICardCache cc)
     {
         var field = ResolveField(spec.Selector, selfField, oppField);
@@ -107,6 +160,12 @@ public static class TargetSelector
     /// <summary>
     /// Resolves a single target from a TargetSpec, constrained to the given valid target IDs.
     /// </summary>
+    /// <param name="spec">ターゲット仕様。</param>
+    /// <param name="validTargets">エンジンが許可するターゲット ID 集合。</param>
+    /// <param name="selfField">自分のフィールド。</param>
+    /// <param name="oppField">相手のフィールド。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>解決したターゲットの InstanceID。該当なしなら null。</returns>
     public static string? ResolveFromValid(
         TargetSpec spec, List<string> validTargets, Field selfField, Field oppField, ICardCache cc)
     {
@@ -120,6 +179,11 @@ public static class TargetSelector
     /// <summary>
     /// Orders AvailableActions by the given order_by stat applied to their source resource.
     /// </summary>
+    /// <param name="actions">ソート対象のアクション列。</param>
+    /// <param name="orderBy">_desc / _asc サフィックス付きの並び順指定。</param>
+    /// <param name="field">ソース リソースを含むフィールド。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>ソート済みのアクション列。</returns>
     public static List<AvailableAction> OrderActions(
         List<AvailableAction> actions, string orderBy, Field field, ICardCache cc)
     {
@@ -137,6 +201,10 @@ public static class TargetSelector
     /// Filters resources on a field using a SelectorDef. Shared by target resolution
     /// and GuardChecker condition evaluation.
     /// </summary>
+    /// <param name="field">対象のフィールド。</param>
+    /// <param name="sel">セレクタ定義。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>条件を満たすリソース列。</returns>
     public static IEnumerable<DeployedResource> FilterResources(
         Field field, SelectorDef sel, ICardCache cc)
     {

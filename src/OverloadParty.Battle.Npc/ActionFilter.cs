@@ -9,6 +9,12 @@ namespace OverloadParty.Battle.Npc;
 /// </summary>
 public static class ActionFilter
 {
+    /// <summary>
+    /// 指定アクションタイプに一致するものだけを抽出します。
+    /// </summary>
+    /// <param name="actions">フィルタ対象のアクション列。</param>
+    /// <param name="actionType">抽出するアクションタイプ。</param>
+    /// <returns>該当アクションのみのリスト。</returns>
     public static List<AvailableAction> FilterByType(List<AvailableAction> actions, string actionType)
     {
         return actions.Where(a => a.Type == actionType).ToList();
@@ -17,6 +23,10 @@ public static class ActionFilter
     /// <summary>
     /// Selects the best zone from validZones based on card type strategy.
     /// </summary>
+    /// <param name="validZones">エンジンが許可する配置先ゾーン候補。</param>
+    /// <param name="cardDef">配置するカード定義。</param>
+    /// <param name="usedZones">既に使用済みのゾーン集合。</param>
+    /// <returns>選択したゾーン文字列。該当なしなら null。</returns>
     public static string? PickBestZone(List<string>? validZones, CardDefinition cardDef, HashSet<string> usedZones)
     {
         if (validZones is null || validZones.Count == 0) { return null; }
@@ -47,11 +57,22 @@ public static class ActionFilter
         return available[0];
     }
 
+    /// <summary>
+    /// 未使用のサポートゾーン枠を 1 つ選択します。
+    /// </summary>
+    /// <param name="validZones">エンジンが許可する配置先ゾーン候補。</param>
+    /// <param name="usedZones">既に使用済みのゾーン集合。</param>
+    /// <returns>選択したサポートゾーン文字列。該当なしなら null。</returns>
     public static string? PickSupportZone(List<string>? validZones, HashSet<string> usedZones)
     {
         return validZones?.FirstOrDefault(z => z.StartsWith("support_") && !usedZones.Contains(z));
     }
 
+    /// <summary>
+    /// "frontend_0" 形式のゾーン文字列をゾーン名とインデックスに分解します。
+    /// </summary>
+    /// <param name="zone">パース対象のゾーン文字列。</param>
+    /// <returns>解析結果。形式不正なら null。</returns>
     public static SlotPosition? ParseZoneStr(string zone)
     {
         int idx = zone.LastIndexOf('_');
@@ -66,6 +87,12 @@ public static class ActionFilter
         return new SlotPosition { Zone = zone[..idx], Index = index };
     }
 
+    /// <summary>
+    /// フィールド上の InstanceID からカード ID を解決します。
+    /// </summary>
+    /// <param name="instanceId">対象の InstanceID。</param>
+    /// <param name="field">検索対象のフィールド。</param>
+    /// <returns>該当カードの CardID。</returns>
     public static string ResolveCardIdForInstance(string instanceId, Field field)
     {
         var resource = FieldHelpers.AllResources(field).FirstOrDefault(r => r.InstanceID == instanceId);

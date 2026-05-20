@@ -30,6 +30,11 @@ public static class PriorityResolver
         [EffectCategory.Survive] = EffectCategories.Survive,
     };
 
+    /// <summary>
+    /// 効果カテゴリを設定ファイル上のキー文字列に変換します。
+    /// </summary>
+    /// <param name="cat">変換対象のカテゴリ。</param>
+    /// <returns>対応するキー文字列。未登録なら null。</returns>
     public static string? CategoryToKey(EffectCategory cat)
     {
         return CategoryKeys.GetValueOrDefault(cat);
@@ -38,6 +43,13 @@ public static class PriorityResolver
     /// <summary>
     /// Evaluates a card's effect and returns (priority, shouldUse, choiceData).
     /// </summary>
+    /// <param name="cardId">評価対象のカード ID。</param>
+    /// <param name="trigger">対象トリガー種別。</param>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="config">適用する AI 設定。</param>
+    /// <param name="effects">効果情報の参照元。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>優先度・使用可否・選択肢データのタプル。</returns>
     public static (int Priority, bool Use, Dictionary<string, object>? ChoiceData) Evaluate(
         string cardId, TriggerType trigger, DecisionContext ctx,
         AiConfig config, IEffectRegistry effects, ICardCache cc)
@@ -82,6 +94,12 @@ public static class PriorityResolver
     /// <summary>
     /// Resolves priority for a single effect category based on config.
     /// </summary>
+    /// <param name="cat">評価対象の効果カテゴリ。</param>
+    /// <param name="info">効果情報。</param>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="config">適用する AI 設定。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>優先度と使用可否のタプル。</returns>
     public static (int Priority, bool Use) Resolve(
         EffectCategory cat, EffectInfo info, DecisionContext ctx,
         AiConfig config, ICardCache cc)
@@ -200,6 +218,11 @@ public static class PriorityResolver
     /// <summary>
     /// Target selection based on config TargetSpec definitions.
     /// </summary>
+    /// <param name="info">対象効果の情報。</param>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="targets">ターゲット選択設定。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>選択したターゲットの InstanceID。該当なしなら null。</returns>
     public static string? SelectTarget(EffectInfo info, DecisionContext ctx, TargetSelectionConfig targets, ICardCache cc)
     {
         if (info.HasCategory(EffectCategory.SingleDamage))

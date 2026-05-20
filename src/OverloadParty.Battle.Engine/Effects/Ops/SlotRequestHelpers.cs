@@ -11,6 +11,8 @@ public static class SlotRequestHelpers
     /// Removes the chosen card from hand, creates a <see cref="DeployedResource"/>,
     /// computes valid zones, and enqueues a <see cref="AwaitingSlotSelect"/> entry.
     /// </summary>
+    /// <param name="ctx">パイプライン実行コンテキスト。</param>
+    /// <param name="choiceCardId">手札からデプロイするカードの ID。</param>
     public static void DeployFromHand(OpContext ctx, string choiceCardId)
     {
         var card = ctx.CardCache.MustGet(choiceCardId);

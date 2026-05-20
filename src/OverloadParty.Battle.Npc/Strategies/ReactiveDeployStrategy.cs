@@ -19,6 +19,12 @@ internal sealed class ReactiveDeployStrategy
         _cc = cc;
     }
 
+    /// <summary>
+    /// リアクティブのデプロイアクション列を決定します。
+    /// </summary>
+    /// <param name="playActions">PlayCard 系のアクション一覧。</param>
+    /// <param name="usedZones">既に使用済みのゾーン集合。決定時に追記される。</param>
+    /// <returns>リアクティブのデプロイアクション列。</returns>
     public List<NpcAction> Decide(List<AvailableAction> playActions, HashSet<string> usedZones)
     {
         var reactive = _config.Reactive!;

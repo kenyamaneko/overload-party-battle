@@ -19,6 +19,13 @@ internal sealed class AttachmentDeployStrategy
         _cc = cc;
     }
 
+    /// <summary>
+    /// アタッチメントのデプロイアクション列を決定します。
+    /// </summary>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="playActions">PlayCard 系のアクション一覧。</param>
+    /// <param name="usedZones">既に使用済みのゾーン集合。決定時に追記される。</param>
+    /// <returns>アタッチメントのデプロイアクション列。</returns>
     public List<NpcAction> Decide(
         DecisionContext ctx, List<AvailableAction> playActions, HashSet<string> usedZones)
     {

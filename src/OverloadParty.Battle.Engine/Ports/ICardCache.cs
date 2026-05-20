@@ -18,6 +18,7 @@ public interface ICardCache
     CardDefinition MustGet(string cardId);
 
     /// <summary>Returns all loaded card definitions keyed by card ID.</summary>
+    /// <returns>カード ID をキーとするカード定義の読み取り専用辞書。</returns>
     IReadOnlyDictionary<string, CardDefinition> All();
 
     /// <summary>Gets the total number of loaded card definitions.</summary>

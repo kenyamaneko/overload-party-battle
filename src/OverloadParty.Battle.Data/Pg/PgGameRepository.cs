@@ -12,6 +12,11 @@ namespace OverloadParty.Battle.Data.Pg;
 /// </summary>
 public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
 {
+    /// <summary>新規ゲームのセッション情報・NPC スロット・初期デッキ・初期状態をトランザクションで永続化する。</summary>
+    /// <param name="game">永続化するゲームのセッション情報。</param>
+    /// <param name="state">永続化する初期ゲーム状態。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>非同期処理を表すタスク。</returns>
     public async Task CreateGame(Game game, BattleGameState state, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -91,6 +96,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
+    /// <summary>指定 ID のゲームのセッション情報を取得する。</summary>
+    /// <param name="gameID">取得対象のゲーム ID。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>該当ゲームの <see cref="Game"/>。存在しなければ null。</returns>
     public async Task<Game?> GetGame(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -114,6 +123,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return ReadGame(reader);
     }
 
+    /// <summary>指定 ID のゲーム状態を取得する。</summary>
+    /// <param name="gameID">取得対象のゲーム ID。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>該当ゲームの <see cref="BattleGameState"/>。存在しなければ null。</returns>
     public async Task<BattleGameState?> GetGameState(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -128,6 +141,12 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return ReadGameState(reader);
     }
 
+    /// <summary>行ロック下でゲーム状態を読み出し、更新関数を適用して保存する。pending action があれば同じトランザクションで追記する。</summary>
+    /// <param name="gameID">更新対象のゲーム ID。</param>
+    /// <param name="fn">読み出した状態に対して適用する更新関数。</param>
+    /// <param name="pendingAction">追記する pending action。不要なら null。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>非同期処理を表すタスク。</returns>
     public async Task UpdateGameState(string gameID, Func<BattleGameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -186,6 +205,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await tx.CommitAsync(ct);
     }
 
+    /// <summary>イベントを game_events に追記する。</summary>
+    /// <param name="evt">追記するイベント。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>非同期処理を表すタスク。</returns>
     public async Task AppendEvent(GameEvent evt, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -202,6 +225,12 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
+    /// <summary>ゲームを終了状態にし、勝者と勝因を記録する。</summary>
+    /// <param name="gameID">終了対象のゲーム ID。</param>
+    /// <param name="winnerNum">勝者のプレイヤー番号。</param>
+    /// <param name="winReason">勝因の識別子。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>非同期処理を表すタスク。</returns>
     public async Task FinishGame(string gameID, long winnerNum, string winReason, CancellationToken ct = default)
     {
         var now = DateTime.UtcNow;
@@ -219,6 +248,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
+    /// <summary>指定ゲームに記録されたイベント数を取得する。</summary>
+    /// <param name="gameID">取得対象のゲーム ID。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>記録されたイベント数。</returns>
     public async Task<long> GetEventCount(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -228,6 +261,11 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return (long)(await cmd.ExecuteScalarAsync(ct))!;
     }
 
+    /// <summary>指定ゲームのステータスを更新する。</summary>
+    /// <param name="gameID">更新対象のゲーム ID。</param>
+    /// <param name="status">新しいゲームステータス。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>非同期処理を表すタスク。</returns>
     public async Task UpdateGameStatus(string gameID, GameStatus status, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -239,6 +277,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
+    /// <summary>指定ゲームのイベントを sequence_number 昇順で取得する。</summary>
+    /// <param name="gameID">取得対象のゲーム ID。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>sequence_number 昇順のイベント一覧。</returns>
     public async Task<List<GameEvent>> GetEvents(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -268,6 +310,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return events;
     }
 
+    /// <summary>指定ゲームの初期状態スナップショットを取得する。</summary>
+    /// <param name="gameID">取得対象のゲーム ID。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>初期状態の <see cref="BattleGameState"/>。存在しなければ null。</returns>
     public async Task<BattleGameState?> GetInitialState(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -419,6 +465,11 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };
     }
 
+    /// <summary>プレイヤーサマリのスナップショットを player_summary テーブルに保存する。</summary>
+    /// <param name="gameID">対象のゲーム ID。</param>
+    /// <param name="summaries">保存するプレイヤーサマリ。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>非同期処理を表すタスク。</returns>
     public async Task SavePlayerSummaries(string gameID, IReadOnlyList<PlayerSummarySnapshot> summaries, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
@@ -437,6 +488,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await tx.CommitAsync(ct);
     }
 
+    /// <summary>指定ゲームのプレイヤーサマリを player_num 昇順で取得する。</summary>
+    /// <param name="gameID">取得対象のゲーム ID。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>player_num 昇順のプレイヤーサマリ一覧。</returns>
     public async Task<List<PlayerSummarySnapshot>> GetPlayerSummaries(string gameID, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);

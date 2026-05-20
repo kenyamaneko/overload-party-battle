@@ -43,6 +43,8 @@ public class OpContext
     /// <summary>
     /// Get a player's field. Cached for the duration of this pipeline.
     /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号 (1 または 2)。</param>
+    /// <returns>指定プレイヤーのフィールド。</returns>
     public Field GetField(long playerNum)
     {
         if (!_fieldCache.TryGetValue(playerNum, out var field))
@@ -100,9 +102,12 @@ public class OpContext
     /// <summary>
     /// Add an event to the result.
     /// </summary>
+    /// <param name="evt">追加するイベント。</param>
     public void AddEvent(GameEvent evt) => Result.Events.Add(evt);
 
     /// <summary>指定したリソースを所有するプレイヤー番号を返します</summary>
+    /// <param name="resource">所有者を特定したいリソース。</param>
+    /// <returns>所有者のプレイヤー番号。両者のフィールドにない場合は null。</returns>
     public long? OwnerOf(DeployedResource resource)
     {
         if (FieldHelpers.FindResourceByID(MyField, resource.InstanceID) is not null)

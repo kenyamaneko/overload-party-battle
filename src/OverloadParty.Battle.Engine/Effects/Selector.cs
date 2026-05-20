@@ -140,6 +140,13 @@ public class AllOwnSelector : ISelector
         return FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes);
     }
 
+    /// <summary>ゾーン・陣営・カードタイプでフィルタした表向きリソースを返します。</summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="zone">ゾーンフィルタ。null なら全ゾーン。</param>
+    /// <param name="faction">陣営フィルタ。null または空文字なら全陣営。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="cardTypes">カードタイプフィルタ。null または空なら全タイプ。</param>
+    /// <returns>フィルタ後のリソース一覧。</returns>
     internal static List<DeployedResource> FilterResources(Field field, string? zone, string? faction, ICardCache cc, List<string>? cardTypes = null)
     {
         IEnumerable<DeployedResource> candidates = zone switch

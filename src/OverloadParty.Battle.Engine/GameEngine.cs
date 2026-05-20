@@ -33,6 +33,15 @@ public class GameEngine
     /// <summary>
     /// CreateNewGame はシャッフルしたデッキと初期手札で新しいゲームを作成します
     /// </summary>
+    /// <param name="deck1">プレイヤー 1 のデッキスナップショット。</param>
+    /// <param name="deck2">プレイヤー 2 のデッキスナップショット。</param>
+    /// <param name="firstPlayer">先攻プレイヤー番号 (1 または 2)。</param>
+    /// <param name="npc1Model">プレイヤー 1 が NPC のときのモデル識別子。</param>
+    /// <param name="npc2Model">プレイヤー 2 が NPC のときのモデル識別子。</param>
+    /// <param name="engineVersion">エンジンのバージョン。</param>
+    /// <param name="cardDataVersion">カードデータのバージョン。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>作成されたゲームの ID。</returns>
     public async Task<string> CreateNewGame(
         DeckSnapshot deck1, DeckSnapshot deck2,
         long firstPlayer,
@@ -57,6 +66,9 @@ public class GameEngine
     /// Runs the draw-phase auto-advance for the active player.
     /// Called at the start of each turn before player actions.
     /// </summary>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>勝敗が確定した場合の結果、未確定なら null。</returns>
     public async Task<GameOverResult?> RunAutoAdvance(
         Game game, CancellationToken ct = default)
     {
@@ -83,6 +95,8 @@ public class GameEngine
     /// <param name="game">The game metadata.</param>
     /// <param name="playerNum">The forfeiting player's number (1 or 2).</param>
     /// <param name="reason">The reason for the forfeit.</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>棄権処理の結果として相手の勝利を表すアクション結果。</returns>
     public async Task<ActionResult> Forfeit(
         Game game, long playerNum, WinReason reason,
         CancellationToken ct = default)
@@ -107,6 +121,8 @@ public class GameEngine
     /// <param name="playerNum">The acting player's number (1 or 2).</param>
     /// <param name="actionType">The type of action to process.</param>
     /// <param name="actionData">The action-specific request data.</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>アクション処理の結果イベントと勝敗確定情報を含むアクション結果。</returns>
     public async Task<ActionResult> ProcessAction(
         Game game, long playerNum, ActionType actionType, object actionData,
         CancellationToken ct = default)
@@ -207,6 +223,7 @@ public class GameEngine
     /// Deducts elapsed time since TurnStartedAt from the active player's TimeBank
     /// and resets TurnStartedAt to now.
     /// </summary>
+    /// <param name="state">対象のゲーム状態。</param>
     internal static void DeductElapsedTime(BattleGameState state)
     {
         var now = DateTime.UtcNow;
@@ -222,6 +239,10 @@ public class GameEngine
     /// <summary>
     /// Computes all valid actions available to a player in the current game state.
     /// </summary>
+    /// <param name="gameID">対象ゲームの ID。</param>
+    /// <param name="playerNum">アクションを算出するプレイヤー番号。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>そのプレイヤーが現在実行可能なアクション一覧。</returns>
     public async Task<List<AvailableAction>> ComputeAvailableActions(
         string gameID, long playerNum, CancellationToken ct = default)
     {
@@ -243,6 +264,9 @@ public class GameEngine
     /// <summary>
     /// Computes turn control information (whether the player can end the phase, discard count).
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="hand">対象プレイヤーの手札。</param>
+    /// <returns>UI 向けのターン制御情報。</returns>
     public TurnControlsMessage ComputeTurnControls(BattleGameState state, List<UndeployedCard> hand)
     {
         return AvailableActions.ComputeTurnControls(state, hand);

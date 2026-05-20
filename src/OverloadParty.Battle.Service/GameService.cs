@@ -71,6 +71,11 @@ public class GameService
     /// 対戦当時の player display 情報 (name / level) を battle が永続化する。account
     /// に同期依存せず、引数として渡された snapshot をそのまま信頼して保存する。
     /// </summary>
+    /// <param name="player1Cards">プレイヤー 1 のデッキ snapshot。</param>
+    /// <param name="player2Cards">プレイヤー 2 のデッキ snapshot。</param>
+    /// <param name="playerSummaries">両プレイヤーの表示用 summary。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>初期化済みの Game。</returns>
     public async Task<Game> CreateGameFromMatch(
         List<DeckSnapshotCard> player1Cards,
         List<DeckSnapshotCard> player2Cards,
@@ -100,6 +105,11 @@ public class GameService
     /// 対戦当時の player summary (人間 player と NPC) を player_summary に永続化する。
     /// NPC summary は caller (gateway) が npc_model の display_name から組み立てて渡す。
     /// </summary>
+    /// <param name="playerCards">人間プレイヤーのデッキ snapshot。</param>
+    /// <param name="npcModel">対戦相手となる NPC モデル ID。</param>
+    /// <param name="playerSummaries">両プレイヤー (人間と NPC) の表示用 summary。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>初期化済みの Game。</returns>
     public async Task<Game> StartNPCBattle(
         List<DeckSnapshotCard> playerCards, string npcModel,
         IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
@@ -145,6 +155,12 @@ public class GameService
     /// Processes a single player action. If the resulting active player is an NPC,
     /// returns NpcPending=true so the gateway can loop AdvanceNpcTurn.
     /// </summary>
+    /// <param name="gameID">対象 Game の ID。</param>
+    /// <param name="playerNum">アクションを実行するプレイヤー番号。</param>
+    /// <param name="actionType">アクション種別。</param>
+    /// <param name="actionData">アクション種別ごとのリクエスト本体。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>アクション適用後の状態・イベント・NPC 継続フラグ。</returns>
     public async Task<GameActionResult> ProcessAction(
         string gameID, long playerNum, ActionType actionType, object actionData,
         CancellationToken ct = default)
@@ -196,10 +212,20 @@ public class GameService
 
     // ─── State queries ──────────────────────────────────────────
 
+    /// <summary>指定プレイヤー視点の情報秘匿済みゲーム状態を返す。</summary>
+    /// <param name="gameID">対象 Game の ID。</param>
+    /// <param name="playerNum">視点となるプレイヤー番号。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>視点プレイヤー向けの ClientGameState。</returns>
     public Task<ClientGameState> GetGameStateForPlayer(
         string gameID, long playerNum, CancellationToken ct = default)
         => GetStateForPlayer(gameID, playerNum, ct);
 
+    /// <summary>指定プレイヤーがターンプレイヤーである場合の操作可能アクションを返す。</summary>
+    /// <param name="gameID">対象 Game の ID。</param>
+    /// <param name="playerNum">問い合わせ元のプレイヤー番号。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>ターンプレイヤーでない場合は null、それ以外は操作 UI 情報。</returns>
     public async Task<TurnControlsMessage?> GetTurnControlsForPlayer(
         string gameID, long playerNum, CancellationToken ct = default)
     {
@@ -219,6 +245,9 @@ public class GameService
     /// Processes exactly one NPC action and returns. The gateway loops on NpcPending
     /// so every NPC action is delivered with its own post-action state snapshot.
     /// </summary>
+    /// <param name="gameID">対象 Game の ID。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>NPC アクション適用後の状態・イベント・NPC 継続フラグ。</returns>
     public async Task<GameActionResult> AdvanceNpcTurn(
         string gameID, CancellationToken ct = default)
     {

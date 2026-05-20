@@ -31,8 +31,8 @@ public class EffectRegistry : IEffectRegistry
     /// <summary>
     /// Registers a custom effect handler for a card and trigger.
     /// </summary>
-    /// <param name="cardId">Card ID.</param>
-    /// <param name="trigger">Trigger type.</param>
+    /// <param name="cardId">カード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
     /// <param name="handler">The handler to register.</param>
     public void Register(string cardId, TriggerType trigger, EffectHandler handler)
     {
@@ -49,6 +49,9 @@ public class EffectRegistry : IEffectRegistry
     /// Builds a handler from ops via Compose and stores both
     /// the handler and the ops for NPC classification.
     /// </summary>
+    /// <param name="cardId">カード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
+    /// <param name="ops">構成する効果 op の列。</param>
     public void RegisterComposed(string cardId, TriggerType trigger, params IEffectOp[] ops)
     {
         var key = (cardId, trigger);
@@ -70,8 +73,8 @@ public class EffectRegistry : IEffectRegistry
     /// <summary>
     /// Retrieves the full registration (handler + ops) for a card and trigger.
     /// </summary>
-    /// <param name="cardId">Card ID.</param>
-    /// <param name="trigger">Trigger type.</param>
+    /// <param name="cardId">カード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
     /// <returns>The registration, or null if not found.</returns>
     public EffectRegistration? GetRegistration(string cardId, TriggerType trigger)
     {
@@ -84,6 +87,12 @@ public class EffectRegistry : IEffectRegistry
         return _handlers.ContainsKey((cardId, trigger));
     }
 
+    /// <summary>
+    /// 効果のバジェット条件を返します。条件がなければ null。
+    /// </summary>
+    /// <param name="cardId">カード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
+    /// <returns>抽出したバジェット条件、または条件なしの場合は null。</returns>
     public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger)
     {
         var reg = GetRegistration(cardId, trigger);
@@ -121,6 +130,9 @@ public class EffectRegistry : IEffectRegistry
     /// <summary>
     /// Returns NPC classification for an effect. Null if no ops stored.
     /// </summary>
+    /// <param name="cardId">カード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
+    /// <returns>分類結果。op 列が未保存の場合は null。</returns>
     public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger)
     {
         var reg = GetRegistration(cardId, trigger);
@@ -134,6 +146,9 @@ public class EffectRegistry : IEffectRegistry
     /// <summary>
     /// Returns branch keys if the effect uses BranchOnChoice.
     /// </summary>
+    /// <param name="cardId">カード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
+    /// <returns>分岐キーのリスト。BranchOnChoice が使われていない場合は null。</returns>
     public List<string>? GetChoiceOptions(string cardId, TriggerType trigger)
     {
         var reg = GetRegistration(cardId, trigger);
@@ -157,6 +172,8 @@ public class EffectRegistry : IEffectRegistry
     /// <summary>
     /// Returns all card IDs that have a handler for the given trigger.
     /// </summary>
+    /// <param name="trigger">トリガー種別。</param>
+    /// <returns>該当トリガーのハンドラを持つ Card ID 一覧。</returns>
     public List<string> CardIdsForTrigger(TriggerType trigger)
     {
         return _handlers.Keys

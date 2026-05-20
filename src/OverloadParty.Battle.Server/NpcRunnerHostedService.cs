@@ -22,11 +22,17 @@ public sealed class NpcRunnerHostedService : IHostedService
         _services = services;
     }
 
+    /// <summary>HTTP サーバ受付前に <see cref="NpcRunner"/> を DI から解決して起動時バリデーションを発火させる。</summary>
+    /// <param name="cancellationToken">ホスト起動のキャンセル通知。</param>
+    /// <returns>起動完了を表すタスク。</returns>
     public Task StartAsync(CancellationToken cancellationToken)
     {
         _ = _services.GetRequiredService<NpcRunner>();
         return Task.CompletedTask;
     }
 
+    /// <summary>ホスト停止時のフックで、本サービスでは追加処理を持たない。</summary>
+    /// <param name="cancellationToken">ホスト停止のキャンセル通知。</param>
+    /// <returns>停止完了を表すタスク。</returns>
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

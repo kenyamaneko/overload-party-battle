@@ -42,6 +42,9 @@ public sealed class CardServiceClient : IDisposable
         _http.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
     }
 
+    /// <summary>カードサービスの internal カード一覧エンドポイントから全カード定義を取得する。</summary>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>取得したカード定義の一覧。</returns>
     public async Task<List<CardDefinition>> ListAllCardsAsync(CancellationToken ct = default)
     {
         using var response = await _http.GetAsync("internal/v1/cards", ct);

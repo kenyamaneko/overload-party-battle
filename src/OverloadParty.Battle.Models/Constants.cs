@@ -18,6 +18,8 @@ public static class BattleConstants
     /// <summary>
     /// RankMultiplier はランクに応じた倍率を返します
     /// </summary>
+    /// <param name="rank">対象のランク</param>
+    /// <returns>ランクに応じた倍率</returns>
     public static long RankMultiplier(Rank? rank) => rank switch
     {
         Rank.Small => 1,
@@ -29,6 +31,8 @@ public static class BattleConstants
     /// <summary>
     /// FamilyMultiplier はインスタンスファミリーに応じた TP/AV 倍率を返します
     /// </summary>
+    /// <param name="family">対象のインスタンスファミリー</param>
+    /// <returns>スループット倍率と可用性倍率の組</returns>
     public static (double TpMult, double AvMult) FamilyMultiplier(InstanceFamily family) => family switch
     {
         InstanceFamily.M => (1.0, 1.0),
