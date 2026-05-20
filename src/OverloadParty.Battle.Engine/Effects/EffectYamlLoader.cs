@@ -488,36 +488,41 @@ public static class EffectYamlLoader
     private static IEffectOp BuildGuard(JsonElement element)
     {
         // ガードの negate: true フラグ。指定時はガードの判定結果を反転する。
+        // 反転は内側 op の構築と分離し、外側で NegateGuardOp を 1 回だけ被せる。
         bool negate = element.TryGetProperty("negate", out var negEl)
             && negEl.ValueKind == JsonValueKind.True;
 
+        IEffectOp op = BuildGuardBody(element);
+        return negate ? new NegateGuardOp(op) : op;
+    }
+
+    private static IEffectOp BuildGuardBody(JsonElement element)
+    {
         if (element.TryGetProperty("stat", out var statEl))
         {
-            return BuildStatGuard(statEl, negate);
+            return BuildStatGuard(statEl);
         }
 
         if (element.TryGetProperty("count", out var countEl))
         {
-            return BuildCountGuard(countEl, negate);
+            return BuildCountGuard(countEl);
         }
 
         if (element.TryGetProperty("match", out var matchEl))
         {
-            return BuildMatchGuard(matchEl, negate);
+            return BuildMatchGuard(matchEl);
         }
 
         if (element.TryGetProperty("not_same", out var notSameEl))
         {
             var (a, b) = ParseResourceRefPair(notSameEl);
-            IEffectOp op = new GuardNotSameOp(a, b);
-            return negate ? new NegateGuardOp(op) : op;
+            return new GuardNotSameOp(a, b);
         }
 
         if (element.TryGetProperty("same", out var sameEl))
         {
             var (a, b) = ParseResourceRefPair(sameEl);
-            IEffectOp op = new GuardSameOp(a, b);
-            return negate ? new NegateGuardOp(op) : op;
+            return new GuardSameOp(a, b);
         }
 
         if (element.TryGetProperty("event_owner", out var ownerEl))
@@ -528,14 +533,13 @@ public static class EffectYamlLoader
                 PlayerRefs.Opponent => false,
                 _ => throw new InvalidOperationException($"Unknown event_owner: {ownerEl.GetString()}"),
             };
-            IEffectOp op = new GuardEventOwnerOp(isSelf);
-            return negate ? new NegateGuardOp(op) : op;
+            return new GuardEventOwnerOp(isSelf);
         }
 
         if (element.TryGetProperty("lethal", out var lethalEl)
             && lethalEl.ValueKind == JsonValueKind.True)
         {
-            return negate ? new NegateGuardOp(GuardLethalOp.Instance) : GuardLethalOp.Instance;
+            return GuardLethalOp.Instance;
         }
 
         throw new InvalidOperationException($"Unknown guard type: {element}");
@@ -556,7 +560,7 @@ public static class EffectYamlLoader
         _ => throw new InvalidOperationException($"Unknown resource reference: {s}"),
     };
 
-    private static IEffectOp BuildStatGuard(JsonElement element, bool negate)
+    private static IEffectOp BuildStatGuard(JsonElement element)
     {
         string selectorStr = element.GetProperty("selector").GetString()!;
         string stat = element.GetProperty("stat").GetString()!;
@@ -565,13 +569,11 @@ public static class EffectYamlLoader
         {
             if (element.TryGetProperty("min", out var minEl))
             {
-                IEffectOp op = new RequireBudgetOp(minEl.GetInt64());
-                return negate ? new NegateGuardOp(op) : op;
+                return new RequireBudgetOp(minEl.GetInt64());
             }
             if (element.TryGetProperty("max", out var maxEl))
             {
-                IEffectOp op = new RequireMaxBudgetOp(maxEl.GetInt64());
-                return negate ? new NegateGuardOp(op) : op;
+                return new RequireMaxBudgetOp(maxEl.GetInt64());
             }
         }
 
@@ -579,22 +581,22 @@ public static class EffectYamlLoader
         {
             if (element.TryGetProperty("max", out var maxEl))
             {
-                IEffectOp op = new GuardTargetAVOp(maxEl.GetInt64());
-                return negate ? new NegateGuardOp(op) : op;
+                return new GuardTargetAVOp(maxEl.GetInt64());
             }
         }
 
         throw new InvalidOperationException($"Unsupported stat guard: selector={selectorStr}, stat={stat}");
     }
 
-    private static IEffectOp BuildCountGuard(JsonElement element, bool negate)
+    private static IEffectOp BuildCountGuard(JsonElement element)
     {
         var selectorEl = element.GetProperty("selector");
         int min = element.TryGetProperty("min", out var minEl) ? minEl.GetInt32() : 1;
         int? max = element.TryGetProperty("max", out var maxEl) ? maxEl.GetInt32() : null;
 
-        // Try to map to existing RequireFactionCountOp for NPC classifier compatibility
-        if (!negate && max is null && selectorEl.ValueKind == JsonValueKind.Object)
+        // NPC classifier 互換のため、faction 限定の count guard は RequireFactionCountOp に集約する。
+        // 反転 (negate) は外側 BuildGuard が NegateGuardOp で被せるため、ここでは関与しない。
+        if (max is null && selectorEl.ValueKind == JsonValueKind.Object)
         {
             string? owner = selectorEl.TryGetProperty("owner", out var ow) ? ow.GetString() : null;
             string? faction = selectorEl.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
@@ -608,10 +610,10 @@ public static class EffectYamlLoader
             }
         }
 
-        return BuildResourceCountGuard(selectorEl, min, max, negate);
+        return BuildResourceCountGuard(selectorEl, min, max);
     }
 
-    private static IEffectOp BuildResourceCountGuard(JsonElement selectorEl, int min, int? max, bool negate)
+    private static IEffectOp BuildResourceCountGuard(JsonElement selectorEl, int min, int? max)
     {
         string? owner = null;
         string? zone = null;
@@ -629,10 +631,10 @@ public static class EffectYamlLoader
         }
 
         return new ResourceCountGuardOp(
-            owner ?? PlayerRefs.Myself, zone, faction, cardTypes, cardIds, min, max, negate);
+            owner ?? PlayerRefs.Myself, zone, faction, cardTypes, cardIds, min, max);
     }
 
-    private static IEffectOp BuildMatchGuard(JsonElement element, bool negate)
+    private static IEffectOp BuildMatchGuard(JsonElement element)
     {
         var selector = ParseMatchSelector(element.GetProperty("selector").GetString()!);
         string? faction = element.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
@@ -647,8 +649,7 @@ public static class EffectYamlLoader
             }
             : null;
 
-        IEffectOp op = new GuardMatchOp(selector, faction, cardTypes, cardIds, ownerIsOpponent);
-        return negate ? new NegateGuardOp(op) : op;
+        return new GuardMatchOp(selector, faction, cardTypes, cardIds, ownerIsOpponent);
     }
 
     private static MatchSelector ParseMatchSelector(string s) => s switch
