@@ -134,7 +134,7 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         var result = handler(MakeContext(state));
 
-        // Guard failure — EffectComposer catches GameRuleException and sets GuardFailed
+        // 発動条件判定失敗 — EffectComposer は GameRuleException を捕捉し GuardFailed をセットする
         result.GuardFailed.Should().BeTrue();
     }
 

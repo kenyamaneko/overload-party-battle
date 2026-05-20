@@ -6,7 +6,7 @@ namespace OverloadParty.Battle.Npc.Strategies;
 
 /// <summary>
 /// リソース / プラットフォームのデプロイ判断。
-/// 維持費上限を超えないよう候補を累積チェックする。
+/// 維持コスト上限を超えないよう候補を累積チェックする。
 /// Attachment / Reactive は責務が違うため別 strategy で扱う。
 /// </summary>
 internal sealed class DeployStrategy
