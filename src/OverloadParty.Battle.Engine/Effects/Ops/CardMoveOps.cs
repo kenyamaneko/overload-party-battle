@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// DrawCardsOp はプレイヤーのデッキからカードを手札に引きます
+/// DrawCardsOp はプレイヤーのリポジトリからカードを手札に引きます
 /// </summary>
 public class DrawCardsOp(int count) : IEffectOp
 {
