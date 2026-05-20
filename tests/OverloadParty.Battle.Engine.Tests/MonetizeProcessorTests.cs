@@ -12,11 +12,11 @@ public class MonetizeProcessorTests
     public MonetizeProcessorTests()
     {
         // Backend compute card: TP=600
-        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
         // Second backend compute card: TP=400
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 400, name: "SmallCompute"));
         // Database card (data type, not compute)
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", subtype: "Database"));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0002", subtype: "Database"));
     }
 
     private static MonetizeRequest MakeReq(params MonetizeDistribution[] dists) =>
@@ -31,7 +31,7 @@ public class MonetizeProcessorTests
     public void Process_BasicMonetize_TransfersInsightToBudget()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
         state.Player1Field.Backend[0] = resource;
         state.SetInsightPool(1, 500);
 
@@ -49,7 +49,7 @@ public class MonetizeProcessorTests
     public void Process_FirstTurn_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 1);
-        state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
+        state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
         state.SetInsightPool(1, 500);
 
         var act = () => MonetizeProcessor.Process(
@@ -78,7 +78,7 @@ public class MonetizeProcessorTests
     public void Process_FrontendCompute_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "fe_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1", faceUp: true);
         state.Player1Field.Frontend[0] = resource;
         state.SetInsightPool(1, 500);
 
@@ -94,7 +94,7 @@ public class MonetizeProcessorTests
     public void Process_NonComputeType_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "NT-0009", instanceId: "be_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0002", instanceId: "be_1", faceUp: true);
         state.Player1Field.Backend[0] = resource;
         state.SetInsightPool(1, 500);
 
@@ -110,7 +110,7 @@ public class MonetizeProcessorTests
     public void Process_ExceedsInsightPool_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
         state.Player1Field.Backend[0] = resource;
         state.SetInsightPool(1, 100);
 
@@ -126,7 +126,7 @@ public class MonetizeProcessorTests
     public void Process_ExceedsThroughputCapacity_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
         state.Player1Field.Backend[0] = resource;
         state.SetInsightPool(1, 5000);
 
@@ -143,7 +143,7 @@ public class MonetizeProcessorTests
     public void Process_NegativeAmount_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
         state.Player1Field.Backend[0] = resource;
         state.SetInsightPool(1, 500);
 
@@ -159,7 +159,7 @@ public class MonetizeProcessorTests
     public void Process_MultipleDistributions_AllApplied()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        var res1 = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "be_1", faceUp: true);
+        var res1 = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
         var res2 = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "be_2", faceUp: true,
             maxTP: 400, currentTP: 400);
         state.Player1Field.Backend[0] = res1;

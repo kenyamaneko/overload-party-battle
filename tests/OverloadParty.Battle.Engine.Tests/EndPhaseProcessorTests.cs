@@ -11,7 +11,7 @@ public class EndPhaseProcessorTests
 
     public EndPhaseProcessorTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
     }
 
     // ─── Phase transition: Main → Battle (one step) ──────────
@@ -118,7 +118,7 @@ public class EndPhaseProcessorTests
             state.Player1Hand.Add(new UndeployedCard
             {
                 InstanceID = $"hand_{i}",
-                CardID = "SH-0001",
+                CardID = "TST-0001",
             });
         }
 
@@ -142,7 +142,7 @@ public class EndPhaseProcessorTests
             state.Player1Hand.Add(new UndeployedCard
             {
                 InstanceID = $"hand_{i}",
-                CardID = "SH-0001",
+                CardID = "TST-0001",
             });
         }
 
@@ -162,7 +162,7 @@ public class EndPhaseProcessorTests
         AddRepoCards(state, 2);
 
         // Place a face-up compute resource (MC=150 at small rank)
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res_1", faceUp: true);
         state.Player1Field.Frontend[0] = resource;
 
         EndPhaseProcessor.Process(state, _game, 1, _cc);
@@ -176,14 +176,14 @@ public class EndPhaseProcessorTests
     [Fact]
     public void Process_EndPhase_ElasticResource_CostPerRequest()
     {
-        _cc.Add(TestFactory.ElasticContainerCard(cardId: "SH-0009"));
+        _cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0002"));
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
         AddRepoCards(state, 2);
 
         // Elastic container: base TP=500, free_tier=500, cost_per_request=10
         // MC = max(0, 500 - 500) * 10 / 100 = 0
         var resource = TestFactory.MakeResource(
-            cardId: "SH-0009", instanceId: "res_1", faceUp: true,
+            cardId: "TST-0002", instanceId: "res_1", faceUp: true,
             maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200);
         state.Player1Field.Frontend[0] = resource;
 
@@ -196,7 +196,7 @@ public class EndPhaseProcessorTests
     [Fact]
     public void Process_EndPhase_ElasticResource_WithBonus_CostsMore()
     {
-        _cc.Add(TestFactory.ElasticContainerCard(cardId: "SH-0009"));
+        _cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0002"));
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
         AddRepoCards(state, 2);
 
@@ -205,7 +205,7 @@ public class EndPhaseProcessorTests
         // scaledStat = 500 * 1 + 300 = 800
         // MC = max(0, 800 - 500) * 10 / 100 = 300 * 10 / 100 = 30
         var resource = TestFactory.MakeResource(
-            cardId: "SH-0009", instanceId: "res_1", faceUp: true,
+            cardId: "TST-0002", instanceId: "res_1", faceUp: true,
             maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200, elasticBonus: 300);
         state.Player1Field.Frontend[0] = resource;
 
@@ -219,13 +219,13 @@ public class EndPhaseProcessorTests
     [Fact]
     public void Process_EndPhase_GeneratesInsightFromBackendData()
     {
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0003", yield: 400));
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
         AddRepoCards(state, 2);
 
         // Place a face-up data resource in backend
         var resource = TestFactory.MakeResource(
-            cardId: "NT-0009", instanceId: "db_1", faceUp: true,
+            cardId: "TST-0003", instanceId: "db_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         state.Player1Field.Backend[0] = resource;
 
@@ -239,13 +239,13 @@ public class EndPhaseProcessorTests
     [Fact]
     public void Process_EndPhase_FaceDownBackendData_NoInsight()
     {
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0003", yield: 400));
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
         AddRepoCards(state, 2);
 
         // Place a face-down data resource in backend
         var resource = TestFactory.MakeResource(
-            cardId: "NT-0009", instanceId: "db_1", faceUp: false, deployLeft: 1,
+            cardId: "TST-0003", instanceId: "db_1", faceUp: false, deployLeft: 1,
             maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
         state.Player1Field.Backend[0] = resource;
 
@@ -260,12 +260,12 @@ public class EndPhaseProcessorTests
     public void Process_EndPhase_ElasticDataResource_GainsElasticIncrement()
     {
         _cc.Add(TestFactory.DataCard(
-            cardId: "NT-0011", yield: 300, elastic: true, elasticIncrement: 50, freeTier: 300));
+            cardId: "TST-0004", yield: 300, elastic: true, elasticIncrement: 50, freeTier: 300));
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
         AddRepoCards(state, 2);
 
         var resource = TestFactory.MakeResource(
-            cardId: "NT-0011", instanceId: "db_1", faceUp: true,
+            cardId: "TST-0004", instanceId: "db_1", faceUp: true,
             maxAV: 800, currentAV: 800, maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
         state.Player1Field.Backend[0] = resource;
 
@@ -282,7 +282,7 @@ public class EndPhaseProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
         AddRepoCards(state, 2);
 
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res_1", faceUp: true);
         resource.TemporaryEffects.Add(new TemporaryEffect
         {
             EffectType = EffectTypes.BuffTP,
@@ -305,7 +305,7 @@ public class EndPhaseProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
         AddRepoCards(state, 2);
 
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "res_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res_1", faceUp: true);
         resource.HasAttacked = true;
         resource.EffectUsedThisTurn = true;
         resource.MonetizedAmount = 100;
@@ -411,7 +411,7 @@ public class EndPhaseProcessorTests
     private static void AddRepoCards(BattleGameState state, long playerNum)
     {
         var repo = state.GetRepository(playerNum);
-        repo.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "SH-0001" });
-        repo.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "SH-0001" });
+        repo.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+        repo.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "TST-0001" });
     }
 }

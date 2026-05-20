@@ -14,9 +14,9 @@ public class EffectRegistryTests
     {
         var registry = new EffectRegistry();
         bool called = false;
-        registry.Register("SH-0001", TriggerType.OnDeploy, _ => { called = true; return new EffectResult(); });
+        registry.Register("TST-0001", TriggerType.OnDeploy, _ => { called = true; return new EffectResult(); });
 
-        var handler = registry.Get("SH-0001", TriggerType.OnDeploy);
+        var handler = registry.Get("TST-0001", TriggerType.OnDeploy);
         handler.Should().NotBeNull();
 
         handler!(null!); // just to verify it's callable
@@ -34,16 +34,16 @@ public class EffectRegistryTests
     public void Has_Registered_ReturnsTrue()
     {
         var registry = new EffectRegistry();
-        registry.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
+        registry.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
 
-        registry.Has("SH-0001", TriggerType.Ignition).Should().BeTrue();
+        registry.Has("TST-0001", TriggerType.Ignition).Should().BeTrue();
     }
 
     [Fact]
     public void Has_Unregistered_ReturnsFalse()
     {
         var registry = new EffectRegistry();
-        registry.Has("SH-0001", TriggerType.Ignition).Should().BeFalse();
+        registry.Has("TST-0001", TriggerType.Ignition).Should().BeFalse();
     }
 
     [Fact]
@@ -51,9 +51,9 @@ public class EffectRegistryTests
     {
         var registry = new EffectRegistry();
         var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
-        registry.RegisterComposed("TK-0020", TriggerType.OnDeploy, ops);
+        registry.RegisterComposed("TST-0002", TriggerType.OnDeploy, ops);
 
-        var reg = registry.GetRegistration("TK-0020", TriggerType.OnDeploy);
+        var reg = registry.GetRegistration("TST-0002", TriggerType.OnDeploy);
         reg.Should().NotBeNull();
         reg!.Ops.Should().NotBeNull();
         reg.Ops.Should().ContainSingle();
@@ -63,11 +63,11 @@ public class EffectRegistryTests
     public void GetEffectInfo_ReturnsClassification()
     {
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TK-0020", TriggerType.OnDeploy,
+        registry.RegisterComposed("TST-0002", TriggerType.OnDeploy,
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)),
             new DrawCardsOp(1));
 
-        var info = registry.GetEffectInfo("TK-0020", TriggerType.OnDeploy);
+        var info = registry.GetEffectInfo("TST-0002", TriggerType.OnDeploy);
         info.Should().NotBeNull();
         info!.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
         info.HasCategory(EffectCategory.Draw).Should().BeTrue();
@@ -77,9 +77,9 @@ public class EffectRegistryTests
     public void GetEffectInfo_NoOps_ReturnsNull()
     {
         var registry = new EffectRegistry();
-        registry.Register("TK-0020", TriggerType.OnDeploy, _ => new EffectResult());
+        registry.Register("TST-0002", TriggerType.OnDeploy, _ => new EffectResult());
 
-        registry.GetEffectInfo("TK-0020", TriggerType.OnDeploy).Should().BeNull();
+        registry.GetEffectInfo("TST-0002", TriggerType.OnDeploy).Should().BeNull();
     }
 
     [Fact]
@@ -91,9 +91,9 @@ public class EffectRegistryTests
             ["use"] = [new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100))],
             ["redis"] = [new DrawCardsOp(1)],
         };
-        registry.RegisterComposed("SH-0006", TriggerType.Ignition, new BranchOnChoiceOp(branches));
+        registry.RegisterComposed("TST-0003", TriggerType.Ignition, new BranchOnChoiceOp(branches));
 
-        var options = registry.GetChoiceOptions("SH-0006", TriggerType.Ignition);
+        var options = registry.GetChoiceOptions("TST-0003", TriggerType.Ignition);
         options.Should().NotBeNull();
         options.Should().HaveCount(2);
         options.Should().Contain("use");
@@ -104,24 +104,24 @@ public class EffectRegistryTests
     public void GetChoiceOptions_NoBranch_ReturnsNull()
     {
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TK-0020", TriggerType.OnDeploy,
+        registry.RegisterComposed("TST-0002", TriggerType.OnDeploy,
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)));
 
-        registry.GetChoiceOptions("TK-0020", TriggerType.OnDeploy).Should().BeNull();
+        registry.GetChoiceOptions("TST-0002", TriggerType.OnDeploy).Should().BeNull();
     }
 
     [Fact]
     public void CardIdsForTrigger_ReturnsMatchingCards()
     {
         var registry = new EffectRegistry();
-        registry.Register("SH-0001", TriggerType.OnDeploy, _ => new EffectResult());
-        registry.Register("SH-0002", TriggerType.OnDeploy, _ => new EffectResult());
-        registry.Register("SH-0002", TriggerType.Ignition, _ => new EffectResult());
+        registry.Register("TST-0001", TriggerType.OnDeploy, _ => new EffectResult());
+        registry.Register("TST-0004", TriggerType.OnDeploy, _ => new EffectResult());
+        registry.Register("TST-0004", TriggerType.Ignition, _ => new EffectResult());
 
         var nos = registry.CardIdsForTrigger(TriggerType.OnDeploy);
         nos.Should().HaveCount(2);
-        nos.Should().Contain("SH-0001");
-        nos.Should().Contain("SH-0002");
+        nos.Should().Contain("TST-0001");
+        nos.Should().Contain("TST-0004");
     }
 
     [Fact]
@@ -130,8 +130,8 @@ public class EffectRegistryTests
         var registry = new EffectRegistry();
         registry.RegistrationCount.Should().Be(0);
 
-        registry.Register("SH-0001", TriggerType.OnDeploy, _ => new EffectResult());
-        registry.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
+        registry.Register("TST-0001", TriggerType.OnDeploy, _ => new EffectResult());
+        registry.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
 
         registry.RegistrationCount.Should().Be(2);
     }
@@ -143,10 +143,10 @@ public class EffectRegistryTests
     public void Register_SameKey_Overwrites()
     {
         var registry = new EffectRegistry();
-        registry.Register("SH-0001", TriggerType.OnDeploy, _ => new EffectResult { CancelAction = false });
-        registry.Register("SH-0001", TriggerType.OnDeploy, _ => new EffectResult { CancelAction = true });
+        registry.Register("TST-0001", TriggerType.OnDeploy, _ => new EffectResult { CancelAction = false });
+        registry.Register("TST-0001", TriggerType.OnDeploy, _ => new EffectResult { CancelAction = true });
 
-        var handler = registry.Get("SH-0001", TriggerType.OnDeploy)!;
+        var handler = registry.Get("TST-0001", TriggerType.OnDeploy)!;
         var result = handler(null!);
         result.CancelAction.Should().BeTrue();
     }

@@ -11,8 +11,8 @@ public class GameStateViewTests
 
     public GameStateViewTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
     }
 
     // ─── PlayerView (own field fully visible) ─────────────────
@@ -25,15 +25,15 @@ public class GameStateViewTests
         state.Player1InsightPool = 200;
 
         // Place a resource on player 1's frontend
-        var res = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "inst_1", faceUp: true);
+        var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_1", faceUp: true);
         state.Player1Field.Frontend[0] = res;
 
         // Give player 1 a hand card
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
 
         // Give player 1 repository and trash
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "SH-0001" });
-        state.Player1Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "SH-0001" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
+        state.Player1Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" });
 
         var result = GameStateView.Build(state, _game, 1, _cc, null);
 
@@ -44,7 +44,7 @@ public class GameStateViewTests
         result.MyView.Field.Frontend[0]!.FaceUp.Should().BeTrue();
         result.MyView.Hand.Should().HaveCount(1);
         result.MyView.Hand[0].InstanceID.Should().Be("h_1");
-        result.MyView.Hand[0].CardID.Should().Be("SH-0001");
+        result.MyView.Hand[0].CardID.Should().Be("TST-0001");
         result.MyView.RepoCount.Should().Be(1);
         result.MyView.TrashCount.Should().Be(1);
         result.MyView.Trash.Should().HaveCount(1);
@@ -56,8 +56,8 @@ public class GameStateViewTests
     public void Build_OpponentView_ShowsHandCountNotCards()
     {
         var state = TestFactory.MakeGameState();
-        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0001" });
-        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_2", CardID = "NT-0009" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_2", CardID = "TST-0002" });
 
         var result = GameStateView.Build(state, _game, 1, _cc, null);
 
@@ -70,7 +70,7 @@ public class GameStateViewTests
     {
         var state = TestFactory.MakeGameState();
         var faceDownRes = TestFactory.MakeResource(
-            cardId: "SH-0001", instanceId: "inst_opp", faceUp: false,
+            cardId: "TST-0001", instanceId: "inst_opp", faceUp: false,
             deployLeft: 1, maxAV: 1400, currentAV: 1400, maxTP: 600, currentTP: 600);
         state.Player2Field.Frontend[0] = faceDownRes;
 
@@ -92,7 +92,7 @@ public class GameStateViewTests
     {
         var state = TestFactory.MakeGameState();
         var faceUpRes = TestFactory.MakeResource(
-            cardId: "SH-0001", instanceId: "inst_opp_up", faceUp: true,
+            cardId: "TST-0001", instanceId: "inst_opp_up", faceUp: true,
             maxAV: 1400, currentAV: 1400, maxTP: 600, currentTP: 600);
         state.Player2Field.Frontend[1] = faceUpRes;
 
@@ -101,7 +101,7 @@ public class GameStateViewTests
         var oppSlot = result.OppView.Field.Frontend[1];
         oppSlot.Should().NotBeNull();
         oppSlot!.FaceUp.Should().BeTrue();
-        oppSlot.CardID.Should().Be("SH-0001");
+        oppSlot.CardID.Should().Be("TST-0001");
         oppSlot.MaxAV.Should().Be(1400);
     }
 
@@ -209,8 +209,8 @@ public class GameStateViewTests
     public void Build_AsPlayer2_SwapsMyViewAndOppView()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "p1_h", CardID = "SH-0001" });
-        state.Player2Hand.Add(new UndeployedCard { InstanceID = "p2_h", CardID = "NT-0009" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "p1_h", CardID = "TST-0001" });
+        state.Player2Hand.Add(new UndeployedCard { InstanceID = "p2_h", CardID = "TST-0002" });
 
         var result = GameStateView.Build(state, _game, 2, _cc, null);
 
@@ -243,9 +243,9 @@ public class GameStateViewTests
     public void Build_OpponentView_ReportsRepoAndTrashCounts()
     {
         var state = TestFactory.MakeGameState();
-        state.Player2Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "SH-0001" });
-        state.Player2Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "SH-0001" });
-        state.Player2Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "SH-0001" });
+        state.Player2Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
+        state.Player2Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "TST-0001" });
+        state.Player2Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" });
 
         var result = GameStateView.Build(state, _game, 1, _cc, null);
 

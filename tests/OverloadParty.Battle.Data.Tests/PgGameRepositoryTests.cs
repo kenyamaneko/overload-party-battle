@@ -42,7 +42,7 @@ public class PgGameRepositoryTests
             Player1Budget = 5000,
             Player1InsightPool = 0,
             Player1Field = new Field(),
-            Player1Hand = [new UndeployedCard { InstanceID = "h1", CardID = "SH-0001" }],
+            Player1Hand = [new UndeployedCard { InstanceID = "h1", CardID = "TST-0001" }],
             Player1Repository = [],
             Player1Trash = [],
             Player1TimeBank = 480,
@@ -122,7 +122,7 @@ public class PgGameRepositoryTests
         got.Player1Budget.Should().Be(5000);
         got.Player2Budget.Should().Be(5000);
         got.Player1Hand.Should().HaveCount(1);
-        got.Player1Hand[0].CardID.Should().Be("SH-0001");
+        got.Player1Hand[0].CardID.Should().Be("TST-0001");
         got.Player1TimeBank.Should().Be(480);
         got.NextInstanceSeq.Should().Be(1);
     }
@@ -190,7 +190,7 @@ public class PgGameRepositoryTests
             PlayerNum = 1,
             EventData = new PlayCardEventData
             {
-                CardId = "SH-0001",
+                CardId = "TST-0001",
                 Zone = "frontend",
                 Index = 0,
             },
@@ -215,7 +215,7 @@ public class PgGameRepositoryTests
         events[0].EventType.Should().Be(EventTypes.PlayCard);
         events[0].PlayerNum.Should().Be(1);
         events[0].EventData.Should().BeOfType<PlayCardEventData>()
-            .Which.CardId.Should().Be("SH-0001");
+            .Which.CardId.Should().Be("TST-0001");
         events[1].SequenceNumber.Should().Be(2);
         events[1].EventType.Should().Be(EventTypes.TurnStart);
         events[1].PlayerNum.Should().BeNull();
@@ -289,7 +289,7 @@ public class PgGameRepositoryTests
         state.Player1Field.Frontend[0] = new DeployedResource
         {
             InstanceID = "inst_0",
-            CardID = "SH-0001",
+            CardID = "TST-0001",
             Rank = Rank.Small,
             FaceUp = true,
             MaxAV = 1400,
@@ -300,7 +300,7 @@ public class PgGameRepositoryTests
         state.Player2Field.Backend[0] = new DeployedResource
         {
             InstanceID = "inst_1",
-            CardID = "NT-0009",
+            CardID = "TST-0002",
             FaceUp = false,
             DeployingTurnsLeft = 1,
             MaxAV = 800,

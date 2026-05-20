@@ -12,7 +12,7 @@ public class UseEffectProcessorTests
 
     public UseEffectProcessorTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 0));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
         _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
     }
 
@@ -23,14 +23,14 @@ public class UseEffectProcessorTests
     {
         bool handlerCalled = false;
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Ignition, ctx =>
+        reg.Register("TST-0001", TriggerType.Ignition, ctx =>
         {
             handlerCalled = true;
             return new EffectResult();
         });
 
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1", faceUp: true);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
         state.Player1Field.Frontend[0] = resource;
 
         var req = new UseEffectRequest { InstanceID = "r_1" };
@@ -44,10 +44,10 @@ public class UseEffectProcessorTests
     public void Process_ResourceEffect_GeneratesActivateEvent()
     {
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
+        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
 
         var req = new UseEffectRequest { InstanceID = "r_1" };
         var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
@@ -61,7 +61,7 @@ public class UseEffectProcessorTests
         var reg = new EffectRegistry(); // nothing registered
 
         var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
 
         var req = new UseEffectRequest { InstanceID = "r_1" };
         var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
@@ -73,10 +73,10 @@ public class UseEffectProcessorTests
     public void Process_EffectAlreadyUsedThisTurn_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
+        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
         resource.EffectUsedThisTurn = true;
         state.Player1Field.Frontend[0] = resource;
 
@@ -90,10 +90,10 @@ public class UseEffectProcessorTests
     public void Process_CannotOperateEffect_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
+        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
         resource.TemporaryEffects.Add(new TemporaryEffect
         {
             EffectType = EffectTypes.CannotOperate,
@@ -113,7 +113,7 @@ public class UseEffectProcessorTests
     public void Process_ResourceNotFound_Throws()
     {
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Ignition, _ => new EffectResult());
+        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
 
         var state = TestFactory.MakeGameState(turn: 2);
         // Nothing on the field
@@ -128,7 +128,7 @@ public class UseEffectProcessorTests
     public void Process_NullEffectRegistry_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
 
         var req = new UseEffectRequest { InstanceID = "r_1" };
         var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, effects: null);
@@ -143,15 +143,15 @@ public class UseEffectProcessorTests
     {
         DeployedResource? capturedTarget = null;
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Ignition, ctx =>
+        reg.Register("TST-0001", TriggerType.Ignition, ctx =>
         {
             capturedTarget = ctx.Target;
             return new EffectResult();
         });
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var source = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
-        var target = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_2");
+        var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
+        var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_2");
         state.Player1Field.Frontend[0] = source;
         state.Player1Field.Frontend[1] = target;
 
@@ -167,15 +167,15 @@ public class UseEffectProcessorTests
     {
         DeployedResource? capturedTarget = null;
         var reg = new EffectRegistry();
-        reg.Register("SH-0001", TriggerType.Ignition, ctx =>
+        reg.Register("TST-0001", TriggerType.Ignition, ctx =>
         {
             capturedTarget = ctx.Target;
             return new EffectResult();
         });
 
         var state = TestFactory.MakeGameState(turn: 2);
-        var source = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r_1");
-        var oppTarget = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "opp_r");
+        var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
+        var oppTarget = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_r");
         state.Player1Field.Frontend[0] = source;
         state.Player2Field.Frontend[0] = oppTarget;
 

@@ -13,8 +13,8 @@ public class GameLogServiceTests
 
     public GameLogServiceTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", name: "えくぼ", mc: 300));
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", name: "TestDB"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", name: "えくぼ", mc: 300));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0002", name: "TestDB"));
         _svc = new GameLogService(_repo, _cc);
     }
 
@@ -34,7 +34,7 @@ public class GameLogServiceTests
             SequenceNumber = 1,
             EventType = ActionTypes.PlayCard,
             PlayerNum = 1,
-            EventData = new PlayCardEventData { CardId = "SH-0001", Zone = "frontend", Index = 0 },
+            EventData = new PlayCardEventData { CardId = "TST-0001", Zone = "frontend", Index = 0 },
         });
         await _repo.AppendEvent(new GameEvent
         {

@@ -14,12 +14,12 @@ public class ResourceHelpersTests
     [Fact]
     public void CreateDeployedResource_ComputeCard_SetsTPAndAV()
     {
-        var card = TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400);
+        var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400);
 
         var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 3);
 
         resource.InstanceID.Should().Be("inst_1");
-        resource.CardID.Should().Be("SH-0001");
+        resource.CardID.Should().Be("TST-0001");
         resource.MaxAV.Should().Be(1400);
         resource.CurrentAV.Should().Be(1400);
         resource.MaxTP.Should().Be(600);
@@ -30,7 +30,7 @@ public class ResourceHelpersTests
     [Fact]
     public void CreateDeployedResource_DataCard_SetsYieldAndAV()
     {
-        var card = TestFactory.DataCard(cardId: "NT-0009", yield: 400, av: 800);
+        var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400, av: 800);
 
         var resource = ResourceHelpers.CreateDeployedResource(card, "inst_2", deployTurn: 1);
 
@@ -46,7 +46,7 @@ public class ResourceHelpersTests
     [InlineData(false)]
     public void CreateDeployedResource_ResizableFlag_SetsRank(bool resizable)
     {
-        var card = TestFactory.ComputeCard(cardId: "SH-0001", resizable: resizable);
+        var card = TestFactory.ComputeCard(cardId: "TST-0001", resizable: resizable);
 
         var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 1);
 
@@ -66,7 +66,7 @@ public class ResourceHelpersTests
     public void CreateDeployedResource_DeployTurns_SetsFaceUpAndTurnsLeft(
         int deployTurns, bool expectedFaceUp, int expectedTurnsLeft)
     {
-        var card = TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: deployTurns);
+        var card = TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: deployTurns);
 
         var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 1);
 
@@ -77,7 +77,7 @@ public class ResourceHelpersTests
     [Fact]
     public void CreateDeployedResource_SetsArtNo()
     {
-        var card = TestFactory.ComputeCard(cardId: "SH-0001");
+        var card = TestFactory.ComputeCard(cardId: "TST-0001");
 
         var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 1, artNo: 42);
 
@@ -192,23 +192,23 @@ public class ResourceHelpersTests
     public void DeployFromHand_RemovesFromHandAndPlacesOnField()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0009", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0003", deployTurns: 0));
 
         var state = TestFactory.MakeGameState();
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "SH-0009", ArtNo = 5 });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0003", ArtNo = 5 });
 
         var field = state.Player1Field;
-        ResourceHelpers.DeployFromHand(state, 1, field, cardId: "SH-0009", cc);
+        ResourceHelpers.DeployFromHand(state, 1, field, cardId: "TST-0003", cc);
 
         state.Player1Hand.Should().BeEmpty();
-        FieldHelpers.AllResources(field).Any(r => r.CardID == "SH-0009").Should().BeTrue();
+        FieldHelpers.AllResources(field).Any(r => r.CardID == "TST-0003").Should().BeTrue();
     }
 
     [Fact]
     public void DeployFromHand_CardNotInHand_Throws()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0003"));
 
         var state = TestFactory.MakeGameState();
         var field = state.Player1Field;
@@ -223,33 +223,33 @@ public class ResourceHelpersTests
     public void DeployFromRepo_RemovesFromRepoAndPlaces()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0019", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0004", deployTurns: 0));
 
         var state = TestFactory.MakeGameState();
-        var repoCard = new UndeployedCard { InstanceID = "r_1", CardID = "SH-0019", ArtNo = 3 };
+        var repoCard = new UndeployedCard { InstanceID = "r_1", CardID = "TST-0004", ArtNo = 3 };
         state.Player1Repository.Add(repoCard);
 
         var field = state.Player1Field;
         ResourceHelpers.DeployFromRepo(state, 1, field, repoCard, overrideAV: 0, cc);
 
         state.Player1Repository.Should().BeEmpty();
-        FieldHelpers.AllResources(field).Any(r => r.CardID == "SH-0019").Should().BeTrue();
+        FieldHelpers.AllResources(field).Any(r => r.CardID == "TST-0004").Should().BeTrue();
     }
 
     [Fact]
     public void DeployFromRepo_WithOverrideAV_SetsMaxAV()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0019", av: 1400, deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0004", av: 1400, deployTurns: 0));
 
         var state = TestFactory.MakeGameState();
-        var repoCard = new UndeployedCard { InstanceID = "r_1", CardID = "SH-0019" };
+        var repoCard = new UndeployedCard { InstanceID = "r_1", CardID = "TST-0004" };
         state.Player1Repository.Add(repoCard);
 
         var field = state.Player1Field;
         ResourceHelpers.DeployFromRepo(state, 1, field, repoCard, overrideAV: 999, cc);
 
-        var deployed = FieldHelpers.AllResources(field).First(r => r.CardID == "SH-0019");
+        var deployed = FieldHelpers.AllResources(field).First(r => r.CardID == "TST-0004");
         deployed.MaxAV.Should().Be(999);
         deployed.Damage.Should().Be(0);
     }
@@ -260,11 +260,11 @@ public class ResourceHelpersTests
     public void DestroyResource_AppliesSLAPenalty()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0009", slaPenalty: 400));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0003", slaPenalty: 400));
 
         var state = TestFactory.MakeGameState(p1Budget: 5000);
         var field = state.Player1Field;
-        var resource = TestFactory.MakeResource(cardId: "SH-0009", instanceId: "inst_1");
+        var resource = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "inst_1");
         field.Frontend[0] = resource;
 
         ResourceHelpers.DestroyResource(state, 1, field, resource, cc);
@@ -276,27 +276,27 @@ public class ResourceHelpersTests
     public void DestroyResource_MovesToTrash()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0003"));
 
         var state = TestFactory.MakeGameState();
         var field = state.Player1Field;
-        var resource = TestFactory.MakeResource(cardId: "SH-0009", instanceId: "inst_1");
+        var resource = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "inst_1");
         field.Frontend[0] = resource;
 
         ResourceHelpers.DestroyResource(state, 1, field, resource, cc);
 
-        state.Player1Trash.Should().Contain(c => c.CardID == "SH-0009");
+        state.Player1Trash.Should().Contain(c => c.CardID == "TST-0003");
     }
 
     [Fact]
     public void DestroyResource_RemovesFromField()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0003"));
 
         var state = TestFactory.MakeGameState();
         var field = state.Player1Field;
-        var resource = TestFactory.MakeResource(cardId: "SH-0009", instanceId: "inst_1");
+        var resource = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "inst_1");
         field.Frontend[0] = resource;
 
         ResourceHelpers.DestroyResource(state, 1, field, resource, cc);
@@ -308,18 +308,18 @@ public class ResourceHelpersTests
     public void DestroyResource_AttachmentsAlsoTrashed()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0003"));
 
         var state = TestFactory.MakeGameState();
         var field = state.Player1Field;
-        var resource = TestFactory.MakeResource(cardId: "SH-0009", instanceId: "inst_1");
+        var resource = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "inst_1");
         field.Frontend[0] = resource;
         field.Support.TryPlace(new DeployedSupport { InstanceID = "att_1", CardID = "TEST-0300", ArtNo = 0, TargetInstanceID = "inst_1" });
         field.Support.TryPlace(new DeployedSupport { InstanceID = "att_2", CardID = "TEST-0301", ArtNo = 0, TargetInstanceID = "inst_1" });
 
         ResourceHelpers.DestroyResource(state, 1, field, resource, cc);
 
-        state.Player1Trash.Select(c => c.CardID).Should().Contain(new[] { "SH-0009", "TEST-0300", "TEST-0301" });
+        state.Player1Trash.Select(c => c.CardID).Should().Contain(new[] { "TST-0003", "TEST-0300", "TEST-0301" });
     }
 
     // ─── ChangeRank ───────────────────────────────────────────
@@ -328,9 +328,9 @@ public class ResourceHelpersTests
     public void ChangeRank_UpdatesRankAndMaxAV()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", av: 1400, tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", av: 1400, tp: 600));
 
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Small);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", rank: Rank.Small);
 
         ResourceHelpers.ChangeRank(resource, Rank.Medium, TestFactory.MakeField(), cc);
 
@@ -342,9 +342,9 @@ public class ResourceHelpersTests
     public void ChangeRank_NonElasticCompute_RecalculatesTP()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, elastic: false));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, elastic: false));
 
-        var resource = TestFactory.MakeResource(cardId: "SH-0001", rank: Rank.Small);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", rank: Rank.Small);
 
         ResourceHelpers.ChangeRank(resource, Rank.Large, TestFactory.MakeField(), cc);
 
@@ -356,9 +356,9 @@ public class ResourceHelpersTests
     public void ChangeRank_NonElasticData_RecalculatesYield()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "NT-0009", yield: 400));
+        cc.Add(TestFactory.DataCard(cardId: "TST-0002", yield: 400));
 
-        var resource = TestFactory.MakeResource(cardId: "NT-0009", rank: Rank.Small, maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+        var resource = TestFactory.MakeResource(cardId: "TST-0002", rank: Rank.Small, maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
 
         ResourceHelpers.ChangeRank(resource, Rank.Medium, TestFactory.MakeField(), cc);
 

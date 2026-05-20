@@ -17,12 +17,12 @@ public class GameServiceTests
 
     public GameServiceTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009"));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
         _engine = new GameEngine(_repo, _cc);
         var npcDeck = Enumerable.Range(0, InitialValues.DeckSize)
-            .Select(_ => new DeckEntry { CardId = "SH-0001", Copies = 1 })
+            .Select(_ => new DeckEntry { CardId = "TST-0001", Copies = 1 })
             .ToList();
         var aiConfigs = new Dictionary<string, AiConfig>
         {
@@ -32,7 +32,7 @@ public class GameServiceTests
         _svc = new GameService(_engine, _repo, _cc, npcRunner, aiConfigs);
     }
 
-    private List<DeckSnapshotCard> MakePlayerCards(string cardId = "SH-0001")
+    private List<DeckSnapshotCard> MakePlayerCards(string cardId = "TST-0001")
     {
         return Enumerable.Range(0, InitialValues.DeckSize)
             .Select(_ => new DeckSnapshotCard { CardId = cardId })
