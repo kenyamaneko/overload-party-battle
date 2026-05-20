@@ -222,11 +222,9 @@ public class CustomEffectRegistry
             return null;
         }
 
-        string? faction = meta.TryGetValue("faction", out var fc) ? fc.GetString() : null;
-        var cardTypes = meta.TryGetValue("card_type", out var ct)
-            ? ct.EnumerateArray().Select(e => e.GetString()!).ToList()
-            : null;
-        long discount = meta.TryGetValue("deploy_discount", out var dc) ? dc.GetInt64() : 0;
+        string? faction = meta.GetStringOrNull("faction");
+        var cardTypes = meta.GetStringListOrNull("card_type");
+        long discount = meta.GetInt64Or("deploy_discount", 0);
 
         return octx =>
         {
@@ -271,9 +269,7 @@ public class CustomEffectRegistry
     /// </summary>
     private static Action<OpContext>? BuildSpotExpiry(Dictionary<string, JsonElement>? meta)
     {
-        int expiryTurns = meta is not null && meta.TryGetValue("turns", out var tEl)
-            ? tEl.GetInt32()
-            : 2;
+        int expiryTurns = meta?.GetInt32Or("turns", 2) ?? 2;
 
         return octx =>
         {
