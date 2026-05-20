@@ -141,7 +141,7 @@ public class AiConfigLoaderTests
                 - card_id: TK-0005
                   priority: 90
                   condition:
-                    selector: { owner: self }
+                    selector: { owner: myself }
                     card_id: [TK-0010]
                     min: 1
                   fallback_priority: 70
@@ -153,7 +153,7 @@ public class AiConfigLoaderTests
         cp.CardId.Should().Be("TK-0005");
         cp.Priority.Should().Be(90);
         cp.FallbackPriority.Should().Be(70);
-        cp.Condition.Selector!.Owner.Should().Be("self");
+        cp.Condition.Selector!.Owner.Should().Be("myself");
         cp.Condition.CardId.Should().Equal("TK-0010");
         cp.Condition.Min.Should().Be(1);
     }
@@ -169,7 +169,7 @@ public class AiConfigLoaderTests
                 condition:
                   turn_min: 6
                   count:
-                    selector: { owner: self }
+                    selector: { owner: myself }
                     min: 3
                 target_selection:
                   attack:
@@ -183,7 +183,7 @@ public class AiConfigLoaderTests
 
         var late = config.GamePhases!.Late!;
         late.Condition.TurnMin.Should().Be(6);
-        late.Condition.Count!.Selector!.Owner.Should().Be("self");
+        late.Condition.Count!.Selector!.Owner.Should().Be("myself");
         late.Condition.Count.Min.Should().Be(3);
         late.TargetSelection!.Attack.Should().NotBeNull();
         late.TargetSelection!.Attack!.OrderBy.Should().Be("tp_desc");
@@ -201,7 +201,7 @@ public class AiConfigLoaderTests
               conditional_family:
                 - family: M
                   condition:
-                    selector: { owner: self, card_type: Data, zone: backend }
+                    selector: { owner: myself, card_type: Data, zone: backend }
                     min: 2
               max_maintenance_ratio: 0.6
               order_by: tp_desc

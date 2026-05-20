@@ -39,7 +39,7 @@ public enum EffectTargetType
     None,
     Choice,
     AllOpp,
-    Self,
+    Myself,
 }
 
 /// <summary>
@@ -284,10 +284,10 @@ public static class EffectClassifier
                 break;
             case AllOwnSelector:
                 info.AddCategory(EffectCategory.AoEDamage);
-                info.TargetType = EffectTargetType.Self;
+                info.TargetType = EffectTargetType.Myself;
                 break;
             case SourceSelector:
-                info.TargetType = EffectTargetType.Self;
+                info.TargetType = EffectTargetType.Myself;
                 break;
             default:
                 info.AddCategory(EffectCategory.SingleDamage);
@@ -303,7 +303,7 @@ public static class EffectClassifier
             case SourceSelector:
             case AllOwnSelector:
                 info.AddCategory(EffectCategory.Buff);
-                info.TargetType = EffectTargetType.Self;
+                info.TargetType = EffectTargetType.Myself;
                 break;
             case ByChoiceSelector bcs:
                 info.AddCategory(bcs.Owner == "opponent" ? EffectCategory.Debuff : EffectCategory.Buff);

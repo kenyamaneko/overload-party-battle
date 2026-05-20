@@ -287,7 +287,7 @@ public class GuardEventOwnerOp(bool isSelf) : IEffectOp
         if (ownerIsSelf != isSelf)
         {
             throw new GameRuleException(
-                $"Event owner is {(ownerIsSelf ? "self" : "opponent")}, expected {(isSelf ? "self" : "opponent")}");
+                $"Event owner is {(ownerIsSelf ? "myself" : "opponent")}, expected {(isSelf ? "myself" : "opponent")}");
         }
     }
 }
@@ -372,7 +372,7 @@ public class ResourceCountGuardOp(
     {
         int total = 0;
 
-        if (owner is "self" or "both")
+        if (owner is "myself" or "both")
         {
             total += CountField(ctx.MyField, ctx.CardCache, ctx.Source);
         }

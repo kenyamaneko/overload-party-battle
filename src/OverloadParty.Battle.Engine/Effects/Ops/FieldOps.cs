@@ -17,7 +17,7 @@ public class DestroyCheckOp(PlayerRef player) : IEffectOp
             return;
         }
 
-        long playerNum = player == PlayerRef.Self ? ctx.PlayerNum : ctx.OpponentNum;
+        long playerNum = player == PlayerRef.Myself ? ctx.PlayerNum : ctx.OpponentNum;
         DestroyZeroed(ctx, playerNum);
     }
 

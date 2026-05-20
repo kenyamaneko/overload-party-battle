@@ -141,7 +141,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self"
+                "owner": "myself"
               },
               "buff": "incident_reduction",
               "amount": 200,
@@ -175,7 +175,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self"
+                "owner": "myself"
               },
               "buff": "sla_penalty_reduction",
               "amount": 100,
@@ -297,7 +297,7 @@
         "ops": [
           {
             "gain_budget": {
-              "target": "self",
+              "target": "myself",
               "amount": 400
             }
           }
@@ -328,7 +328,7 @@
         "ops": [
           {
             "gain_budget": {
-              "target": "self",
+              "target": "myself",
               "amount": 1000
             }
           }
@@ -629,7 +629,7 @@
           },
           {
             "gain_budget": {
-              "target": "self",
+              "target": "myself",
               "amount": 500
             }
           }
@@ -697,7 +697,7 @@
         "guard": [
           {
             "stat": {
-              "selector": "self",
+              "selector": "myself",
               "stat": "budget",
               "min": 200
             }
@@ -706,7 +706,7 @@
         "ops": [
           {
             "lose_budget": {
-              "target": "self",
+              "target": "myself",
               "amount": 200
             }
           },
@@ -867,7 +867,7 @@
           {
             "count": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "card_type": "ObjectStorage"
               },
               "min": 1
@@ -910,7 +910,7 @@
         "guard": [
           {
             "stat": {
-              "selector": "self",
+              "selector": "myself",
               "stat": "budget",
               "max": 1000
             }
@@ -919,7 +919,7 @@
         "ops": [
           {
             "gain_budget": {
-              "target": "self",
+              "target": "myself",
               "amount": 900
             }
           }
@@ -1323,7 +1323,7 @@
           {
             "count": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "SHE",
                 "card_type": "ObjectStorage"
               },
@@ -1373,7 +1373,7 @@
           "use": [
             {
               "gain_budget": {
-                "target": "self",
+                "target": "myself",
                 "amount": 200
               }
             },
@@ -1425,7 +1425,7 @@
                 "base": 0,
                 "per": {
                   "count": {
-                    "owner": "self",
+                    "owner": "myself",
                     "zone": "backend",
                     "faction": "SHE",
                     "card_type": "Database",
@@ -1514,7 +1514,7 @@
         "guard": [
           {
             "stat": {
-              "selector": "self",
+              "selector": "myself",
               "stat": "budget",
               "min": 400
             }
@@ -1523,7 +1523,7 @@
         "ops": [
           {
             "lose_budget": {
-              "target": "self",
+              "target": "myself",
               "amount": 400
             }
           },
@@ -1571,7 +1571,7 @@
           "memcached": [
             {
               "gain_budget": {
-                "target": "self",
+                "target": "myself",
                 "amount": 400
               }
             }
@@ -1613,7 +1613,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "SHE"
               },
               "buff": "scale_cost_reduction",
@@ -1648,7 +1648,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "SHE",
                 "card_type": [
                   "Compute",
@@ -1899,7 +1899,7 @@
           {
             "count": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "SHE"
               },
               "min": 3
@@ -1909,7 +1909,7 @@
         "ops": [
           {
             "gain_budget": {
-              "target": "self",
+              "target": "myself",
               "amount": 600
             }
           }
@@ -1941,7 +1941,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self"
+                "owner": "myself"
               },
               "buff": "deploy_discount",
               "amount": 200,
@@ -2021,7 +2021,7 @@
           {
             "count": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "SHE"
               },
               "min": 3
@@ -2032,7 +2032,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "zone": "frontend",
                 "faction": "SHE"
               },
@@ -2102,7 +2102,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "card_id": "SH-0009"
               },
               "buff": "yield",
@@ -2235,7 +2235,7 @@
           "categories": [
             "cost_reduction"
           ],
-          "target": "self"
+          "target": "myself"
         }
       }
     ]
@@ -2384,7 +2384,7 @@
           {
             "deal_damage": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "zone": "backend"
               },
               "amount": 400
@@ -2392,7 +2392,7 @@
           },
           {
             "destroy_check": {
-              "target": "self"
+              "target": "myself"
             }
           }
         ]
@@ -2559,7 +2559,7 @@
           "memcached": [
             {
               "gain_budget": {
-                "target": "self",
+                "target": "myself",
                 "amount": 400
               }
             }
@@ -2624,7 +2624,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "Sugar"
               },
               "buff": "scale_cost_reduction",
@@ -2659,7 +2659,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "Sugar",
                 "card_type": [
                   "Compute",
@@ -2763,7 +2763,7 @@
           "categories": [
             "single_damage"
           ],
-          "target": "self"
+          "target": "myself"
         }
       }
     ]
@@ -2846,7 +2846,7 @@
           "categories": [
             "utility"
           ],
-          "target": "self"
+          "target": "myself"
         }
       }
     ]
@@ -2905,7 +2905,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "zone": "frontend",
                 "card_type": [
                   "Compute",
@@ -2955,7 +2955,7 @@
                 "base": 400,
                 "per": {
                   "count": {
-                    "owner": "self",
+                    "owner": "myself",
                     "zone": "backend"
                   },
                   "value": 200
@@ -3065,7 +3065,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self"
+                "owner": "myself"
               },
               "buff": "incident_reduction",
               "amount": 50,
@@ -3078,7 +3078,7 @@
           "categories": [
             "defensive"
           ],
-          "target": "self"
+          "target": "myself"
         }
       }
     ]
@@ -3163,7 +3163,7 @@
                 "base": 0,
                 "per": {
                   "count": {
-                    "owner": "self",
+                    "owner": "myself",
                     "zone": "backend",
                     "faction": "Tenki",
                     "card_type": "Data"
@@ -3397,7 +3397,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "Tenki"
               },
               "buff": "scale_cost_reduction",
@@ -3432,7 +3432,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "Tenki",
                 "card_type": [
                   "Compute",
@@ -3896,7 +3896,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self"
+                "owner": "myself"
               },
               "buff": "incident_reduction",
               "amount": 300,
@@ -4018,7 +4018,7 @@
           {
             "count": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "Tuners"
               },
               "max": 3
@@ -4090,7 +4090,7 @@
           {
             "count": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "Tuners",
                 "card_type": [
                   "Database",
@@ -4229,7 +4229,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "Tuners"
               },
               "buff": "scale_cost_reduction",
@@ -4264,7 +4264,7 @@
           {
             "apply_buff": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "faction": "Tuners"
               },
               "buff": "incident_reduction",
@@ -4461,7 +4461,7 @@
           {
             "heal_damage": {
               "selector": {
-                "owner": "self",
+                "owner": "myself",
                 "zone": "backend",
                 "faction": "Tuners",
                 "card_type": "Database",

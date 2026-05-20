@@ -166,10 +166,10 @@ effect_target_types:
 - none
 - choice
 - all_opp
-- self
+- myself
 
 player_refs:
-- self
+- myself
 - opponent
 - both
 

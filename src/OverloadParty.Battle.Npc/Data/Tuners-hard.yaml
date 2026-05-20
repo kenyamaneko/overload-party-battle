@@ -45,7 +45,7 @@ game_phases:
     condition:
       turn_min: 6
       count:
-        selector: { owner: self }
+        selector: { owner: myself }
         min: 3
     target_selection:
       attack:
@@ -113,13 +113,13 @@ effect_priorities:
   buff:
     priority: 45
     condition:
-      selector: { owner: self }
+      selector: { owner: myself }
       min: 1
   heal:
     priority: 50
     condition:
       stat: damage
-      selector: { owner: self }
+      selector: { owner: myself }
       min: 1
   deploy_free: 75
   recover_card: 35
@@ -146,10 +146,10 @@ target_selection:
     selector: { owner: opponent }
     order_by: tp_desc
   buff:
-    selector: { owner: self }
+    selector: { owner: myself }
     order_by: tp_desc
   heal:
-    selector: { owner: self }
+    selector: { owner: myself }
     order_by: damage_desc
 
 scale_up:
@@ -165,12 +165,12 @@ attachments:
   TN-0014:
     priority: 80
     target:
-      selector: { owner: self }
+      selector: { owner: myself }
       order_by: tp_desc
   TN-0015:
     priority: 70
     target:
-      selector: { owner: self }
+      selector: { owner: myself }
       order_by: tp_desc
 
 reactive:

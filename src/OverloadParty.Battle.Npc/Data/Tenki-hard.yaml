@@ -47,7 +47,7 @@ game_phases:
     condition:
       turn_min: 6
       count:
-        selector: { owner: self }
+        selector: { owner: myself }
         min: 3
     target_selection:
       attack:
@@ -74,7 +74,7 @@ deploy:
     - card_id: TK-0005
       priority: 90
       condition:
-        selector: { owner: self }
+        selector: { owner: myself }
         card_id: [TK-0010]
         min: 1
       fallback_priority: 70
@@ -126,13 +126,13 @@ effect_priorities:
   buff:
     priority: 45
     condition:
-      selector: { owner: self }
+      selector: { owner: myself }
       min: 1
   heal:
     priority: 50
     condition:
       stat: damage
-      selector: { owner: self }
+      selector: { owner: myself }
       min: 1
   deploy_free: 75
   recover_card: 35
@@ -159,10 +159,10 @@ target_selection:
     selector: { owner: opponent }
     order_by: tp_desc
   buff:
-    selector: { owner: self }
+    selector: { owner: myself }
     order_by: tp_desc
   heal:
-    selector: { owner: self }
+    selector: { owner: myself }
     order_by: damage_desc
 
 scale_up:
@@ -170,7 +170,7 @@ scale_up:
   conditional_family:
     - family: M
       condition:
-        selector: { owner: self, card_type: Data, zone: backend }
+        selector: { owner: myself, card_type: Data, zone: backend }
         min: 2
   max_maintenance_ratio: 0.6
   order_by: tp_desc
@@ -183,17 +183,17 @@ attachments:
   TK-0015:
     priority: 80
     target:
-      selector: { owner: self }
+      selector: { owner: myself }
       order_by: tp_desc
   TK-0018:
     priority: 70
     target:
-      selector: { owner: self }
+      selector: { owner: myself }
       order_by: tp_desc
   NT-0004:
     priority: 60
     target:
-      selector: { owner: self }
+      selector: { owner: myself }
       order_by: tp_desc
 
 reactive:

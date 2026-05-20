@@ -50,7 +50,7 @@ public class EffectRegistryTests
     public void RegisterComposed_StoresOps_ForClassification()
     {
         var registry = new EffectRegistry();
-        var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)) };
+        var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
         registry.RegisterComposed("TK-0020", TriggerType.OnDeploy, ops);
 
         var reg = registry.GetRegistration("TK-0020", TriggerType.OnDeploy);
@@ -64,7 +64,7 @@ public class EffectRegistryTests
     {
         var registry = new EffectRegistry();
         registry.RegisterComposed("TK-0020", TriggerType.OnDeploy,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)),
             new DrawCardsOp(1));
 
         var info = registry.GetEffectInfo("TK-0020", TriggerType.OnDeploy);
@@ -88,7 +88,7 @@ public class EffectRegistryTests
         var registry = new EffectRegistry();
         var branches = new Dictionary<string, List<IEffectOp>>
         {
-            ["use"] = [new GainBudgetOp(PlayerRef.Self, new StaticAmount(100))],
+            ["use"] = [new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100))],
             ["redis"] = [new DrawCardsOp(1)],
         };
         registry.RegisterComposed("SH-0006", TriggerType.Ignition, new BranchOnChoiceOp(branches));
@@ -105,7 +105,7 @@ public class EffectRegistryTests
     {
         var registry = new EffectRegistry();
         registry.RegisterComposed("TK-0020", TriggerType.OnDeploy,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)));
 
         registry.GetChoiceOptions("TK-0020", TriggerType.OnDeploy).Should().BeNull();
     }

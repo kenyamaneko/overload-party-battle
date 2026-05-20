@@ -99,7 +99,7 @@ public static class GuardChecker
     {
         var field = sel.Owner switch
         {
-            "self" => ctx.Field,
+            "myself" => ctx.Field,
             "opponent" => ctx.OppField,
             var o => throw new InvalidOperationException($"Unknown selector owner: '{o}'"),
         };

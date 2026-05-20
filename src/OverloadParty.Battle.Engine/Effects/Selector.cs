@@ -55,8 +55,8 @@ public class ByChoiceSelector : ISelector
     /// <summary>Card type filter, or null for any type.</summary>
     public string? CardType { get; init; }
 
-    /// <summary>Owner of the target: "self" or "opponent".</summary>
-    public string Owner { get; init; } = "self";
+    /// <summary>Owner of the target: "myself" or "opponent".</summary>
+    public string Owner { get; init; } = "myself";
 
     /// <inheritdoc />
     public List<DeployedResource> Select(OpContext ctx)
