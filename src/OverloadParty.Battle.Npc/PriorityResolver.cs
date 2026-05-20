@@ -86,7 +86,7 @@ public static class PriorityResolver
         EffectCategory cat, EffectInfo info, DecisionContext ctx,
         AiConfig config, ICardCache cc)
     {
-        // リアクティブ / automatic / uncategorized categories — never use proactively
+        // リアクティブ / 自動発動 / 未分類カテゴリ — 能動的には使用しない
         if (cat is EffectCategory.CancelAction
                 or EffectCategory.Survive
                 or EffectCategory.SelfDestruct

@@ -6,7 +6,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Tests.Engine;
 
 /// <summary>
-/// ガード op が条件を満たすときは通過し、満たさないときは例外を投げることを検証します
+/// 発動条件 op が条件を満たすときは通過し、満たさないときは例外を投げることを検証します
 /// </summary>
 public class GuardOpTests
 {
