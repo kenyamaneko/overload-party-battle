@@ -5,7 +5,7 @@ namespace OverloadParty.Battle.Engine.Effects.Ops;
 /// <summary>
 /// PlayerRef は操作の対象プレイヤーを識別します
 /// </summary>
-public enum PlayerRef { Self, Opponent, Both }
+public enum PlayerRef { Myself, Opponent, Both }
 
 /// <summary>
 /// GainBudgetOp はプレイヤーのバジェットを増加させます
@@ -16,7 +16,7 @@ public class GainBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
     public void Execute(OpContext ctx)
     {
         long amount = value.Resolve(ctx);
-        long playerNum = player == PlayerRef.Self ? ctx.PlayerNum : ctx.OpponentNum;
+        long playerNum = player == PlayerRef.Myself ? ctx.PlayerNum : ctx.OpponentNum;
         long budget = ctx.State.GetBudget(playerNum);
         ctx.State.SetBudget(playerNum, budget + amount);
     }
@@ -31,7 +31,7 @@ public class LoseBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
     public void Execute(OpContext ctx)
     {
         long amount = value.Resolve(ctx);
-        long playerNum = player == PlayerRef.Self ? ctx.PlayerNum : ctx.OpponentNum;
+        long playerNum = player == PlayerRef.Myself ? ctx.PlayerNum : ctx.OpponentNum;
         long budget = ctx.State.GetBudget(playerNum);
         ctx.State.SetBudget(playerNum, budget - amount);
     }

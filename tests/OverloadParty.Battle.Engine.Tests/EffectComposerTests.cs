@@ -45,7 +45,7 @@ public class EffectComposerTests
         var state = TestFactory.MakeGameState(p1Budget: 5000);
         var ops = new IEffectOp[]
         {
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)),
         };
 
         var handler = EffectComposer.Compose(ops);
@@ -75,8 +75,8 @@ public class EffectComposerTests
         var state = TestFactory.MakeGameState(p1Budget: 5000);
         var ops = new IEffectOp[]
         {
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(300)),
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(300)),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)),
         };
 
         var handler = EffectComposer.Compose(ops);
@@ -106,7 +106,7 @@ public class EffectComposerTests
         var state = TestFactory.MakeGameState(p1Budget: 5000);
         var ops = new List<IEffectOp>
         {
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(1000)),
         };
 
         var handler = EffectComposer.Compose(ops);

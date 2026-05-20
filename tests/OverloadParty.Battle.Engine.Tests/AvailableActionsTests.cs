@@ -855,7 +855,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("SH-0009", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
@@ -894,7 +894,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("SH-0009", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
@@ -916,7 +916,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("SH-0009", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
@@ -938,7 +938,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TEST-0200", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
@@ -964,7 +964,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TEST-0200", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
@@ -989,7 +989,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TEST-0200", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
@@ -1016,7 +1016,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("SH-0009", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
@@ -1039,7 +1039,7 @@ public class AvailableActionsTests
         var registry = new EffectRegistry();
         registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new RequireBudgetOp(400),
-            new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)));
+            new LoseBudgetOp(PlayerRef.Myself, new StaticAmount(400)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 300);
         var myField = TestFactory.MakeField();
@@ -1060,7 +1060,7 @@ public class AvailableActionsTests
         var registry = new EffectRegistry();
         registry.RegisterComposed("SH-0009", TriggerType.Ignition,
             new RequireBudgetOp(400),
-            new LoseBudgetOp(PlayerRef.Self, new StaticAmount(400)));
+            new LoseBudgetOp(PlayerRef.Myself, new StaticAmount(400)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 500);
         var myField = TestFactory.MakeField();
@@ -1081,7 +1081,7 @@ public class AvailableActionsTests
         var registry = new EffectRegistry();
         registry.RegisterComposed("NT-0026", TriggerType.Ignition,
             new RequireMaxBudgetOp(1000),
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(900)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(900)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 1500);
         var myField = TestFactory.MakeField();
@@ -1102,7 +1102,7 @@ public class AvailableActionsTests
         var registry = new EffectRegistry();
         registry.RegisterComposed("NT-0026", TriggerType.Ignition,
             new RequireMaxBudgetOp(1000),
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(900)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(900)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 800);
         var myField = TestFactory.MakeField();
@@ -1122,7 +1122,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TK-0008", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 0);
         var myField = TestFactory.MakeField();
@@ -1145,7 +1145,7 @@ public class AvailableActionsTests
         var registry = new EffectRegistry();
         registry.RegisterComposed("SL-0004", TriggerType.Ignition,
             new RequireBudgetOp(500),
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(1000)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 200);
         var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "SL-0004" } };
@@ -1165,7 +1165,7 @@ public class AvailableActionsTests
         var registry = new EffectRegistry();
         registry.RegisterComposed("SL-0004", TriggerType.Ignition,
             new RequireBudgetOp(500),
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(1000)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(1000)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 600);
         var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "SL-0004" } };
@@ -1510,7 +1510,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("SH-0009", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)));
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();

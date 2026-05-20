@@ -183,12 +183,12 @@ const (
 	EffectTargetTypeNone = "none"
 	EffectTargetTypeChoice = "choice"
 	EffectTargetTypeAllOpp = "all_opp"
-	EffectTargetTypeSelf = "self"
+	EffectTargetTypeMyself = "myself"
 )
 
 // Player references.
 const (
-	PlayerRefSelf = "self"
+	PlayerRefMyself = "myself"
 	PlayerRefOpponent = "opponent"
 	PlayerRefBoth = "both"
 )

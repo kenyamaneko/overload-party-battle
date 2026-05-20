@@ -187,7 +187,7 @@ public static class TargetSelector
     {
         return sel.Owner switch
         {
-            "self" => selfField,
+            "myself" => selfField,
             "opponent" => oppField,
             var o => throw new InvalidOperationException($"Unknown selector owner: '{o}'"),
         };

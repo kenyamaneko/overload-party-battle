@@ -63,10 +63,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             scale_up:
               instance_family: M
@@ -94,7 +94,7 @@ public class NpcAiTests
                 - card_id: TK-0005
                   priority: 90
                   condition:
-                    selector: { owner: self }
+                    selector: { owner: myself }
                     card_id: [TK-0010]
                     min: 1
                   fallback_priority: 30
@@ -110,10 +110,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             scale_up:
               instance_family: R
@@ -147,17 +147,17 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             scale_up:
               instance_family: R
               conditional_family:
                 - family: M
                   condition:
-                    selector: { owner: self, zone: backend }
+                    selector: { owner: myself, zone: backend }
                     card_type: Data
                     min: 2
               max_maintenance_ratio: 0.6
@@ -614,10 +614,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             scale_up:
               instance_family: M
@@ -715,10 +715,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             scale_up:
               instance_family: M
@@ -862,10 +862,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             effect_priorities: {}
             scale_up:
@@ -924,10 +924,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             effect_priorities: {}
             scale_up:
@@ -974,7 +974,7 @@ public class NpcAiTests
                 condition:
                   turn_min: 6
                   count:
-                    selector: { owner: self }
+                    selector: { owner: myself }
                     min: 3
                 target_selection:
                   attack:
@@ -991,10 +991,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             effect_priorities: {}
             scale_up:
@@ -1073,10 +1073,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             scale_up:
               instance_family: M
@@ -1089,7 +1089,7 @@ public class NpcAiTests
               SH-0022:
                 priority: 80
                 target:
-                  selector: { owner: self }
+                  selector: { owner: myself }
                   order_by: tp_desc
             """;
         var config = AiConfigLoader.LoadFromString(yaml);
@@ -1145,10 +1145,10 @@ public class NpcAiTests
                 selector: { owner: opponent }
                 order_by: tp_desc
               buff:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: tp_desc
               heal:
-                selector: { owner: self }
+                selector: { owner: myself }
                 order_by: damage_desc
             scale_up:
               instance_family: M

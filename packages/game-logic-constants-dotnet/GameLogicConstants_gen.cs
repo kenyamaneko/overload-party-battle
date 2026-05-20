@@ -183,12 +183,12 @@ public static class EffectTargetTypes
     public const string None = "none";
     public const string Choice = "choice";
     public const string AllOpp = "all_opp";
-    public const string Self = "self";
+    public const string Myself = "myself";
 }
 
 public static class PlayerRefs
 {
-    public const string Self = "self";
+    public const string Myself = "myself";
     public const string Opponent = "opponent";
     public const string Both = "both";
 }

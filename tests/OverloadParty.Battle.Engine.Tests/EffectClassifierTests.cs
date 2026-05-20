@@ -15,7 +15,7 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_GainBudget()
     {
-        var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)) };
+        var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
         info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
@@ -82,7 +82,7 @@ public class EffectClassifierTests
         var ops = new IEffectOp[] { new DealDamageOp(SourceSelector.Instance, new StaticAmount(100)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
-        info.TargetType.Should().Be(EffectTargetType.Self);
+        info.TargetType.Should().Be(EffectTargetType.Myself);
     }
 
     // ─── Buff / Debuff ────────────────────────────────────────
@@ -94,7 +94,7 @@ public class EffectClassifierTests
         var info = EffectClassifier.ClassifyOps(ops);
 
         info.HasCategory(EffectCategory.Buff).Should().BeTrue();
-        info.TargetType.Should().Be(EffectTargetType.Self);
+        info.TargetType.Should().Be(EffectTargetType.Myself);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_RequireBudget_AddsCondition()
     {
-        var ops = new IEffectOp[] { new RequireBudgetOp(1000), new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)) };
+        var ops = new IEffectOp[] { new RequireBudgetOp(1000), new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
         var info = EffectClassifier.ClassifyOps(ops);
 
         info.Conditions.Should().ContainSingle();
@@ -217,7 +217,7 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_IfCondition_MergesThenBranch()
     {
-        var then = new List<IEffectOp> { new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)) };
+        var then = new List<IEffectOp> { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
         var ops = new IEffectOp[] { new IfConditionOp(_ => true, then) };
         var info = EffectClassifier.ClassifyOps(ops);
 
@@ -234,7 +234,7 @@ public class EffectClassifierTests
             new CustomFnTaggedOp(_ => { })
             {
                 Categories = [EffectCategory.Draw, EffectCategory.Search],
-                Target = EffectTargetType.Self,
+                Target = EffectTargetType.Myself,
                 Zone = Zones.Backend,
             }
         };
@@ -242,7 +242,7 @@ public class EffectClassifierTests
 
         info.HasCategory(EffectCategory.Draw).Should().BeTrue();
         info.HasCategory(EffectCategory.Search).Should().BeTrue();
-        info.TargetType.Should().Be(EffectTargetType.Self);
+        info.TargetType.Should().Be(EffectTargetType.Myself);
         info.TargetZone.Should().Be(Zones.Backend);
     }
 
@@ -253,7 +253,7 @@ public class EffectClassifierTests
     {
         var ops = new IEffectOp[]
         {
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(500)),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)),
             new DrawCardsOp(1),
             new HealDamageOp(SourceSelector.Instance, new StaticAmount(200)),
         };
@@ -273,8 +273,8 @@ public class EffectClassifierTests
     {
         var ops = new IEffectOp[]
         {
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(100)),
-            new GainBudgetOp(PlayerRef.Self, new StaticAmount(200)),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100)),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)),
         };
         var info = EffectClassifier.ClassifyOps(ops);
 

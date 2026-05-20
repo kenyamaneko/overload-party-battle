@@ -374,7 +374,7 @@ public static class EffectYamlLoader
             string? pick = element.TryGetProperty("pick", out var pk) ? pk.GetString() : SelectorPickModes.All;
             if (pick == SelectorPickModes.Choice)
             {
-                string? owner = element.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
+                string? owner = element.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Myself;
                 string? zone = element.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
                 string? faction = element.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
                 var cardTypes = ParseCardTypes(element);
@@ -384,7 +384,7 @@ public static class EffectYamlLoader
                     Zone = zone,
                     Faction = faction,
                     CardType = cardTypes is { Count: 1 } ? cardTypes[0] : null,
-                    Owner = owner ?? PlayerRefs.Self,
+                    Owner = owner ?? PlayerRefs.Myself,
                 };
             }
         }
@@ -404,7 +404,7 @@ public static class EffectYamlLoader
             };
         }
 
-        string? owner = element.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
+        string? owner = element.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Myself;
         string? zone = element.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
         string? faction = element.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
         bool excludeSource = element.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
@@ -412,7 +412,7 @@ public static class EffectYamlLoader
 
         ISelector selector = owner switch
         {
-            PlayerRefs.Self => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
+            PlayerRefs.Myself => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
             PlayerRefs.Opponent => new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
             PlayerRefs.Both => new UnionSelector(
                 new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
@@ -521,7 +521,7 @@ public static class EffectYamlLoader
         {
             bool isSelf = ownerEl.GetString() switch
             {
-                PlayerRefs.Self => true,
+                PlayerRefs.Myself => true,
                 PlayerRefs.Opponent => false,
                 _ => throw new InvalidOperationException($"Unknown event_owner: {ownerEl.GetString()}"),
             };
@@ -558,7 +558,7 @@ public static class EffectYamlLoader
         string selectorStr = element.GetProperty("selector").GetString()!;
         string stat = element.GetProperty("stat").GetString()!;
 
-        if (selectorStr == "self" && stat == "budget")
+        if (selectorStr == "myself" && stat == "budget")
         {
             if (element.TryGetProperty("min", out var minEl))
             {
@@ -599,7 +599,7 @@ public static class EffectYamlLoader
             bool hasCardType = selectorEl.TryGetProperty("card_type", out _);
             bool hasCardId = selectorEl.TryGetProperty("card_id", out _);
 
-            if (owner == PlayerRefs.Self && faction is not null && !hasZone && !hasCardType && !hasCardId)
+            if (owner == PlayerRefs.Myself && faction is not null && !hasZone && !hasCardType && !hasCardId)
             {
                 return new RequireFactionCountOp(faction, min);
             }
@@ -618,7 +618,7 @@ public static class EffectYamlLoader
 
         if (selectorEl.ValueKind == JsonValueKind.Object)
         {
-            owner = selectorEl.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
+            owner = selectorEl.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Myself;
             zone = selectorEl.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
             faction = selectorEl.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
             cardTypes = ParseCardTypes(selectorEl);
@@ -626,7 +626,7 @@ public static class EffectYamlLoader
         }
 
         return new ResourceCountGuardOp(
-            owner ?? PlayerRefs.Self, zone, faction, cardTypes, cardIds, min, max, negate);
+            owner ?? PlayerRefs.Myself, zone, faction, cardTypes, cardIds, min, max, negate);
     }
 
     private static IEffectOp BuildMatchGuard(JsonElement element, bool negate)
@@ -638,7 +638,7 @@ public static class EffectYamlLoader
         bool? ownerIsOpponent = element.TryGetProperty("owner", out var ow)
             ? ow.GetString() switch
             {
-                PlayerRefs.Self => false,
+                PlayerRefs.Myself => false,
                 PlayerRefs.Opponent => true,
                 _ => throw new InvalidOperationException($"Unknown match owner: {ow.GetString()}"),
             }
@@ -710,7 +710,7 @@ public static class EffectYamlLoader
 
     private static PlayerRef ParsePlayerRef(string s) => s switch
     {
-        PlayerRefs.Self => PlayerRef.Self,
+        PlayerRefs.Myself => PlayerRef.Myself,
         PlayerRefs.Opponent => PlayerRef.Opponent,
         PlayerRefs.Both => PlayerRef.Both,
         _ => throw new InvalidOperationException($"Unknown player ref: {s}"),
@@ -815,7 +815,7 @@ public static class EffectYamlLoader
         EffectTargetTypes.None => EffectTargetType.None,
         EffectTargetTypes.Choice => EffectTargetType.Choice,
         EffectTargetTypes.AllOpp => EffectTargetType.AllOpp,
-        EffectTargetTypes.Self => EffectTargetType.Self,
+        EffectTargetTypes.Myself => EffectTargetType.Myself,
         _ => throw new InvalidOperationException($"Unknown effect target type: {s}"),
     };
 }

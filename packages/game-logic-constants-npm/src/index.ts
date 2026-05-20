@@ -36,10 +36,10 @@ export type CustomEffect = (typeof CUSTOM_EFFECTS)[number];
 export const EFFECT_CATEGORIES = ["budget_gain", "budget_penalty", "insight_absorb", "insight_gain", "single_damage", "aoe_damage", "buff", "debuff", "heal", "draw", "search", "deploy_free", "recover_card", "reveal_reactive", "destroy_platform", "cancel_action", "survive"] as const;
 export type EffectCategory = (typeof EFFECT_CATEGORIES)[number];
 
-export const EFFECT_TARGET_TYPES = ["none", "choice", "all_opp", "self"] as const;
+export const EFFECT_TARGET_TYPES = ["none", "choice", "all_opp", "myself"] as const;
 export type EffectTargetType = (typeof EFFECT_TARGET_TYPES)[number];
 
-export const PLAYER_REFS = ["self", "opponent", "both"] as const;
+export const PLAYER_REFS = ["myself", "opponent", "both"] as const;
 export type PlayerRef = (typeof PLAYER_REFS)[number];
 
 export const USE_LIMITS = ["once_per_turn", "once_per_game"] as const;
