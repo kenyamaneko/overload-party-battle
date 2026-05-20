@@ -109,9 +109,8 @@ public static class EventTriggerFiring
                 ReactiveCard.Consume(state, reactive, candidate.OwnerNum);
             }
 
-            // アクションがキャンセルされたら後続候補は発火しない。
-            // 後続トリガーは「同じアクションを契機に発動する」ので、その契機が無効化されたら
-            // 発動対象を失う (TCG 一般の counter / negate semantics)。
+            // アクションがキャンセルされたら、同じイベントを契機とする後続の効果は発火しない。
+            // キャンセルでアクションが「発生しなかった」扱いになり、後続効果は発動契機を失う。
             if (result.CancelAction)
             {
                 cancelled = true;
