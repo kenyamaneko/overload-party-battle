@@ -351,14 +351,14 @@ public class ResourceCountGuardOp(
     string? faction,
     List<string>? cardTypes,
     List<string>? cardIds,
-    int min,
+    int? min,
     int? max) : IEffectOp
 {
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         int count = CountResources(ctx);
-        bool satisfied = count >= min && (max is null || count <= max);
+        bool satisfied = (min is null || count >= min) && (max is null || count <= max);
 
         if (!satisfied)
         {
