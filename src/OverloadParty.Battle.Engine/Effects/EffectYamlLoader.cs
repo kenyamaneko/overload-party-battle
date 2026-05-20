@@ -589,13 +589,10 @@ public static class EffectYamlLoader
     private static IEffectOp BuildCountGuard(JsonElement element)
     {
         var selectorElement = element.GetProperty("selector");
-        // min / max とも省略可。省略側は条件を課さない (= -∞ または +∞ と同等)。
         int? min = element.GetInt32OrNull("min");
         int? max = element.GetInt32OrNull("max");
 
-        // NPC classifier 互換のため、min 指定のみ + faction 限定 selector の count guard は
-        // RequireFactionCountOp に集約する。RequireFactionCountOp は min を非 nullable で要求する。
-        // 反転 (negate) は外側 BuildGuard が NegateGuardOp で被せるため、ここでは関与しない。
+        // NPC classifier が認識できる形 (RequireFactionCountOp) に寄せられるパターンは shortcut で集約する。
         if (min.HasValue && max is null && selectorElement.ValueKind == JsonValueKind.Object)
         {
             string? owner = selectorElement.GetStringOrNull("owner");
