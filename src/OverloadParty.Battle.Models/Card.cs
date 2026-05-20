@@ -64,7 +64,7 @@ public class CardDefinition
     public long BaseAvailability => ComputeStats?.Availability ?? DataStats?.Availability ?? 0;
 
     /// <summary>
-    /// MaintenanceCost は Compute または Data の維持費を返します
+    /// MaintenanceCost は Compute または Data の維持コストを返します
     /// </summary>
     public long MaintenanceCost => ComputeStats?.MaintenanceCost ?? DataStats?.MaintenanceCost ?? 0;
 

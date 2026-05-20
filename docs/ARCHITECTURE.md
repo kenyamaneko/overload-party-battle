@@ -31,7 +31,7 @@ draw → yield → main → battle → end → (ActivePlayer切替) → draw ...
 | 手順 | 処理 | 実装関数 / 備考 |
 |------|------|------|
 | 1 | Passive / OnEndPhase 効果の発火 | `FirePassiveEffects` — フィールドのカードを `DeployOrder` 昇順で走査し、`TriggerType.Passive` / `OnEndPhase` ハンドラを実行 |
-| 2 | 維持費徴収 | `CollectMaintenanceCost` — 全表向きリソースの維持費を合算し budget から減算（Elastic カードは `BaseThroughput/Yield * RankMultiplier + ElasticBonus` を超過した分のみ従量課金） |
+| 2 | 維持コスト徴収 | `CollectMaintenanceCost` — 全表向きリソースの維持コストを合算し budget から減算（Elastic カードは `BaseThroughput/Yield * RankMultiplier + ElasticBonus` を超過した分のみ従量課金） |
 | 3 | Insight 生成 & Elastic ボーナス累積 | `GenerateInsight` — バックエンドの Data 系リソースが `StatCalculator.CalculateEffectiveInsight` で yield を計算し Insight プールに加算。続けて `StatCalculator.ApplyElasticBonus` で `ElasticBonus` を `elasticIncrement` ぶん**累積**（リセットではない。逓減は `EffectiveElasticBonus` が対数スケールで処理） |
 | 4 | 一時効果の終了 | `ExpireTemporaryEffects` — `duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
 | 5 | ターン単位フラグのリセット | `ResetPerTurnFlags` — `HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |

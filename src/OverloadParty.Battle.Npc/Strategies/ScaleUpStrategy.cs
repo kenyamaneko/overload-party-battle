@@ -5,7 +5,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Npc.Strategies;
 
 /// <summary>
-/// スケールアップの実行判断。維持費上限を超えないように累積確認する。
+/// スケールアップの実行判断。維持コスト上限を超えないように累積確認する。
 /// </summary>
 internal sealed class ScaleUpStrategy
 {

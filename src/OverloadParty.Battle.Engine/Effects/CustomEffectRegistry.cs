@@ -332,7 +332,7 @@ public class CustomEffectRegistry
             throw new GameRuleException("Source attacked last turn");
         }
 
-        // Elastic カードの維持費を算出して同額の reduction を付与
+        // Elastic カードの維持コストを算出して同額の reduction を付与
         var card = octx.CardCache.MustGet(octx.Source.CardID);
         long intrinsic = card.IsComputeType ? card.BaseThroughput : card.BaseYield;
         long scaledStat = intrinsic * BattleConstants.RankMultiplier(octx.Source.Rank) + octx.Source.ElasticBonus;

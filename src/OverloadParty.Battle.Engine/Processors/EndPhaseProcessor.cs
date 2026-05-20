@@ -4,7 +4,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// EndPhaseProcessor はフェーズ進行とターン終了ロジック（維持費・インサイト生成・ターン交代）を処理します
+/// EndPhaseProcessor はフェーズ進行とターン終了ロジック（維持コスト・インサイト生成・ターン交代）を処理します
 /// </summary>
 public static class EndPhaseProcessor
 {
