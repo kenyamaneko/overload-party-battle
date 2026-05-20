@@ -13,7 +13,7 @@ public class CustomEffectRegistry
     private readonly Dictionary<string, Func<Dictionary<string, JsonElement>?, Action<OpContext>?>> _factories = new()
     {
         // Phase 2-2: 既存カスタム（EffectInit から移行）
-        [CustomEffects.ChainAttackBonus] = _ => ChainAttackBonus,
+        [CustomEffects.ChainAttackBonus] = BuildChainAttackBonus,
         [CustomEffects.DeploySameTypeFromHand] = _ => DeploySameTypeFromHand,
         [CustomEffects.DisableHighTpDeploy] = _ => DisableHighTpDeploy,
         [CustomEffects.CancelNthDeploy] = _ => CancelNthDeploy,
@@ -54,31 +54,39 @@ public class CustomEffectRegistry
     // ================================================================
 
     /// <summary>
-    /// If another Sugar Compute is on own frontend, deal 200 bonus damage to target.
+    /// 他の自分の しゅがーらぼ コンピュート系リソースが自分のフロントエンドに居る場合、対象に追加ダメージを与える。
+    /// meta: { damage }
     /// </summary>
-    /// <param name="octx">効果実行コンテキスト。</param>
-    public static void ChainAttackBonus(OpContext octx)
+    /// <param name="meta">カード定義由来の追加ダメージ量。</param>
+    /// <returns>構築した効果関数。meta に damage が欠ける場合は null。</returns>
+    private static Action<OpContext>? BuildChainAttackBonus(Dictionary<string, JsonElement>? meta)
     {
-        if (octx.Target is null)
+        if (meta is null || !meta.TryGetValue("damage", out var damageEl))
         {
-            return;
+            return null;
         }
+        long damage = damageEl.GetInt64();
 
-        var ally = octx.MyField.Frontend
-            .Where(r => r.InstanceID != octx.Source?.InstanceID)
-            .FirstOrDefault(r =>
+        return octx =>
+        {
+            if (octx.Target is null)
             {
-                var card = octx.CardCache.MustGet(r.CardID);
-                return card.Faction == Factions.Sugar && card.IsComputeType;
-            });
-        if (ally is not null)
-        {
-            DamageApplication.Apply(octx, octx.Target, ChainAttackBonusDamage);
-        }
-    }
+                return;
+            }
 
-    /// <summary>Bonus damage dealt when a Sugar Compute ally backs the attack.</summary>
-    private const long ChainAttackBonusDamage = 200;
+            var ally = octx.MyField.Frontend
+                .Where(r => r.InstanceID != octx.Source?.InstanceID)
+                .FirstOrDefault(r =>
+                {
+                    var card = octx.CardCache.MustGet(r.CardID);
+                    return card.Faction == Factions.Sugar && card.IsComputeType;
+                });
+            if (ally is not null)
+            {
+                DamageApplication.Apply(octx, octx.Target, damage);
+            }
+        };
+    }
 
     /// <summary>
     /// Validate choice card type matches destroyed target's type, request slot selection for deploy.
