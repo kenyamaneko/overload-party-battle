@@ -13,12 +13,12 @@ public class NpcAiTests
 
     public NpcAiTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", tp: 600, av: 1400, mc: 150));
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-4005", tp: 500, av: 1200, mc: 120));
-        _cc.Add(TestFactory.DataCard(cardId: "TST-1009", subtype: "Database", yield: 400, av: 800, mc: 100));
-        _cc.Add(TestFactory.DataCard(cardId: "TST-4010", subtype: "Database", yield: 300, av: 600, mc: 80));
-        _cc.Add(TestFactory.PlatformCard(cardId: "TST-1023", name: "TestPlatform"));
-        _cc.Add(TestFactory.AttachmentCard(cardId: "TST-2022", name: "TestAttachment"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, mc: 150));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0002", tp: 500, av: 1200, mc: 120));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0003", subtype: "Database", yield: 400, av: 800, mc: 100));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0004", subtype: "Database", yield: 300, av: 600, mc: 80));
+        _cc.Add(TestFactory.PlatformCard(cardId: "TST-0005", name: "TestPlatform"));
+        _cc.Add(TestFactory.AttachmentCard(cardId: "TST-0006", name: "TestAttachment"));
     }
 
     private static AiConfig MakeConfig()
@@ -31,7 +31,7 @@ public class NpcAiTests
               maintenance_limit_ratio: 0.8
             deploy:
               priorities:
-                - card_id: TST-2001
+                - card_id: TST-0001
                   priority: 80
                 - card_type: Compute
                   priority: 50
@@ -40,7 +40,7 @@ public class NpcAiTests
                 - card_type: Platform
                   priority: 30
               choices:
-                TST-2006: use
+                TST-0007: use
               zone_preferences:
                 Compute: [frontend, backend]
                 Data: [backend]
@@ -91,11 +91,11 @@ public class NpcAiTests
                 - card_type: Compute
                   priority: 50
               conditional_priorities:
-                - card_id: TST-4005
+                - card_id: TST-0002
                   priority: 90
                   condition:
                     selector: { owner: myself }
-                    card_id: [TST-4010]
+                    card_id: [TST-0004]
                     min: 1
                   fallback_priority: 30
             effect_priorities: {}
@@ -180,9 +180,9 @@ public class NpcAiTests
         var state = TestFactory.MakeGameState(phase: Phase.End);
         state.Player1Hand =
         [
-            new() { InstanceID = "h_sh1", CardID = "TST-2001" },  // card_id pri 80 → kept
-            new() { InstanceID = "h_tk5", CardID = "TST-4005" },  // compute pri 50 → discarded
-            new() { InstanceID = "h_nt9", CardID = "TST-1009" },  // data pri 40 → discarded
+            new() { InstanceID = "h_sh1", CardID = "TST-0001" },  // card_id pri 80 → kept
+            new() { InstanceID = "h_tk5", CardID = "TST-0002" },  // compute pri 50 → discarded
+            new() { InstanceID = "h_nt9", CardID = "TST-0003" },  // data pri 40 → discarded
         ];
 
         var discards = ai.DecideDiscard(state, 1, 2);
@@ -233,9 +233,9 @@ public class NpcAiTests
 
         var state = TestFactory.MakeGameState(phase: Phase.Battle);
         state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "low_tp", currentTP: 200, maxAV: 2000);
+            cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 2000);
         state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "high_tp", currentTP: 900, maxAV: 400);
+            cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 400);
 
         var available = new List<AvailableAction>
         {
@@ -329,20 +329,20 @@ public class NpcAiTests
     [Fact]
     public void Deploy_CardIdPriority_TakesPrecedenceOverCardType()
     {
-        // config: TST-2001 card_id=80, compute card_type=50
-        // TST-2001 is compute, should get 80 not 50
+        // config: TST-0001 card_id=80, compute card_type=50
+        // TST-0001 is compute, should get 80 not 50
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         state.Player1Hand =
         [
-            new() { InstanceID = "h_tk5", CardID = "TST-4005" },  // compute, no card_id match → 50
-            new() { InstanceID = "h_sh1", CardID = "TST-2001" },  // compute, card_id match → 80
+            new() { InstanceID = "h_tk5", CardID = "TST-0002" },  // compute, no card_id match → 50
+            new() { InstanceID = "h_sh1", CardID = "TST-0001" },  // compute, card_id match → 80
         ];
 
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_tk5", CardID = "TST-4005", ValidZones = ["frontend_1"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-2001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_tk5", CardID = "TST-0002", ValidZones = ["frontend_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
@@ -366,19 +366,19 @@ public class NpcAiTests
         state.Player1Hand =
         [
             new() { InstanceID = "h_weird", CardID = "WEIRD-001" },
-            new() { InstanceID = "h_sh1", CardID = "TST-2001" },
+            new() { InstanceID = "h_sh1", CardID = "TST-0001" },
         ];
 
         var available = new List<AvailableAction>
         {
             new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_weird", CardID = "WEIRD-001", ValidZones = ["frontend_1"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-2001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // TST-2001 (pri=80) should come before WEIRD-001 (pri=0)
+        // TST-0001 (pri=80) should come before WEIRD-001 (pri=0)
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
     }
@@ -389,23 +389,23 @@ public class NpcAiTests
         var ai = new NpcAi(MakeConditionalPriorityConfig(), _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-4010", instanceId: "cosmo_1");
+        state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0004", instanceId: "cosmo_1");
         state.Player1Hand =
         [
-            new() { InstanceID = "hand_sh1", CardID = "TST-2001" },
-            new() { InstanceID = "hand_tk5", CardID = "TST-4005" },
+            new() { InstanceID = "hand_sh1", CardID = "TST-0001" },
+            new() { InstanceID = "hand_tk5", CardID = "TST-0002" },
         ];
 
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-2001", ValidZones = ["frontend_1"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-4005", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = ["frontend_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = ["frontend_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // TST-4005 (conditional 90) before TST-2001 (50)
+        // TST-0002 (conditional 90) before TST-0001 (50)
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_tk5");
     }
@@ -415,24 +415,24 @@ public class NpcAiTests
     {
         var ai = new NpcAi(MakeConditionalPriorityConfig(), _cc, _effects);
 
-        // NO TST-4010 on field → fallback_priority=30
+        // NO TST-0004 on field → fallback_priority=30
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         state.Player1Hand =
         [
-            new() { InstanceID = "hand_sh1", CardID = "TST-2001" },
-            new() { InstanceID = "hand_tk5", CardID = "TST-4005" },
+            new() { InstanceID = "hand_sh1", CardID = "TST-0001" },
+            new() { InstanceID = "hand_tk5", CardID = "TST-0002" },
         ];
 
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-2001", ValidZones = ["frontend_0"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-4005", ValidZones = ["frontend_1"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = ["frontend_1"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // TST-2001 (50) before TST-4005 (fallback 30)
+        // TST-0001 (50) before TST-0002 (fallback 30)
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_sh1");
     }
@@ -444,16 +444,16 @@ public class NpcAiTests
     [Fact]
     public void Deploy_Choice_UsesConfigValue()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2006", tp: 400, av: 1000));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0007", tp: 400, av: 1000));
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
         var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_0006", CardID = "TST-2006" }];
+        state.Player1Hand = [new() { InstanceID = "h_0006", CardID = "TST-0007" }];
 
         var available = new List<AvailableAction>
         {
             new()
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_0006", CardID = "TST-2006",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_0006", CardID = "TST-0007",
                 ValidZones = ["frontend_0"], ChoiceOptions = ["use", "reserve"],
             },
         };
@@ -498,13 +498,13 @@ public class NpcAiTests
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
         var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_sh1", CardID = "TST-2001" }];
+        state.Player1Hand = [new() { InstanceID = "h_sh1", CardID = "TST-0001" }];
 
         var available = new List<AvailableAction>
         {
             new()
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-2001",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001",
                 ValidZones = ["backend_0", "frontend_0"],
             },
         };
@@ -521,13 +521,13 @@ public class NpcAiTests
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
         var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_db", CardID = "TST-1009" }];
+        state.Player1Hand = [new() { InstanceID = "h_db", CardID = "TST-0003" }];
 
         var available = new List<AvailableAction>
         {
             new()
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_db", CardID = "TST-1009",
+                Type = ActionTypes.PlayCard, HandInstanceID = "h_db", CardID = "TST-0003",
                 ValidZones = ["frontend_0", "backend_0"],
             },
         };
@@ -551,9 +551,9 @@ public class NpcAiTests
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         // 2 data cards in backend → condition met
         state.Player1Field.Backend[0] = TestFactory.MakeResource(
-            cardId: "TST-1009", instanceId: "db1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+            cardId: "TST-0003", instanceId: "db1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
         state.Player1Field.Backend[1] = TestFactory.MakeResource(
-            cardId: "TST-4010", instanceId: "db2", maxTP: null, currentTP: null, maxYield: 300, currentYield: 300);
+            cardId: "TST-0004", instanceId: "db2", maxTP: null, currentTP: null, maxYield: 300, currentYield: 300);
 
         var available = new List<AvailableAction>
         {
@@ -574,7 +574,7 @@ public class NpcAiTests
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         // Only 1 data card → condition NOT met
         state.Player1Field.Backend[0] = TestFactory.MakeResource(
-            cardId: "TST-1009", instanceId: "db1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+            cardId: "TST-0003", instanceId: "db1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
 
         var available = new List<AvailableAction>
         {
@@ -674,9 +674,9 @@ public class NpcAiTests
         state.Player1InsightPool = 1000;
         // res_high has TP=600, res_low has TP=200
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "res_high", currentTP: 600);
+            cardId: "TST-0001", instanceId: "res_high", currentTP: 600);
         state.Player1Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "res_low", currentTP: 200);
+            cardId: "TST-0001", instanceId: "res_low", currentTP: 200);
 
         var available = new List<AvailableAction>
         {
@@ -734,9 +734,9 @@ public class NpcAiTests
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         state.Player1InsightPool = 1000;
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "res_a", currentTP: 600);
+            cardId: "TST-0001", instanceId: "res_a", currentTP: 600);
         state.Player1Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "res_b", currentTP: 400);
+            cardId: "TST-0001", instanceId: "res_b", currentTP: 400);
 
         var available = new List<AvailableAction>
         {
@@ -763,7 +763,7 @@ public class NpcAiTests
         // No monetize actions in available
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-2001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
@@ -881,9 +881,9 @@ public class NpcAiTests
 
         var state = TestFactory.MakeGameState(turn: 8, phase: Phase.Battle);
         state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "low_tp", currentTP: 200, maxAV: 2000);
+            cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 2000);
         state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "high_tp", currentTP: 900, maxAV: 400);
+            cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 400);
 
         var available = new List<AvailableAction>
         {
@@ -944,9 +944,9 @@ public class NpcAiTests
         // Turn 3 → late condition NOT met
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "low_tp", currentTP: 200, maxAV: 400);
+            cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 400);
         state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "high_tp", currentTP: 900, maxAV: 2000);
+            cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 2000);
 
         var available = new List<AvailableAction>
         {
@@ -1012,9 +1012,9 @@ public class NpcAiTests
         var state = TestFactory.MakeGameState(turn: 8, phase: Phase.Battle);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(instanceId: "own1");
         state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "low_tp", currentTP: 200, maxAV: 400);
+            cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 400);
         state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "high_tp", currentTP: 900, maxAV: 2000);
+            cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 2000);
 
         var available = new List<AvailableAction>
         {
@@ -1086,7 +1086,7 @@ public class NpcAiTests
               order_by: tp_desc
               reserve_ratio: 0.0
             attachments:
-              TST-2022:
+              TST-0006:
                 priority: 80
                 target:
                   selector: { owner: myself }
@@ -1098,17 +1098,17 @@ public class NpcAiTests
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         state.Player1Hand =
         [
-            new() { InstanceID = "h_sh1", CardID = "TST-2001" },
-            new() { InstanceID = "h_att", CardID = "TST-2022" },
+            new() { InstanceID = "h_sh1", CardID = "TST-0001" },
+            new() { InstanceID = "h_att", CardID = "TST-0006" },
         ];
 
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-2001", ValidZones = ["frontend_0"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-2022",
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-0006",
                     ValidZones = ["support_0"], ValidTargets = ["res1"] },
         };
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "res1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res1");
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
@@ -1123,7 +1123,7 @@ public class NpcAiTests
     [Fact]
     public void Deploy_AttachmentPriority_HigherPriorityFirst()
     {
-        _cc.Add(TestFactory.AttachmentCard(cardId: "TST-1003", name: "TestAttachment2"));
+        _cc.Add(TestFactory.AttachmentCard(cardId: "TST-0008", name: "TestAttachment2"));
 
         var yaml = """
             model: test
@@ -1158,34 +1158,34 @@ public class NpcAiTests
               order_by: tp_desc
               reserve_ratio: 0.0
             attachments:
-              TST-2022:
+              TST-0006:
                 priority: 40
-              TST-1003:
+              TST-0008:
                 priority: 90
             """;
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "res1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res1");
         state.Player1Hand =
         [
-            new() { InstanceID = "h_att1", CardID = "TST-2022" },
-            new() { InstanceID = "h_att2", CardID = "TST-1003" },
+            new() { InstanceID = "h_att1", CardID = "TST-0006" },
+            new() { InstanceID = "h_att2", CardID = "TST-0008" },
         ];
 
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att1", CardID = "TST-2022",
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att1", CardID = "TST-0006",
                     ValidZones = ["support_0"], ValidTargets = ["res1"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att2", CardID = "TST-1003",
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att2", CardID = "TST-0008",
                     ValidZones = ["support_1"], ValidTargets = ["res1"] },
         };
 
         var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // TST-1003 (pri=90) before TST-2022 (pri=40)
+        // TST-0008 (pri=90) before TST-0006 (pri=40)
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_att2");
         ((PlayCardRequest)deploys[1].Data).CardInstanceID.Should().Be("h_att1");
@@ -1200,12 +1200,12 @@ public class NpcAiTests
         var state = TestFactory.MakeGameState(phase: Phase.Main);
         state.Player1Hand =
         [
-            new() { InstanceID = "h_att", CardID = "TST-2022" },
+            new() { InstanceID = "h_att", CardID = "TST-0006" },
         ];
 
         var available = new List<AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-2022",
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-0006",
                     ValidZones = ["support_0"], ValidTargets = ["res1"] },
         };
 

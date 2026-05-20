@@ -13,9 +13,9 @@ public class GameEngineTests
 
     public GameEngineTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
-        _cc.Add(TestFactory.DataCard(cardId: "TST-1009"));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
         _engine = new GameEngine(_repo, _cc);
     }
 
@@ -29,7 +29,7 @@ public class GameEngineTests
     [Fact]
     public async Task CreateNewGame_ReturnsGameID_And_InitializesState()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
 
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
@@ -55,13 +55,13 @@ public class GameEngineTests
         state.Player1Repository.Should().HaveCount(InitialValues.DeckSize - BattleConstants.InitialHandSize);
 
         // All hand cards should reference the correct card
-        state.Player1Hand.Should().AllSatisfy(h => h.CardID.Should().Be("TST-2001"));
+        state.Player1Hand.Should().AllSatisfy(h => h.CardID.Should().Be("TST-0001"));
     }
 
     [Fact]
     public async Task CreateNewGame_FirstPlayer2_SetsActivePlayer2()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
 
         var gameID = await _engine.CreateNewGame(deck, deck, 2);
 
@@ -74,7 +74,7 @@ public class GameEngineTests
     [Fact]
     public async Task RunAutoAdvance_DrawPhase_DrawsCardAndAdvancesToMain()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         var state = await _repo.GetGameState(gameID);
@@ -97,7 +97,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_PlayCard_PlaysCardAndReturnsEvents()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         // Advance past draw phase
@@ -135,17 +135,17 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_Attack_DealsDamageAndReturnsEvents()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         // Set up the game state directly for attack testing
         var state = await _repo.GetGameState(gameID);
 
         // Place resources manually
-        var attacker = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "atk_1", faceUp: true);
+        var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
         state!.Player1Field.Frontend[0] = attacker;
 
-        var defender = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "def_1", faceUp: true);
+        var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
         // Set to battle phase, turn 2+
@@ -179,7 +179,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_WrongPlayer_Throws()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
@@ -204,7 +204,7 @@ public class GameEngineTests
     [Fact]
     public async Task GetNpcModel_InvalidPlayer_Throws()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         var game = await _repo.GetGame(gameID);
@@ -217,7 +217,7 @@ public class GameEngineTests
     [Fact]
     public async Task Forfeit_EndsGameImmediately()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         var game = await _repo.GetGame(gameID);
@@ -236,7 +236,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_FinishedGame_Throws()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         // Forfeit to finish the game
@@ -256,7 +256,7 @@ public class GameEngineTests
     [Fact]
     public async Task GetInitialState_ReturnsOriginalState_AfterMutations()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
         var initialState = await _repo.GetInitialState(gameID);
@@ -281,7 +281,7 @@ public class GameEngineTests
     [Fact]
     public async Task CreateNewGame_RecordsVersions()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1,
             engineVersion: "1.2.3", cardDataVersion: "4.5.6");
 
@@ -295,7 +295,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_PendingSlotSelect_BlocksOtherActions()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
@@ -318,7 +318,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_PendingSlotSelect_AllowsSelectSlot()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
@@ -327,7 +327,7 @@ public class GameEngineTests
         state!.PendingSlotSelects.Add(new AwaitingSlotSelect
         {
             PlayerNum = 1,
-            Resource = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "pending_1"),
+            Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
             ValidZones = ["frontend_1"],
         });
 
@@ -344,7 +344,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_PendingSlotSelect_DoesNotBlockOtherPlayer()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
@@ -376,7 +376,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_WhilePendingSlotSelect_BlocksNextAction()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
@@ -418,7 +418,7 @@ public class GameEngineTests
     [Fact]
     public async Task ProcessAction_SelectSlot_ResolvesAndReturnsNeedsSlotSelectTrue_WhenQueueRemains()
     {
-        var deck = MakeSingleCardDeck("TST-2001");
+        var deck = MakeSingleCardDeck("TST-0001");
         var gameID = await _engine.CreateNewGame(deck, deck, 1);
         var game = await _repo.GetGame(gameID);
         await _engine.RunAutoAdvance(game!);
@@ -429,13 +429,13 @@ public class GameEngineTests
         state!.PendingSlotSelects.Add(new AwaitingSlotSelect
         {
             PlayerNum = 1,
-            Resource = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "pending_1"),
+            Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
             ValidZones = ["frontend_0"],
         });
         state.PendingSlotSelects.Add(new AwaitingSlotSelect
         {
             PlayerNum = 1,
-            Resource = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "pending_2"),
+            Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_2"),
             ValidZones = ["frontend_1"],
         });
 

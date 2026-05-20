@@ -191,18 +191,18 @@ public class ActionFilterTests
     public void ResolveCardIdForInstance_FindsResourceInFrontend()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-4020", instanceId: "inst_42");
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_42");
 
-        ActionFilter.ResolveCardIdForInstance("inst_42", field).Should().Be("TST-4020");
+        ActionFilter.ResolveCardIdForInstance("inst_42", field).Should().Be("TST-0001");
     }
 
     [Fact]
     public void ResolveCardIdForInstance_FindsDeployedSupport()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-1008" };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0002" };
 
-        ActionFilter.ResolveCardIdForInstance("sup_1", field).Should().Be("TST-1008");
+        ActionFilter.ResolveCardIdForInstance("sup_1", field).Should().Be("TST-0002");
     }
 
     [Fact]

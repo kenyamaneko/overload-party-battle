@@ -12,11 +12,11 @@ public class PlayCardProcessorTests
     public PlayCardProcessorTests()
     {
         // Compute card: deployTurns=1
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", deployTurns: 1));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 1));
         // Serverless card: deployTurns=0
-        _cc.Add(TestFactory.ServerlessCard(cardId: "TST-2002"));
+        _cc.Add(TestFactory.ServerlessCard(cardId: "TST-0002"));
         // Database card (data type, backend-only)
-        _cc.Add(TestFactory.DataCard(cardId: "TST-1009", subtype: "Database"));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0003", subtype: "Database"));
         // Attachment card
         _cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
         // Incident card
@@ -53,20 +53,20 @@ public class PlayCardProcessorTests
     public void PlayCard_ComputeToFrontend_IsDeployed()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-2001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
 
         state.Player1Hand.Should().BeEmpty();
-        state.Player1Field.Frontend[0]!.CardID.Should().Be("TST-2001");
+        state.Player1Field.Frontend[0]!.CardID.Should().Be("TST-0001");
     }
 
     [Fact]
     public void PlayCard_ComputeToFrontend_EmitsPlayCardEvent()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-2001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
 
         var result = PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
@@ -77,9 +77,9 @@ public class PlayCardProcessorTests
     [Fact]
     public void PlayCard_WithDeployTurns_IsFaceDownDuringDeploy()
     {
-        // TST-2001 has deployTurns=1 → must wait 1 turn face-down
+        // TST-0001 has deployTurns=1 → must wait 1 turn face-down
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-2001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
@@ -92,20 +92,20 @@ public class PlayCardProcessorTests
     public void PlayCard_ComputeToBackend_IsDeployed()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-2001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Backend, 0), _cc, null);
 
-        state.Player1Field.Backend[0]!.CardID.Should().Be("TST-2001");
+        state.Player1Field.Backend[0]!.CardID.Should().Be("TST-0001");
     }
 
     [Fact]
     public void PlayCard_ZeroDeployTurns_IsImmediatelyFaceUp()
     {
-        // Serverless (TST-2002) has deployTurns=0 → face-up immediately (RULEBOOK §4)
+        // Serverless (TST-0002) has deployTurns=0 → face-up immediately (RULEBOOK §4)
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-2002" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0002" });
 
         PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
@@ -132,7 +132,7 @@ public class PlayCardProcessorTests
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource();
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-2001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
@@ -145,7 +145,7 @@ public class PlayCardProcessorTests
     public void PlayCard_DatabaseToFrontend_IsRejected()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-1009" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0003" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, null);
@@ -158,7 +158,7 @@ public class PlayCardProcessorTests
     public void PlayCard_ComputeToSupport_IsRejected()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-2001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, null);
@@ -173,7 +173,7 @@ public class PlayCardProcessorTests
     public void PlayCard_OutOfRangeSlotIndex_IsRejected(int index)
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-2001" });
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
 
         var act = () => PlayCardProcessor.Process(
             state, _game, 1, MakeReq("h_1", Zones.Frontend, index), _cc, null);
@@ -313,7 +313,7 @@ public class PlayCardProcessorTests
     public void Process_AttachmentReplacement_OldSupportTrashed()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "res_1");
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res_1");
         state.Player1Field.Support[0] = new DeployedSupport
         {
             InstanceID = "old_att",

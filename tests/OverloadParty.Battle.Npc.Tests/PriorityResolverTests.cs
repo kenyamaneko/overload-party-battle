@@ -11,8 +11,8 @@ public class PriorityResolverTests
 
     public PriorityResolverTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", tp: 600, av: 1400));
-        _cc.Add(TestFactory.DataCard(cardId: "TST-1009", subtype: "Database", yield: 400, av: 800));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0002", subtype: "Database", yield: 400, av: 800));
         _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", name: "TestPlatform"));
     }
 
@@ -90,8 +90,8 @@ public class PriorityResolverTests
     {
         var hand = new List<UndeployedCard>
         {
-            new() { InstanceID = "h1", CardID = "TST-2001" },
-            new() { InstanceID = "h2", CardID = "TST-2001" },
+            new() { InstanceID = "h1", CardID = "TST-0001" },
+            new() { InstanceID = "h2", CardID = "TST-0001" },
         };
         var ctx = MakeCtx(hand: hand);
         var config = MakeConfig(new()
@@ -116,7 +116,7 @@ public class PriorityResolverTests
     public void Resolve_Draw_ManyCards_ReturnsLowPriority()
     {
         var hand = Enumerable.Range(0, 5)
-            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-2001" })
+            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-0001" })
             .ToList();
         var ctx = MakeCtx(hand: hand);
         var config = MakeConfig(new()
@@ -279,7 +279,7 @@ public class PriorityResolverTests
     public void Evaluate_WithEffect_ReturnsConfigPriority()
     {
         var reg = new StubEffectRegistry();
-        reg.SetEffectInfo("TST-2009", TriggerType.Ignition, new EffectInfo
+        reg.SetEffectInfo("TST-0003", TriggerType.Ignition, new EffectInfo
         {
             TargetType = EffectTargetType.None,
         }.WithCategory(EffectCategory.BudgetGain));
@@ -296,7 +296,7 @@ public class PriorityResolverTests
         });
 
         var (pri, use, _) = PriorityResolver.Evaluate(
-            "TST-2009", TriggerType.Ignition, ctx, config, reg, _cc);
+            "TST-0003", TriggerType.Ignition, ctx, config, reg, _cc);
 
         use.Should().BeTrue();
         pri.Should().Be(90);

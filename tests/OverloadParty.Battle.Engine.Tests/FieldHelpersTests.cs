@@ -305,9 +305,9 @@ public class FieldHelpersTests
     {
         var state = TestFactory.MakeGameState();
 
-        CardMoveHelpers.AddToTrash(state, 1, "TST-4020", "inst_42");
+        CardMoveHelpers.AddToTrash(state, 1, "TST-0001", "inst_42");
         state.Player1Trash.Should().ContainSingle()
-            .Which.CardID.Should().Be("TST-4020");
+            .Which.CardID.Should().Be("TST-0001");
         state.Player2Trash.Should().BeEmpty();
     }
 

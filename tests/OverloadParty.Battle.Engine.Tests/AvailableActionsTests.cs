@@ -16,17 +16,17 @@ public class AvailableActionsTests
     public void MainPhase_ReturnsPlayScaleDistributeActivateActions()
     {
         var cc = new TestCardCache();
-        var compute = TestFactory.ComputeCard(cardId: "TST-2001");
-        var db = TestFactory.DataCard(cardId: "TST-1009");
+        var compute = TestFactory.ComputeCard(cardId: "TST-0001");
+        var db = TestFactory.DataCard(cardId: "TST-0002");
         cc.Add(compute);
         cc.Add(db);
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 5000);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-2001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 100, cc, null);
@@ -41,15 +41,15 @@ public class AvailableActionsTests
     public void BattlePhase_ReturnsAttackAndActivateOnly()
     {
         var cc = new TestCardCache();
-        var compute = TestFactory.ComputeCard(cardId: "TST-2001");
+        var compute = TestFactory.ComputeCard(cardId: "TST-0001");
         cc.Add(compute);
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, p1Budget: 5000);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -68,10 +68,10 @@ public class AvailableActionsTests
     public void PlayCard_ComputeCanGoToFrontendAndBackend()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-2001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -86,10 +86,10 @@ public class AvailableActionsTests
     {
         // Database は Backend のみ
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-1009", subtype: "Database"));
+        cc.Add(TestFactory.DataCard(cardId: "TST-0002", subtype: "Database"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-1009" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-0002" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -103,10 +103,10 @@ public class AvailableActionsTests
     public void PlayCard_CacheDBCanOnlyGoToBackend()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-1010", subtype: "CacheDB"));
+        cc.Add(TestFactory.DataCard(cardId: "TST-0003", subtype: "CacheDB"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_cache", CardID = "TST-1010" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_cache", CardID = "TST-0003" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -121,10 +121,10 @@ public class AvailableActionsTests
     {
         // ObjectStorage は Frontend / Backend 両方
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-1011", subtype: "ObjectStorage"));
+        cc.Add(TestFactory.DataCard(cardId: "TST-0004", subtype: "ObjectStorage"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_os", CardID = "TST-1011" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_os", CardID = "TST-0004" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -139,10 +139,10 @@ public class AvailableActionsTests
     {
         // AI/ML は Frontend / Backend 両方
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2004", subtype: "AI/ML", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", subtype: "AI/ML", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_ai", CardID = "TST-2004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_ai", CardID = "TST-0005" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -156,10 +156,10 @@ public class AvailableActionsTests
     public void PlayCard_StrategyDoesNotRequireZone()
     {
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3004", CardName = "S", CardType = CardTypes.Strategy });
+        cc.Add(new CardDefinition { CardId = "TST-0006", CardName = "S", CardType = CardTypes.Strategy });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-3004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-0006" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -172,10 +172,10 @@ public class AvailableActionsTests
     public void PlayCard_ReactiveGoesToSupportZone()
     {
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3006", CardName = "R", CardType = CardTypes.Reactive });
+        cc.Add(new CardDefinition { CardId = "TST-0007", CardName = "R", CardType = CardTypes.Reactive });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_r", CardID = "TST-3006" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_r", CardID = "TST-0007" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -207,19 +207,19 @@ public class AvailableActionsTests
     {
         // 各ゾーン上限3体、スロットが埋まっていれば配置不可
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
         // Fill all frontend and backend slots
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_0");
-        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
-        myField.Frontend[2] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_2");
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_0");
-        myField.Backend[1] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
-        myField.Backend[2] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_2");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_0");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
+        myField.Frontend[2] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_2");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_0");
+        myField.Backend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
+        myField.Backend[2] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_2");
 
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-2001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -231,7 +231,7 @@ public class AvailableActionsTests
     public void PlayCard_StrategyAvailableEvenWhenAllSupportSlotsOccupied()
     {
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3004", CardName = "S", CardType = CardTypes.Strategy });
+        cc.Add(new CardDefinition { CardId = "TST-0006", CardName = "S", CardType = CardTypes.Strategy });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
@@ -239,7 +239,7 @@ public class AvailableActionsTests
         myField.Support[1] = new DeployedSupport { InstanceID = "s_1", CardID = "TEST-0200" };
         myField.Support[2] = new DeployedSupport { InstanceID = "s_2", CardID = "TEST-0200" };
 
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-3004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-0006" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -251,14 +251,14 @@ public class AvailableActionsTests
     public void PlayCard_OnlyOffersEmptySlots()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_0");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_0");
         // Frontend slots 1,2 are empty; all backend slots are empty
 
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-2001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -276,10 +276,10 @@ public class AvailableActionsTests
     {
         // 先攻T1ではインシデント使用不可
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3015", CardName = "I", CardType = CardTypes.Incident });
+        cc.Add(new CardDefinition { CardId = "TST-0008", CardName = "I", CardType = CardTypes.Incident });
 
         var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-3015" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-0008" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -291,10 +291,10 @@ public class AvailableActionsTests
     public void PlayCard_IncidentAllowedOnLaterTurns()
     {
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3015", CardName = "I", CardType = CardTypes.Incident });
+        cc.Add(new CardDefinition { CardId = "TST-0008", CardName = "I", CardType = CardTypes.Incident });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-3015" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-0008" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -307,13 +307,13 @@ public class AvailableActionsTests
     {
         // インシデントは1ターン1枚まで
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3015", CardName = "I", CardType = CardTypes.Incident });
+        cc.Add(new CardDefinition { CardId = "TST-0008", CardName = "I", CardType = CardTypes.Incident });
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         state.Player1IncidentPlayedThisTurn = true;
         var myField = TestFactory.MakeField();
 
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-3015" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-0008" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -328,12 +328,12 @@ public class AvailableActionsTests
     {
         // Attachment はリソースに装備。ValidTargets を返す
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
         cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
 
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
@@ -351,12 +351,12 @@ public class AvailableActionsTests
     {
         // サポートゾーンが満杯でも張り替えで配置可能
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
         cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
         myField.Support[0] = new DeployedSupport { InstanceID = "s_0", CardID = "TEST-0300", TargetInstanceID = "fe_1" };
         myField.Support[1] = new DeployedSupport { InstanceID = "s_1", CardID = "TEST-0300", TargetInstanceID = "fe_1" };
         myField.Support[2] = new DeployedSupport { InstanceID = "s_2", CardID = "TEST-0300", TargetInstanceID = "fe_1" };
@@ -373,12 +373,12 @@ public class AvailableActionsTests
     public void PlayCard_AttachmentExcludesFaceDownResources()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
         cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1", faceUp: false);
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1", faceUp: false);
 
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
@@ -408,11 +408,11 @@ public class AvailableActionsTests
     public void ScaleUp_ResizableSmallOffersAllOptions()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", resizable: true));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", resizable: true));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1", rank: Rank.Small);
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1", rank: Rank.Small);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -432,12 +432,12 @@ public class AvailableActionsTests
     public void ScaleUp_ResizableMediumOffersAllOptions()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", resizable: true));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", resizable: true));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
         myField.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "fe_1", rank: Rank.Medium, family: InstanceFamily.M);
+            cardId: "TST-0001", instanceId: "fe_1", rank: Rank.Medium, family: InstanceFamily.M);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -452,12 +452,12 @@ public class AvailableActionsTests
     public void ScaleUp_ResizableLargeHasNoOptions()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", resizable: true));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", resizable: true));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
         myField.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "fe_1", rank: Rank.Large, family: InstanceFamily.M);
+            cardId: "TST-0001", instanceId: "fe_1", rank: Rank.Large, family: InstanceFamily.M);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -472,11 +472,11 @@ public class AvailableActionsTests
     {
         // Resizable でないカードはスケールアップ不可
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", resizable: false));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", resizable: false));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -506,11 +506,11 @@ public class AvailableActionsTests
     {
         // 裏向きカードは「いないものとみなす」
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", resizable: true));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", resizable: true));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1", faceUp: false);
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1", faceUp: false);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -526,14 +526,14 @@ public class AvailableActionsTests
     public void Attack_FrontendComputeCanAttack()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -548,14 +548,14 @@ public class AvailableActionsTests
     {
         // バックエンドのリソースは攻撃できない
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -568,16 +568,16 @@ public class AvailableActionsTests
     {
         // Object Storage をフロントエンドに置いた場合、攻撃できない
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-1011", subtype: "ObjectStorage"));
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.DataCard(cardId: "TST-0004", subtype: "ObjectStorage"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
         myField.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-1011", instanceId: "os_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+            cardId: "TST-0004", instanceId: "os_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -590,16 +590,16 @@ public class AvailableActionsTests
     {
         // 1ターンに1回攻撃
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        var attacker = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_1");
+        var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
         attacker.HasAttacked = true;
         myField.Frontend[0] = attacker;
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -611,16 +611,16 @@ public class AvailableActionsTests
     public void Attack_CannotOperateExcluded()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        var attacker = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_1");
+        var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
         attacker.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.CannotOperate });
         myField.Frontend[0] = attacker;
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -633,14 +633,14 @@ public class AvailableActionsTests
     {
         // 裏向きカードは攻撃対象にできない
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1", faceUp: false);
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1", faceUp: false);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -654,16 +654,16 @@ public class AvailableActionsTests
     {
         // フロントエンドに表向きリソースが0体ならバックエンドを攻撃可能
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
 
         var oppField = TestFactory.MakeField();
         // Only face-down in frontend
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_fe", faceUp: false);
-        oppField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_be");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_fe", faceUp: false);
+        oppField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_be");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -678,15 +678,15 @@ public class AvailableActionsTests
     {
         // フロントエンドに表向きリソースがいればバックエンドは攻撃不可
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_fe");
-        oppField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_be");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_fe");
+        oppField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_be");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -701,14 +701,14 @@ public class AvailableActionsTests
     {
         // 裏向きカードは攻撃できない
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_1", faceUp: false);
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1", faceUp: false);
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -724,11 +724,11 @@ public class AvailableActionsTests
     public void Monetize_BackendComputeIncluded()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
@@ -741,11 +741,11 @@ public class AvailableActionsTests
     {
         // フロントエンドの Compute は収益化できない
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
@@ -758,12 +758,12 @@ public class AvailableActionsTests
     {
         // 収益化はComputeのみ。DatabaseはInsight生成源だがBudget変換はしない
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-1009"));
+        cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
         myField.Backend[0] = TestFactory.MakeResource(
-            cardId: "TST-1009", instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+            cardId: "TST-0002", instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
@@ -776,11 +776,11 @@ public class AvailableActionsTests
     {
         // 先攻T1では収益化をスキップ
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
@@ -793,11 +793,11 @@ public class AvailableActionsTests
     {
         // InsightプールからInsightを消費して変換。0なら変換不可
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -810,11 +810,11 @@ public class AvailableActionsTests
     {
         // 各カードの変換上限 = スループット値
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
+        var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
         res.MonetizedAmount = 200; // 既に200使用
         myField.Backend[0] = res;
 
@@ -829,11 +829,11 @@ public class AvailableActionsTests
     public void Monetize_ExcludedWhenCapacityFull()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
+        var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
         res.MonetizedAmount = 600; // 全容量使用済み
         myField.Backend[0] = res;
 
@@ -851,15 +851,15 @@ public class AvailableActionsTests
     public void UseEffect_ResourceWithEffectIncluded()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-2009", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2009", instanceId: "res_10");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
@@ -871,14 +871,14 @@ public class AvailableActionsTests
     public void UseEffect_ResourceWithoutEffectExcluded()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var registry = new EffectRegistry();
         // No effect registered for card 1
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
@@ -890,15 +890,15 @@ public class AvailableActionsTests
     public void UseEffect_EffectUsedThisTurnExcluded()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-2009", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "TST-2009", instanceId: "res_10");
+        var res = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
         res.EffectUsedThisTurn = true;
         myField.Frontend[0] = res;
 
@@ -912,15 +912,15 @@ public class AvailableActionsTests
     public void UseEffect_CannotOperateExcluded()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-2009", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "TST-2009", instanceId: "res_10");
+        var res = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
         res.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.CannotOperate });
         myField.Frontend[0] = res;
 
@@ -1012,15 +1012,15 @@ public class AvailableActionsTests
     {
         // エフェクト発動はバトルフェーズでも可能
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-2009", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2009", instanceId: "res_10");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
@@ -1034,16 +1034,16 @@ public class AvailableActionsTests
     public void UseEffect_ExcludedWhenBudgetBelowMinimum()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2009", tp: 600, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-2009", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
             new RequireBudgetOp(400),
             new LoseBudgetOp(PlayerRef.Myself, new StaticAmount(400)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 300);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2009", instanceId: "res_10");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 300, 0, cc, registry);
@@ -1055,16 +1055,16 @@ public class AvailableActionsTests
     public void UseEffect_IncludedWhenBudgetMeetsMinimum()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2009", tp: 600, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-2009", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
             new RequireBudgetOp(400),
             new LoseBudgetOp(PlayerRef.Myself, new StaticAmount(400)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 500);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2009", instanceId: "res_10");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 500, 0, cc, registry);
@@ -1076,16 +1076,16 @@ public class AvailableActionsTests
     public void UseEffect_ExcludedWhenBudgetExceedsMaximum()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-1026", tp: 600, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0010", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-1026", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0010", TriggerType.Ignition,
             new RequireMaxBudgetOp(1000),
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(900)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 1500);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-1026", instanceId: "res_120");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0010", instanceId: "res_120");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 1500, 0, cc, registry);
@@ -1097,16 +1097,16 @@ public class AvailableActionsTests
     public void UseEffect_IncludedWhenBudgetWithinMaximum()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-1026", tp: 600, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0010", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-1026", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0010", TriggerType.Ignition,
             new RequireMaxBudgetOp(1000),
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(900)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 800);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-1026", instanceId: "res_120");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0010", instanceId: "res_120");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 800, 0, cc, registry);
@@ -1118,15 +1118,15 @@ public class AvailableActionsTests
     public void UseEffect_IncludedWhenNoBudgetRequirement()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-4008", tp: 600, av: 1400));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0011", tp: 600, av: 1400));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-4008", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0011", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 0);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-4008", instanceId: "res_30");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0011", instanceId: "res_30");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 0, 0, cc, registry);
@@ -1140,15 +1140,15 @@ public class AvailableActionsTests
     public void PlayStrategy_ExcludedWhenBudgetInsufficient()
     {
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3004", CardName = "S", CardType = CardTypes.Strategy });
+        cc.Add(new CardDefinition { CardId = "TST-0006", CardName = "S", CardType = CardTypes.Strategy });
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-3004", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0006", TriggerType.Ignition,
             new RequireBudgetOp(500),
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(1000)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 200);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "TST-3004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "TST-0006" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 200, 0, cc, registry);
@@ -1160,15 +1160,15 @@ public class AvailableActionsTests
     public void PlayStrategy_IncludedWhenBudgetSufficient()
     {
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3004", CardName = "S", CardType = CardTypes.Strategy });
+        cc.Add(new CardDefinition { CardId = "TST-0006", CardName = "S", CardType = CardTypes.Strategy });
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-3004", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0006", TriggerType.Ignition,
             new RequireBudgetOp(500),
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(1000)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 600);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "TST-3004" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "TST-0006" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 600, 0, cc, registry);
@@ -1180,15 +1180,15 @@ public class AvailableActionsTests
     public void PlayIncident_ExcludedWhenBudgetInsufficient()
     {
         var cc = new TestCardCache();
-        cc.Add(new CardDefinition { CardId = "TST-3015", CardName = "I", CardType = CardTypes.Incident });
+        cc.Add(new CardDefinition { CardId = "TST-0008", CardName = "I", CardType = CardTypes.Incident });
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-3015", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0008", TriggerType.Ignition,
             new RequireBudgetOp(300),
             new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 100);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_60", CardID = "TST-3015" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "hand_60", CardID = "TST-0008" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 100, 0, cc, registry);
@@ -1223,7 +1223,7 @@ public class AvailableActionsTests
         // 手札上限6枚、超過分を捨てる
         var state = TestFactory.MakeGameState(phase: Phase.End);
         var hand = Enumerable.Range(0, 8)
-            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-2001" })
+            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-0001" })
             .ToList();
 
         var controls = AvailableActions.ComputeTurnControls(state, hand);
@@ -1235,7 +1235,7 @@ public class AvailableActionsTests
     {
         var state = TestFactory.MakeGameState(phase: Phase.End);
         var hand = Enumerable.Range(0, 5)
-            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-2001" })
+            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-0001" })
             .ToList();
 
         var controls = AvailableActions.ComputeTurnControls(state, hand);
@@ -1252,15 +1252,15 @@ public class AvailableActionsTests
     {
         // フロントが3枠埋まっていてもバックエンドに空きがあればCompute配置可能
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_0");
-        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
-        myField.Frontend[2] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_2");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_0");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
+        myField.Frontend[2] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_2");
 
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-2001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1275,16 +1275,16 @@ public class AvailableActionsTests
     {
         // Database はそもそも Backend のみ。フロントが満杯でも関係ない
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-1009"));
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_0");
-        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
-        myField.Frontend[2] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_2");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_0");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
+        myField.Frontend[2] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_2");
 
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-1009" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-0002" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1296,17 +1296,17 @@ public class AvailableActionsTests
     public void PlayCard_ComputeExcludedWhenBothZonesFull()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", deployTurns: 0));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
         for (int i = 0; i < 3; i++)
         {
-            myField.Frontend[i] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: $"fe_{i}");
-            myField.Backend[i] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: $"be_{i}");
+            myField.Frontend[i] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: $"fe_{i}");
+            myField.Backend[i] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: $"be_{i}");
         }
 
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-2001" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1337,10 +1337,10 @@ public class AvailableActionsTests
     public void PlayCard_ServerlessCanGoToFrontendAndBackend()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ServerlessCard(cardId: "TST-2002"));
+        cc.Add(TestFactory.ServerlessCard(cardId: "TST-0012"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-2002" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-0012" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1354,10 +1354,10 @@ public class AvailableActionsTests
     public void PlayCard_OrchestratorCanGoToFrontendAndBackend()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.OrchestratorCard(cardId: "TST-2003"));
+        cc.Add(TestFactory.OrchestratorCard(cardId: "TST-0013"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var hand = new List<UndeployedCard> { new() { InstanceID = "h_o", CardID = "TST-2003" } };
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_o", CardID = "TST-0013" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, null);
@@ -1373,18 +1373,18 @@ public class AvailableActionsTests
     public void PlayCard_AttachmentTargetsAllFaceUpResources()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
         cc.Add(TestFactory.AttachmentCard(cardId: "TEST-0300"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
 
-        var res1 = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_1");
+        var res1 = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
         myField.Frontend[0] = res1;
         myField.Support.TryPlace(new DeployedSupport { InstanceID = "a1", CardID = "TEST-0300", TargetInstanceID = "fe_1" });
         myField.Support.TryPlace(new DeployedSupport { InstanceID = "a2", CardID = "TEST-0300", TargetInstanceID = "fe_1" });
 
-        var res2 = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "fe_2");
+        var res2 = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_2");
         myField.Frontend[1] = res2;
 
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
@@ -1404,11 +1404,11 @@ public class AvailableActionsTests
     {
         // R+E カードは手動スケールアップも可能
         var cc = new TestCardCache();
-        cc.Add(TestFactory.OrchestratorCard(cardId: "TST-2003")); // R+E
+        cc.Add(TestFactory.OrchestratorCard(cardId: "TST-0013")); // R+E
 
         var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2003", instanceId: "orch_1", rank: Rank.Small);
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0013", instanceId: "orch_1", rank: Rank.Small);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -1421,12 +1421,12 @@ public class AvailableActionsTests
     {
         // Resizable な Database もスケールアップ可能
         var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-1009", resizable: true));
+        cc.Add(TestFactory.DataCard(cardId: "TST-0002", resizable: true));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
         myField.Backend[0] = TestFactory.MakeResource(
-            cardId: "TST-1009", instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+            cardId: "TST-0002", instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, null);
@@ -1440,15 +1440,15 @@ public class AvailableActionsTests
     public void Attack_MultipleAttackersEachGetOwnAction()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_1");
-        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "my_2");
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
+        myField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_2");
 
         var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "opp_1");
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, oppField, [], 5000, 0, cc, null);
@@ -1465,11 +1465,11 @@ public class AvailableActionsTests
     {
         // 裏向きリソースは収益化できない（稼働していない）
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1", faceUp: false);
+        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: false);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 100, cc, null);
@@ -1482,12 +1482,12 @@ public class AvailableActionsTests
     {
         // 複数のバックエンドComputeがある場合、それぞれにmonetizeが生成される
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
         cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 500, name: "Compute2"));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "be_1");
+        myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
         myField.Backend[1] = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "be_2");
 
         var actions = AvailableActions.GetAllAvailableActions(
@@ -1506,15 +1506,15 @@ public class AvailableActionsTests
     public void UseEffect_FaceDownResourceExcluded()
     {
         var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-2009"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
 
         var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-2009", TriggerType.Ignition,
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
-        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2009", instanceId: "res_10", faceUp: false);
+        myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10", faceUp: false);
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);

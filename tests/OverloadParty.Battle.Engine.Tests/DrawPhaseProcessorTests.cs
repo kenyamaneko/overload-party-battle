@@ -11,7 +11,7 @@ public class DrawPhaseProcessorTests
 
     public DrawPhaseProcessorTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2001"));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
     }
 
     // ─── Normal draw ─────────────────────────────────────────
@@ -20,7 +20,7 @@ public class DrawPhaseProcessorTests
     public void Process_DrawPhase_DrawsCardAndAdvancesToMain()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-2001", ArtNo = 0 });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001", ArtNo = 0 });
 
         var result = DrawPhaseProcessor.Process(state, _game, _cc);
 
@@ -36,7 +36,7 @@ public class DrawPhaseProcessorTests
     public void Process_NotDrawPhase_ReturnsNull_NoStateChange()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-2001" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
 
         var result = DrawPhaseProcessor.Process(state, _game, _cc);
 
@@ -66,7 +66,7 @@ public class DrawPhaseProcessorTests
     public void Process_DecrementsDeployCountdown()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-2001" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
         var resource = TestFactory.MakeResource(faceUp: false, deployLeft: 2);
         state.Player1Field.Frontend[0] = resource;
 
@@ -80,7 +80,7 @@ public class DrawPhaseProcessorTests
     public void Process_DeployCountdownReachesZero_FlipsFaceUp()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-2001" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
         var resource = TestFactory.MakeResource(faceUp: false, deployLeft: 1);
         state.Player1Field.Frontend[0] = resource;
 

@@ -10,8 +10,8 @@ public class TargetSelectorTests
 
     public TargetSelectorTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", tp: 600, av: 1400, mc: 150));
-        _cc.Add(TestFactory.DataCard(cardId: "TST-1009", subtype: "Database", yield: 400, av: 800, mc: 100));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, mc: 150));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0002", subtype: "Database", yield: 400, av: 800, mc: 100));
         _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200", name: "TestPlatform"));
     }
 
@@ -82,8 +82,8 @@ public class TargetSelectorTests
     public void StrongestInZone_ReturnsResourceWithHighestValue()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "low_tp", currentTP: 300);
-        field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "high_tp", currentTP: 900);
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "low_tp", currentTP: 300);
+        field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "high_tp", currentTP: 900);
 
         var result = TargetSelector.StrongestInZone(field, Zones.Frontend, _cc);
 
@@ -95,9 +95,9 @@ public class TargetSelectorTests
     {
         var field = TestFactory.MakeField();
         field.Backend[0] = TestFactory.MakeResource(
-            cardId: "TST-1009", instanceId: "data_res", currentTP: null, currentYield: 500, maxYield: 500);
+            cardId: "TST-0002", instanceId: "data_res", currentTP: null, currentYield: 500, maxYield: 500);
         field.Backend[1] = TestFactory.MakeResource(
-            cardId: "TST-2001", instanceId: "compute_res", currentTP: 200, currentYield: null);
+            cardId: "TST-0001", instanceId: "compute_res", currentTP: 200, currentYield: null);
 
         var result = TargetSelector.StrongestInZone(field, Zones.Backend, _cc);
 
@@ -271,7 +271,7 @@ public class TargetSelectorTests
     public void HasPlatform_NoPlatform_ReturnsFalse()
     {
         var field = TestFactory.MakeField();
-        field.Support[0] = new DeployedSupport { InstanceID = "sup1", CardID = "TST-2001", FaceUp = true };
+        field.Support[0] = new DeployedSupport { InstanceID = "sup1", CardID = "TST-0001", FaceUp = true };
 
         TargetSelector.HasPlatform(field, _cc).Should().BeFalse();
     }
@@ -302,7 +302,7 @@ public class TargetSelectorTests
     [Fact]
     public void ResourceValue_CurrentTP_ReturnsTP()
     {
-        var res = TestFactory.MakeResource(cardId: "TST-2001", currentTP: 700);
+        var res = TestFactory.MakeResource(cardId: "TST-0001", currentTP: 700);
 
         var value = TargetSelector.ResourceValue(res, _cc);
 
@@ -312,7 +312,7 @@ public class TargetSelectorTests
     [Fact]
     public void ResourceValue_CurrentYield_ReturnsYield()
     {
-        var res = TestFactory.MakeResource(cardId: "TST-1009", currentTP: null, currentYield: 500, maxYield: 500);
+        var res = TestFactory.MakeResource(cardId: "TST-0002", currentTP: null, currentYield: 500, maxYield: 500);
 
         var value = TargetSelector.ResourceValue(res, _cc);
 
@@ -322,7 +322,7 @@ public class TargetSelectorTests
     [Fact]
     public void ResourceValue_NoCurrentStats_FallsBackToCardDefinition()
     {
-        var res = TestFactory.MakeResource(cardId: "TST-2001", currentTP: null, currentYield: null);
+        var res = TestFactory.MakeResource(cardId: "TST-0001", currentTP: null, currentYield: null);
 
         var value = TargetSelector.ResourceValue(res, _cc);
 
