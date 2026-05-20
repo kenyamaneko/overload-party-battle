@@ -249,6 +249,7 @@ public class EffectRegistrationTests
             Source = source,
             CardCache = _cardCache,
             ChoiceData = new Dictionary<string, object> { ["option"] = "memcached" },
+            Effects = _registry,
         };
         handler(ctx);
 
@@ -320,12 +321,12 @@ public class EffectRegistrationTests
 
         var handler = _registry.Get("TK-0025", TriggerType.OnDeploy)
             ?? throw new InvalidOperationException("TK-0025 OnDeploy handler not registered");
-        var ctx = new EffectContext
-        {
+        var ctx = new EffectContext {
             State = state,
             Game = _game,
             PlayerNum = 1,
             CardCache = _cardCache,
+            Effects = new EffectRegistry(),
         };
         handler(ctx);
 
@@ -360,12 +361,12 @@ public class EffectRegistrationTests
         // Fire an incident that deals 500 damage
         var selector = new FixedSelector([resource]);
         var op = new IncidentDamageOp(selector, new StaticAmount(500));
-        var opCtx = new OpContext(new EffectContext
-        {
+        var opCtx = new OpContext(new EffectContext {
             State = state,
             Game = _game,
             PlayerNum = 1,
             CardCache = _cardCache,
+            Effects = new EffectRegistry(),
         });
 
         op.Execute(opCtx);
@@ -380,12 +381,12 @@ public class EffectRegistrationTests
         var handler = _registry.Get(cardId, trigger)
             ?? throw new InvalidOperationException($"{cardId} {trigger} handler not registered");
 
-        var ctx = new EffectContext
-        {
+        var ctx = new EffectContext {
             State = state,
             Game = _game,
             PlayerNum = playerNum,
             CardCache = _cardCache,
+            Effects = new EffectRegistry(),
         };
 
         return handler(ctx);

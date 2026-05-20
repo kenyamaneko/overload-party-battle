@@ -21,13 +21,8 @@ public static class UseEffectProcessor
     /// <returns>The action result containing effect events and state update flag.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        UseEffectRequest req, ICardCache cc, IEffectRegistry? effects)
+        UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
     {
-        if (effects is null)
-        {
-            throw new GameRuleException("effect system not initialized");
-        }
-
         var field = state.GetField(playerNum);
 
         // まずリソースとして検索

@@ -13,12 +13,12 @@ public class EffectComposerTests
     private static EffectContext MakeContext(BattleGameState? state = null)
     {
         state ??= TestFactory.MakeGameState();
-        return new EffectContext
-        {
+        return new EffectContext {
             State = state,
             Game = TestFactory.MakeGame(),
             PlayerNum = 1,
             CardCache = new TestCardCache(),
+            Effects = new EffectRegistry(),
         };
     }
 

@@ -20,7 +20,7 @@ public static class DiscardProcessor
     /// <returns>The action result containing discard events and possible game-over result.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        DiscardHandRequest req, ICardCache cc, IEffectRegistry? effects = null)
+        DiscardHandRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var hand = state.GetHand(playerNum);
         int requiredDiscards = hand.Count - BattleConstants.HandLimit;

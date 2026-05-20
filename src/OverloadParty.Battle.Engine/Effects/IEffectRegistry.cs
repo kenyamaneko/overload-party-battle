@@ -56,7 +56,7 @@ public class EffectContext
     public long? EventDamage { get; init; }
 
     /// <summary>入れ子のトリガー発火に使うエフェクトレジストリ</summary>
-    public IEffectRegistry? Effects { get; init; }
+    public required IEffectRegistry Effects { get; init; }
 }
 
 /// <summary>

@@ -21,14 +21,14 @@ public class BuffTypeTests
 
     private OpContext MakeOpContext(BattleGameState state, long playerNum, DeployedResource? source = null, DeployedResource? target = null)
     {
-        var ctx = new EffectContext
-        {
+        var ctx = new EffectContext {
             State = state,
             Game = _game,
             PlayerNum = playerNum,
             Source = source,
             Target = target,
             CardCache = _cc,
+            Effects = new EffectRegistry(),
         };
         return new OpContext(ctx);
     }

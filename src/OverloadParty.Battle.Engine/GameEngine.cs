@@ -12,23 +12,21 @@ public class GameEngine
 {
     private readonly IGameRepository _repo;
     private readonly ICardCache _cardCache;
-    private IEffectRegistry? _effects;
+    private readonly IEffectRegistry _effects;
 
     /// <summary>Initializes a new instance of <see cref="GameEngine"/>.</summary>
     /// <param name="repo">The game persistence layer.</param>
     /// <param name="cardCache">Read-only card definitions.</param>
-    public GameEngine(IGameRepository repo, ICardCache cardCache)
+    /// <param name="effects">The effect registry (card effect handlers).</param>
+    public GameEngine(IGameRepository repo, ICardCache cardCache, IEffectRegistry effects)
     {
         _repo = repo;
         _cardCache = cardCache;
+        _effects = effects;
     }
 
-    /// <summary>Injects the effect registry (card effect handlers). Must be called before processing actions that use effects.</summary>
-    /// <param name="registry">The effect registry to use.</param>
-    public void SetEffectRegistry(IEffectRegistry registry) => _effects = registry;
-
-    /// <summary>Gets the currently configured effect registry, or <c>null</c> if not set.</summary>
-    public IEffectRegistry? EffectRegistry => _effects;
+    /// <summary>Gets the configured effect registry.</summary>
+    public IEffectRegistry EffectRegistry => _effects;
 
     /// <summary>
     /// CreateNewGame はシャッフルしたデッキと初期手札で新しいゲームを作成します

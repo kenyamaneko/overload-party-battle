@@ -22,7 +22,7 @@ public static class GameStateView
     /// <returns>視点プレイヤー向けの ClientGameState。</returns>
     public static GD.ClientGameState Build(
         BattleGameState state, Game game, long playerNum,
-        ICardCache cc, IEffectRegistry? effects)
+        ICardCache cc, IEffectRegistry effects)
     {
         var oppNum = state.OpponentOf(playerNum);
 

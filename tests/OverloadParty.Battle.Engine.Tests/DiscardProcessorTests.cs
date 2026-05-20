@@ -49,7 +49,7 @@ public class DiscardProcessorTests
         state.Player2Repository = MakeRepo(5);
 
         var result = DiscardProcessor.Process(
-            state, _game, 1, MakeReq("h_6", "h_7"), _cc);
+            state, _game, 1, MakeReq("h_6", "h_7"), _cc, new EffectRegistry());
 
         // After discard, hand should have 6 cards
         // (Note: SwitchActivePlayer + DrawPhaseProcessor runs after, so hand count may change for P2)
@@ -68,7 +68,7 @@ public class DiscardProcessorTests
         state.Player1Hand = MakeHand(4); // under limit
 
         var act = () => DiscardProcessor.Process(
-            state, _game, 1, MakeReq("h_0"), _cc);
+            state, _game, 1, MakeReq("h_0"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*no discard needed*");
     }
@@ -82,7 +82,7 @@ public class DiscardProcessorTests
         state.Player1Hand = MakeHand(8); // need to discard 2
 
         var act = () => DiscardProcessor.Process(
-            state, _game, 1, MakeReq("h_6"), _cc); // only 1 provided
+            state, _game, 1, MakeReq("h_6"), _cc, new EffectRegistry()); // only 1 provided
 
         act.Should().Throw<GameRuleException>().WithMessage("*exactly*");
     }
@@ -96,7 +96,7 @@ public class DiscardProcessorTests
         state.Player1Hand = MakeHand(8);
         state.Player2Repository = MakeRepo(5);
 
-        DiscardProcessor.Process(state, _game, 1, MakeReq("h_6", "h_7"), _cc);
+        DiscardProcessor.Process(state, _game, 1, MakeReq("h_6", "h_7"), _cc, new EffectRegistry());
 
         // After SwitchActivePlayer, active player changes to 2, turn increments
         state.ActivePlayer.Should().Be(2);
@@ -113,7 +113,7 @@ public class DiscardProcessorTests
         state.Player2Repository = MakeRepo(5);
 
         var result = DiscardProcessor.Process(
-            state, _game, 1, MakeReq("h_6"), _cc);
+            state, _game, 1, MakeReq("h_6"), _cc, new EffectRegistry());
 
         var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
         discardEvent.EventData.Should().BeOfType<DiscardHandEventData>()

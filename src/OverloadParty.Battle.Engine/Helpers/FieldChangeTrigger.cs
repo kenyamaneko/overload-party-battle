@@ -17,9 +17,8 @@ public static class FieldChangeTrigger
     /// <param name="cc">カード定義キャッシュ。</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
     public static void Fire(
-        BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects)
+        BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects)
     {
-        if (effects is null) { return; }
 
         FireForPlayer(state, game, 1, cc, effects);
         FireForPlayer(state, game, 2, cc, effects);
@@ -72,6 +71,7 @@ public static class FieldChangeTrigger
                 Source = source,
                 SupSource = supSource,
                 CardCache = cc,
+                Effects = effects,
             });
         }
     }

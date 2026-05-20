@@ -22,8 +22,7 @@ public class NpcEventStateTests
     {
         var (effects, cc) = TestEffectSetup.Get();
         _cc = cc;
-        var engine = new GameEngine(_repo, cc);
-        engine.SetEffectRegistry(effects);
+        var engine = new GameEngine(_repo, cc, effects);
 
         var npcDataDir = FindNpcDataDir()
             ?? throw new FileNotFoundException("NPC data directory not found");

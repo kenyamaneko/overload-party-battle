@@ -16,14 +16,14 @@ public class UseLimitTests
         DeployedSupport? supSource = null)
     {
         var cc = new TestCardCache();
-        var ctx = new EffectContext
-        {
+        var ctx = new EffectContext {
             State = state,
             Game = _game,
             PlayerNum = playerNum,
             Source = source,
             SupSource = supSource,
             CardCache = cc,
+            Effects = new EffectRegistry(),
         };
         return new OpContext(ctx);
     }
