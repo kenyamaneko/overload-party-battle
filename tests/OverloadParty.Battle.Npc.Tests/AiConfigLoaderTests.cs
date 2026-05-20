@@ -25,18 +25,18 @@ public class AiConfigLoaderTests
             model: test
             faction: SHE
             deck:
-              - card_id: SH-0001
+              - card_id: TST-2001
                 copies: 3
-              - card_id: SH-0002
+              - card_id: TST-2002
                 copies: 1
             """;
 
         var config = AiConfigLoader.LoadFromString(yaml);
 
         config.Deck.Should().HaveCount(2);
-        config.Deck[0].CardId.Should().Be("SH-0001");
+        config.Deck[0].CardId.Should().Be("TST-2001");
         config.Deck[0].Copies.Should().Be(3);
-        config.Deck[1].CardId.Should().Be("SH-0002");
+        config.Deck[1].CardId.Should().Be("TST-2002");
         config.Deck[1].Copies.Should().Be(1);
     }
 
@@ -109,12 +109,12 @@ public class AiConfigLoaderTests
             faction: SHE
             deploy:
               priorities:
-                - card_id: SH-0001
+                - card_id: TST-2001
                   priority: 80
                 - card_type: Compute
                   priority: 50
               choices:
-                SH-0006: use
+                TST-2006: use
               zone_preferences:
                 Compute: [frontend, backend]
                 Data: [backend]
@@ -123,10 +123,10 @@ public class AiConfigLoaderTests
         var config = AiConfigLoader.LoadFromString(yaml);
 
         config.Deploy.Priorities.Should().HaveCount(2);
-        config.Deploy.Priorities[0].CardId.Should().Be("SH-0001");
+        config.Deploy.Priorities[0].CardId.Should().Be("TST-2001");
         config.Deploy.Priorities[0].Priority.Should().Be(80);
         config.Deploy.Priorities[1].CardType.Should().Be("Compute");
-        config.Deploy.Choices!["SH-0006"].Should().Be("use");
+        config.Deploy.Choices!["TST-2006"].Should().Be("use");
         config.Deploy.ZonePreferences!["Compute"].Should().Equal("frontend", "backend");
     }
 
@@ -138,11 +138,11 @@ public class AiConfigLoaderTests
             faction: Tenki
             deploy:
               conditional_priorities:
-                - card_id: TK-0005
+                - card_id: TST-4005
                   priority: 90
                   condition:
                     selector: { owner: myself }
-                    card_id: [TK-0010]
+                    card_id: [TST-4010]
                     min: 1
                   fallback_priority: 70
             """;
@@ -150,11 +150,11 @@ public class AiConfigLoaderTests
         var config = AiConfigLoader.LoadFromString(yaml);
 
         var cp = config.Deploy.ConditionalPriorities![0];
-        cp.CardId.Should().Be("TK-0005");
+        cp.CardId.Should().Be("TST-4005");
         cp.Priority.Should().Be(90);
         cp.FallbackPriority.Should().Be(70);
         cp.Condition.Selector!.Owner.Should().Be("myself");
-        cp.Condition.CardId.Should().Equal("TK-0010");
+        cp.Condition.CardId.Should().Equal("TST-4010");
         cp.Condition.Min.Should().Be(1);
     }
 
@@ -226,15 +226,15 @@ public class AiConfigLoaderTests
             reactive:
               max_slots: 2
               priorities:
-                NT-0025: 90
-                NT-0024: 70
+                TST-1025: 90
+                TST-1024: 70
             """;
 
         var config = AiConfigLoader.LoadFromString(yaml);
 
         config.Reactive!.MaxSlots.Should().Be(2);
-        config.Reactive.Priorities["NT-0025"].Should().Be(90);
-        config.Reactive.Priorities["NT-0024"].Should().Be(70);
+        config.Reactive.Priorities["TST-1025"].Should().Be(90);
+        config.Reactive.Priorities["TST-1024"].Should().Be(70);
     }
 
     [Fact]

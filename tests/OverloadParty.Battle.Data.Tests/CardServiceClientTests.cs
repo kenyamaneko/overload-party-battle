@@ -35,7 +35,7 @@ public class CardServiceClientTests
         const string body = """
         [
           {
-            "card_id": "SH-0001",
+            "card_id": "TST-2001",
             "card_name": "VM Instance",
             "resource_label": "VM",
             "faction": "SHE",
@@ -55,7 +55,7 @@ public class CardServiceClientTests
         var cards = await client.ListAllCardsAsync();
 
         cards.Should().HaveCount(1);
-        cards[0].CardId.Should().Be("SH-0001");
+        cards[0].CardId.Should().Be("TST-2001");
         cards[0].CardName.Should().Be("VM Instance");
         cards[0].Faction.Should().Be("SHE");
         cards[0].Resizable.Should().BeTrue();

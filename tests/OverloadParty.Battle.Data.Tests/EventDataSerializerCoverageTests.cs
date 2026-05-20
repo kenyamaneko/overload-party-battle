@@ -89,8 +89,8 @@ public class EventDataSerializerCoverageTests
     /// </summary>
     private static readonly Dictionary<Type, IEventData> RoundTripSamples = new()
     {
-        [typeof(PlayCardEventData)] = new PlayCardEventData { CardId = "SH-0001", Zone = "frontend", Index = 0 },
-        [typeof(AttachCardEventData)] = new AttachCardEventData { CardId = "SH-0010", TargetId = "inst_7" },
+        [typeof(PlayCardEventData)] = new PlayCardEventData { CardId = "TST-2001", Zone = "frontend", Index = 0 },
+        [typeof(AttachCardEventData)] = new AttachCardEventData { CardId = "TST-2010", TargetId = "inst_7" },
         [typeof(AttackEventData)] = new AttackEventData { AttackerId = "a", TargetId = "d", Damage = 300, Destroyed = false, SlaPenalty = 0 },
         [typeof(ScaleUpEventData)] = new ScaleUpEventData { InstanceId = "i", TargetRank = "medium", InstanceFamily = "M" },
         [typeof(MonetizeEventData)] = new MonetizeEventData { TotalAmount = 100 },
@@ -159,11 +159,11 @@ public class EventDataSerializerCoverageTests
         // so byte-identical serialization requires the same policy here.
         var json = EventDataSerializer.Serialize(new PlayCardEventData
         {
-            CardId = "SH-0001",
+            CardId = "TST-2001",
             Zone = "frontend",
             Index = 3,
         });
-        json.Should().Contain("\"cardId\":\"SH-0001\"");
+        json.Should().Contain("\"cardId\":\"TST-2001\"");
         json.Should().Contain("\"zone\":\"frontend\"");
         json.Should().Contain("\"index\":3");
     }

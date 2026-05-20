@@ -10,8 +10,8 @@ public class GuardCheckerTests
 
     public GuardCheckerTests()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", tp: 600, av: 1400));
-        _cc.Add(TestFactory.DataCard(cardId: "NT-0009", subtype: "Database", yield: 400, av: 800));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", tp: 600, av: 1400));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-1009", subtype: "Database", yield: 400, av: 800));
     }
 
     private DecisionContext MakeCtx(
@@ -138,8 +138,8 @@ public class GuardCheckerTests
     public void Check_CountWithFaction()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
-        field.Frontend[1] = TestFactory.MakeResource(cardId: "NT-0009", instanceId: "r2");
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "r1");
+        field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-1009", instanceId: "r2");
         var ctx = MakeCtx(field: field);
 
         var cond = new ConditionDef
@@ -161,13 +161,13 @@ public class GuardCheckerTests
     public void Check_CountWithCardId()
     {
         var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
-        field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r2");
+        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "r1");
+        field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-2001", instanceId: "r2");
         var ctx = MakeCtx(field: field);
 
         var cond = new ConditionDef
         {
-            Selector = new SelectorDef { Owner = "myself", CardId = ["SH-0001"] },
+            Selector = new SelectorDef { Owner = "myself", CardId = ["TST-2001"] },
             Min = 2,
         };
         GuardChecker.Check(cond, ctx, _cc).Should().BeTrue();
