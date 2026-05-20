@@ -18,6 +18,7 @@ public class FieldOpTests
             Game = _game,
             PlayerNum = playerNum,
             CardCache = _cc,
+            Effects = new EffectRegistry(),
         };
         return new OpContext(ctx);
     }

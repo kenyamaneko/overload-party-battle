@@ -20,7 +20,7 @@ public static class ScaleUpProcessor
     /// <returns>The action result containing the scale-up event and state update flag.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        ScaleUpRequest req, ICardCache cc, IEffectRegistry? effects = null)
+        ScaleUpRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var field = state.GetField(playerNum);
 
@@ -114,6 +114,7 @@ public static class ScaleUpProcessor
                 PlayerNum = playerNum,
                 Source = source,
                 CardCache = cc,
+                Effects = effects,
             });
             if (!result.GuardFailed) { events.AddRange(result.Events); }
         }

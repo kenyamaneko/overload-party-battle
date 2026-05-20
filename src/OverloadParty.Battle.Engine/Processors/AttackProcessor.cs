@@ -20,7 +20,7 @@ public static class AttackProcessor
     /// <returns>The action result containing attack events and state update flag.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        AttackRequest req, ICardCache cc, IEffectRegistry? effects)
+        AttackRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var myField = state.GetField(playerNum);
         var opponentNum = state.OpponentOf(playerNum);
@@ -68,7 +68,7 @@ public static class AttackProcessor
         attacker.LastAttackTurn = state.CurrentTurn;
 
         // OnAttack トリガーを発動
-        if (effects?.Has(attackerCard.CardId, TriggerType.OnAttack) == true)
+        if (effects.Has(attackerCard.CardId, TriggerType.OnAttack))
         {
             var handler = effects.Get(attackerCard.CardId, TriggerType.OnAttack)!;
             var ctx = new EffectContext
@@ -194,9 +194,8 @@ public static class AttackProcessor
     private static (bool Cancelled, List<GameEvent> Events) FireOnAttackDeclared(
         BattleGameState state, Game game, long attackerNum, long defenderNum, Field defenderField,
         DeployedResource attacker, DeployedResource target, long damage,
-        ICardCache cc, IEffectRegistry? effects)
+        ICardCache cc, IEffectRegistry effects)
     {
-        if (effects is null) { return (false, []); }
 
         var candidates = FieldHelpers.AllSupports(defenderField)
             .Select(s => EventTriggerCandidate.ForSupport(s, defenderNum))
@@ -225,9 +224,8 @@ public static class AttackProcessor
     private static List<GameEvent> FireOnDestroy(
         BattleGameState state, Game game, long ownerNum,
         DeployedResource destroyed, Field ownerField,
-        ICardCache cc, IEffectRegistry? effects)
+        ICardCache cc, IEffectRegistry effects)
     {
-        if (effects is null) { return []; }
 
         var candidates = new List<EventTriggerCandidate>();
 
@@ -268,9 +266,8 @@ public static class AttackProcessor
 
     private static List<GameEvent> FireOnHit(
         BattleGameState state, Game game, long defenderPlayerNum,
-        DeployedResource defender, ICardCache cc, IEffectRegistry? effects)
+        DeployedResource defender, ICardCache cc, IEffectRegistry effects)
     {
-        if (effects is null) { return []; }
 
         var allEvents = new List<GameEvent>();
 

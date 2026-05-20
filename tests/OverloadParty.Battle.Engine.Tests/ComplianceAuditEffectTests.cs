@@ -164,6 +164,7 @@ public class ComplianceAuditEffectTests
             Game = _game,
             PlayerNum = playerNum,
             CardCache = _cc,
+            Effects = new EffectRegistry(),
         };
 
         return handler(ctx);

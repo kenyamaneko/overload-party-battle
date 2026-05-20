@@ -19,6 +19,7 @@ public class EffectComposerTests
             Game = TestFactory.MakeGame(),
             PlayerNum = 1,
             CardCache = new TestCardCache(),
+            Effects = new EffectRegistry(),
         };
     }
 

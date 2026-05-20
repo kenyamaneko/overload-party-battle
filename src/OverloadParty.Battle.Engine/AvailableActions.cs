@@ -86,7 +86,7 @@ public static class AvailableActions
         BattleGameState state,
         Field myField, Field oppField, List<UndeployedCard> hand,
         long budget, long insightPool,
-        ICardCache cc, IEffectRegistry? effects)
+        ICardCache cc, IEffectRegistry effects)
     {
         var actions = new List<AvailableAction>();
 
@@ -110,7 +110,7 @@ public static class AvailableActions
 
     private static IEnumerable<AvailableAction> EnumeratePlayCardActions(
         BattleGameState state, Field field, List<UndeployedCard> hand,
-        long budget, ICardCache cc, IEffectRegistry? effects)
+        long budget, ICardCache cc, IEffectRegistry effects)
     {
         foreach (var handCard in hand)
         {
@@ -123,7 +123,7 @@ public static class AvailableActions
 
     private static AvailableAction? BuildPlayCardAction(
         BattleGameState state, Field field, UndeployedCard handCard, CardDefinition card,
-        long budget, ICardCache cc, IEffectRegistry? effects)
+        long budget, ICardCache cc, IEffectRegistry effects)
     {
         return EnumExtensions.GetCategory(card.CardType) switch
         {
@@ -135,7 +135,7 @@ public static class AvailableActions
 
     private static AvailableAction? BuildSupportPlayAction(
         BattleGameState state, Field field, UndeployedCard handCard, CardDefinition card,
-        long budget, ICardCache cc, IEffectRegistry? effects)
+        long budget, ICardCache cc, IEffectRegistry effects)
     {
         if (card.CardType == CardTypes.Attachment)
         {
@@ -197,9 +197,8 @@ public static class AvailableActions
     /// passes the filter (in which case the action must be suppressed).
     /// </summary>
     private static bool TryPopulateTrashChoice(
-        AvailableAction action, BattleGameState state, string cardId, ICardCache cc, IEffectRegistry? effects)
+        AvailableAction action, BattleGameState state, string cardId, ICardCache cc, IEffectRegistry effects)
     {
-        if (effects is null) { return true; }
 
         var ops = effects.GetOps(cardId, TriggerType.Ignition);
         if (ops is null) { return true; }
@@ -359,9 +358,8 @@ public static class AvailableActions
 
     private static IEnumerable<AvailableAction> EnumerateUseEffectActions(
         BattleGameState state, Field myField, Field oppField,
-        long budget, ICardCache cc, IEffectRegistry? effects)
+        long budget, ICardCache cc, IEffectRegistry effects)
     {
-        if (effects is null) { yield break; }
 
         // フロントエンドおよびバックエンドリソース
         foreach (var resource in FieldHelpers.AllFaceUpResources(myField))

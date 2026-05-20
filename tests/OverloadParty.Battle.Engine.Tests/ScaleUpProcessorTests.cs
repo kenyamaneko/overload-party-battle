@@ -32,7 +32,7 @@ public class ScaleUpProcessorTests
         resource.DeployedOnTurn = 1;
         state.Player1Field.Frontend[0] = resource;
 
-        ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", reqRank, reqFamily), _cc);
+        ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", reqRank, reqFamily), _cc, new EffectRegistry());
 
         resource.Rank.Should().Be(expectedRank);
     }
@@ -48,7 +48,7 @@ public class ScaleUpProcessorTests
         state.Player1Field.Frontend[0] = resource;
 
         var act = () => ScaleUpProcessor.Process(
-            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
+            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*not resizable*");
     }
@@ -64,7 +64,7 @@ public class ScaleUpProcessorTests
         state.Player1Field.Frontend[0] = resource;
 
         ScaleUpProcessor.Process(
-            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
+            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, new EffectRegistry());
 
         resource.Rank.Should().Be(Rank.Medium);
     }
@@ -80,9 +80,9 @@ public class ScaleUpProcessorTests
         state.Player1Field.Frontend[0] = resource;
 
         ScaleUpProcessor.Process(
-            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
+            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, new EffectRegistry());
         ScaleUpProcessor.Process(
-            state, _game, 1, MakeReq("inst_1", "large", "M"), _cc);
+            state, _game, 1, MakeReq("inst_1", "large", "M"), _cc, new EffectRegistry());
 
         resource.Rank.Should().Be(Rank.Large);
     }
@@ -99,7 +99,7 @@ public class ScaleUpProcessorTests
         state.Player1Field.Frontend[0] = resource;
 
         var act = () => ScaleUpProcessor.Process(
-            state, _game, 1, MakeReq("inst_1", "medium"), _cc);
+            state, _game, 1, MakeReq("inst_1", "medium"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*family required*");
     }
@@ -115,7 +115,7 @@ public class ScaleUpProcessorTests
         state.Player1Field.Frontend[0] = resource;
 
         var act = () => ScaleUpProcessor.Process(
-            state, _game, 1, MakeReq("inst_1", "large", "C"), _cc);
+            state, _game, 1, MakeReq("inst_1", "large", "C"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*cannot change instance family*");
     }
@@ -131,7 +131,7 @@ public class ScaleUpProcessorTests
         state.Player1Field.Frontend[0] = resource;
 
         var act = () => ScaleUpProcessor.Process(
-            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
+            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*scale up*higher rank*");
     }
@@ -147,7 +147,7 @@ public class ScaleUpProcessorTests
         state.Player1Field.Frontend[0] = resource;
 
         var result = ScaleUpProcessor.Process(
-            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc);
+            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, new EffectRegistry());
 
         var evt = result.Events.First(e => e.EventType == ActionTypes.ScaleUp);
         var data = evt.EventData.Should().BeOfType<ScaleUpEventData>().Subject;

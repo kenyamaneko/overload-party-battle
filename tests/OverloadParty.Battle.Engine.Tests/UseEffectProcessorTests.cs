@@ -124,18 +124,6 @@ public class UseEffectProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*not found*");
     }
 
-    [Fact]
-    public void Process_NullEffectRegistry_Throws()
-    {
-        var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
-
-        var req = new UseEffectRequest { InstanceID = "r_1" };
-        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, effects: null);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*not initialized*");
-    }
-
     // ─── Resource effect with target ────────────────────────────
 
     [Fact]

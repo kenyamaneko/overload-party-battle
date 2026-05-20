@@ -97,7 +97,7 @@ public class OpContext
     public long? EventDamage => Ctx.EventDamage;
 
     /// <summary>入れ子のトリガー発火に使うエフェクトレジストリ</summary>
-    public IEffectRegistry? Effects => Ctx.Effects;
+    public IEffectRegistry Effects => Ctx.Effects;
 
     /// <summary>
     /// Add an event to the result.

@@ -64,16 +64,13 @@ builder.Services.AddSingleton(sp =>
 {
     var gameRepo = sp.GetRequiredService<IGameRepository>();
     var cc = sp.GetRequiredService<ICardCache>();
-    var engine = new GameEngine(gameRepo, cc);
 
     // カード定義からエフェクトを初期化（YAML 駆動）
     var registry = new EffectRegistry();
     var customEffects = new CustomEffectRegistry();
     EffectYamlLoader.LoadFromCards(cc.All().Values, registry, customEffects);
 
-    engine.SetEffectRegistry(registry);
-
-    return engine;
+    return new GameEngine(gameRepo, cc, registry);
 });
 
 // ─── Services ───────────────────────────────────────────────

@@ -249,6 +249,7 @@ public class EffectRegistrationTests
             Source = source,
             CardCache = _cardCache,
             ChoiceData = new Dictionary<string, object> { ["option"] = "memcached" },
+            Effects = _registry,
         };
         handler(ctx);
 
@@ -326,6 +327,7 @@ public class EffectRegistrationTests
             Game = _game,
             PlayerNum = 1,
             CardCache = _cardCache,
+            Effects = new EffectRegistry(),
         };
         handler(ctx);
 
@@ -366,6 +368,7 @@ public class EffectRegistrationTests
             Game = _game,
             PlayerNum = 1,
             CardCache = _cardCache,
+            Effects = new EffectRegistry(),
         });
 
         op.Execute(opCtx);
@@ -386,6 +389,7 @@ public class EffectRegistrationTests
             Game = _game,
             PlayerNum = playerNum,
             CardCache = _cardCache,
+            Effects = new EffectRegistry(),
         };
 
         return handler(ctx);

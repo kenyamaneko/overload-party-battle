@@ -28,6 +28,7 @@ public class SlotRequestOpsTests
             Target = target,
             CardCache = _cc,
             ChoiceData = choiceData,
+            Effects = new EffectRegistry(),
         };
     }
 

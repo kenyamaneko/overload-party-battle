@@ -55,6 +55,7 @@ public class GuardOpTests
             IncidentCard = incidentCard,
             EventDamage = eventDamage,
             CardCache = _cc,
+            Effects = new EffectRegistry(),
         });
     }
 

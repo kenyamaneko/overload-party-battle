@@ -26,6 +26,7 @@ public class TrashToHandOpTests
             PlayerNum = 1,
             CardCache = _cc,
             ChoiceData = choiceData,
+            Effects = new EffectRegistry(),
         };
     }
 

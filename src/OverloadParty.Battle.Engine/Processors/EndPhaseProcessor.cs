@@ -18,7 +18,7 @@ public static class EndPhaseProcessor
     /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <returns>The action result containing phase change events and possible game-over or discard requirements.</returns>
     public static ActionResult Process(
-        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects = null)
+        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects)
     {
         var previousPhase = TurnManager.AdvancePhase(state);
 
@@ -45,7 +45,7 @@ public static class EndPhaseProcessor
 
     private static ActionResult ProcessEndPhaseTransition(
         BattleGameState state, Game game, long playerNum, ICardCache cc,
-        IEffectRegistry? effects, List<GameEvent> events)
+        IEffectRegistry effects, List<GameEvent> events)
     {
         bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects);
         var result = new ActionResult { Events = events, StateUpdated = true };
@@ -93,7 +93,7 @@ public static class EndPhaseProcessor
     /// <summary>
     /// Returns true if the player needs to discard (hand > 6).
     /// </summary>
-    static bool ProcessEndPhaseLogic(BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects)
+    static bool ProcessEndPhaseLogic(BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects)
     {
         var field = state.GetField(playerNum);
 
@@ -190,9 +190,8 @@ public static class EndPhaseProcessor
 
     static void FirePassiveEffects(
         BattleGameState state, Game game, long playerNum, Field field,
-        ICardCache cc, IEffectRegistry? effects)
+        ICardCache cc, IEffectRegistry effects)
     {
-        if (effects is null) { return; }
 
         // リソース＋アタッチメント＋サポートを DeployOrder 昇順で収集
         var triggers = new List<(string CardId, long DeployOrder, DeployedResource? Source, DeployedSupport? SupSource)>();
@@ -237,6 +236,7 @@ public static class EndPhaseProcessor
                 Source = source,
                 SupSource = supSource,
                 CardCache = cc,
+                Effects = effects,
             });
         }
     }

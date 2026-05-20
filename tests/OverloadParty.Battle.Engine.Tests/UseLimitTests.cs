@@ -24,6 +24,7 @@ public class UseLimitTests
             Source = source,
             SupSource = supSource,
             CardCache = cc,
+            Effects = new EffectRegistry(),
         };
         return new OpContext(ctx);
     }

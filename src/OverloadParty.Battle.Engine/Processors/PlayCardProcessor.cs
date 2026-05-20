@@ -11,7 +11,7 @@ public static class PlayCardProcessor
     /// <summary>カードプレイ処理で各メソッドへ引き回す処理コンテキスト。</summary>
     private record PlayContext(
         BattleGameState State, Game Game, long PlayerNum,
-        ICardCache CC, IEffectRegistry? Effects);
+        ICardCache CC, IEffectRegistry Effects);
 
     /// <summary>
     /// Plays a card from the player's hand onto the field, handling resource, support, and attachment placement.
@@ -25,7 +25,7 @@ public static class PlayCardProcessor
     /// <returns>The action result containing generated events and state update flag.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        PlayCardRequest req, ICardCache cc, IEffectRegistry? effects)
+        PlayCardRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var hand = state.GetHand(playerNum);
         var field = state.GetField(playerNum);
@@ -115,7 +115,7 @@ public static class PlayCardProcessor
             incidentCancelled = cancelled;
         }
 
-        if (!incidentCancelled && ctx.Effects?.Has(cardDef.CardId, TriggerType.Ignition) == true)
+        if (!incidentCancelled && ctx.Effects.Has(cardDef.CardId, TriggerType.Ignition))
         {
             var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.Ignition)!;
             var effectCtx = new EffectContext
@@ -267,7 +267,7 @@ public static class PlayCardProcessor
         var events = new List<GameEvent>();
 
         // アタッチメントは装備された時点が自身のデプロイにあたるため、ここで自身の on_deploy 効果を発火する。
-        if (ctx.Effects?.Has(cardDef.CardId, TriggerType.OnDeploy) == true)
+        if (ctx.Effects.Has(cardDef.CardId, TriggerType.OnDeploy))
         {
             var handler = ctx.Effects.Get(cardDef.CardId, TriggerType.OnDeploy)!;
             var effectCtx = new EffectContext
@@ -333,7 +333,6 @@ public static class PlayCardProcessor
     private static (bool Cancelled, List<GameEvent> Events) FireOnDeployForResource(
         PlayContext ctx, DeployedResource deployed)
     {
-        if (ctx.Effects is null) { return (false, []); }
 
         var events = new List<GameEvent>();
 
@@ -371,7 +370,6 @@ public static class PlayCardProcessor
     /// <returns>発火したイベント。</returns>
     private static List<GameEvent> FireOnDeployForSupport(PlayContext ctx, DeployedSupport deployed)
     {
-        if (ctx.Effects is null) { return []; }
 
         var events = new List<GameEvent>();
 
@@ -409,7 +407,6 @@ public static class PlayCardProcessor
     private static (bool Cancelled, List<GameEvent> Events) FireOnDeployTriggers(
         PlayContext ctx, DeployedResource? deployedResource, DeployedSupport? supSource)
     {
-        if (ctx.Effects is null) { return (false, []); }
 
         var opponentNum = ctx.State.OpponentOf(ctx.PlayerNum);
         var opponentField = ctx.State.GetField(opponentNum);
@@ -443,7 +440,6 @@ public static class PlayCardProcessor
     private static (bool Cancelled, List<GameEvent> Events) FireOnIncident(
         PlayContext ctx, CardDefinition incidentCard)
     {
-        if (ctx.Effects is null) { return (false, []); }
 
         var allEvents = new List<GameEvent>();
         bool cancelled = false;

@@ -20,7 +20,7 @@ public static class ResourceHelpers
     /// <param name="amount">適用するダメージ量。</param>
     /// <returns>on_damaged トリガーで生成されたイベント一覧。</returns>
     public static List<GameEvent> ApplyDamage(
-        BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects,
+        BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects,
         DeployedResource resource, long ownerNum, long amount)
     {
         resource.Damage += amount;
@@ -31,10 +31,9 @@ public static class ResourceHelpers
     /// 被ダメージリソースの所有者フィールド（リソース＋サポートゾーン）を走査して on_damaged を発火する。
     /// </summary>
     private static List<GameEvent> FireOnDamaged(
-        BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects,
+        BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects,
         DeployedResource damaged, long ownerNum)
     {
-        if (effects is null) { return []; }
 
         var ownerField = state.GetField(ownerNum);
         var candidates = new List<EventTriggerCandidate>();

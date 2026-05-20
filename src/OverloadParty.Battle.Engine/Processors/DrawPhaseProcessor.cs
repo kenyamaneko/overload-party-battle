@@ -17,7 +17,7 @@ public static class DrawPhaseProcessor
     /// <param name="cc">The card definition cache.</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <returns>A game-over result if a win condition is met; otherwise <c>null</c>.</returns>
-    public static GameOverResult? Process(BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects = null)
+    public static GameOverResult? Process(BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects)
     {
         if (state.CurrentPhase != Phase.Draw) { return null; }
 
@@ -40,7 +40,7 @@ public static class DrawPhaseProcessor
     static bool CanDraw(BattleGameState state) =>
         state.GetRepository(state.ActivePlayer).Count > 0;
 
-    static void ProcessDeployCountdown(BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects)
+    static void ProcessDeployCountdown(BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects)
     {
         var playerNum = state.ActivePlayer;
         var field = state.GetField(playerNum);
@@ -77,11 +77,11 @@ public static class DrawPhaseProcessor
     /// デプロイのカウントダウン完了で稼働したカード自身の on_deploy 効果を発火します。
     /// </summary>
     static void FireOnDeploy(
-        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects,
+        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects,
         DeployedResource? source, DeployedSupport? supSource)
     {
         string cardId = source?.CardID ?? supSource!.CardID;
-        if (effects?.Has(cardId, TriggerType.OnDeploy) != true) { return; }
+        if (!effects.Has(cardId, TriggerType.OnDeploy)) { return; }
 
         var handler = effects.Get(cardId, TriggerType.OnDeploy)!;
         handler(new EffectContext

@@ -22,7 +22,7 @@ public class DrawPhaseProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
         state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001", ArtNo = 0 });
 
-        var result = DrawPhaseProcessor.Process(state, _game, _cc);
+        var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
         result.Should().BeNull();
         state.CurrentPhase.Should().Be(Phase.Main);
@@ -38,7 +38,7 @@ public class DrawPhaseProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
         state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
 
-        var result = DrawPhaseProcessor.Process(state, _game, _cc);
+        var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
         result.Should().BeNull();
         state.CurrentPhase.Should().Be(Phase.Main);
@@ -53,7 +53,7 @@ public class DrawPhaseProcessorTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
         // No cards in repository
 
-        var result = DrawPhaseProcessor.Process(state, _game, _cc);
+        var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
         result.Should().NotBeNull();
         result!.WinnerNum.Should().Be(2);
@@ -70,7 +70,7 @@ public class DrawPhaseProcessorTests
         var resource = TestFactory.MakeResource(faceUp: false, deployLeft: 2);
         state.Player1Field.Frontend[0] = resource;
 
-        DrawPhaseProcessor.Process(state, _game, _cc);
+        DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
         resource.DeployingTurnsLeft.Should().Be(1);
         resource.FaceUp.Should().BeFalse();
@@ -84,7 +84,7 @@ public class DrawPhaseProcessorTests
         var resource = TestFactory.MakeResource(faceUp: false, deployLeft: 1);
         state.Player1Field.Frontend[0] = resource;
 
-        DrawPhaseProcessor.Process(state, _game, _cc);
+        DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
         resource.DeployingTurnsLeft.Should().Be(0);
         resource.FaceUp.Should().BeTrue();
