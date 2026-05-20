@@ -29,23 +29,15 @@ public class EffectRegistrationTests
 
     // ─── SHE faction ────────────────────────────────────────────
 
+    // 各 TriggerType 種別の代表 1 件のみを残す (load の動線確認が目的、
+    // カード固有挙動は別途 Card{NN}_* / SH{NN}_* Fact で検証)
     [Theory]
     [InlineData("SH-0006", TriggerType.OnDeploy)]
     [InlineData("SH-0008", TriggerType.OnDestroy)]
     [InlineData("SH-0009", TriggerType.Ignition)]
-    [InlineData("SH-0010", TriggerType.OnDeploy)]
-    [InlineData("SH-0013", TriggerType.Ignition)]
     [InlineData("SH-0014", TriggerType.OnIncident)]
-    [InlineData("SH-0017", TriggerType.OnIncident)]
-    [InlineData("SH-0018", TriggerType.Ignition)]
-    [InlineData("SH-0019", TriggerType.Ignition)]
-    [InlineData("SH-0020", TriggerType.Ignition)]
     [InlineData("SH-0021", TriggerType.OnDamaged)]
-    [InlineData("SH-0022", TriggerType.Ignition)]
-    [InlineData("SH-0023", TriggerType.Ignition)]
-    [InlineData("SH-0011", TriggerType.OnDeploy)]      // Platform: scale_cost_reduction (while_on_field)
-    [InlineData("SH-0016", TriggerType.OnDeploy)]      // Attachment: TP buff (while_on_field)
-    [InlineData("SH-0005", TriggerType.OnFieldChange)] // Conditional: TP buff if ObjectStorage
+    [InlineData("SH-0005", TriggerType.OnFieldChange)]
     public void SHE_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -59,17 +51,8 @@ public class EffectRegistrationTests
     [InlineData("TK-0008", TriggerType.OnDestroy)]
     [InlineData("TK-0010", TriggerType.OnDeploy)]
     [InlineData("TK-0014", TriggerType.OnIncident)]
-    [InlineData("TK-0015", TriggerType.OnDestroy)]
-    [InlineData("TK-0017", TriggerType.OnIncident)]
-    [InlineData("TK-0018", TriggerType.OnDestroy)]
     [InlineData("TK-0020", TriggerType.Ignition)]
-    [InlineData("TK-0021", TriggerType.Ignition)]
-    [InlineData("TK-0022", TriggerType.Ignition)]
-    [InlineData("TK-0023", TriggerType.OnIncident)]
-    [InlineData("TK-0024", TriggerType.OnDestroy)]
-    [InlineData("TK-0025", TriggerType.OnDeploy)]
     [InlineData("NT-0027", TriggerType.OnAttackDeclared)]
-    [InlineData("NT-0028", TriggerType.OnAttackDeclared)]
     public void Tenki_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -82,17 +65,10 @@ public class EffectRegistrationTests
     [Theory]
     [InlineData("SL-0004", TriggerType.OnDeploy)]
     [InlineData("SL-0006", TriggerType.OnAttack)]
-    [InlineData("SL-0007", TriggerType.OnAttack)]
     [InlineData("SL-0007", TriggerType.OnDestroy)]
-    [InlineData("SL-0010", TriggerType.OnDeploy)]
-    [InlineData("SL-0011", TriggerType.OnAttack)]
     [InlineData("SL-0016", TriggerType.OnEndPhase)]
-    [InlineData("SL-0018", TriggerType.OnAttack)]
     [InlineData("SL-0021", TriggerType.Ignition)]
-    [InlineData("SL-0022", TriggerType.Ignition)]
-    [InlineData("SL-0023", TriggerType.Ignition)]
     [InlineData("SL-0024", TriggerType.OnAttackDeclared)]
-    [InlineData("SL-0012", TriggerType.OnDeploy)]
     public void Sugar_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -107,8 +83,7 @@ public class EffectRegistrationTests
     [InlineData("TN-0013", TriggerType.OnIncident)]
     [InlineData("TN-0014", TriggerType.OnDestroy)]
     [InlineData("TN-0017", TriggerType.Ignition)]
-    [InlineData("TN-0018", TriggerType.OnDestroy)]
-    [InlineData("TN-0004", TriggerType.OnFieldChange)] // Orchestrator: maintenance_reduction if <= 3 Tuners
+    [InlineData("TN-0004", TriggerType.OnFieldChange)]
     public void Tuners_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -120,15 +95,9 @@ public class EffectRegistrationTests
 
     [Theory]
     [InlineData("NT-0007", TriggerType.Ignition)]
-    [InlineData("NT-0008", TriggerType.Ignition)]
-    [InlineData("NT-0009", TriggerType.Ignition)]
-    [InlineData("NT-0010", TriggerType.Ignition)]
-    [InlineData("NT-0011", TriggerType.Ignition)]
-    [InlineData("NT-0012", TriggerType.Ignition)]
-    [InlineData("NT-0026", TriggerType.Ignition)]
-    [InlineData("NT-0002", TriggerType.OnHit)]         // Attachment: TP buff on hit
-    [InlineData("NT-0005", TriggerType.OnDeploy)]      // Platform: incident_reduction (while_on_field)
-    [InlineData("NT-0025", TriggerType.OnFieldChange)] // Attachment: conditional attack_damage_reduction
+    [InlineData("NT-0002", TriggerType.OnHit)]
+    [InlineData("NT-0005", TriggerType.OnDeploy)]
+    [InlineData("NT-0025", TriggerType.OnFieldChange)]
     public void Neutral_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -140,16 +109,7 @@ public class EffectRegistrationTests
 
     [Theory]
     [InlineData("NT-0013", TriggerType.Ignition)]
-    [InlineData("NT-0014", TriggerType.Ignition)]
-    [InlineData("NT-0015", TriggerType.Ignition)]
-    [InlineData("NT-0016", TriggerType.Ignition)]
-    [InlineData("NT-0017", TriggerType.Ignition)]
-    [InlineData("NT-0018", TriggerType.Ignition)]
-    [InlineData("NT-0019", TriggerType.Ignition)]
-    [InlineData("NT-0020", TriggerType.Ignition)]
-    [InlineData("NT-0021", TriggerType.Ignition)]
     [InlineData("NT-0022", TriggerType.OnDeploy)]
-    [InlineData("NT-0034", TriggerType.OnDeploy)]
     public void Incident_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
