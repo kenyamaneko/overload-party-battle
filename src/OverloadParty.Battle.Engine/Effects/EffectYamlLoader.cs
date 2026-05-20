@@ -592,7 +592,8 @@ public static class EffectYamlLoader
         int? min = element.GetInt32OrNull("min");
         int? max = element.GetInt32OrNull("max");
 
-        // NPC classifier が認識できる形 (RequireFactionCountOp) に寄せられるパターンは shortcut で集約する。
+        // 「自分の陣営 N 体以上」型の guard は汎用 ResourceCountGuardOp ではなく RequireFactionCountOp に
+        // 変換する。EffectClassifier が NPC AI 向けに「必要陣営 / 必要枚数」をこの op の形で読み取るため。
         if (min.HasValue && max is null && selectorElement.ValueKind == JsonValueKind.Object)
         {
             string? owner = selectorElement.GetStringOrNull("owner");
