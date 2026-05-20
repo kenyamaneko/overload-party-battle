@@ -37,6 +37,9 @@ public class CustomEffectRegistry
     /// Builds a custom effect function for the given name and meta parameters.
     /// Returns null if the custom name is not registered.
     /// </summary>
+    /// <param name="customName">登録済みのカスタム効果名。</param>
+    /// <param name="meta">カスタム効果の追加パラメータ。</param>
+    /// <returns>構築したカスタム効果関数。登録名が未登録の場合は null。</returns>
     public Action<OpContext>? Build(string customName, Dictionary<string, JsonElement>? meta)
     {
         if (!_factories.TryGetValue(customName, out var factory))
@@ -53,6 +56,7 @@ public class CustomEffectRegistry
     /// <summary>
     /// If another Sugar Compute is on own frontend, deal 200 bonus damage to target.
     /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
     public static void ChainAttackBonus(OpContext octx)
     {
         if (octx.Target is null)
@@ -79,6 +83,7 @@ public class CustomEffectRegistry
     /// <summary>
     /// Validate choice card type matches destroyed target's type, request slot selection for deploy.
     /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
     public static void DeploySameTypeFromHand(OpContext octx)
     {
         if (octx.Target is null)
@@ -112,6 +117,7 @@ public class CustomEffectRegistry
     /// <summary>
     /// When opponent deploys a Compute/AI_ML card with TP >= 900, apply cannot_operate.
     /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
     public static void DisableHighTpDeploy(OpContext octx)
     {
         var target = octx.Target;
@@ -150,6 +156,7 @@ public class CustomEffectRegistry
     /// <summary>
     /// When opponent deploys their 3rd resource in a turn, cancel (destroy) it.
     /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
     public static void CancelNthDeploy(OpContext octx)
     {
         if (octx.SupSource is { EffectUsedThisTurn: true })
@@ -176,6 +183,7 @@ public class CustomEffectRegistry
     /// <summary>
     /// Validate redirect target is opponent's frontend.
     /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
     public static void RedirectAttack(OpContext octx)
     {
         var instanceId = octx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
@@ -280,6 +288,7 @@ public class CustomEffectRegistry
     /// <summary>
     /// Move this attachment to a different valid target resource.
     /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
     public static void Reattach(OpContext octx)
     {
         var newTargetId = octx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
@@ -315,6 +324,7 @@ public class CustomEffectRegistry
     /// Scale to Zero: if the source did not attack last turn and was not deployed this turn,
     /// set its maintenance cost to 0 for this turn.
     /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
     public static void ScaleToZero(OpContext octx)
     {
         if (octx.Source is null)

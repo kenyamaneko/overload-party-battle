@@ -18,6 +18,12 @@ internal sealed class ScaleUpStrategy
         _cc = cc;
     }
 
+    /// <summary>
+    /// スケールアップアクション列を決定します。
+    /// </summary>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="available">エンジンが事前計算した実行可能アクション一覧。</param>
+    /// <returns>スケールアップアクション列。</returns>
     public List<NpcAction> Decide(DecisionContext ctx, List<AvailableAction> available)
     {
         var scaleActions = ActionFilter.FilterByType(available, ActionTypes.ScaleUp);

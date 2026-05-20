@@ -10,6 +10,9 @@ public static class FieldHelpers
     /// <summary>
     /// Find a resource on the field by InstanceID.
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="instanceID">探すリソースのインスタンス ID。</param>
+    /// <returns>該当リソース。見つからなければ null。</returns>
     public static DeployedResource? FindResourceByID(Field field, string instanceID)
     {
         return field.Frontend.FirstOrDefault(r => r.InstanceID == instanceID)
@@ -19,6 +22,9 @@ public static class FieldHelpers
     /// <summary>
     /// Find the zone (Frontend/Backend) of a resource by InstanceID.
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="instanceID">探すリソースのインスタンス ID。</param>
+    /// <returns>所属ゾーン。見つからなければ null。</returns>
     public static Zone? FindResourceZone(Field field, string instanceID)
     {
         if (field.Frontend.Any(r => r.InstanceID == instanceID)) { return Zone.Frontend; }
@@ -29,6 +35,9 @@ public static class FieldHelpers
     /// <summary>
     /// Find a support instance by InstanceID.
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="instanceID">探すサポートのインスタンス ID。</param>
+    /// <returns>該当サポート。見つからなければ null。</returns>
     public static DeployedSupport? FindSupportByID(Field field, string instanceID)
     {
         return field.Support.FirstOrDefault(s => s.InstanceID == instanceID);
@@ -37,6 +46,8 @@ public static class FieldHelpers
     /// <summary>
     /// Check if a field has any face-up resources in the frontend zone.
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <returns>フロントエンドに表向きリソースがあれば true。</returns>
     public static bool HasFrontendResources(Field field)
     {
         return field.Frontend.Any(r => r.FaceUp);
@@ -45,6 +56,8 @@ public static class FieldHelpers
     /// <summary>
     /// Check if a field has any face-up resources in frontend or backend.
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <returns>表向きリソースが 1 体以上あれば true。</returns>
     public static bool HasAnyActiveResources(Field field)
     {
         return field.Frontend.Concat(field.Backend).Any(r => r.FaceUp);
@@ -53,6 +66,9 @@ public static class FieldHelpers
     /// <summary>
     /// Check if a resource has a specific temporary effect.
     /// </summary>
+    /// <param name="resource">対象リソース。</param>
+    /// <param name="effectType">判定する一時効果の種別。</param>
+    /// <returns>該当する一時効果を持っていれば true。</returns>
     public static bool HasTemporaryEffect(DeployedResource resource, string effectType)
     {
         return resource.TemporaryEffects.Any(e => e.EffectType == effectType);
@@ -61,6 +77,9 @@ public static class FieldHelpers
     /// <summary>
     /// Remove a resource from the field by InstanceID. Returns true if found and removed.
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="instanceID">除去するリソースのインスタンス ID。</param>
+    /// <returns>除去に成功すれば true。</returns>
     public static bool RemoveResourceFromField(Field field, string instanceID)
     {
         return field.Frontend.Remove(r => r.InstanceID == instanceID)
@@ -70,6 +89,9 @@ public static class FieldHelpers
     /// <summary>
     /// Remove a support card from the field by InstanceID. Returns true if found and removed.
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="instanceID">除去するサポートのインスタンス ID。</param>
+    /// <returns>除去に成功すれば true。</returns>
     public static bool RemoveSupportFromField(Field field, string instanceID)
     {
         return field.Support.Remove(s => s.InstanceID == instanceID);
@@ -78,6 +100,8 @@ public static class FieldHelpers
     /// <summary>
     /// フィールド上の表向きリソースをすべて返す (frontend + backend)。
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <returns>表向きリソースの即時評価リスト。</returns>
     /// <remarks>
     /// 呼び出し元でフィールド状態が変更される可能性があるため、
     /// 遅延実行せず即時評価して結果を確定させる。
@@ -90,6 +114,8 @@ public static class FieldHelpers
     /// <summary>
     /// フィールド上の全リソースを返す (face-down 含む)。
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <returns>全リソースの即時評価リスト。</returns>
     /// <remarks>
     /// 呼び出し元でフィールド状態が変更される可能性があるため、
     /// 遅延実行せず即時評価して結果を確定させる。
@@ -102,6 +128,8 @@ public static class FieldHelpers
     /// <summary>
     /// サポートインスタンスをすべて返す。
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <returns>サポートインスタンスの即時評価リスト。</returns>
     /// <remarks>
     /// 呼び出し元でフィールド状態が変更される可能性があるため、
     /// 遅延実行せず即時評価して結果を確定させる。
@@ -114,6 +142,9 @@ public static class FieldHelpers
     /// <summary>
     /// Check card eligibility for frontend zone (Compute 全般 + Data の ObjectStorage subtype のみ)。
     /// </summary>
+    /// <param name="cardType">判定対象のカードタイプ。</param>
+    /// <param name="subtype">判定対象のサブタイプ。</param>
+    /// <returns>フロントエンドに配置可能なら true。</returns>
     public static bool IsFrontendEligible(string cardType, string? subtype)
     {
         return cardType == CardTypes.Compute
@@ -123,6 +154,8 @@ public static class FieldHelpers
     /// <summary>
     /// Check card eligibility for backend zone (Compute と Data 全般)。
     /// </summary>
+    /// <param name="cardType">判定対象のカードタイプ。</param>
+    /// <returns>バックエンドに配置可能なら true。</returns>
     public static bool IsBackendEligible(string cardType)
     {
         return cardType is CardTypes.Compute or CardTypes.Data;
@@ -131,6 +164,8 @@ public static class FieldHelpers
     /// <summary>
     /// Check if a card type belongs to the support category.
     /// </summary>
+    /// <param name="cardType">判定対象のカードタイプ。</param>
+    /// <returns>サポートカードに属するなら true。</returns>
     public static bool IsSupportType(string cardType)
     {
         return cardType is CardTypes.Platform or CardTypes.Reactive or CardTypes.Strategy
@@ -140,6 +175,8 @@ public static class FieldHelpers
     /// <summary>
     /// Check if a card type is immediate (resolves on play, then removed).
     /// </summary>
+    /// <param name="cardType">判定対象のカードタイプ。</param>
+    /// <returns>即時解決型 (ストラテジー / インシデント) なら true。</returns>
     public static bool IsImmediateType(string cardType)
     {
         return cardType is CardTypes.Strategy or CardTypes.Incident;
@@ -148,6 +185,8 @@ public static class FieldHelpers
     /// <summary>
     /// Check if card is a compute type.
     /// </summary>
+    /// <param name="cardType">判定対象のカードタイプ。</param>
+    /// <returns>コンピュート系リソースなら true。</returns>
     public static bool IsComputeType(string cardType)
     {
         return cardType == CardTypes.Compute;
@@ -156,6 +195,8 @@ public static class FieldHelpers
     /// <summary>
     /// Check if card is a data type.
     /// </summary>
+    /// <param name="cardType">判定対象のカードタイプ。</param>
+    /// <returns>DB系リソースなら true。</returns>
     public static bool IsDataType(string cardType)
     {
         return cardType == CardTypes.Data;
@@ -164,6 +205,11 @@ public static class FieldHelpers
     /// <summary>
     /// サポートカードを破壊してトラッシュに移動する。
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="ownerNum">サポートカードの所有プレイヤー番号。</param>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="instanceID">破壊するサポートのインスタンス ID。</param>
+    /// <returns>破壊に成功すれば true。</returns>
     public static bool DestroySupport(BattleGameState state, long ownerNum, Field field, string instanceID)
     {
         var support = field.Support.FirstOrDefault(s => s.InstanceID == instanceID);
@@ -182,6 +228,10 @@ public static class FieldHelpers
     /// Checks whether a resource is protected by a target_shield attachment
     /// (e.g. Load Balancer) and has other face-up frontends on the same field.
     /// </summary>
+    /// <param name="resource">判定対象のリソース。</param>
+    /// <param name="field">リソースが置かれているフィールド。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <returns>シールドで保護されていれば true。</returns>
     public static bool IsTargetShielded(DeployedResource resource, Field field, ICardCache cc)
     {
         bool hasShieldAttachment = field.Support
@@ -196,6 +246,10 @@ public static class FieldHelpers
     /// Applies reduction from temporary effects with the given type, supporting both flat and percent modes.
     /// Flat values are subtracted first, then percent values reduce the remainder.
     /// </summary>
+    /// <param name="effects">適用対象の一時効果リスト。</param>
+    /// <param name="effectType">軽減を引き起こす効果種別。</param>
+    /// <param name="baseValue">軽減前の基準値。</param>
+    /// <returns>軽減を適用した結果値。</returns>
     public static long ApplyReduction(List<TemporaryEffect> effects, string effectType, long baseValue)
     {
         long flatSum = effects
@@ -215,6 +269,8 @@ public static class FieldHelpers
     /// Removes all <c>while_on_field</c> buffs whose SourceID matches the given instance.
     /// Called when a card leaves the field (destroyed, etc.) to clean up its persistent buffs.
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="sourceInstanceID">バフ付与元のインスタンス ID。</param>
     public static void RemoveWhileOnFieldBuffs(Field field, string sourceInstanceID)
     {
         foreach (var resource in AllResources(field))

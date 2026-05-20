@@ -7,6 +7,15 @@ namespace OverloadParty.Battle.Engine.Processors;
 /// </summary>
 public static class SelectSlotProcessor
 {
+    /// <summary>
+    /// 保留中のエフェクトデプロイをプレイヤーが選択したスロットに配置して解決します。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    /// <param name="playerNum">スロットを選択するプレイヤー番号。</param>
+    /// <param name="req">選択されたスロットを含むリクエスト。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <returns>配置イベントと、後続スロット選択の要否を含むアクション結果。</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
         SelectSlotRequest req, ICardCache cc)

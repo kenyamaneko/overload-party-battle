@@ -18,6 +18,11 @@ public class Game
     public string EngineVersion { get; set; } = "";
     public string CardDataVersion { get; set; } = "";
 
+    /// <summary>
+    /// 指定したプレイヤー番号の NPC モデル名を返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号 (1 または 2)</param>
+    /// <returns>NPC モデル名。人間プレイヤーなら null</returns>
     public string? GetNpcModel(long playerNum) => playerNum switch
     {
         1 => Npc1Model,
@@ -72,12 +77,22 @@ public class BattleGameState
 
     // ─── Accessor helpers (by player number) ────────────────
 
+    /// <summary>
+    /// 指定したプレイヤーのバジェットを返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>バジェット値</returns>
     public long GetBudget(long playerNum) => playerNum switch
     {
         1 => Player1Budget,
         2 => Player2Budget,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーのバジェットを設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="value">設定するバジェット値</param>
     public void SetBudget(long playerNum, long value)
     {
         switch (playerNum)
@@ -88,12 +103,22 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーのインサイトプール残量を返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>インサイトプール残量</returns>
     public long GetInsightPool(long playerNum) => playerNum switch
     {
         1 => Player1InsightPool,
         2 => Player2InsightPool,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーのインサイトプール残量を設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="value">設定するインサイトプール残量</param>
     public void SetInsightPool(long playerNum, long value)
     {
         switch (playerNum)
@@ -104,12 +129,22 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーのフィールドを返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>プレイヤーのフィールド</returns>
     public Field GetField(long playerNum) => playerNum switch
     {
         1 => Player1Field,
         2 => Player2Field,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーのフィールドを設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="field">設定するフィールド</param>
     public void SetField(long playerNum, Field field)
     {
         switch (playerNum)
@@ -120,12 +155,22 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーの手札を返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>手札のカード一覧</returns>
     public List<UndeployedCard> GetHand(long playerNum) => playerNum switch
     {
         1 => Player1Hand,
         2 => Player2Hand,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーの手札を設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="hand">設定する手札のカード一覧</param>
     public void SetHand(long playerNum, List<UndeployedCard> hand)
     {
         switch (playerNum)
@@ -136,12 +181,22 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーのリポジトリを返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>リポジトリのカード一覧</returns>
     public List<UndeployedCard> GetRepository(long playerNum) => playerNum switch
     {
         1 => Player1Repository,
         2 => Player2Repository,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーのリポジトリを設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="repo">設定するリポジトリのカード一覧</param>
     public void SetRepository(long playerNum, List<UndeployedCard> repo)
     {
         switch (playerNum)
@@ -152,12 +207,22 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーのトラッシュを返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>トラッシュのカード一覧</returns>
     public List<UndeployedCard> GetTrash(long playerNum) => playerNum switch
     {
         1 => Player1Trash,
         2 => Player2Trash,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーのトラッシュを設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="trash">設定するトラッシュのカード一覧</param>
     public void SetTrash(long playerNum, List<UndeployedCard> trash)
     {
         switch (playerNum)
@@ -168,12 +233,22 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーのタイムバンク残量を返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>タイムバンク残量</returns>
     public long GetTimeBank(long playerNum) => playerNum switch
     {
         1 => Player1TimeBank,
         2 => Player2TimeBank,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーのタイムバンク残量を設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="value">設定するタイムバンク残量</param>
     public void SetTimeBank(long playerNum, long value)
     {
         switch (playerNum)
@@ -184,12 +259,22 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーが現ターンにインシデントを使用済みかを返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>現ターンにインシデントを使用済みなら true</returns>
     public bool GetIncidentPlayedThisTurn(long playerNum) => playerNum switch
     {
         1 => Player1IncidentPlayedThisTurn,
         2 => Player2IncidentPlayedThisTurn,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーの現ターンのインシデント使用フラグを設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="value">設定するフラグ値</param>
     public void SetIncidentPlayedThisTurn(long playerNum, bool value)
     {
         switch (playerNum)
@@ -200,12 +285,22 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーの稼働実績フラグを返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>稼働実績ありなら true</returns>
     public bool GetHasHadActiveResource(long playerNum) => playerNum switch
     {
         1 => Player1HasHadActiveResource,
         2 => Player2HasHadActiveResource,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
+    /// <summary>
+    /// 指定したプレイヤーの稼働実績フラグを設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="value">設定する稼働実績フラグ</param>
     public void SetHasHadActiveResource(long playerNum, bool value)
     {
         switch (playerNum)
@@ -216,6 +311,11 @@ public class BattleGameState
         }
     }
 
+    /// <summary>
+    /// 指定したプレイヤーの相手のプレイヤー番号を返します
+    /// </summary>
+    /// <param name="playerNum">基準となるプレイヤー番号</param>
+    /// <returns>相手のプレイヤー番号</returns>
     public long OpponentOf(long playerNum) => playerNum switch
     {
         1 => 2,
@@ -226,6 +326,7 @@ public class BattleGameState
     /// <summary>
     /// Generate the next unique instance ID and increment the sequence.
     /// </summary>
+    /// <returns>新しいインスタンス ID 文字列</returns>
     public string NextInstanceID()
     {
         var id = $"inst_{NextInstanceSeq}";
@@ -242,6 +343,7 @@ public class BattleGameState
     /// <summary>
     /// Generate the next deploy order value.
     /// </summary>
+    /// <returns>採番された新しいデプロイ順</returns>
     public long NextDeployOrder()
     {
         NextDeployOrderSeq++;

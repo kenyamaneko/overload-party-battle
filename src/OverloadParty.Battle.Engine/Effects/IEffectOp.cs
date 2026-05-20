@@ -11,5 +11,6 @@ public interface IEffectOp
     /// ガード条件が満たされない場合は GameRuleException を投げてパイプラインを中断する。
     /// EffectComposer がキャッチして EffectResult.GuardFailed = true に変換する。
     /// </summary>
+    /// <param name="ctx">パイプライン実行コンテキスト。</param>
     void Execute(OpContext ctx);
 }

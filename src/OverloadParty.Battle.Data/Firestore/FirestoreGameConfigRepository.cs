@@ -19,6 +19,10 @@ public class FirestoreGameConfigRepository : IGameConfigRepository
         _db = db;
     }
 
+    /// <summary>指定キーの int64 値を Firestore から取得する。ドキュメント不在時は <see cref="NotFoundException"/> を投げる。</summary>
+    /// <param name="key">取得対象のドキュメント ID 兼設定キー。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>キーに紐づく int64 値。</returns>
     public async Task<long> GetInt64Async(string key, CancellationToken ct = default)
     {
         DocumentSnapshot snap;

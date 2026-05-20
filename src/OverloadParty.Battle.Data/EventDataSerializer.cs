@@ -40,6 +40,8 @@ public static class EventDataSerializer
     };
 
     /// <summary>Serialize a typed event payload to JSON. Uses the runtime type for polymorphism.</summary>
+    /// <param name="data">シリアライズ対象のイベントペイロード。</param>
+    /// <returns>JSON 文字列。</returns>
     public static string Serialize(IEventData data) =>
         JsonSerializer.Serialize(data, data.GetType(), Opts);
 
@@ -51,12 +53,17 @@ public static class EventDataSerializer
     /// null is serialized as JSON null (ValueKind=Null), matching legacy behavior when the
     /// old Dictionary&lt;string, object&gt;? field was null.
     /// </summary>
+    /// <param name="data">シリアライズ対象のイベントペイロード。null も許容。</param>
+    /// <returns>シリアライズ結果の <see cref="JsonElement"/>。null は ValueKind=Null として表現。</returns>
     public static JsonElement SerializeToElement(IEventData? data) =>
         data is null
             ? JsonSerializer.SerializeToElement<object?>(null, Opts)
             : JsonSerializer.SerializeToElement(data, data.GetType(), Opts);
 
     /// <summary>Deserialize a JSON string into the typed record determined by the event type.</summary>
+    /// <param name="eventType">イベント種別文字列。</param>
+    /// <param name="json">デシリアライズ対象の JSON 文字列。</param>
+    /// <returns>イベント種別に対応する型のイベントペイロード。</returns>
     public static IEventData Deserialize(string eventType, string json)
     {
         if (!_map.TryGetValue(eventType, out var type))
@@ -67,12 +74,16 @@ public static class EventDataSerializer
     }
 
     /// <summary>Test/introspection: get the record type for an event type string.</summary>
+    /// <param name="eventType">イベント種別文字列。</param>
+    /// <returns>対応するレコード型。登録されていなければ null。</returns>
     public static Type? GetTypeForEventType(string eventType) =>
         _map.TryGetValue(eventType, out var t) ? t : null;
 
     /// <summary>Test/introspection: all IEventData record types reachable via the discriminator.</summary>
+    /// <returns>登録済みの全レコード型。</returns>
     public static IEnumerable<Type> GetAllRegisteredTypes() => _map.Values;
 
     /// <summary>Test/introspection: all event-type keys registered in the discriminator.</summary>
+    /// <returns>登録済みの全イベント種別文字列。</returns>
     public static IEnumerable<string> GetAllRegisteredEventTypes() => _map.Keys;
 }

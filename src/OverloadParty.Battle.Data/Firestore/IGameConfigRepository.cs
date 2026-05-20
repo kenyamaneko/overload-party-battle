@@ -11,5 +11,8 @@ public interface IGameConfigRepository
     /// Returns the int64 value for the given key. Throws
     /// <see cref="NotFoundException"/> if the document is absent (fail-fast).
     /// </summary>
+    /// <param name="key">取得対象の設定キー。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>キーに紐づく int64 値。</returns>
     Task<long> GetInt64Async(string key, CancellationToken ct = default);
 }

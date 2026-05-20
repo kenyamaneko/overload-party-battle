@@ -72,12 +72,18 @@ public static class EffectHelpers
     /// subtype 名 (VM/Container/Database...) を区別せず受け付けるため CardType と
     /// Subtype の両方に対して dual-match する。
     /// </summary>
+    /// <param name="card">判定対象のカード定義。</param>
+    /// <param name="filterValue">マッチング対象の値。</param>
+    /// <returns>CardType または Subtype が一致すれば true。</returns>
     public static bool MatchesCardType(CardDefinition card, string filterValue)
         => card.CardType == filterValue || card.Subtype == filterValue;
 
     /// <summary>
     /// 任意の filterValues のいずれかに dual-match するか判定。
     /// </summary>
+    /// <param name="card">判定対象のカード定義。</param>
+    /// <param name="filterValues">マッチング対象の値の集合。</param>
+    /// <returns>いずれかと dual-match すれば true。</returns>
     public static bool MatchesAnyCardType(CardDefinition card, IEnumerable<string> filterValues)
         => filterValues.Any(v => MatchesCardType(card, v));
 }

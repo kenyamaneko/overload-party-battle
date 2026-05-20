@@ -16,6 +16,7 @@ public static class DiscardProcessor
     /// <param name="playerNum">The player number performing the discard.</param>
     /// <param name="req">The discard request containing card instance IDs to discard.</param>
     /// <param name="cc">The card definition cache.</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <returns>The action result containing discard events and possible game-over result.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,

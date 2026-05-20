@@ -28,6 +28,10 @@ public class GameLogService
 
     // ─── JSON log ────────────────────────────────────────────────
 
+    /// <summary>指定 Game の構造化ゲームログを返す。</summary>
+    /// <param name="gameID">対象 Game の ID。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>Game が存在しない場合は null、それ以外は GameLogResponse。</returns>
     public async Task<GameLogResponse?> GetGameLog(string gameID, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct);
@@ -77,6 +81,10 @@ public class GameLogService
 
     // ─── Text log ────────────────────────────────────────────────
 
+    /// <summary>指定 Game の人間可読なテキスト形式ゲームログを返す。</summary>
+    /// <param name="gameID">対象 Game の ID。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>Game が存在しない場合は null、それ以外はテキスト形式のログ。</returns>
     public async Task<string?> GetGameLogText(string gameID, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct);
@@ -135,6 +143,9 @@ public class GameLogService
 
     // ─── Serialization helpers ───────────────────────────────────
 
+    /// <summary>GameLogResponse を JSON バイト列にシリアライズする。</summary>
+    /// <param name="log">シリアライズ対象のゲームログ。</param>
+    /// <returns>UTF-8 JSON バイト列。</returns>
     public byte[] SerializeToJson(GameLogResponse log)
     {
         return JsonSerializer.SerializeToUtf8Bytes(log, JsonOpts);

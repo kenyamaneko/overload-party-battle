@@ -27,6 +27,9 @@ public sealed class EventTriggerCandidate
     public DeployedSupport? Support { get; init; }
 
     /// <summary>フィールド上のリソースから生成します。</summary>
+    /// <param name="resource">候補化するリソース。</param>
+    /// <param name="ownerNum">リソースを所有するプレイヤー番号。</param>
+    /// <returns>生成された候補。</returns>
     public static EventTriggerCandidate ForResource(DeployedResource resource, long ownerNum) =>
         new()
         {
@@ -37,6 +40,9 @@ public sealed class EventTriggerCandidate
         };
 
     /// <summary>サポートゾーンのカードから生成します。</summary>
+    /// <param name="support">候補化するサポートカード。</param>
+    /// <param name="ownerNum">サポートカードを所有するプレイヤー番号。</param>
+    /// <returns>生成された候補。</returns>
     public static EventTriggerCandidate ForSupport(DeployedSupport support, long ownerNum) =>
         new()
         {

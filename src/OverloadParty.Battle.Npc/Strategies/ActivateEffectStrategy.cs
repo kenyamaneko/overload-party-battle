@@ -19,6 +19,13 @@ internal sealed class ActivateEffectStrategy
         _effects = effects;
     }
 
+    /// <summary>
+    /// フィールド上のカードの起動効果アクション列を決定します。
+    /// </summary>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="available">エンジンが事前計算した実行可能アクション一覧。</param>
+    /// <param name="activeConfig">現在の状況で有効な AI 設定。</param>
+    /// <returns>起動効果アクション列。</returns>
     public List<NpcAction> Decide(
         DecisionContext ctx, List<AvailableAction> available, AiConfig activeConfig)
     {

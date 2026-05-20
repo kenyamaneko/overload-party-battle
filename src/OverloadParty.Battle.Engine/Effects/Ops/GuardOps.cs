@@ -190,6 +190,9 @@ public enum ResourceRef
 internal static class ResourceRefResolver
 {
     /// <summary>指定参照のインスタンス ID を解決します。解決できないときは例外を投げます。</summary>
+    /// <param name="refKind">解決する参照の種別。</param>
+    /// <param name="ctx">パイプライン実行コンテキスト。</param>
+    /// <returns>解決したインスタンス ID。</returns>
     public static string Resolve(ResourceRef refKind, OpContext ctx) => refKind switch
     {
         ResourceRef.Source => (ctx.Source

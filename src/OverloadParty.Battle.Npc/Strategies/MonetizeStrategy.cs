@@ -19,6 +19,13 @@ internal sealed class MonetizeStrategy
         _cc = cc;
     }
 
+    /// <summary>
+    /// 収益化アクション列を決定します。
+    /// </summary>
+    /// <param name="ctx">意思決定コンテキスト。</param>
+    /// <param name="available">エンジンが事前計算した実行可能アクション一覧。</param>
+    /// <param name="insightPool">自分のインサイトプールの残量。</param>
+    /// <returns>収益化アクション列。</returns>
     public List<NpcAction> Decide(DecisionContext ctx, List<AvailableAction> available, long insightPool)
     {
         var yieldActions = ActionFilter.FilterByType(available, ActionTypes.Monetize);

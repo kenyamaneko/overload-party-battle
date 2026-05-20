@@ -11,6 +11,12 @@ public static class GameInitializer
     /// Create a new game with shuffled decks and initial hands.
     /// Returns (game, gameState).
     /// </summary>
+    /// <param name="gameID">ゲームの ID。</param>
+    /// <param name="deck1">プレイヤー 1 のデッキスナップショット。</param>
+    /// <param name="deck2">プレイヤー 2 のデッキスナップショット。</param>
+    /// <param name="firstPlayer">先攻プレイヤー番号 (1 または 2)。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <returns>初期化された Game とゲーム状態。</returns>
     public static (Game Game, BattleGameState State) CreateNewGame(
         string gameID,
         DeckSnapshot deck1,

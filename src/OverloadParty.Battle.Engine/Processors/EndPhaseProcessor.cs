@@ -15,6 +15,7 @@ public static class EndPhaseProcessor
     /// <param name="game">The game metadata.</param>
     /// <param name="playerNum">The player number ending their phase.</param>
     /// <param name="cc">The card definition cache.</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <returns>The action result containing phase change events and possible game-over or discard requirements.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects = null)
@@ -269,6 +270,10 @@ public static class EndPhaseProcessor
         };
     }
 
+    /// <summary>ターン開始イベントを生成します。</summary>
+    /// <param name="gameID">対象ゲームの ID。</param>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <returns>生成されたターン開始イベント。</returns>
     internal static GameEvent MakeTurnStartEvent(string gameID, BattleGameState state)
     {
         return new GameEvent

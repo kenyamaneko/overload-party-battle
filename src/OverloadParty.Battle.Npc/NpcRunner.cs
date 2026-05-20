@@ -14,6 +14,10 @@ public record NpcAdvanceResult(
     GameOverResult? GameOver,
     bool NpcPending)
 {
+    /// <summary>
+    /// NPC のアクションが不要であることを示す結果を返します。
+    /// </summary>
+    /// <returns>進行不要を表す結果。</returns>
     public static NpcAdvanceResult Done() => new([], null, false);
 }
 
@@ -54,6 +58,9 @@ public class NpcRunner
     /// Returns NpcPending=true if the active player is still an NPC after the action.
     /// The gateway calls this in a loop until NpcPending is false or GameOver is set.
     /// </summary>
+    /// <param name="game">対象ゲーム。</param>
+    /// <param name="ct">キャンセル制御トークン。</param>
+    /// <returns>1 アクション進行の結果。</returns>
     public async Task<NpcAdvanceResult> AdvanceOneAction(Game game, CancellationToken ct = default)
     {
         var gameID = game.GameID;

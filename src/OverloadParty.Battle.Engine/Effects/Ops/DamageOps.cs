@@ -31,6 +31,9 @@ internal static class DamageApplication
     /// <summary>
     /// リソースにダメージを与え、on_damaged を発火します
     /// </summary>
+    /// <param name="ctx">パイプライン実行コンテキスト。</param>
+    /// <param name="target">ダメージ適用先のリソース。</param>
+    /// <param name="amount">適用するダメージ量。</param>
     public static void Apply(OpContext ctx, DeployedResource target, long amount)
     {
         long? owner = ctx.OwnerOf(target);

@@ -94,8 +94,8 @@ public interface IEffectRegistry
     /// <summary>
     /// Retrieves the effect handler for the given card and trigger, or null if none registered.
     /// </summary>
-    /// <param name="cardId">Card ID to look up.</param>
-    /// <param name="trigger">Trigger type to look up.</param>
+    /// <param name="cardId">検索対象のカード ID。</param>
+    /// <param name="trigger">検索対象のトリガー種別。</param>
     /// <returns>The handler, or null if not found.</returns>
     EffectHandler? Get(string cardId, TriggerType trigger);
 
@@ -110,16 +110,25 @@ public interface IEffectRegistry
     /// <summary>
     /// Returns budget requirements for the given effect, or null if none.
     /// </summary>
+    /// <param name="cardId">検索対象のカード ID。</param>
+    /// <param name="trigger">検索対象のトリガー種別。</param>
+    /// <returns>抽出したバジェット条件、または条件なしの場合は null。</returns>
     BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger);
 
     /// <summary>
     /// Returns NPC classification for an effect, or null if no ops are stored.
     /// </summary>
+    /// <param name="cardId">検索対象のカード ID。</param>
+    /// <param name="trigger">検索対象のトリガー種別。</param>
+    /// <returns>分類結果。op 列が未保存の場合は null。</returns>
     EffectInfo? GetEffectInfo(string cardId, TriggerType trigger);
 
     /// <summary>
     /// Returns branch keys if the effect uses BranchOnChoice, or null otherwise.
     /// </summary>
+    /// <param name="cardId">検索対象のカード ID。</param>
+    /// <param name="trigger">検索対象のトリガー種別。</param>
+    /// <returns>分岐キーのリスト。BranchOnChoice が使われていない場合は null。</returns>
     List<string>? GetChoiceOptions(string cardId, TriggerType trigger);
 
     /// <summary>
@@ -127,5 +136,8 @@ public interface IEffectRegistry
     /// Used by <see cref="AvailableActions"/> to inspect filter information that
     /// only the ops themselves carry (e.g. <c>trash_to_hand</c> filters).
     /// </summary>
+    /// <param name="cardId">検索対象のカード ID。</param>
+    /// <param name="trigger">検索対象のトリガー種別。</param>
+    /// <returns>登録済み op 列。未登録または op 列が未保存の場合は null。</returns>
     IEffectOp[]? GetOps(string cardId, TriggerType trigger);
 }

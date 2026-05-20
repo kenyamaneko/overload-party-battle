@@ -78,6 +78,8 @@ public static class WinConditionChecker
     /// Checks only the timeout condition (TimeBank &lt;= 0).
     /// Used by GameEngine before processing an action to detect mid-turn timeout.
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <returns>タイムアウトによる勝敗結果。未確定なら null。</returns>
     public static GameOverResult? CheckTimeout(BattleGameState state)
     {
         if (state.Player1TimeBank <= 0)
@@ -95,6 +97,9 @@ public static class WinConditionChecker
     /// Check if a player has lost due to system down (no active resources).
     /// Only triggers if the player has previously deployed a resource.
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="playerNum">判定対象プレイヤー番号 (1 または 2)。</param>
+    /// <returns>システムダウン条件を満たしていれば true。</returns>
     public static bool IsSystemDown(BattleGameState state, long playerNum)
     {
         if (!state.GetHasHadActiveResource(playerNum))
@@ -108,6 +113,9 @@ public static class WinConditionChecker
     /// <summary>
     /// Check if a player has failed to launch (no active resource by turn 3).
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="playerNum">判定対象プレイヤー番号 (1 または 2)。</param>
+    /// <returns>ローンチ失敗条件を満たしていれば true。</returns>
     public static bool CheckLaunchFailure(BattleGameState state, long playerNum)
     {
         long personalTurn = (state.CurrentTurn + 1) / 2;

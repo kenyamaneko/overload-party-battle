@@ -22,6 +22,9 @@ public static class EffectYamlLoader
     /// Loads effects from card definitions and registers them into the registry.
     /// Cards with a <c>custom</c> effect require a matching entry in the custom registry.
     /// </summary>
+    /// <param name="cards">読み込み対象のカード定義群。</param>
+    /// <param name="registry">登録先の効果レジストリ。</param>
+    /// <param name="customRegistry">カスタム効果のレジストリ。</param>
     public static void LoadFromCards(
         IEnumerable<CardDefinition> cards,
         EffectRegistry registry,

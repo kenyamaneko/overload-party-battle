@@ -17,6 +17,12 @@ internal static class CardCandidateBuilder
     /// projector が null を返した候補は除外する。
     /// 結果は priority 降順でソート済み。
     /// </summary>
+    /// <typeparam name="TExtra">候補に紐付ける追加データ型。</typeparam>
+    /// <param name="playActions">PlayCard 系のアクション一覧。</param>
+    /// <param name="cardCache">カード定義の参照元。</param>
+    /// <param name="predicate">対象カード定義の絞り込み条件。</param>
+    /// <param name="projector">(優先度, 追加データ) を返す写像。null 返却で除外。</param>
+    /// <returns>優先度降順の候補リスト。</returns>
     public static List<Candidate<TExtra>> Build<TExtra>(
         IEnumerable<AvailableAction> playActions,
         ICardCache cardCache,

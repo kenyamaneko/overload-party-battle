@@ -11,6 +11,14 @@ public static class ResourceHelpers
     /// <summary>
     /// リソースにダメージを適用し、適用後に on_damaged トリガーを発火する単一チョークポイント。
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <param name="resource">ダメージ適用先のリソース。</param>
+    /// <param name="ownerNum">リソースの所有プレイヤー番号。</param>
+    /// <param name="amount">適用するダメージ量。</param>
+    /// <returns>on_damaged トリガーで生成されたイベント一覧。</returns>
     public static List<GameEvent> ApplyDamage(
         BattleGameState state, Game game, ICardCache cc, IEffectRegistry? effects,
         DeployedResource resource, long ownerNum, long amount)
@@ -61,6 +69,11 @@ public static class ResourceHelpers
     /// <summary>
     /// カード定義からリソースインスタンスを生成する。
     /// </summary>
+    /// <param name="card">元になるカード定義。</param>
+    /// <param name="instanceID">付与するインスタンス ID。</param>
+    /// <param name="deployTurn">デプロイされたターン番号。</param>
+    /// <param name="artNo">アート番号。</param>
+    /// <returns>生成されたリソースインスタンス。</returns>
     public static DeployedResource CreateDeployedResource(CardDefinition card, string instanceID, long deployTurn, long artNo = 0)
     {
         var resource = new DeployedResource
@@ -95,6 +108,9 @@ public static class ResourceHelpers
     /// <summary>
     /// リソースをフィールドの適切なゾーンに自動配置する。
     /// </summary>
+    /// <param name="field">配置先のフィールド。</param>
+    /// <param name="instance">配置するリソースインスタンス。</param>
+    /// <param name="card">元になるカード定義。</param>
     public static void PlaceResourceOnField(Field field, DeployedResource instance, CardDefinition card)
     {
         if (card.IsComputeType)
@@ -124,6 +140,11 @@ public static class ResourceHelpers
     /// <summary>
     /// 手札からカードを配置する。
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="playerNum">対象プレイヤー番号 (1 または 2)。</param>
+    /// <param name="field">配置先のフィールド。</param>
+    /// <param name="cardId">手札から配置するカードの ID。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
     public static void DeployFromHand(BattleGameState state, long playerNum, Field field, string cardId, ICardCache cc)
     {
         var hand = state.GetHand(playerNum);
@@ -144,6 +165,12 @@ public static class ResourceHelpers
     /// <summary>
     /// リポジトリからカードを配置する。
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="playerNum">対象プレイヤー番号 (1 または 2)。</param>
+    /// <param name="field">配置先のフィールド。</param>
+    /// <param name="repoCard">配置するリポジトリのカード。</param>
+    /// <param name="overrideAV">配置リソースに上書きする可用性。0 ならカード定義の値を使う。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
     public static void DeployFromRepo(BattleGameState state, long playerNum, Field field, UndeployedCard repoCard, long overrideAV, ICardCache cc)
     {
         var repo = state.GetRepository(playerNum);
@@ -165,6 +192,9 @@ public static class ResourceHelpers
     /// カードタイプに基づいて配置可能なスロット一覧を返す。
     /// ワイヤーフォーマット: "{zone}_{slotIndex}" (例: "frontend_0", "backend_2")
     /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <param name="card">配置するカードの定義。</param>
+    /// <returns>配置可能なスロットのワイヤー文字列一覧。</returns>
     public static List<string> BuildValidZones(Field field, CardDefinition card)
     {
         var validZones = new List<string>();
@@ -185,6 +215,11 @@ public static class ResourceHelpers
     /// <summary>
     /// リソースを破壊する（SLAペナルティ適用、マイグレーションリンククリア、トラッシュ移動、フィールド除去）。
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="ownerNum">リソースの所有プレイヤー番号。</param>
+    /// <param name="field">破壊対象が置かれているフィールド。</param>
+    /// <param name="resource">破壊するリソース。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
     public static void DestroyResource(BattleGameState state, long ownerNum, Field field, DeployedResource resource, ICardCache cc)
     {
         var card = cc.MustGet(resource.CardID);
@@ -219,6 +254,10 @@ public static class ResourceHelpers
     /// リソースのランクを変更し、MaxAV/MaxTP/MaxYield を再計算する。
     /// Elastic カードは TP/Yield を ElasticBonus から動的に算出するため MaxTP/MaxYield の再計算は不要。
     /// </summary>
+    /// <param name="resource">ランクを変更するリソース。</param>
+    /// <param name="targetRank">変更後のランク。</param>
+    /// <param name="field">リソースが置かれているフィールド。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
     public static void ChangeRank(DeployedResource resource, Rank targetRank, Field field, ICardCache cc)
     {
         resource.Rank = targetRank;
