@@ -178,7 +178,7 @@ public class BuffTypeTests
         state.Player2Field.Frontend[0] = defender;
 
         var req = new AttackRequest { AttackerInstanceID = "atk_1", TargetInstanceID = "def_1" };
-        AttackProcessor.Process(state, _game, 1, req, _cc, null);
+        AttackProcessor.Process(state, _game, 1, req, _cc, new EffectRegistry());
 
         defender.Damage.Should().Be(400, "600 TP - 200 reduction = 400 damage");
     }
@@ -203,7 +203,7 @@ public class BuffTypeTests
         state.Player2Field.Frontend[0] = defender;
 
         var req = new AttackRequest { AttackerInstanceID = "atk_1", TargetInstanceID = "def_1" };
-        AttackProcessor.Process(state, _game, 1, req, _cc, null);
+        AttackProcessor.Process(state, _game, 1, req, _cc, new EffectRegistry());
 
         defender.Damage.Should().Be(0, "reduction exceeds TP so damage is clamped to 0");
     }

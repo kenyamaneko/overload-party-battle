@@ -41,7 +41,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var result = AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         defender.Damage.Should().Be(600);
         attacker.HasAttacked.Should().BeTrue();
@@ -63,7 +63,7 @@ public class AttackProcessorTests
         long budgetBefore = state.Player2Budget;
 
         var result = AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         // Defender should be removed from field
         state.Player2Field.Frontend[0].Should().BeNull();
@@ -91,7 +91,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*frontend*");
     }
@@ -110,7 +110,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*compute*");
     }
@@ -130,7 +130,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*already attacked*");
     }
@@ -156,7 +156,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*cannot operate*");
     }
@@ -177,7 +177,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>();
     }
@@ -200,7 +200,7 @@ public class AttackProcessorTests
         state.Player2Field.Backend[0] = backRes;
 
         var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "back_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "back_1"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*backend*frontend*");
     }
@@ -220,7 +220,7 @@ public class AttackProcessorTests
         state.Player2Field.Backend[0] = backRes;
 
         var result = AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "back_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "back_1"), _cc, new EffectRegistry());
 
         backRes.Damage.Should().Be(600);
         result.Events.Should().Contain(e => e.EventType == ActionTypes.Attack);
@@ -246,7 +246,7 @@ public class AttackProcessorTests
         long bonusBefore = defender.ElasticBonus;
 
         AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         defender.ElasticBonus.Should().BeGreaterThan(bonusBefore);
     }
@@ -265,7 +265,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var result = AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
         var data = attackEvent.EventData.Should().BeOfType<AttackEventData>().Subject;
@@ -286,7 +286,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("nonexistent", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("nonexistent", "def_1"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*not found*");
     }
@@ -302,7 +302,7 @@ public class AttackProcessorTests
         state.Player1Field.Frontend[0] = attacker;
 
         var act = () => AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "nonexistent"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "nonexistent"), _cc, new EffectRegistry());
 
         act.Should().Throw<GameRuleException>().WithMessage("*not found*");
     }
@@ -323,7 +323,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         defender.ElasticBonus.Should().Be(0);
     }
@@ -495,7 +495,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         // Defender should be removed from field (destroyed)
         state.Player2Field.Frontend[0].Should().BeNull();
@@ -515,7 +515,7 @@ public class AttackProcessorTests
         state.Player2Field.Frontend[0] = defender;
 
         var result = AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         var attackEvent = result.Events.First(e => e.EventType == ActionTypes.Attack);
         attackEvent.EventData.Should().BeOfType<AttackEventData>()
@@ -545,7 +545,7 @@ public class AttackProcessorTests
         };
 
         var result = AttackProcessor.Process(
-            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, null);
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
         // Attack should proceed normally
         defender.Damage.Should().Be(600);
@@ -565,7 +565,7 @@ public class AttackProcessorTests
         state.Player1Field.Frontend[0] = defender;
 
         var result = AttackProcessor.Process(
-            state, _game, 2, MakeReq("atk_2", "def_1"), _cc, null);
+            state, _game, 2, MakeReq("atk_2", "def_1"), _cc, new EffectRegistry());
 
         defender.Damage.Should().Be(600);
         attacker.HasAttacked.Should().BeTrue();

@@ -35,7 +35,7 @@ public class GameStateViewTests
         state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
         state.Player1Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" });
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         result.MyView.PlayerNum.Should().Be(1);
         result.MyView.Budget.Should().Be(4000);
@@ -59,7 +59,7 @@ public class GameStateViewTests
         state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
         state.Player2Hand.Add(new UndeployedCard { InstanceID = "h_2", CardID = "TST-0002" });
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         result.OppView.HandCount.Should().Be(2);
         result.OppView.PlayerNum.Should().Be(2);
@@ -74,7 +74,7 @@ public class GameStateViewTests
             deployLeft: 1, maxAV: 1400, currentAV: 1400, maxTP: 600, currentTP: 600);
         state.Player2Field.Frontend[0] = faceDownRes;
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         var oppSlot = result.OppView.Field.Frontend[0];
         oppSlot.Should().NotBeNull();
@@ -96,7 +96,7 @@ public class GameStateViewTests
             maxAV: 1400, currentAV: 1400, maxTP: 600, currentTP: 600);
         state.Player2Field.Frontend[1] = faceUpRes;
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         var oppSlot = result.OppView.Field.Frontend[1];
         oppSlot.Should().NotBeNull();
@@ -117,7 +117,7 @@ public class GameStateViewTests
             FaceUp = false,
         };
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         var oppSup = result.OppView.Field.Support[0];
         oppSup.Should().NotBeNull();
@@ -140,7 +140,7 @@ public class GameStateViewTests
             PeekedBy = [1],
         };
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         var oppSup = result.OppView.Field.Support[0];
         oppSup.Should().NotBeNull();
@@ -162,7 +162,7 @@ public class GameStateViewTests
             FaceUp = true,
         };
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         var oppSup = result.OppView.Field.Support[1];
         oppSup.Should().NotBeNull();
@@ -182,7 +182,7 @@ public class GameStateViewTests
     {
         var state = TestFactory.MakeGameState(activePlayer: activePlayer);
 
-        var result = GameStateView.Build(state, _game, viewingPlayer, _cc, null);
+        var result = GameStateView.Build(state, _game, viewingPlayer, _cc, new EffectRegistry());
 
         result.IsMyTurn.Should().Be(expected);
         result.ActivePlayer.Should().Be(activePlayer);
@@ -197,7 +197,7 @@ public class GameStateViewTests
         state.Player1InsightPool = 150;
         state.Player2InsightPool = 300;
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         result.MyView.Budget.Should().Be(3500);
         result.MyView.InsightPool.Should().Be(150);
@@ -212,7 +212,7 @@ public class GameStateViewTests
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "p1_h", CardID = "TST-0001" });
         state.Player2Hand.Add(new UndeployedCard { InstanceID = "p2_h", CardID = "TST-0002" });
 
-        var result = GameStateView.Build(state, _game, 2, _cc, null);
+        var result = GameStateView.Build(state, _game, 2, _cc, new EffectRegistry());
 
         result.MyView.PlayerNum.Should().Be(2);
         result.MyView.Budget.Should().Be(2000);
@@ -229,7 +229,7 @@ public class GameStateViewTests
     {
         var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle, activePlayer: 2);
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         result.GameID.Should().Be("test-game");
         result.CurrentTurn.Should().Be(5);
@@ -247,7 +247,7 @@ public class GameStateViewTests
         state.Player2Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "TST-0001" });
         state.Player2Trash.Add(new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" });
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         result.OppView.RepoCount.Should().Be(2);
         result.OppView.TrashCount.Should().Be(1);
@@ -262,7 +262,7 @@ public class GameStateViewTests
     {
         var state = TestFactory.MakeGameState(phase: Phase.Main, activePlayer: activePlayer);
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         if (expectActions)
         {
@@ -281,7 +281,7 @@ public class GameStateViewTests
         game.Status = GameStatus.Finished;
         var state = TestFactory.MakeGameState(phase: Phase.Main, activePlayer: 1);
 
-        var result = GameStateView.Build(state, game, 1, _cc, null);
+        var result = GameStateView.Build(state, game, 1, _cc, new EffectRegistry());
 
         result.MyView.AvailableActions.Should().BeNull();
     }
@@ -295,7 +295,7 @@ public class GameStateViewTests
         state.Player1TimeBank = 300;
         state.Player2TimeBank = 420;
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         result.MyView.TimeBank.Should().Be(300);
         result.OppView.TimeBank.Should().Be(420);
@@ -309,7 +309,7 @@ public class GameStateViewTests
         var state = TestFactory.MakeGameState();
         // Player 2 field is completely empty
 
-        var result = GameStateView.Build(state, _game, 1, _cc, null);
+        var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
         result.OppView.Field.Frontend.Should().AllSatisfy(slot => slot.Should().BeNull());
         result.OppView.Field.Backend.Should().AllSatisfy(slot => slot.Should().BeNull());
