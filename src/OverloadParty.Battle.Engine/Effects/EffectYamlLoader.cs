@@ -487,8 +487,8 @@ public static class EffectYamlLoader
 
     private static IEffectOp BuildGuard(JsonElement element)
     {
-        // ガードの negate: true フラグ。指定時はガードの判定結果を反転する。
-        // 反転は内側 op の構築と分離し、外側で NegateGuardOp を 1 回だけ被せる。
+        // negate は反転条件であって判定種別ではないため、sub-builder に持たせるとガード種別ごとに
+        // 反転ラップが重複する。外側で 1 度だけ NegateGuardOp を被せる責務分離。
         bool negate = element.TryGetProperty("negate", out var negEl)
             && negEl.ValueKind == JsonValueKind.True;
 
