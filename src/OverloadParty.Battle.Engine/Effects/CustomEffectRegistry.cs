@@ -69,9 +69,12 @@ public class CustomEffectRegistry
             });
         if (ally is not null)
         {
-            octx.Target.Damage += 200;
+            DamageApplication.Apply(octx, octx.Target, ChainAttackBonusDamage);
         }
     }
+
+    /// <summary>Bonus damage dealt when a Sugar Compute ally backs the attack.</summary>
+    private const long ChainAttackBonusDamage = 200;
 
     /// <summary>
     /// Validate choice card type matches destroyed target's type, request slot selection for deploy.

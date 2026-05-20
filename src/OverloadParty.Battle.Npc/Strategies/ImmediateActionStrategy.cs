@@ -36,7 +36,7 @@ internal sealed class ImmediateActionStrategy
             (a, card) =>
             {
                 var (pri, use, choice) = PriorityResolver.Evaluate(
-                    card.CardId, TriggerType.Activate, ctx, activeConfig, _effects, _cc);
+                    card.CardId, TriggerType.Ignition, ctx, activeConfig, _effects, _cc);
                 if (!use)
                 {
                     return null;
@@ -99,7 +99,7 @@ internal sealed class ImmediateActionStrategy
             return true;
         }
 
-        var info = _effects.GetEffectInfo(card.CardId, TriggerType.Activate);
+        var info = _effects.GetEffectInfo(card.CardId, TriggerType.Ignition);
         if (info is null)
         {
             return true;

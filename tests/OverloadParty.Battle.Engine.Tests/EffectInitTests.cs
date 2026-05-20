@@ -30,21 +30,21 @@ public class EffectRegistrationTests
     // ─── SHE faction ────────────────────────────────────────────
 
     [Theory]
-    [InlineData("SH-0006", TriggerType.Deploy)]
+    [InlineData("SH-0006", TriggerType.OnDeploy)]
     [InlineData("SH-0008", TriggerType.OnDestroy)]
-    [InlineData("SH-0009", TriggerType.Activate)]
-    [InlineData("SH-0010", TriggerType.Deploy)]
-    [InlineData("SH-0013", TriggerType.Activate)]
-    [InlineData("SH-0014", TriggerType.Reactive)]
-    [InlineData("SH-0017", TriggerType.Reactive)]
-    [InlineData("SH-0018", TriggerType.Activate)]
-    [InlineData("SH-0019", TriggerType.Activate)]
-    [InlineData("SH-0020", TriggerType.Activate)]
-    [InlineData("SH-0021", TriggerType.Reactive)]
-    [InlineData("SH-0022", TriggerType.Activate)]
-    [InlineData("SH-0023", TriggerType.Activate)]
-    [InlineData("SH-0011", TriggerType.Deploy)]        // Platform: scale_cost_reduction (while_on_field)
-    [InlineData("SH-0016", TriggerType.Deploy)]        // Attachment: TP buff (while_on_field)
+    [InlineData("SH-0009", TriggerType.Ignition)]
+    [InlineData("SH-0010", TriggerType.OnDeploy)]
+    [InlineData("SH-0013", TriggerType.Ignition)]
+    [InlineData("SH-0014", TriggerType.OnIncident)]
+    [InlineData("SH-0017", TriggerType.OnIncident)]
+    [InlineData("SH-0018", TriggerType.Ignition)]
+    [InlineData("SH-0019", TriggerType.Ignition)]
+    [InlineData("SH-0020", TriggerType.Ignition)]
+    [InlineData("SH-0021", TriggerType.OnDamaged)]
+    [InlineData("SH-0022", TriggerType.Ignition)]
+    [InlineData("SH-0023", TriggerType.Ignition)]
+    [InlineData("SH-0011", TriggerType.OnDeploy)]      // Platform: scale_cost_reduction (while_on_field)
+    [InlineData("SH-0016", TriggerType.OnDeploy)]      // Attachment: TP buff (while_on_field)
     [InlineData("SH-0005", TriggerType.OnFieldChange)] // Conditional: TP buff if ObjectStorage
     public void SHE_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
@@ -57,19 +57,19 @@ public class EffectRegistrationTests
 
     [Theory]
     [InlineData("TK-0008", TriggerType.OnDestroy)]
-    [InlineData("TK-0010", TriggerType.Deploy)]
-    [InlineData("TK-0014", TriggerType.Reactive)]
+    [InlineData("TK-0010", TriggerType.OnDeploy)]
+    [InlineData("TK-0014", TriggerType.OnIncident)]
     [InlineData("TK-0015", TriggerType.OnDestroy)]
-    [InlineData("TK-0017", TriggerType.Reactive)]
+    [InlineData("TK-0017", TriggerType.OnIncident)]
     [InlineData("TK-0018", TriggerType.OnDestroy)]
-    [InlineData("TK-0020", TriggerType.Activate)]
-    [InlineData("TK-0021", TriggerType.Activate)]
-    [InlineData("TK-0022", TriggerType.Activate)]
-    [InlineData("TK-0023", TriggerType.Reactive)]
-    [InlineData("TK-0024", TriggerType.Reactive)]
-    [InlineData("TK-0025", TriggerType.Deploy)]
-    [InlineData("NT-0027", TriggerType.Reactive)]
-    [InlineData("NT-0028", TriggerType.Reactive)]
+    [InlineData("TK-0020", TriggerType.Ignition)]
+    [InlineData("TK-0021", TriggerType.Ignition)]
+    [InlineData("TK-0022", TriggerType.Ignition)]
+    [InlineData("TK-0023", TriggerType.OnIncident)]
+    [InlineData("TK-0024", TriggerType.OnDestroy)]
+    [InlineData("TK-0025", TriggerType.OnDeploy)]
+    [InlineData("NT-0027", TriggerType.OnAttackDeclared)]
+    [InlineData("NT-0028", TriggerType.OnAttackDeclared)]
     public void Tenki_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -80,19 +80,19 @@ public class EffectRegistrationTests
     // ─── Sugar faction ─────────────────────────────────────────
 
     [Theory]
-    [InlineData("SL-0004", TriggerType.Deploy)]
+    [InlineData("SL-0004", TriggerType.OnDeploy)]
     [InlineData("SL-0006", TriggerType.OnAttack)]
     [InlineData("SL-0007", TriggerType.OnAttack)]
     [InlineData("SL-0007", TriggerType.OnDestroy)]
-    [InlineData("SL-0010", TriggerType.Deploy)]
+    [InlineData("SL-0010", TriggerType.OnDeploy)]
     [InlineData("SL-0011", TriggerType.OnAttack)]
     [InlineData("SL-0016", TriggerType.OnEndPhase)]
     [InlineData("SL-0018", TriggerType.OnAttack)]
-    [InlineData("SL-0021", TriggerType.Activate)]
-    [InlineData("SL-0022", TriggerType.Activate)]
-    [InlineData("SL-0023", TriggerType.Activate)]
-    [InlineData("SL-0024", TriggerType.Reactive)]
-    [InlineData("SL-0012", TriggerType.Deploy)]
+    [InlineData("SL-0021", TriggerType.Ignition)]
+    [InlineData("SL-0022", TriggerType.Ignition)]
+    [InlineData("SL-0023", TriggerType.Ignition)]
+    [InlineData("SL-0024", TriggerType.OnAttackDeclared)]
+    [InlineData("SL-0012", TriggerType.OnDeploy)]
     public void Sugar_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -104,10 +104,10 @@ public class EffectRegistrationTests
 
     [Theory]
     [InlineData("TN-0002", TriggerType.OnAttack)]
-    [InlineData("TN-0013", TriggerType.Reactive)]
+    [InlineData("TN-0013", TriggerType.OnIncident)]
     [InlineData("TN-0014", TriggerType.OnDestroy)]
-    [InlineData("TN-0017", TriggerType.Activate)]
-    [InlineData("TN-0018", TriggerType.Reactive)]
+    [InlineData("TN-0017", TriggerType.Ignition)]
+    [InlineData("TN-0018", TriggerType.OnDestroy)]
     [InlineData("TN-0004", TriggerType.OnFieldChange)] // Orchestrator: maintenance_reduction if <= 3 Tuners
     public void Tuners_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
@@ -119,15 +119,15 @@ public class EffectRegistrationTests
     // ─── Neutral cards ─────────────────────────────────────────
 
     [Theory]
-    [InlineData("NT-0007", TriggerType.Activate)]
-    [InlineData("NT-0008", TriggerType.Activate)]
-    [InlineData("NT-0009", TriggerType.Activate)]
-    [InlineData("NT-0010", TriggerType.Activate)]
-    [InlineData("NT-0011", TriggerType.Activate)]
-    [InlineData("NT-0012", TriggerType.Activate)]
-    [InlineData("NT-0026", TriggerType.Activate)]
+    [InlineData("NT-0007", TriggerType.Ignition)]
+    [InlineData("NT-0008", TriggerType.Ignition)]
+    [InlineData("NT-0009", TriggerType.Ignition)]
+    [InlineData("NT-0010", TriggerType.Ignition)]
+    [InlineData("NT-0011", TriggerType.Ignition)]
+    [InlineData("NT-0012", TriggerType.Ignition)]
+    [InlineData("NT-0026", TriggerType.Ignition)]
     [InlineData("NT-0002", TriggerType.OnHit)]         // Attachment: TP buff on hit
-    [InlineData("NT-0005", TriggerType.Deploy)]        // Platform: incident_reduction (while_on_field)
+    [InlineData("NT-0005", TriggerType.OnDeploy)]      // Platform: incident_reduction (while_on_field)
     [InlineData("NT-0025", TriggerType.OnFieldChange)] // Attachment: conditional attack_damage_reduction
     public void Neutral_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
@@ -139,17 +139,17 @@ public class EffectRegistrationTests
     // ─── Incidents ─────────────────────────────────────────────
 
     [Theory]
-    [InlineData("NT-0013", TriggerType.Activate)]
-    [InlineData("NT-0014", TriggerType.Activate)]
-    [InlineData("NT-0015", TriggerType.Activate)]
-    [InlineData("NT-0016", TriggerType.Activate)]
-    [InlineData("NT-0017", TriggerType.Activate)]
-    [InlineData("NT-0018", TriggerType.Activate)]
-    [InlineData("NT-0019", TriggerType.Activate)]
-    [InlineData("NT-0020", TriggerType.Activate)]
-    [InlineData("NT-0021", TriggerType.Activate)]
-    [InlineData("NT-0022", TriggerType.OnEnemyDeploy)]
-    [InlineData("NT-0034", TriggerType.OnEnemyDeploy)]
+    [InlineData("NT-0013", TriggerType.Ignition)]
+    [InlineData("NT-0014", TriggerType.Ignition)]
+    [InlineData("NT-0015", TriggerType.Ignition)]
+    [InlineData("NT-0016", TriggerType.Ignition)]
+    [InlineData("NT-0017", TriggerType.Ignition)]
+    [InlineData("NT-0018", TriggerType.Ignition)]
+    [InlineData("NT-0019", TriggerType.Ignition)]
+    [InlineData("NT-0020", TriggerType.Ignition)]
+    [InlineData("NT-0021", TriggerType.Ignition)]
+    [InlineData("NT-0022", TriggerType.OnDeploy)]
+    [InlineData("NT-0034", TriggerType.OnDeploy)]
     public void Incident_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -160,8 +160,8 @@ public class EffectRegistrationTests
     // ─── Reactives ─────────────────────────────────────────────
 
     [Theory]
-    [InlineData("NT-0023", TriggerType.Reactive)]
-    [InlineData("NT-0024", TriggerType.Reactive)]
+    [InlineData("NT-0023", TriggerType.OnDestroy)]
+    [InlineData("NT-0024", TriggerType.OnAttackDeclared)]
     public void Reactive_Cards_AreRegistered(string cardId, TriggerType trigger)
     {
         _registry.Has(cardId, trigger).Should().BeTrue(
@@ -174,17 +174,17 @@ public class EffectRegistrationTests
     [Fact]
     public void UnregisteredCard_ReturnsNull()
     {
-        _registry.Get("TEST-9999", TriggerType.Activate).Should().BeNull();
-        _registry.Has("TEST-9999", TriggerType.Activate).Should().BeFalse();
+        _registry.Get("TEST-9999", TriggerType.Ignition).Should().BeNull();
+        _registry.Has("TEST-9999", TriggerType.Ignition).Should().BeFalse();
     }
 
     // ─── Choice-based cards have branch options ────────────────
 
     [Theory]
-    [InlineData("SH-0006", TriggerType.Deploy, new[] { "use", "skip" })]
-    [InlineData("SH-0010", TriggerType.Deploy, new[] { "memcached", "redis" })]
-    [InlineData("SL-0012", TriggerType.Deploy, new[] { "memcached", "redis" })]
-    [InlineData("SL-0004", TriggerType.Deploy, new[] { "autopilot", "standard" })]
+    [InlineData("SH-0006", TriggerType.OnDeploy, new[] { "use", "skip" })]
+    [InlineData("SH-0010", TriggerType.OnDeploy, new[] { "memcached", "redis" })]
+    [InlineData("SL-0012", TriggerType.OnDeploy, new[] { "memcached", "redis" })]
+    [InlineData("SL-0004", TriggerType.OnDeploy, new[] { "autopilot", "standard" })]
     public void ChoiceBased_Cards_HaveExpectedBranches(string cardId, TriggerType trigger, string[] expectedKeys)
     {
         var options = _registry.GetChoiceOptions(cardId, trigger);
@@ -197,7 +197,7 @@ public class EffectRegistrationTests
     [Fact]
     public void Card10_RequiresBudget400()
     {
-        var req = _registry.GetBudgetRequirement("SH-0009", TriggerType.Activate);
+        var req = _registry.GetBudgetRequirement("SH-0009", TriggerType.Ignition);
         req.Should().NotBeNull();
         req!.MinBudget.Should().Be(400);
     }
@@ -205,7 +205,7 @@ public class EffectRegistrationTests
     [Fact]
     public void Card120_RequiresMaxBudget1000()
     {
-        var req = _registry.GetBudgetRequirement("NT-0026", TriggerType.Activate);
+        var req = _registry.GetBudgetRequirement("NT-0026", TriggerType.Ignition);
         req.Should().NotBeNull();
         req!.MaxBudget.Should().Be(1000);
     }
@@ -213,7 +213,7 @@ public class EffectRegistrationTests
     [Fact]
     public void Card98_HasNoBudgetRequirement()
     {
-        var req = _registry.GetBudgetRequirement("NT-0007", TriggerType.Activate);
+        var req = _registry.GetBudgetRequirement("NT-0007", TriggerType.Ignition);
         req.Should().BeNull();
     }
 
@@ -222,14 +222,14 @@ public class EffectRegistrationTests
     [Fact]
     public void Card104_EffectInfo_HasDamageCategory()
     {
-        var info = _registry.GetEffectInfo("NT-0013", TriggerType.Activate);
+        var info = _registry.GetEffectInfo("NT-0013", TriggerType.Ignition);
         info.Should().NotBeNull();
     }
 
     [Fact]
     public void Card101_EffectInfo_HasBudgetCategory()
     {
-        var info = _registry.GetEffectInfo("NT-0010", TriggerType.Activate);
+        var info = _registry.GetEffectInfo("NT-0010", TriggerType.Ignition);
         info.Should().NotBeNull();
     }
 
@@ -240,7 +240,7 @@ public class EffectRegistrationTests
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000);
 
-        ExecuteEffect(state, "NT-0010", TriggerType.Activate, playerNum: 1);
+        ExecuteEffect(state, "NT-0010", TriggerType.Ignition, playerNum: 1);
 
         state.Player1Budget.Should().Be(1400, "NT-0010 grants +400 budget");
     }
@@ -250,7 +250,7 @@ public class EffectRegistrationTests
     {
         var state = TestFactory.MakeGameState(p1Budget: 2000);
 
-        var result = ExecuteEffect(state, "NT-0026", TriggerType.Activate, playerNum: 1);
+        var result = ExecuteEffect(state, "NT-0026", TriggerType.Ignition, playerNum: 1);
 
         result.GuardFailed.Should().BeTrue("NT-0026 requires budget <= 1000");
         state.Player1Budget.Should().Be(2000, "budget should not change when guard fails");
@@ -264,7 +264,7 @@ public class EffectRegistrationTests
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
         state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "r2");
 
-        var result = ExecuteEffect(state, "SH-0019", TriggerType.Activate, playerNum: 1);
+        var result = ExecuteEffect(state, "SH-0019", TriggerType.Ignition, playerNum: 1);
 
         result.GuardFailed.Should().BeTrue("SH-0019 requires 3+ SHE cards on field");
         state.Player1Budget.Should().Be(1000, "budget should not change when guard fails");
@@ -279,8 +279,8 @@ public class EffectRegistrationTests
         var source = TestFactory.MakeResource(cardId: "SH-0010", instanceId: "cache_1");
         state.Player1Field.Backend[0] = source;
 
-        var handler = _registry.Get("SH-0010", TriggerType.Deploy)
-            ?? throw new InvalidOperationException("SH-0010 Deploy handler not registered");
+        var handler = _registry.Get("SH-0010", TriggerType.OnDeploy)
+            ?? throw new InvalidOperationException("SH-0010 OnDeploy handler not registered");
         var ctx = new EffectContext
         {
             State = state,
@@ -298,10 +298,31 @@ public class EffectRegistrationTests
     // ─── CardIdsForTrigger ─────────────────────────────────────
 
     [Fact]
-    public void CardIdsForTrigger_Reactive_ContainsExpectedCards()
+    public void CardIdsForTrigger_OnAttackDeclared_ContainsExpectedCards()
     {
-        var reactiveCards = _registry.CardIdsForTrigger(TriggerType.Reactive);
-        reactiveCards.Should().Contain(new string[] { "SH-0014", "SH-0021", "TK-0014", "TK-0017", "TK-0023", "TK-0024", "SL-0024", "TN-0013", "TN-0018", "NT-0023", "NT-0024", "NT-0027", "NT-0028" });
+        var cards = _registry.CardIdsForTrigger(TriggerType.OnAttackDeclared);
+        cards.Should().Contain(new string[] { "SL-0024", "NT-0024", "NT-0027", "NT-0028" });
+    }
+
+    [Fact]
+    public void CardIdsForTrigger_OnIncident_ContainsExpectedCards()
+    {
+        var cards = _registry.CardIdsForTrigger(TriggerType.OnIncident);
+        cards.Should().Contain(new string[] { "SH-0014", "SH-0017", "TK-0014", "TK-0017", "TK-0023", "TN-0013" });
+    }
+
+    [Fact]
+    public void CardIdsForTrigger_OnDestroy_ContainsExpectedReactiveCards()
+    {
+        var cards = _registry.CardIdsForTrigger(TriggerType.OnDestroy);
+        cards.Should().Contain(new string[] { "TK-0024", "TN-0018", "NT-0023" });
+    }
+
+    [Fact]
+    public void CardIdsForTrigger_OnDamaged_ContainsExpectedCards()
+    {
+        var cards = _registry.CardIdsForTrigger(TriggerType.OnDamaged);
+        cards.Should().Contain("SH-0021");
     }
 
     [Fact]
@@ -337,8 +358,8 @@ public class EffectRegistrationTests
             FaceUp = false,
         };
 
-        var handler = _registry.Get("TK-0025", TriggerType.Deploy)
-            ?? throw new InvalidOperationException("TK-0025 Deploy handler not registered");
+        var handler = _registry.Get("TK-0025", TriggerType.OnDeploy)
+            ?? throw new InvalidOperationException("TK-0025 OnDeploy handler not registered");
         var ctx = new EffectContext
         {
             State = state,

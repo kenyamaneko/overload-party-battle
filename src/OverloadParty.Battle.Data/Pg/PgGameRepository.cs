@@ -157,8 +157,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 player1_repository = $9, player1_trash = $10, player1_time_bank = $11,
                 player2_budget = $12, player2_insight_pool = $13, player2_field = $14, player2_hand = $15,
                 player2_repository = $16, player2_trash = $17, player2_time_bank = $18,
-                chain_stack = $19, current_action_timer = $20, next_instance_seq = $21, updated_at = $22
-            WHERE game_id = $23", conn, tx))
+                current_action_timer = $19, next_instance_seq = $20, updated_at = $21
+            WHERE game_id = $22", conn, tx))
         {
             AddGameStateParams(cmd, state);
             cmd.Parameters.AddWithValue(state.GameID);
@@ -293,7 +293,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                player1_repository, player1_trash, player1_time_bank,
                player2_budget, player2_insight_pool, player2_field, player2_hand,
                player2_repository, player2_trash, player2_time_bank,
-               chain_stack, current_action_timer, next_instance_seq, updated_at
+               current_action_timer, next_instance_seq, updated_at
         FROM game_states WHERE game_id = $1";
 
     // ─── Helpers ─────────────────────────────────────────────────
@@ -350,10 +350,9 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             Player2Trash = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(17), DbJsonOptions.Default) ?? [],
             Player2TimeBank = r.GetInt64(18),
 
-            ChainStack = JsonSerializer.Deserialize<List<ChainEntry>>(r.GetString(19), DbJsonOptions.Default) ?? [],
-            CurrentActionTimer = r.IsDBNull(20) ? null : r.GetInt64(20),
-            NextInstanceSeq = r.GetInt64(21),
-            UpdatedAt = r.GetDateTime(22),
+            CurrentActionTimer = r.IsDBNull(19) ? null : r.GetInt64(19),
+            NextInstanceSeq = r.GetInt64(20),
+            UpdatedAt = r.GetDateTime(21),
         };
     }
 
@@ -368,8 +367,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 player1_repository, player1_trash, player1_time_bank,
                 player2_budget, player2_insight_pool, player2_field, player2_hand,
                 player2_repository, player2_trash, player2_time_bank,
-                chain_stack, current_action_timer, next_instance_seq, updated_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)", conn, tx);
+                current_action_timer, next_instance_seq, updated_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)", conn, tx);
         cmd.Parameters.AddWithValue(state.GameID);
         cmd.Parameters.Add(new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = stateJson });
         AddGameStateParams(cmd, state);
@@ -399,7 +398,6 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.Add(JsonbParam(state.Player2Trash));
         cmd.Parameters.AddWithValue(state.Player2TimeBank);
 
-        cmd.Parameters.Add(JsonbParam(state.ChainStack));
         cmd.Parameters.AddWithValue((object?)state.CurrentActionTimer ?? DBNull.Value);
         cmd.Parameters.AddWithValue(state.NextInstanceSeq);
         cmd.Parameters.AddWithValue(state.UpdatedAt);

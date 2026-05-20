@@ -365,6 +365,7 @@ public class AttackProcessorTests
     public void Process_ReactiveCancelsAttack_DamageIsZero()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+        _cc.Add(TestFactory.ReactiveCard(cardId: "TEST-0400"));
 
         var attacker = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "atk_1", faceUp: true);
         state.Player1Field.Frontend[0] = attacker;
@@ -372,17 +373,17 @@ public class AttackProcessorTests
         var defender = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "def_1", faceUp: true);
         state.Player2Field.Frontend[0] = defender;
 
-        // Opponent has a support with reactive trigger
+        // Opponent has a face-down Reactive watching for an attack declaration
         state.Player2Field.Support[0] = new DeployedSupport
         {
             InstanceID = "sup_1",
-            CardID = "TEST-0200",
+            CardID = "TEST-0400",
             FaceUp = false,
             DeployOrder = 1
         };
 
         var effects = new TestEffectRegistry();
-        effects.Register("TEST-0200", TriggerType.Reactive, ctx => new EffectResult
+        effects.Register("TEST-0400", TriggerType.OnAttackDeclared, ctx => new EffectResult
         {
             CancelAction = true,
             Events = [new GameEvent { EventType = "reactive_fired", GameID = ctx.Game.GameID }]
@@ -402,7 +403,7 @@ public class AttackProcessorTests
         data.Damage.Should().Be(0L);
         // Reactive should be removed from support zone and sent to trash
         state.Player2Field.Support[0].Should().BeNull();
-        state.Player2Trash.Should().Contain(c => c.CardID == "TEST-0200");
+        state.Player2Trash.Should().Contain(c => c.CardID == "TEST-0400");
     }
 
     // ─── 17. OnDestroy trigger fires when defender is destroyed ─

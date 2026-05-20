@@ -779,7 +779,7 @@ public class NpcAiTests
     public void Immediate_StrategyCard_PlayedWithPriority()
     {
         _cc.Add(new CardDefinition { CardId = "TST-STRAT", CardName = "TestStrategy", CardType = "Strategy" });
-        _effects.SetEffectInfo("TST-STRAT", TriggerType.Activate, new EffectInfo
+        _effects.SetEffectInfo("TST-STRAT", TriggerType.Ignition, new EffectInfo
         {
             TargetType = EffectTargetType.None,
         }.WithCategory(EffectCategory.BudgetGain));

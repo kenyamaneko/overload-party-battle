@@ -136,7 +136,7 @@ public class TrashToHandAvailableActionsTests
     {
         var registry = new EffectRegistry();
         var op = new TrashToHandOp { Filter = filter };
-        registry.RegisterComposed(cardId, TriggerType.Activate, op);
+        registry.RegisterComposed(cardId, TriggerType.Ignition, op);
         return registry;
     }
 

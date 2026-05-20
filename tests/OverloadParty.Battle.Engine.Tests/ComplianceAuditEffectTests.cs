@@ -155,7 +155,7 @@ public class ComplianceAuditEffectTests
 
     private EffectResult ExecuteEffect(BattleGameState state, long playerNum)
     {
-        var handler = _registry.Get(CardId, TriggerType.Activate)
+        var handler = _registry.Get(CardId, TriggerType.Ignition)
             ?? throw new InvalidOperationException("Card #112 handler not registered");
 
         var ctx = new EffectContext

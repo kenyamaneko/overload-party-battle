@@ -30,13 +30,13 @@ public static class AttackProcessor
         var defender = ValidateDefender(oppField, req.TargetInstanceID, cc);
 
         // ダメージを算出
-        long damage = StatCalculator.CalculateEffectiveTP(attacker, myField, cc);
+        long rawDamage = StatCalculator.CalculateEffectiveTP(attacker, myField, cc);
 
         var events = new List<GameEvent>();
 
-        // リアクティブエフェクトを発動（相手のサポートゾーン）
-        var (cancelled, reactiveEvents) = FireReactives(
-            state, game, opponentNum, oppField, attacker, defender, cc, effects);
+        // 攻撃宣言時のリアクティブを発動（相手のサポートゾーン、ダメージ適用前）
+        var (cancelled, reactiveEvents) = FireOnAttackDeclared(
+            state, game, playerNum, opponentNum, oppField, attacker, defender, rawDamage, cc, effects);
         events.AddRange(reactiveEvents);
 
         if (cancelled)
@@ -60,9 +60,10 @@ public static class AttackProcessor
             return new ActionResult { Events = events, StateUpdated = true };
         }
 
-        // ダメージを適用（防御者の attack_damage_reduction バフで軽減）
-        defender.Damage += FieldHelpers.ApplyReduction(
-            defender.TemporaryEffects, BuffTypes.AttackDamageReduction, damage);
+        // ダメージを適用（防御者の attack_damage_reduction バフで軽減）し、on_damaged を発火
+        long damage = FieldHelpers.ApplyReduction(
+            defender.TemporaryEffects, BuffTypes.AttackDamageReduction, rawDamage);
+        events.AddRange(ResourceHelpers.ApplyDamage(state, game, cc, effects, defender, opponentNum, damage));
         attacker.HasAttacked = true;
         attacker.LastAttackTurn = state.CurrentTurn;
 
@@ -78,6 +79,7 @@ public static class AttackProcessor
                 Source = attacker,
                 Target = defender,
                 CardCache = cc,
+                Effects = effects,
             };
             var result = handler(ctx);
             events.AddRange(result.Events);
@@ -96,7 +98,7 @@ public static class AttackProcessor
             slaPenalty = defCard.SLAPenalty;
 
             // OnDestroy トリガーを発動
-            var destroyEvents = FireOnDestroy(state, game, opponentNum, defender, myField, oppField, cc, effects);
+            var destroyEvents = FireOnDestroy(state, game, opponentNum, defender, oppField, cc, effects);
             events.AddRange(destroyEvents);
 
             ResourceHelpers.DestroyResource(state, opponentNum, oppField, defender, cc);
@@ -186,94 +188,82 @@ public static class AttackProcessor
         return defender;
     }
 
-    private static (bool Cancelled, List<GameEvent> Events) FireReactives(
-        BattleGameState state, Game game, long defenderPlayerNum, Field defenderField,
-        DeployedResource attacker, DeployedResource target,
+    /// <summary>
+    /// ダメージ適用前に防御側サポートゾーンの on_attack_declared を発火します
+    /// </summary>
+    private static (bool Cancelled, List<GameEvent> Events) FireOnAttackDeclared(
+        BattleGameState state, Game game, long attackerNum, long defenderNum, Field defenderField,
+        DeployedResource attacker, DeployedResource target, long damage,
         ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return (false, []); }
 
-        var allEvents = new List<GameEvent>();
+        var candidates = FieldHelpers.AllSupports(defenderField)
+            .Select(s => EventTriggerCandidate.ForSupport(s, defenderNum))
+            .ToList();
 
-        // リアクティブは1つだけ発動する（セットが最も早いもの）
-        var reactive = FieldHelpers.AllSupports(defenderField)
-            .Where(s => effects.Has(s.CardID, TriggerType.Reactive))
-            .MinBy(s => s.DeployOrder);
-
-        if (reactive is null) { return (false, allEvents); }
-
-        var handler = effects.Get(reactive.CardID, TriggerType.Reactive)!;
-        var ctx = new EffectContext
-        {
-            State = state,
-            Game = game,
-            PlayerNum = defenderPlayerNum,
-            SupSource = reactive,
-            Source = attacker,
-            Target = target,
-            CardCache = cc,
-        };
-
-        var result = handler(ctx);
-        allEvents.AddRange(result.Events);
-
-        // 発動時に表向きにしてからトラッシュへ送る
-        reactive.FaceUp = true;
-        FieldHelpers.RemoveSupportFromField(defenderField, reactive.InstanceID);
-        CardMoveHelpers.AddToTrash(state, defenderPlayerNum, reactive.CardID, reactive.InstanceID, reactive.ArtNo);
-
-        return (result.CancelAction, allEvents);
+        return EventTriggerFiring.Fire(
+            state, effects, cc, TriggerType.OnAttackDeclared, candidates,
+            candidate => new EffectContext
+            {
+                State = state,
+                Game = game,
+                PlayerNum = defenderNum,
+                SupSource = candidate.Support,
+                Source = attacker,
+                Target = target,
+                EventOwnerNum = attackerNum,
+                EventDamage = damage,
+                CardCache = cc,
+                Effects = effects,
+            });
     }
 
+    /// <summary>
+    /// 所有者のフィールドリソースとサポートゾーンの on_destroy を発火します
+    /// </summary>
     private static List<GameEvent> FireOnDestroy(
         BattleGameState state, Game game, long ownerNum,
-        DeployedResource destroyed, Field attackerField, Field ownerField,
+        DeployedResource destroyed, Field ownerField,
         ICardCache cc, IEffectRegistry? effects)
     {
         if (effects is null) { return []; }
 
-        var allEvents = new List<GameEvent>();
-
-        var triggers = new List<(DeployedResource Resource, string CardId, long DeployOrder)>();
+        var candidates = new List<EventTriggerCandidate>();
 
         if (effects.Has(destroyed.CardID, TriggerType.OnDestroy))
         {
-            triggers.Add((destroyed, destroyed.CardID, destroyed.DeployOrder));
+            candidates.Add(EventTriggerCandidate.ForResource(destroyed, ownerNum));
         }
 
-        // Allied resources (excluding the destroyed one)
         foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
         {
             if (res.InstanceID == destroyed.InstanceID) { continue; }
-            if (effects.Has(res.CardID, TriggerType.OnDestroy))
-            {
-                triggers.Add((res, res.CardID, res.DeployOrder));
-            }
+            candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum));
         }
 
-        // Sort by deploy order (earliest first)
-        triggers.Sort((a, b) => a.DeployOrder.CompareTo(b.DeployOrder));
-
-        foreach (var (resource, cardId, _) in triggers)
+        // サポートゾーンの伏せ Reactive も on_destroy の走査対象。
+        foreach (var sup in FieldHelpers.AllSupports(ownerField))
         {
-            var handler = effects.Get(cardId, TriggerType.OnDestroy);
-            if (handler is null) { continue; }
+            candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum));
+        }
 
-            var ctx = new EffectContext
+        var (_, events) = EventTriggerFiring.Fire(
+            state, effects, cc, TriggerType.OnDestroy, candidates,
+            candidate => new EffectContext
             {
                 State = state,
                 Game = game,
                 PlayerNum = ownerNum,
-                Source = resource,
+                Source = candidate.Resource,
+                SupSource = candidate.Support,
                 Target = destroyed,
+                EventOwnerNum = ownerNum,
                 CardCache = cc,
-            };
+                Effects = effects,
+            });
 
-            var result = handler(ctx);
-            allEvents.AddRange(result.Events);
-        }
-
-        return allEvents;
+        return events;
     }
 
     private static List<GameEvent> FireOnHit(
@@ -296,6 +286,7 @@ public static class AttackProcessor
                 Source = defender,
                 Target = defender,
                 CardCache = cc,
+                Effects = effects,
             });
             if (!result.GuardFailed) { allEvents.AddRange(result.Events); }
         }
@@ -315,6 +306,7 @@ public static class AttackProcessor
                     Source = defender,
                     Target = defender,
                     CardCache = cc,
+                    Effects = effects,
                 });
                 if (!result.GuardFailed) { allEvents.AddRange(result.Events); }
             }

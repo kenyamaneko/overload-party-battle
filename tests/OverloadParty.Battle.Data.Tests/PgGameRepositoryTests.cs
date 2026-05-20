@@ -53,7 +53,6 @@ public class PgGameRepositoryTests
             Player2Repository = [],
             Player2Trash = [],
             Player2TimeBank = 480,
-            ChainStack = [],
             NextInstanceSeq = 1,
             UpdatedAt = now,
         };

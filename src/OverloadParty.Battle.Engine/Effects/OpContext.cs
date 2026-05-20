@@ -79,10 +79,42 @@ public class OpContext
     /// </summary>
     public Dictionary<string, object>? ChoiceData => Ctx.ChoiceData;
 
+    /// <summary>トリガーとなったイベントを起こしたプレイヤー番号</summary>
+    public long? EventOwnerNum => Ctx.EventOwnerNum;
+
+    /// <summary>on_attack_declared イベントで攻撃を宣言したリソース</summary>
+    public DeployedResource? Attacker => Ctx.Source;
+
+    /// <summary>on_incident イベントで使用されたインシデントカード</summary>
+    public CardDefinition? IncidentCard => Ctx.IncidentCard;
+
+    /// <summary>トリガーとなったイベントを起こしたカード</summary>
+    public CardDefinition? EventCard => Ctx.IncidentCard;
+
+    /// <summary>on_attack_declared イベントの攻撃ダメージ</summary>
+    public long? EventDamage => Ctx.EventDamage;
+
+    /// <summary>入れ子のトリガー発火に使うエフェクトレジストリ</summary>
+    public IEffectRegistry? Effects => Ctx.Effects;
+
     /// <summary>
     /// Add an event to the result.
     /// </summary>
     public void AddEvent(GameEvent evt) => Result.Events.Add(evt);
+
+    /// <summary>指定したリソースを所有するプレイヤー番号を返します</summary>
+    public long? OwnerOf(DeployedResource resource)
+    {
+        if (FieldHelpers.FindResourceByID(MyField, resource.InstanceID) is not null)
+        {
+            return PlayerNum;
+        }
+        if (FieldHelpers.FindResourceByID(OpponentField, resource.InstanceID) is not null)
+        {
+            return OpponentNum;
+        }
+        return null;
+    }
 
     /// <summary>
     /// Mark this action as cancelled (for reactive effects).

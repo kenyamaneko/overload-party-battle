@@ -166,8 +166,8 @@ public static class EffectYamlLoader
             }
         }
 
-        // UseEffectProcessor already enforces once-per-turn for activate triggers
-        if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Activate)
+        // UseEffectProcessor already enforces once-per-turn for ignition triggers
+        if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Ignition)
         {
             bool perGame = def.UseLimit switch
             {
@@ -224,9 +224,9 @@ public static class EffectYamlLoader
     // Op builder
     // ================================================================
 
-    private static IEffectOp BuildOp(JsonElement el)
+    private static IEffectOp BuildOp(JsonElement element)
     {
-        using var enumerator = el.EnumerateObject();
+        using var enumerator = element.EnumerateObject();
         if (!enumerator.MoveNext())
         {
             throw new InvalidOperationException("Empty op object");
@@ -367,17 +367,17 @@ public static class EffectYamlLoader
     // Selector builder
     // ================================================================
 
-    private static ISelector BuildSelector(JsonElement el)
+    private static ISelector BuildSelector(JsonElement element)
     {
-        if (el.ValueKind == JsonValueKind.Object)
+        if (element.ValueKind == JsonValueKind.Object)
         {
-            string? pick = el.TryGetProperty("pick", out var pk) ? pk.GetString() : SelectorPickModes.All;
+            string? pick = element.TryGetProperty("pick", out var pk) ? pk.GetString() : SelectorPickModes.All;
             if (pick == SelectorPickModes.Choice)
             {
-                string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
-                string? zone = el.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
-                string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
-                var cardTypes = ParseCardTypes(el);
+                string? owner = element.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
+                string? zone = element.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
+                string? faction = element.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
+                var cardTypes = ParseCardTypes(element);
 
                 return new ByChoiceSelector
                 {
@@ -389,26 +389,26 @@ public static class EffectYamlLoader
             }
         }
 
-        return BuildSelectorCore(el);
+        return BuildSelectorCore(element);
     }
 
-    private static ISelector BuildSelectorCore(JsonElement el)
+    private static ISelector BuildSelectorCore(JsonElement element)
     {
-        if (el.ValueKind == JsonValueKind.String)
+        if (element.ValueKind == JsonValueKind.String)
         {
-            return el.GetString() switch
+            return element.GetString() switch
             {
                 "source" => SourceSelector.Instance,
                 "target" => TargetSelector.Instance,
-                _ => throw new InvalidOperationException($"Unknown selector keyword: {el.GetString()}"),
+                _ => throw new InvalidOperationException($"Unknown selector keyword: {element.GetString()}"),
             };
         }
 
-        string? owner = el.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
-        string? zone = el.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
-        string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
-        bool excludeSource = el.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
-        var cardTypes = ParseCardTypes(el);
+        string? owner = element.TryGetProperty("owner", out var ow) ? ow.GetString() : PlayerRefs.Self;
+        string? zone = element.TryGetProperty("zone", out var zn) ? zn.GetString() : null;
+        string? faction = element.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
+        bool excludeSource = element.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
+        var cardTypes = ParseCardTypes(element);
 
         ISelector selector = owner switch
         {
@@ -432,15 +432,15 @@ public static class EffectYamlLoader
     // Amount builder
     // ================================================================
 
-    private static IAmountResolver BuildAmount(JsonElement el)
+    private static IAmountResolver BuildAmount(JsonElement element)
     {
-        if (el.ValueKind == JsonValueKind.Number)
+        if (element.ValueKind == JsonValueKind.Number)
         {
-            return new StaticAmount(el.GetInt64());
+            return new StaticAmount(element.GetInt64());
         }
 
         // ref-based: { ref: "source.yield", multiply: 1.0 }
-        if (el.TryGetProperty("ref", out var refEl))
+        if (element.TryGetProperty("ref", out var refEl))
         {
             string refStr = refEl.GetString()!;
             var parts = refStr.Split('.');
@@ -449,7 +449,7 @@ public static class EffectYamlLoader
                 throw new InvalidOperationException($"Invalid ref format: {refStr}");
             }
 
-            double multiply = el.TryGetProperty("multiply", out var mulEl)
+            double multiply = element.TryGetProperty("multiply", out var mulEl)
                 ? mulEl.GetDouble()
                 : 1.0;
 
@@ -457,10 +457,10 @@ public static class EffectYamlLoader
         }
 
         // per-count: { base, per: { count: selector, value }, max? }
-        if (el.TryGetProperty("per", out var perEl))
+        if (element.TryGetProperty("per", out var perEl))
         {
-            long baseVal = el.TryGetProperty("base", out var baseEl) ? baseEl.GetInt64() : 0;
-            long? max = el.TryGetProperty("max", out var maxEl) ? maxEl.GetInt64() : null;
+            long baseVal = element.TryGetProperty("base", out var baseEl) ? baseEl.GetInt64() : 0;
+            long? max = element.TryGetProperty("max", out var maxEl) ? maxEl.GetInt64() : null;
 
             var countSelectorEl = perEl.GetProperty("count");
             long perValue = perEl.GetProperty("value").GetInt64();
@@ -469,64 +469,103 @@ public static class EffectYamlLoader
             return new PerCountAmount(baseVal, countSelector, perValue, max);
         }
 
-        throw new InvalidOperationException($"Unknown amount format: {el}");
+        throw new InvalidOperationException($"Unknown amount format: {element}");
     }
 
     /// <summary>
     /// Builds a selector for counting purposes (used in per-count amounts).
     /// Count selectors don't support pick:choice, so delegates directly to the core builder.
     /// </summary>
-    private static ISelector BuildCountSelector(JsonElement el) => BuildSelectorCore(el);
+    private static ISelector BuildCountSelector(JsonElement element) => BuildSelectorCore(element);
 
     // ================================================================
     // Guard builder
     // ================================================================
 
-    private static IEffectOp BuildGuard(JsonElement el)
+    private static IEffectOp BuildGuard(JsonElement element)
     {
-        bool negate = el.TryGetProperty("negate", out var negEl)
+        // ガードの negate: true フラグ。指定時はガードの判定結果を反転する。
+        bool negate = element.TryGetProperty("negate", out var negEl)
             && negEl.ValueKind == JsonValueKind.True;
 
-        if (el.TryGetProperty("stat", out var statEl))
+        if (element.TryGetProperty("stat", out var statEl))
         {
             return BuildStatGuard(statEl, negate);
         }
 
-        if (el.TryGetProperty("count", out var countEl))
+        if (element.TryGetProperty("count", out var countEl))
         {
             return BuildCountGuard(countEl, negate);
         }
 
-        if (el.TryGetProperty("match", out var matchEl))
+        if (element.TryGetProperty("match", out var matchEl))
         {
             return BuildMatchGuard(matchEl, negate);
         }
 
-        if (el.TryGetProperty("not_same", out var notSameEl))
+        if (element.TryGetProperty("not_same", out var notSameEl))
         {
-            if (negate)
-            {
-                throw new InvalidOperationException("negate on not_same is not supported");
-            }
-            return GuardNotSelfOp.Instance;
+            var (a, b) = ParseResourceRefPair(notSameEl);
+            IEffectOp op = new GuardNotSameOp(a, b);
+            return negate ? new NegateGuardOp(op) : op;
         }
 
-        throw new InvalidOperationException($"Unknown guard type: {el}");
+        if (element.TryGetProperty("same", out var sameEl))
+        {
+            var (a, b) = ParseResourceRefPair(sameEl);
+            IEffectOp op = new GuardSameOp(a, b);
+            return negate ? new NegateGuardOp(op) : op;
+        }
+
+        if (element.TryGetProperty("event_owner", out var ownerEl))
+        {
+            bool isSelf = ownerEl.GetString() switch
+            {
+                PlayerRefs.Self => true,
+                PlayerRefs.Opponent => false,
+                _ => throw new InvalidOperationException($"Unknown event_owner: {ownerEl.GetString()}"),
+            };
+            IEffectOp op = new GuardEventOwnerOp(isSelf);
+            return negate ? new NegateGuardOp(op) : op;
+        }
+
+        if (element.TryGetProperty("lethal", out var lethalEl)
+            && lethalEl.ValueKind == JsonValueKind.True)
+        {
+            return negate ? new NegateGuardOp(GuardLethalOp.Instance) : GuardLethalOp.Instance;
+        }
+
+        throw new InvalidOperationException($"Unknown guard type: {element}");
     }
 
-    private static IEffectOp BuildStatGuard(JsonElement el, bool negate)
+    private static (ResourceRef A, ResourceRef B) ParseResourceRefPair(JsonElement element)
     {
-        string selectorStr = el.GetProperty("selector").GetString()!;
-        string stat = el.GetProperty("stat").GetString()!;
+        var a = ParseResourceRef(element.GetProperty("a").GetString()!);
+        var b = ParseResourceRef(element.GetProperty("b").GetString()!);
+        return (a, b);
+    }
+
+    private static ResourceRef ParseResourceRef(string s) => s switch
+    {
+        "source" => ResourceRef.Source,
+        "target" => ResourceRef.Target,
+        "equip_host" => ResourceRef.EquipHost,
+        _ => throw new InvalidOperationException($"Unknown resource reference: {s}"),
+    };
+
+    private static IEffectOp BuildStatGuard(JsonElement element, bool negate)
+    {
+        string selectorStr = element.GetProperty("selector").GetString()!;
+        string stat = element.GetProperty("stat").GetString()!;
 
         if (selectorStr == "self" && stat == "budget")
         {
-            if (el.TryGetProperty("min", out var minEl))
+            if (element.TryGetProperty("min", out var minEl))
             {
                 IEffectOp op = new RequireBudgetOp(minEl.GetInt64());
                 return negate ? new NegateGuardOp(op) : op;
             }
-            if (el.TryGetProperty("max", out var maxEl))
+            if (element.TryGetProperty("max", out var maxEl))
             {
                 IEffectOp op = new RequireMaxBudgetOp(maxEl.GetInt64());
                 return negate ? new NegateGuardOp(op) : op;
@@ -535,7 +574,7 @@ public static class EffectYamlLoader
 
         if (selectorStr == "target" && stat == "av")
         {
-            if (el.TryGetProperty("max", out var maxEl))
+            if (element.TryGetProperty("max", out var maxEl))
             {
                 IEffectOp op = new GuardTargetAVOp(maxEl.GetInt64());
                 return negate ? new NegateGuardOp(op) : op;
@@ -545,11 +584,11 @@ public static class EffectYamlLoader
         throw new InvalidOperationException($"Unsupported stat guard: selector={selectorStr}, stat={stat}");
     }
 
-    private static IEffectOp BuildCountGuard(JsonElement el, bool negate)
+    private static IEffectOp BuildCountGuard(JsonElement element, bool negate)
     {
-        var selectorEl = el.GetProperty("selector");
-        int min = el.TryGetProperty("min", out var minEl) ? minEl.GetInt32() : 1;
-        int? max = el.TryGetProperty("max", out var maxEl) ? maxEl.GetInt32() : null;
+        var selectorEl = element.GetProperty("selector");
+        int min = element.TryGetProperty("min", out var minEl) ? minEl.GetInt32() : 1;
+        int? max = element.TryGetProperty("max", out var maxEl) ? maxEl.GetInt32() : null;
 
         // Try to map to existing RequireFactionCountOp for NPC classifier compatibility
         if (!negate && max is null && selectorEl.ValueKind == JsonValueKind.Object)
@@ -590,14 +629,32 @@ public static class EffectYamlLoader
             owner ?? PlayerRefs.Self, zone, faction, cardTypes, cardIds, min, max, negate);
     }
 
-    private static IEffectOp BuildMatchGuard(JsonElement el, bool negate)
+    private static IEffectOp BuildMatchGuard(JsonElement element, bool negate)
     {
-        string? faction = el.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
-        string? cardType = el.TryGetProperty("card_type", out var ct) ? ct.GetString() : null;
+        var selector = ParseMatchSelector(element.GetProperty("selector").GetString()!);
+        string? faction = element.TryGetProperty("faction", out var fc) ? fc.GetString() : null;
+        var cardTypes = ParseCardTypes(element);
+        var cardIds = ParseCardIds(element);
+        bool? ownerIsOpponent = element.TryGetProperty("owner", out var ow)
+            ? ow.GetString() switch
+            {
+                PlayerRefs.Self => false,
+                PlayerRefs.Opponent => true,
+                _ => throw new InvalidOperationException($"Unknown match owner: {ow.GetString()}"),
+            }
+            : null;
 
-        IEffectOp op = new GuardFactionOp(faction ?? "", cardType);
+        IEffectOp op = new GuardMatchOp(selector, faction, cardTypes, cardIds, ownerIsOpponent);
         return negate ? new NegateGuardOp(op) : op;
     }
+
+    private static MatchSelector ParseMatchSelector(string s) => s switch
+    {
+        "target" => MatchSelector.Target,
+        "event_card" => MatchSelector.EventCard,
+        "attacker" => MatchSelector.Attacker,
+        _ => throw new InvalidOperationException($"Unknown match selector: {s}"),
+    };
 
     // ================================================================
     // Card filter builder (for deploy_from_repo / deploy_from_hand)
@@ -636,8 +693,8 @@ public static class EffectYamlLoader
 
     private static TriggerType ParseTrigger(string trigger) => trigger switch
     {
-        TriggerTypes.Deploy => TriggerType.Deploy,
-        TriggerTypes.Activate => TriggerType.Activate,
+        TriggerTypes.OnDeploy => TriggerType.OnDeploy,
+        TriggerTypes.Ignition => TriggerType.Ignition,
         TriggerTypes.Passive => TriggerType.OnEndPhase, // 後方互換: passive → OnEndPhase
         TriggerTypes.OnEndPhase => TriggerType.OnEndPhase,
         TriggerTypes.OnFieldChange => TriggerType.OnFieldChange,
@@ -645,8 +702,9 @@ public static class EffectYamlLoader
         TriggerTypes.OnAttack => TriggerType.OnAttack,
         TriggerTypes.OnHit => TriggerType.OnHit,
         TriggerTypes.OnDestroy => TriggerType.OnDestroy,
-        TriggerTypes.Reactive => TriggerType.Reactive,
-        TriggerTypes.OnEnemyDeploy => TriggerType.OnEnemyDeploy,
+        TriggerTypes.OnAttackDeclared => TriggerType.OnAttackDeclared,
+        TriggerTypes.OnIncident => TriggerType.OnIncident,
+        TriggerTypes.OnDamaged => TriggerType.OnDamaged,
         _ => throw new InvalidOperationException($"Unknown trigger: {trigger}"),
     };
 
@@ -682,9 +740,9 @@ public static class EffectYamlLoader
     /// dual-match (CardType OR Subtype) で判定する。lowercase "data"/"compute" は旧 YAML
     /// 互換のため category 名にエイリアスする。
     /// </summary>
-    private static List<string>? ParseCardTypes(JsonElement el)
+    private static List<string>? ParseCardTypes(JsonElement element)
     {
-        if (!el.TryGetProperty("card_type", out var ctEl))
+        if (!element.TryGetProperty("card_type", out var ctEl))
         {
             return null;
         }
@@ -706,9 +764,9 @@ public static class EffectYamlLoader
         return null;
     }
 
-    private static List<string>? ParseCardIds(JsonElement el)
+    private static List<string>? ParseCardIds(JsonElement element)
     {
-        if (!el.TryGetProperty("card_id", out var idEl))
+        if (!element.TryGetProperty("card_id", out var idEl))
         {
             return null;
         }

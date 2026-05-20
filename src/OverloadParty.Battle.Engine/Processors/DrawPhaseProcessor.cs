@@ -44,6 +44,7 @@ public static class DrawPhaseProcessor
         var playerNum = state.ActivePlayer;
         var field = state.GetField(playerNum);
 
+        // カウントダウン完了 = 表向き稼働状態でフィールドに入った瞬間。ここで on_deploy を発火する。
         foreach (var resource in FieldHelpers.AllResources(field))
         {
             if (resource.DeployingTurnsLeft > 0)
@@ -53,6 +54,7 @@ public static class DrawPhaseProcessor
                 {
                     resource.FaceUp = true;
                     state.SetHasHadActiveResource(playerNum, true);
+                    FireOnDeploy(state, game, playerNum, cc, effects, source: resource, supSource: null);
                 }
             }
         }
@@ -62,20 +64,36 @@ public static class DrawPhaseProcessor
             if (support.DeployingTurnsLeft > 0)
             {
                 support.DeployingTurnsLeft--;
-                if (support.DeployingTurnsLeft <= 0
-                    && effects?.Has(support.CardID, TriggerType.Deploy) == true)
+                if (support.DeployingTurnsLeft <= 0)
                 {
-                    var handler = effects.Get(support.CardID, TriggerType.Deploy)!;
-                    handler(new EffectContext
-                    {
-                        State = state,
-                        Game = game,
-                        PlayerNum = playerNum,
-                        SupSource = support,
-                        CardCache = cc,
-                    });
+                    FireOnDeploy(state, game, playerNum, cc, effects, source: null, supSource: support);
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// デプロイのカウントダウン完了で稼働したカード自身の on_deploy 効果を発火します。
+    /// </summary>
+    static void FireOnDeploy(
+        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry? effects,
+        DeployedResource? source, DeployedSupport? supSource)
+    {
+        string cardId = source?.CardID ?? supSource!.CardID;
+        if (effects?.Has(cardId, TriggerType.OnDeploy) != true) { return; }
+
+        var handler = effects.Get(cardId, TriggerType.OnDeploy)!;
+        handler(new EffectContext
+        {
+            State = state,
+            Game = game,
+            PlayerNum = playerNum,
+            Source = source,
+            Target = source,
+            SupSource = supSource,
+            EventOwnerNum = playerNum,
+            CardCache = cc,
+            Effects = effects,
+        });
     }
 }

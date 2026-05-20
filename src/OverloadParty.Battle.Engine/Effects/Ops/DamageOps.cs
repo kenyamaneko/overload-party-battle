@@ -18,7 +18,33 @@ public class DealDamageOp(ISelector sel, IAmountResolver value) : IEffectOp
 
         foreach (var target in targets)
         {
+            DamageApplication.Apply(ctx, target, amount);
+        }
+    }
+}
+
+/// <summary>
+/// エフェクト処理におけるリソースへのダメージ適用と on_damaged 発火の集約点です
+/// </summary>
+internal static class DamageApplication
+{
+    /// <summary>
+    /// リソースにダメージを与え、on_damaged を発火します
+    /// </summary>
+    public static void Apply(OpContext ctx, DeployedResource target, long amount)
+    {
+        long? owner = ctx.OwnerOf(target);
+        if (owner is null)
+        {
             target.Damage += amount;
+            return;
+        }
+
+        var events = ResourceHelpers.ApplyDamage(
+            ctx.State, ctx.Game, ctx.CardCache, ctx.Effects, target, owner.Value, amount);
+        foreach (var evt in events)
+        {
+            ctx.AddEvent(evt);
         }
     }
 }
@@ -47,7 +73,7 @@ public class IncidentDamageOp(ISelector sel, IAmountResolver value, IAmountResol
             long effectiveDamage = FieldHelpers.ApplyReduction(
                 target.TemporaryEffects, BuffTypes.IncidentReduction, damage);
 
-            target.Damage += effectiveDamage;
+            DamageApplication.Apply(ctx, target, effectiveDamage);
         }
 
         if (budgetPenalty is null) { return; }

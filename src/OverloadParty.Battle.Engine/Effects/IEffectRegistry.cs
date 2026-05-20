@@ -45,6 +45,18 @@ public class EffectContext
 
     /// <summary>Player choice data for branching effects.</summary>
     public Dictionary<string, object>? ChoiceData { get; init; }
+
+    /// <summary>トリガーとなったイベントを起こしたプレイヤー番号</summary>
+    public long? EventOwnerNum { get; init; }
+
+    /// <summary>on_incident トリガーのインシデントカード定義</summary>
+    public CardDefinition? IncidentCard { get; init; }
+
+    /// <summary>on_attack_declared イベントの攻撃ダメージ</summary>
+    public long? EventDamage { get; init; }
+
+    /// <summary>入れ子のトリガー発火に使うエフェクトレジストリ</summary>
+    public IEffectRegistry? Effects { get; init; }
 }
 
 /// <summary>

@@ -205,6 +205,22 @@ public static class TestFactory
         };
     }
 
+    /// <summary>
+    /// Reactive カードを生成します
+    /// </summary>
+    public static CardDefinition ReactiveCard(
+        string cardId = "TST-0400",
+        string name = "TestReactive")
+    {
+        return new CardDefinition
+        {
+            CardId = cardId,
+            CardName = name,
+            CardType = "Reactive",
+            DeployTurns = 0,
+        };
+    }
+
     // ─── Resource Instance Builder ────────────────────────────
 
     public static DeployedResource MakeResource(
