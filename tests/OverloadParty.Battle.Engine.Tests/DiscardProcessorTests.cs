@@ -12,7 +12,7 @@ public class DiscardProcessorTests
     public DiscardProcessorTests()
     {
         // Compute card for hand/repo cards
-        _cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", deployTurns: 1));
+        _cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", deployTurns: 1));
     }
 
     private static DiscardHandRequest MakeReq(params string[] ids) =>
@@ -23,7 +23,7 @@ public class DiscardProcessorTests
         var hand = new List<UndeployedCard>();
         for (int i = 0; i < count; i++)
         {
-            hand.Add(new UndeployedCard { InstanceID = $"h_{i}", CardID = "SH-0001" });
+            hand.Add(new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-2001" });
         }
         return hand;
     }
@@ -33,7 +33,7 @@ public class DiscardProcessorTests
         var repo = new List<UndeployedCard>();
         for (int i = 0; i < count; i++)
         {
-            repo.Add(new UndeployedCard { InstanceID = $"r_{i}", CardID = "SH-0001" });
+            repo.Add(new UndeployedCard { InstanceID = $"r_{i}", CardID = "TST-2001" });
         }
         return repo;
     }

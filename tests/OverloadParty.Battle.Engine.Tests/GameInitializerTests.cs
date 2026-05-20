@@ -17,9 +17,9 @@ public class GameInitializerTests
     {
         var cc = new TestCardCache();
         // Add a compute card that covers all 30 deck slots
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0001", name: "Card1"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-2001", name: "Card1"));
         cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", name: "Card2"));
-        cc.Add(TestFactory.ComputeCard(cardId: "SH-0002", name: "Card3"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-2002", name: "Card3"));
         return cc;
     }
 
@@ -27,7 +27,7 @@ public class GameInitializerTests
     public void CreateNewGame_InitialBudget_Is5000()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -40,7 +40,7 @@ public class GameInitializerTests
     public void CreateNewGame_InitialInsightPool_IsZero()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -55,7 +55,7 @@ public class GameInitializerTests
     public void CreateNewGame_Deals5Cards_PerPlayer()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -71,7 +71,7 @@ public class GameInitializerTests
     public void CreateNewGame_RemainingCards_GoToRepository()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -83,7 +83,7 @@ public class GameInitializerTests
     public void CreateNewGame_TotalCards_Equals30()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -98,7 +98,7 @@ public class GameInitializerTests
     public void CreateNewGame_StartsAtTurn1_DrawPhase()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -110,7 +110,7 @@ public class GameInitializerTests
     public void CreateNewGame_ActivePlayer_MatchesFirstPlayer()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state1) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
         state1.ActivePlayer.Should().Be(1);
@@ -123,7 +123,7 @@ public class GameInitializerTests
     public void CreateNewGame_GameStatus_IsPlaying()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (game, _) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -134,7 +134,7 @@ public class GameInitializerTests
     public void CreateNewGame_FirstPlayer_IsSet()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (game, _) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -152,9 +152,9 @@ public class GameInitializerTests
         var deckCards = new List<DeckSnapshotCard>();
         for (int i = 0; i < 10; i++)
         {
-            deckCards.Add(new DeckSnapshotCard { CardId = "SH-0001" });
+            deckCards.Add(new DeckSnapshotCard { CardId = "TST-2001" });
             deckCards.Add(new DeckSnapshotCard { CardId = "TEST-0002" });
-            deckCards.Add(new DeckSnapshotCard { CardId = "SH-0002" });
+            deckCards.Add(new DeckSnapshotCard { CardId = "TST-2002" });
         }
         var deck = new DeckSnapshot { DeckID = "d1", Cards = deckCards };
 
@@ -173,7 +173,7 @@ public class GameInitializerTests
     public void CreateNewGame_InstanceIDs_AreUnique()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -190,7 +190,7 @@ public class GameInitializerTests
     public void CreateNewGame_TimeBank_IsInitialized()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
@@ -203,7 +203,7 @@ public class GameInitializerTests
     public void CreateNewGame_EmptyField_NoDeployedResources()
     {
         var cc = SetupCardCache();
-        var deck = TestFactory.MakeDeck("SH-0001", "SH-0002", "SH-0002");
+        var deck = TestFactory.MakeDeck("TST-2001", "TST-2002", "TST-2002");
 
         var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
 
