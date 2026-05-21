@@ -387,6 +387,15 @@ export interface components {
             trash: components["schemas"]["UndeployedCard"][];
             /** @description 実行可能アクション一覧 (アクティブプレイヤーのみ)。 */
             availableActions?: components["schemas"]["AvailableAction"][];
+            /** @description 効果由来のスロット選択待ち。null なら待ちなし。MyView 視点のプレイヤー番号が選択対象のときだけ値を持つ。 */
+            pendingSlotSelect?: components["schemas"]["PendingSlotSelectView"];
+        };
+        /** @description 効果からのリソースデプロイを待っているスロット選択の client 公開ビュー。 */
+        PendingSlotSelectView: {
+            /** @description 配置待ちのリソース。 */
+            resource: components["schemas"]["DeployedResource"];
+            /** @description 配置可能なゾーンとスロット ("frontend_0" 等)。 */
+            validZones: string[];
         };
         /** @description 相手プレイヤー視点 (情報秘匿適用済み)。 */
         OpponentView: {

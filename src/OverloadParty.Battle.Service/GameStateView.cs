@@ -66,6 +66,7 @@ public static class GameStateView
             TrashCount = myTrash.Count,
             Trash = myTrash.Select(MapUndeployedCard).ToList(),
             AvailableActions = availableActions,
+            PendingSlotSelect = MapPendingSlotSelect(state, playerNum),
         };
 
         var oppView = new GD.OpponentView
@@ -92,6 +93,17 @@ public static class GameStateView
             MyView = myView,
             OppView = oppView,
             PendingEffectChoice = MapPendingEffectChoice(state.PendingEffectChoice),
+        };
+    }
+
+    private static GD.PendingSlotSelectView? MapPendingSlotSelect(BattleGameState state, long playerNum)
+    {
+        var pending = state.PendingSlotSelects.FirstOrDefault(p => p.PlayerNum == playerNum);
+        if (pending is null) { return null; }
+        return new GD.PendingSlotSelectView
+        {
+            Resource = MapResource(pending.Resource),
+            ValidZones = pending.ValidZones.ToList(),
         };
     }
 
