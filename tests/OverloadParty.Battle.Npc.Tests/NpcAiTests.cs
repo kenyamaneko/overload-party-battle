@@ -327,23 +327,23 @@ public class NpcAiTests
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void PendingReactiveChoice_PicksFirstCandidate()
+    public void PendingEffectChoice_PicksFirstCandidate()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
         var state = TestFactory.MakeGameState();
-        var pending = new PendingReactiveChoice
+        var pending = new PendingEffectChoice
         {
             ChooserPlayerNum = 1,
             OwnerPlayerNum = 1,
-            ReactiveCardId = "NT-0023",
-            ReactiveInstanceId = "react_1",
+            EffectCardId = "NT-0023",
+            EffectInstanceId = "react_1",
             Trigger = TriggerType.OnDestroy,
             ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,
             Candidates = ["TST-0001", "TST-0002"],
         };
 
-        var action = ai.DecidePendingReactiveChoice(state, 1, pending);
+        var action = ai.DecidePendingEffectChoice(state, 1, pending);
 
         action.Should().NotBeNull();
         action!.ActionType.Should().Be(ActionTypes.ResolvePendingChoice);
@@ -351,43 +351,43 @@ public class NpcAiTests
     }
 
     [Fact]
-    public void PendingReactiveChoice_WrongChooser_ReturnsNull()
+    public void PendingEffectChoice_WrongChooser_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
         var state = TestFactory.MakeGameState();
-        var pending = new PendingReactiveChoice
+        var pending = new PendingEffectChoice
         {
             ChooserPlayerNum = 2,
             OwnerPlayerNum = 1,
-            ReactiveCardId = "NT-0023",
-            ReactiveInstanceId = "react_1",
+            EffectCardId = "NT-0023",
+            EffectInstanceId = "react_1",
             Trigger = TriggerType.OnDestroy,
             ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,
             Candidates = ["TST-0001"],
         };
 
-        ai.DecidePendingReactiveChoice(state, 1, pending).Should().BeNull();
+        ai.DecidePendingEffectChoice(state, 1, pending).Should().BeNull();
     }
 
     [Fact]
-    public void PendingReactiveChoice_EmptyCandidates_ReturnsNull()
+    public void PendingEffectChoice_EmptyCandidates_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
         var state = TestFactory.MakeGameState();
-        var pending = new PendingReactiveChoice
+        var pending = new PendingEffectChoice
         {
             ChooserPlayerNum = 1,
             OwnerPlayerNum = 1,
-            ReactiveCardId = "NT-0023",
-            ReactiveInstanceId = "react_1",
+            EffectCardId = "NT-0023",
+            EffectInstanceId = "react_1",
             Trigger = TriggerType.OnDestroy,
             ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,
             Candidates = [],
         };
 
-        ai.DecidePendingReactiveChoice(state, 1, pending).Should().BeNull();
+        ai.DecidePendingEffectChoice(state, 1, pending).Should().BeNull();
     }
 
     // ═══════════════════════════════════════════════════════════════

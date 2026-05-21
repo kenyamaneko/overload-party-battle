@@ -44,8 +44,8 @@ public static class GameStateView
         // pending reactive choice 中は ChooserPlayerNum に解決アクションを提示する。
         // 通常は ActivePlayer のみがアクション可。
         System.Collections.Generic.List<GD.AvailableAction>? availableActions = null;
-        bool isChooser = state.PendingReactiveChoice is { } pc && pc.ChooserPlayerNum == playerNum;
-        bool isActivePlayer = state.ActivePlayer == playerNum && state.PendingReactiveChoice is null;
+        bool isChooser = state.PendingEffectChoice is { } pc && pc.ChooserPlayerNum == playerNum;
+        bool isActivePlayer = state.ActivePlayer == playerNum && state.PendingEffectChoice is null;
         if (game.Status == GameStatus.Playing && (isActivePlayer || isChooser))
         {
             availableActions = AvailableActions.GetAllAvailableActions(
@@ -91,18 +91,18 @@ public static class GameStateView
             TurnStartedAt = state.TurnStartedAt,
             MyView = myView,
             OppView = oppView,
-            PendingReactiveChoice = MapPendingReactiveChoice(state.PendingReactiveChoice),
+            PendingEffectChoice = MapPendingEffectChoice(state.PendingEffectChoice),
         };
     }
 
-    private static GD.PendingReactiveChoiceView? MapPendingReactiveChoice(PendingReactiveChoice? pending)
+    private static GD.PendingEffectChoiceView? MapPendingEffectChoice(PendingEffectChoice? pending)
     {
         if (pending is null) { return null; }
-        return new GD.PendingReactiveChoiceView
+        return new GD.PendingEffectChoiceView
         {
             ChooserPlayerNum = pending.ChooserPlayerNum,
-            ReactiveCardId = pending.ReactiveCardId,
-            ReactiveInstanceId = pending.ReactiveInstanceId,
+            EffectCardId = pending.EffectCardId,
+            EffectInstanceId = pending.EffectInstanceId,
             ChoiceKind = pending.ChoiceKind,
         };
     }

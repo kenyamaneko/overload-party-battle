@@ -228,8 +228,8 @@ public class NpcAi : INpcStrategy
     /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
     /// <param name="pending">解決対象の選択待ち状態。</param>
     /// <returns>解決アクション。候補が無い場合は null。</returns>
-    public NpcAction? DecidePendingReactiveChoice(
-        BattleGameState state, long npcPlayerNum, PendingReactiveChoice pending)
+    public NpcAction? DecidePendingEffectChoice(
+        BattleGameState state, long npcPlayerNum, PendingEffectChoice pending)
     {
         if (pending.ChooserPlayerNum != npcPlayerNum || pending.Candidates.Count == 0)
         {

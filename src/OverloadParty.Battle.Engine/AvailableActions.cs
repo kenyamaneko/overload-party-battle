@@ -92,7 +92,7 @@ public static class AvailableActions
 
         // reactive 選択待ちのときは、選択者のみが選択を解決するアクションを提示する。
         // 非選択者は空アクションになるが「相手の割り込み処理中」フラグは別レイヤー (TurnControls) で伝える。
-        if (state.PendingReactiveChoice is { } pendingChoice)
+        if (state.PendingEffectChoice is { } pendingChoice)
         {
             return EnumerateResolvePendingChoiceActions(pendingChoice);
         }
@@ -420,7 +420,7 @@ public static class AvailableActions
     /// </summary>
     /// <param name="pending">保留中の choice 情報。</param>
     /// <returns>候補ごとに 1 件の ResolvePendingChoice アクション。</returns>
-    private static List<AvailableAction> EnumerateResolvePendingChoiceActions(PendingReactiveChoice pending)
+    private static List<AvailableAction> EnumerateResolvePendingChoiceActions(PendingEffectChoice pending)
     {
         // クライアントは選択時に候補 ID を ResolvePendingChoiceRequest.chosen_id として送る。
         // ChoiceKind ごとに何の ID なのかが変わるため、UI が解釈しやすいよう別フィールドに載せる。
@@ -428,8 +428,8 @@ public static class AvailableActions
             .Select(id => new AvailableAction
             {
                 Type = ActionTypes.ResolvePendingChoice,
-                SourceInstanceID = pending.ReactiveInstanceId,
-                CardID = pending.ChoiceKind == ChoiceKinds.HandCard ? id : pending.ReactiveCardId,
+                SourceInstanceID = pending.EffectInstanceId,
+                CardID = pending.ChoiceKind == ChoiceKinds.HandCard ? id : pending.EffectCardId,
                 ValidTargets = pending.ChoiceKind == ChoiceKinds.FieldTarget ? [id] : null,
             })
             .ToList();

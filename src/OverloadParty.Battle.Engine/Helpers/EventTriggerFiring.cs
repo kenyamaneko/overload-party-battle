@@ -116,7 +116,7 @@ public static class EventTriggerFiring
             // 後続候補も同イベント契機なので、resume 後に必要であれば再走査する設計とする。
             if (result.PendingChoice is not null)
             {
-                state.PendingReactiveChoice = result.PendingChoice;
+                state.PendingEffectChoice = result.PendingChoice;
                 break;
             }
 

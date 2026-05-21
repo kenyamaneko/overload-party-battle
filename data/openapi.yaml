@@ -483,40 +483,34 @@ components:
           $ref: "#/components/schemas/PlayerSummary"
         player2Summary:
           $ref: "#/components/schemas/PlayerSummary"
-        pendingReactiveChoice:
-          $ref: "#/components/schemas/PendingReactiveChoiceView"
+        pendingEffectChoice:
+          $ref: "#/components/schemas/PendingEffectChoiceView"
           nullable: true
-          description: |
-            reactive 効果の処理中にプレイヤー選択が必要な状態。null なら待ちなし。
-            choose 側プレイヤーは availableActions に提示された候補から 1 件を選び
-            `resolve_pending_choice` アクションで送信する。非選択者はこの値を見て
-            「相手の割り込み処理中」を表示する。
+          description: 効果処理中にプレイヤー選択が必要な状態。null なら待ちなし。chooser は availableActions の候補から 1 件を選び resolve_pending_choice アクションで送信する。
 
-    PendingReactiveChoiceView:
+    PendingEffectChoiceView:
       type: object
-      description: pendingReactiveChoice の client 公開ビュー。
+      description: pendingEffectChoice の client 公開ビュー。
       x-battle-csharp-package: state
-      required: [chooserPlayerNum, reactiveCardId, reactiveInstanceId, choiceKind]
+      required: [chooserPlayerNum, effectCardId, effectInstanceId, choiceKind]
       properties:
         chooserPlayerNum:
           type: integer
           format: int64
           description: 選択を行うプレイヤー番号
-        reactiveCardId:
+        effectCardId:
           type: string
-          description: 発動中のリアクティブのカード ID
-          x-csharp-name: ReactiveCardId
-          x-go-name: ReactiveCardId
-        reactiveInstanceId:
+          description: 発動中の効果を持つカードの ID
+          x-csharp-name: EffectCardId
+          x-go-name: EffectCardId
+        effectInstanceId:
           type: string
-          description: 発動中のリアクティブのインスタンス ID
-          x-csharp-name: ReactiveInstanceId
-          x-go-name: ReactiveInstanceId
+          description: 発動中の効果を持つカードのインスタンス ID
+          x-csharp-name: EffectInstanceId
+          x-go-name: EffectInstanceId
         choiceKind:
           type: string
-          description: |
-            選択対象の種別。`hand_card` ならば候補は手札カード、
-            `field_target` ならばフィールド上のリソース。
+          description: 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。
 
     PlayerSummary:
       type: object
@@ -925,10 +919,7 @@ components:
       properties:
         type:
           type: string
-          description: |
-            variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` /
-            `resolve_pending_choice` のいずれか。`resolve_pending_choice` は pending reactive choice
-            の候補 1 件を表し、選択時の `chosen_id` は handInstanceID または validTargets[0] から取る。
+          description: variant 種別。play_card / attack / scale_up / monetize / use_effect / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
         # play_card variant
         handInstanceID:
           type: string

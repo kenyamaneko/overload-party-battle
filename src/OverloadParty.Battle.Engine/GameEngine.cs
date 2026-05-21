@@ -139,7 +139,7 @@ public class GameEngine
             // reactive 選択待ちの間は ActivePlayer 以外の chooser が解決アクションを送るため、
             // ResolvePendingChoice は「自分のターン」チェックから除外して chooser 一致で判定する。
             bool isChooserResolving = actionType == ActionType.ResolvePendingChoice
-                && state.PendingReactiveChoice?.ChooserPlayerNum == playerNum;
+                && state.PendingEffectChoice?.ChooserPlayerNum == playerNum;
             if (!isChooserResolving && state.ActivePlayer != playerNum)
             {
                 throw new GameRuleException("not your turn");
@@ -161,7 +161,7 @@ public class GameEngine
                 throw new GameRuleException("slot selection required");
             }
 
-            if (state.PendingReactiveChoice is { } pendingChoice
+            if (state.PendingEffectChoice is { } pendingChoice
                 && pendingChoice.ChooserPlayerNum == playerNum
                 && actionType != ActionType.ResolvePendingChoice)
             {

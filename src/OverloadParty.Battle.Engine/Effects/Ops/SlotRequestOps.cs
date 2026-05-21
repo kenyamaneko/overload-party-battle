@@ -78,7 +78,7 @@ public class RequestSlotFromHandOp : IEffectOp
             {
                 throw new GameRuleException("No card chosen for deploy from hand");
             }
-            var candidates = EnumerateCandidates(ctx);
+            var candidates = EnumerateDeployableHandCards(ctx);
             if (candidates.Count == 0)
             {
                 throw new GameRuleException("No matching card in hand for deploy from hand");
@@ -100,10 +100,13 @@ public class RequestSlotFromHandOp : IEffectOp
         SlotRequestHelpers.DeployFromHand(ctx, choiceCardId);
     }
 
-    private List<string> EnumerateCandidates(OpContext ctx)
+    /// <summary>
+    /// 手札から Filter を満たすカードの CardID を重複排除して返します。
+    /// </summary>
+    private List<string> EnumerateDeployableHandCards(OpContext ctx)
     {
-        // candidate は CardID 単位で重複排除する。SlotRequestHelpers.DeployFromHand は
-        // CardID で手札先頭を引くため、同名カードの 1 枚目で十分。
+        // SlotRequestHelpers.DeployFromHand は CardID で手札先頭を引くため、
+        // 同名カードの 2 枚目以降は候補として区別しなくてよい。
         return ctx.State.GetHand(ctx.PlayerNum)
             .Where(c =>
             {

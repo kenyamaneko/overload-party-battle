@@ -203,11 +203,11 @@ public class ForfeitRequest
 }
 
 /// <summary>
-/// Request to resolve a pending reactive choice, by supplying the chosen value.
+/// 保留中の効果選択を解決するためのリクエスト。選択値を 1 つ受け取る。
 /// </summary>
 public class ResolvePendingChoiceRequest
 {
-    /// <summary>選択された ID (PendingReactiveChoice.Candidates のいずれか)。</summary>
+    /// <summary>選択された ID (PendingEffectChoice.Candidates のいずれか)。</summary>
     [JsonPropertyName("chosen_id")]
     public string ChosenId { get; set; } = "";
 }

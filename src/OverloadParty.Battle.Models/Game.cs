@@ -76,9 +76,9 @@ public class BattleGameState
     public List<AwaitingSlotSelect> PendingSlotSelects { get; set; } = [];
 
     /// <summary>
-    /// reactive 効果が発動中で、プレイヤーの選択を待っている状態。null なら待ちなし。
+    /// 効果が発動中で、プレイヤーの選択を待っている状態。null なら待ちなし。
     /// </summary>
-    public PendingReactiveChoice? PendingReactiveChoice { get; set; }
+    public PendingEffectChoice? PendingEffectChoice { get; set; }
 
     // ─── Accessor helpers (by player number) ────────────────
 

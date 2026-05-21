@@ -69,7 +69,7 @@ public class NpcRunner
 
         // 保留中の reactive choice は ActivePlayer ではなく chooser が解決するため、
         // ActivePlayer の NPC 判定より先に chooser が NPC かを確認する。
-        if (state.PendingReactiveChoice is { } pendingChoice)
+        if (state.PendingEffectChoice is { } pendingChoice)
         {
             var chooserAI = ResolveNpcAIForPlayer(game, pendingChoice.ChooserPlayerNum);
             if (chooserAI is null)
@@ -77,7 +77,7 @@ public class NpcRunner
                 // chooser が human の間は NPC 側に進められる手番がない。
                 return NpcAdvanceResult.Done();
             }
-            return await ProcessOnePendingReactiveChoice(
+            return await ProcessOnePendingEffectChoice(
                 game, state, pendingChoice.ChooserPlayerNum, chooserAI, pendingChoice, ct);
         }
 
@@ -173,12 +173,12 @@ public class NpcRunner
         return new NpcAdvanceResult(result.Events, result.GameOver, pending);
     }
 
-    private async Task<NpcAdvanceResult> ProcessOnePendingReactiveChoice(
+    private async Task<NpcAdvanceResult> ProcessOnePendingEffectChoice(
         Game game, BattleGameState state, long chooserPlayerNum, INpcStrategy chooserAI,
-        PendingReactiveChoice pendingChoice, CancellationToken ct)
+        PendingEffectChoice pendingChoice, CancellationToken ct)
     {
         var gameID = game.GameID;
-        var choiceAction = chooserAI.DecidePendingReactiveChoice(state, chooserPlayerNum, pendingChoice)
+        var choiceAction = chooserAI.DecidePendingEffectChoice(state, chooserPlayerNum, pendingChoice)
             ?? throw new InvalidOperationException(
                 $"NPC failed to decide pending reactive choice (game={gameID})");
 

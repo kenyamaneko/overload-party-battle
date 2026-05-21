@@ -53,6 +53,6 @@ public interface INpcStrategy
     /// <param name="npcPlayerNum">NPC (chooser) のプレイヤー番号。</param>
     /// <param name="pending">解決対象の選択待ち状態。</param>
     /// <returns>解決アクション。候補が無いなど解決不能なら null。</returns>
-    NpcAction? DecidePendingReactiveChoice(
-        BattleGameState state, long npcPlayerNum, PendingReactiveChoice pending);
+    NpcAction? DecidePendingEffectChoice(
+        BattleGameState state, long npcPlayerNum, PendingEffectChoice pending);
 }

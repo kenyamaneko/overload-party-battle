@@ -17,7 +17,7 @@ public class EffectResult
     public bool GuardFailed { get; set; }
 
     /// <summary>選択待ち状態。choice op が ChoiceData 不足で suspend したとき設定される。</summary>
-    public PendingReactiveChoice? PendingChoice { get; set; }
+    public PendingEffectChoice? PendingChoice { get; set; }
 }
 
 /// <summary>

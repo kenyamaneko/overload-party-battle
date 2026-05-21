@@ -100,11 +100,11 @@ public class OpContext
     public IEffectRegistry Effects => Ctx.Effects;
 
     /// <summary>
-    /// reactive 効果の choice op が ChoiceData 不足で選択待ちに遷移するときの状態を作って Result に格納する。
-    /// SupSource (リアクティブ) が無い直接呼び出し経路では使わない。
+    /// choice op が ChoiceData 不足で選択待ちに遷移するときの状態を作って Result に格納する。
+    /// SupSource を持つ reactive 経路でのみ呼び出す前提。
     /// </summary>
     /// <param name="choiceKey">ChoiceData に詰める key。再開時のリクエストもこの key で値を解決する。</param>
-    /// <param name="choiceKind">選択カテゴリ (<see cref="ChoiceKinds"/>)。</param>
+    /// <param name="choiceKind">選択カテゴリ。<see cref="ChoiceKinds"/> の定数を渡す。</param>
     /// <param name="candidates">選択候補の ID 列。</param>
     /// <param name="chooserPlayerNum">選択を行うプレイヤー番号。所有者と異なる場合あり。</param>
     public void SuspendForChoice(
@@ -113,7 +113,7 @@ public class OpContext
         if (SupSource is null)
         {
             throw new InvalidOperationException(
-                "SuspendForChoice requires a reactive SupSource on the context");
+                "SuspendForChoice requires SupSource on the context");
         }
         if (Ctx.Trigger is not { } trigger)
         {
@@ -121,22 +121,18 @@ public class OpContext
                 "SuspendForChoice requires Trigger to be set on the context");
         }
 
-        Result.PendingChoice = new PendingReactiveChoice
+        Result.PendingChoice = new PendingEffectChoice
         {
             OwnerPlayerNum = PlayerNum,
             ChooserPlayerNum = chooserPlayerNum,
-            ReactiveCardId = SupSource.CardID,
-            ReactiveInstanceId = SupSource.InstanceID,
+            EffectCardId = SupSource.CardID,
+            EffectInstanceId = SupSource.InstanceID,
             Trigger = trigger,
             ChoiceKey = choiceKey,
             ChoiceKind = choiceKind,
             Candidates = candidates,
-            SourceInstanceId = Source?.InstanceID,
-            TargetInstanceId = Target?.InstanceID,
-            // 破壊済みリソースを Target とする on_destroy で state から見つからない場合の
-            // フォールバック用に object 参照を一緒に保持する。
-            SourceSnapshot = Source,
-            TargetSnapshot = Target,
+            Source = Source,
+            Target = Target,
             EventOwnerNum = EventOwnerNum,
             IncidentCardId = IncidentCard?.CardId,
             EventDamage = EventDamage,
