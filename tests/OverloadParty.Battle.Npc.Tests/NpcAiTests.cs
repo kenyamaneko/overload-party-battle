@@ -335,8 +335,8 @@ public class NpcAiTests
         {
             ChooserPlayerNum = 1,
             OwnerPlayerNum = 1,
-            EffectCardId = "NT-0023",
-            EffectInstanceId = "react_1",
+            EffectCardId = "TST-0002",
+            EffectInstanceId = "inst_1",
             Trigger = TriggerType.OnDestroy,
             ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,
@@ -359,8 +359,8 @@ public class NpcAiTests
         {
             ChooserPlayerNum = 2,
             OwnerPlayerNum = 1,
-            EffectCardId = "NT-0023",
-            EffectInstanceId = "react_1",
+            EffectCardId = "TST-0002",
+            EffectInstanceId = "inst_1",
             Trigger = TriggerType.OnDestroy,
             ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,
@@ -379,8 +379,8 @@ public class NpcAiTests
         {
             ChooserPlayerNum = 1,
             OwnerPlayerNum = 1,
-            EffectCardId = "NT-0023",
-            EffectInstanceId = "react_1",
+            EffectCardId = "TST-0002",
+            EffectInstanceId = "inst_1",
             Trigger = TriggerType.OnDestroy,
             ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,

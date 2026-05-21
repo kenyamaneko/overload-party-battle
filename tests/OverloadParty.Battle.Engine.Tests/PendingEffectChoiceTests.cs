@@ -12,8 +12,8 @@ namespace OverloadParty.Battle.Tests.Engine;
 /// </summary>
 public class PendingEffectChoiceTests
 {
-    private const string ReactiveDummyCardId = "TST-0400";
     private const string HandDummyCardId = "TST-0001";
+    private const string ReactiveDummyCardId = "TST-0002";
 
     private readonly TestCardCache _cc = new();
     private readonly TestEffectRegistry _registry = new();
