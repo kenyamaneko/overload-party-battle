@@ -1,13 +1,14 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc.Strategies;
 
 /// <summary>
 /// リソース / プラットフォームのデプロイ判断。
 /// 維持コスト上限を超えないよう候補を累積チェックする。
-/// Attachment / Reactive は責務が違うため別 strategy で扱う。
+/// アタッチメント / リアクティブは責務が違うため別 strategy で扱う。
 /// </summary>
 internal sealed class DeployStrategy
 {
@@ -23,12 +24,8 @@ internal sealed class DeployStrategy
     /// <summary>
     /// リソース / プラットフォームのデプロイアクション列を決定します。
     /// </summary>
-    /// <param name="ctx">意思決定コンテキスト。</param>
-    /// <param name="playActions">PlayCard 系のアクション一覧。</param>
-    /// <param name="usedZones">既に使用済みのゾーン集合。決定時に追記される。</param>
-    /// <returns>デプロイアクション列。</returns>
     public List<NpcAction> Decide(
-        DecisionContext ctx, List<AvailableAction> playActions, HashSet<string> usedZones)
+        DecisionContext ctx, List<GD.AvailableAction> playActions, HashSet<string> usedZones)
     {
         var candidates = CardCandidateBuilder.Build<object?>(
             playActions,
@@ -112,7 +109,7 @@ internal sealed class DeployStrategy
 
     private static string ResolveZoneTypeKey(CardDefinition card)
     {
-        // ObjectStorage は唯一 frontend にも置ける Data subtype なので独立キー扱い。
+        // ObjectStorage は唯一フロントエンドにも置ける Data subtype なので独立キー扱い。
         if (card.IsDataType && card.Subtype == "ObjectStorage") { return "ObjectStorage"; }
         return card.CardType;
     }

@@ -1,5 +1,6 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc.Strategies;
 
@@ -10,24 +11,18 @@ namespace OverloadParty.Battle.Npc.Strategies;
 /// </summary>
 internal static class CardCandidateBuilder
 {
-    public record Candidate<TExtra>(AvailableAction Action, CardDefinition Card, int Priority, TExtra Extra);
+    public record Candidate<TExtra>(GD.AvailableAction Action, CardDefinition Card, int Priority, TExtra Extra);
 
     /// <summary>
     /// playActions を predicate でフィルタし、projector で (priority, extra) を計算。
     /// projector が null を返した候補は除外する。
     /// 結果は priority 降順でソート済み。
     /// </summary>
-    /// <typeparam name="TExtra">候補に紐付ける追加データ型。</typeparam>
-    /// <param name="playActions">PlayCard 系のアクション一覧。</param>
-    /// <param name="cardCache">カード定義の参照元。</param>
-    /// <param name="predicate">対象カード定義の絞り込み条件。</param>
-    /// <param name="projector">(優先度, 追加データ) を返す写像。null 返却で除外。</param>
-    /// <returns>優先度降順の候補リスト。</returns>
     public static List<Candidate<TExtra>> Build<TExtra>(
-        IEnumerable<AvailableAction> playActions,
+        IEnumerable<GD.AvailableAction> playActions,
         ICardCache cardCache,
         Func<CardDefinition, bool> predicate,
-        Func<AvailableAction, CardDefinition, (int Priority, TExtra Extra)?> projector)
+        Func<GD.AvailableAction, CardDefinition, (int Priority, TExtra Extra)?> projector)
     {
         return playActions
             .Select(a => (Action: a, Card: MustGet(cardCache, a.CardID)))

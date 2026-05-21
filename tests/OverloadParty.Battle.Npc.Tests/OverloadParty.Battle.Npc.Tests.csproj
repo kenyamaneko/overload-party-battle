@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OverloadParty.Battle.Npc\OverloadParty.Battle.Npc.csproj" />
+    <ProjectReference Include="..\..\src\OverloadParty.Battle.Service\OverloadParty.Battle.Service.csproj" />
     <ProjectReference Include="..\OverloadParty.Battle.Tests.Shared\OverloadParty.Battle.Tests.Shared.csproj" />
   </ItemGroup>
 

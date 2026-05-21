@@ -1,11 +1,11 @@
-using System.Linq;
-using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
-/// ActionFilter は NPC アクションのフィルタリングと選択のヘルパー関数を提供します
+/// ActionFilter は NPC アクションのフィルタリングと選択のヘルパー関数を提供します。
+/// 入出力は wire 型 (GD.AvailableAction / GD.Field) を使う。
 /// </summary>
 public static class ActionFilter
 {
@@ -15,7 +15,7 @@ public static class ActionFilter
     /// <param name="actions">フィルタ対象のアクション列。</param>
     /// <param name="actionType">抽出するアクションタイプ。</param>
     /// <returns>該当アクションのみのリスト。</returns>
-    public static List<AvailableAction> FilterByType(List<AvailableAction> actions, string actionType)
+    public static List<GD.AvailableAction> FilterByType(List<GD.AvailableAction> actions, string actionType)
     {
         return actions.Where(a => a.Type == actionType).ToList();
     }
@@ -88,20 +88,20 @@ public static class ActionFilter
     }
 
     /// <summary>
-    /// フィールド上の InstanceID からカード ID を解決します。
+    /// 自フィールド上の InstanceID からカード ID を解決します。
     /// </summary>
     /// <param name="instanceId">対象の InstanceID。</param>
-    /// <param name="field">検索対象のフィールド。</param>
+    /// <param name="field">検索対象の自フィールド。</param>
     /// <returns>該当カードの CardID。</returns>
-    public static string ResolveCardIdForInstance(string instanceId, Field field)
+    public static string ResolveCardIdForInstance(string instanceId, GD.Field field)
     {
-        var resource = FieldHelpers.AllResources(field).FirstOrDefault(r => r.InstanceID == instanceId);
+        var resource = WireFieldHelpers.AllResources(field).FirstOrDefault(r => r.InstanceID == instanceId);
         if (resource is not null)
         {
             return resource.CardID;
         }
 
-        var support = field.Support.FirstOrDefault(s => s.InstanceID == instanceId);
+        var support = WireFieldHelpers.AllSupports(field).FirstOrDefault(s => s.InstanceID == instanceId);
         if (support is not null)
         {
             return support.CardID;

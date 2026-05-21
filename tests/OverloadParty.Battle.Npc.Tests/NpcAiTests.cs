@@ -3,6 +3,7 @@ using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Tests.Npc;
 
@@ -19,6 +20,33 @@ public class NpcAiTests
         _cc.Add(TestFactory.DataCard(cardId: "TST-0004", subtype: "Database", yield: 300, av: 600, mc: 80));
         _cc.Add(TestFactory.PlatformCard(cardId: "TST-0005", name: "TestPlatform"));
         _cc.Add(TestFactory.AttachmentCard(cardId: "TST-0006", name: "TestAttachment"));
+    }
+
+    private static GD.ClientGameState BuildState(
+        string phase = "main",
+        long turn = 1,
+        long budget = 5000,
+        long insightPool = 0,
+        long oppBudget = 5000,
+        Action<GD.Field>? configureMyField = null,
+        Action<GD.OpponentField>? configureOppField = null,
+        List<GD.UndeployedCard>? hand = null,
+        List<GD.AvailableAction>? available = null,
+        GD.PendingSlotSelectView? pendingSlotSelect = null,
+        GD.PendingEffectChoiceView? pendingEffectChoice = null)
+    {
+        var mf = TestFactory.MakeWireField();
+        configureMyField?.Invoke(mf);
+        var of = TestFactory.MakeWireOpponentField();
+        configureOppField?.Invoke(of);
+        return TestFactory.MakeClientState(
+            myField: mf, oppField: of,
+            myHand: hand, myBudget: budget, myInsightPool: insightPool,
+            oppBudget: oppBudget,
+            turn: turn, phase: phase,
+            availableActions: available,
+            pendingSlotSelect: pendingSlotSelect,
+            pendingEffectChoice: pendingEffectChoice);
     }
 
     private static AiConfig MakeConfig()
@@ -169,7 +197,7 @@ public class NpcAiTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Discard
+    //  手札調整
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -177,37 +205,42 @@ public class NpcAiTests
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.End);
-        state.Player1Hand =
-        [
-            new() { InstanceID = "h_sh1", CardID = "TST-0001" },  // card_id pri 80 → kept
-            new() { InstanceID = "h_tk5", CardID = "TST-0002" },  // compute pri 50 → discarded
-            new() { InstanceID = "h_nt9", CardID = "TST-0003" },  // data pri 40 → discarded
-        ];
+        var hand = new List<GD.UndeployedCard>
+        {
+            new() { InstanceID = "h_sh1", CardID = "TST-0001" },  // card_id pri 80 → 残す
+            new() { InstanceID = "h_tk5", CardID = "TST-0002" },  // compute pri 50 → 捨てる
+            new() { InstanceID = "h_nt9", CardID = "TST-0003" },  // data pri 40 → 捨てる
+        };
+        var state = BuildState(phase: "end", hand: hand);
 
-        var discards = ai.DecideDiscard(state, 1, 2);
+        var discards = ai.DecideDiscard(state, 2);
 
         discards.Should().Equal("h_nt9", "h_tk5");
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Battle phase
+    //  バトルフェーズ
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
     public void Battle_WeakestAV_AttacksLowestAV()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Battle);
-        state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "strong", maxAV: 2000);
-        state.Player2Field.Frontend[1] = TestFactory.MakeResource(instanceId: "weak", maxAV: 400);
 
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["strong", "weak"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "strong", "weak" } },
         };
+        var state = BuildState(
+            phase: "battle",
+            configureOppField: f =>
+            {
+                f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "strong", maxAV: 2000);
+                f.Frontend[1] = TestFactory.MakeWireResource(instanceId: "weak", maxAV: 400);
+            },
+            available: available);
 
-        var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideBattlePhaseActions(state);
         var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("weak");
@@ -231,18 +264,22 @@ public class NpcAiTests
             """);
         var ai = new NpcAi(config, _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Battle);
-        state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 2000);
-        state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 400);
-
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
         };
+        var state = BuildState(
+            phase: "battle",
+            configureOppField: f =>
+            {
+                f.Frontend[0] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 2000);
+                f.Frontend[1] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 400);
+            },
+            available: available);
 
-        var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideBattlePhaseActions(state);
         var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
@@ -252,9 +289,9 @@ public class NpcAiTests
     public void Battle_NoAttackActions_OnlyEndPhase()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Battle);
+        var state = BuildState(phase: "battle", available: new List<GD.AvailableAction>());
 
-        var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, []);
+        var actions = ai.DecideBattlePhaseActions(state);
 
         actions.Should().HaveCount(1);
         actions[0].ActionType.Should().Be(ActionTypes.EndPhase);
@@ -264,37 +301,39 @@ public class NpcAiTests
     public void Battle_MultipleAttackers_AllAttack()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Battle);
-        state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "target", maxAV: 500);
 
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["target"] },
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk2", ValidTargets = ["target"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "target" } },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk2", ValidTargets = new() { "target" } },
         };
+        var state = BuildState(
+            phase: "battle",
+            configureOppField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "target", maxAV: 500),
+            available: available);
 
-        var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideBattlePhaseActions(state);
         var attacks = actions.Where(a => a.ActionType == ActionTypes.Attack).ToList();
 
         attacks.Should().HaveCount(2);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Slot select
+    //  スロット選択
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
     public void SlotSelect_ReturnsFirstValidZone()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState();
-        state.PendingSlotSelects.Add(new AwaitingSlotSelect
+        var pending = new GD.PendingSlotSelectView
         {
-            PlayerNum = 1,
-            ValidZones = ["frontend_0", "backend_1"],
-        });
+            Resource = TestFactory.MakeWireResource(instanceId: "pending_res"),
+            ValidZones = new List<string> { "frontend_0", "backend_1" },
+        };
+        var state = BuildState(pendingSlotSelect: pending);
 
-        var action = ai.DecideSlotSelect(state, 1);
+        var action = ai.DecideSlotSelect(state);
 
         action.Should().NotBeNull();
         ((SelectSlotRequest)action!.Data).Zone.Should().Be("frontend");
@@ -305,45 +344,47 @@ public class NpcAiTests
     public void SlotSelect_NoPending_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        ai.DecideSlotSelect(TestFactory.MakeGameState(), 1).Should().BeNull();
+        ai.DecideSlotSelect(BuildState()).Should().BeNull();
     }
 
     [Fact]
-    public void SlotSelect_WrongPlayer_ReturnsNull()
+    public void SlotSelect_EmptyValidZones_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState();
-        state.PendingSlotSelects.Add(new AwaitingSlotSelect
+        var pending = new GD.PendingSlotSelectView
         {
-            PlayerNum = 2,
-            ValidZones = ["frontend_0"],
-        });
+            Resource = TestFactory.MakeWireResource(instanceId: "pending_res"),
+            ValidZones = new List<string>(),
+        };
+        var state = BuildState(pendingSlotSelect: pending);
 
-        ai.DecideSlotSelect(state, 1).Should().BeNull();
+        ai.DecideSlotSelect(state).Should().BeNull();
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Pending reactive choice
+    //  効果中のプレイヤー選択
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
     public void PendingEffectChoice_PicksFirstCandidate()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState();
-        var pending = new PendingEffectChoice
+        var pending = new GD.PendingEffectChoiceView
         {
             ChooserPlayerNum = 1,
-            OwnerPlayerNum = 1,
             EffectCardId = "TST-0002",
             EffectInstanceId = "inst_1",
-            Trigger = TriggerType.OnDestroy,
-            ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,
-            Candidates = ["TST-0001", "TST-0002"],
         };
+        // resolve_pending_choice の variant: hand_card 種別は CardID に候補 ID を載せる。
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.ResolvePendingChoice, SourceInstanceID = "inst_1", CardID = "TST-0001" },
+            new() { Type = ActionTypes.ResolvePendingChoice, SourceInstanceID = "inst_1", CardID = "TST-0002" },
+        };
+        var state = BuildState(pendingEffectChoice: pending, available: available);
 
-        var action = ai.DecidePendingEffectChoice(state, 1, pending);
+        var action = ai.DecidePendingEffectChoice(state);
 
         action.Should().NotBeNull();
         action!.ActionType.Should().Be(ActionTypes.ResolvePendingChoice);
@@ -354,66 +395,56 @@ public class NpcAiTests
     public void PendingEffectChoice_WrongChooser_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState();
-        var pending = new PendingEffectChoice
+        var pending = new GD.PendingEffectChoiceView
         {
             ChooserPlayerNum = 2,
-            OwnerPlayerNum = 1,
             EffectCardId = "TST-0002",
             EffectInstanceId = "inst_1",
-            Trigger = TriggerType.OnDestroy,
-            ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,
-            Candidates = ["TST-0001"],
         };
+        var state = BuildState(pendingEffectChoice: pending);
 
-        ai.DecidePendingEffectChoice(state, 1, pending).Should().BeNull();
+        ai.DecidePendingEffectChoice(state).Should().BeNull();
     }
 
     [Fact]
-    public void PendingEffectChoice_EmptyCandidates_ReturnsNull()
+    public void PendingEffectChoice_NoResolveActions_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState();
-        var pending = new PendingEffectChoice
+        var pending = new GD.PendingEffectChoiceView
         {
             ChooserPlayerNum = 1,
-            OwnerPlayerNum = 1,
             EffectCardId = "TST-0002",
             EffectInstanceId = "inst_1",
-            Trigger = TriggerType.OnDestroy,
-            ChoiceKey = "cardId",
             ChoiceKind = ChoiceKinds.HandCard,
-            Candidates = [],
         };
+        var state = BuildState(pendingEffectChoice: pending, available: new List<GD.AvailableAction>());
 
-        ai.DecidePendingEffectChoice(state, 1, pending).Should().BeNull();
+        ai.DecidePendingEffectChoice(state).Should().BeNull();
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Deploy: priority resolution
+    //  デプロイ: priority 解決
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
     public void Deploy_CardIdPriority_TakesPrecedenceOverCardType()
     {
-        // config: TST-0001 card_id=80, compute card_type=50
-        // TST-0001 is compute, should get 80 not 50
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand =
-        [
+
+        var hand = new List<GD.UndeployedCard>
+        {
             new() { InstanceID = "h_tk5", CardID = "TST-0002" },  // compute, no card_id match → 50
             new() { InstanceID = "h_sh1", CardID = "TST-0001" },  // compute, card_id match → 80
-        ];
-
-        var available = new List<AvailableAction>
-        {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_tk5", CardID = "TST-0002", ValidZones = ["frontend_1"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
         };
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_1" } },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+        };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         deploys.Should().HaveCount(2);
@@ -424,29 +455,24 @@ public class NpcAiTests
     public void Deploy_UnknownCard_Priority0()
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "UNKNOWN-001", tp: 100, av: 200, mc: 50));
-        // No card_id or card_type match in config priorities for "UNKNOWN-001"
-        // but it IS compute type so it matches card_type: compute → 50
-        // Let's test with a truly unmatched type
         _cc.Add(new CardDefinition { CardId = "WEIRD-001", CardName = "Weird", CardType = "WeirdType" });
 
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand =
-        [
+        var hand = new List<GD.UndeployedCard>
+        {
             new() { InstanceID = "h_weird", CardID = "WEIRD-001" },
             new() { InstanceID = "h_sh1", CardID = "TST-0001" },
-        ];
-
-        var available = new List<AvailableAction>
-        {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_weird", CardID = "WEIRD-001", ValidZones = ["frontend_1"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
         };
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_weird", CardID = "WEIRD-001", ValidZones = new() { "frontend_1" } },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+        };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // TST-0001 (pri=80) should come before WEIRD-001 (pri=0)
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
     }
@@ -456,24 +482,25 @@ public class NpcAiTests
     {
         var ai = new NpcAi(MakeConditionalPriorityConfig(), _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0004", instanceId: "cosmo_1");
-        state.Player1Hand =
-        [
+        var hand = new List<GD.UndeployedCard>
+        {
             new() { InstanceID = "hand_sh1", CardID = "TST-0001" },
             new() { InstanceID = "hand_tk5", CardID = "TST-0002" },
-        ];
-
-        var available = new List<AvailableAction>
-        {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = ["frontend_1"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = ["frontend_0"] },
         };
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_1" } },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_0" } },
+        };
+        var state = BuildState(
+            hand: hand,
+            available: available,
+            configureMyField: f =>
+                f.Backend[0] = TestFactory.MakeWireResource(cardId: "TST-0004", instanceId: "cosmo_1"));
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // TST-0002 (conditional 90) before TST-0001 (50)
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_tk5");
     }
@@ -483,30 +510,27 @@ public class NpcAiTests
     {
         var ai = new NpcAi(MakeConditionalPriorityConfig(), _cc, _effects);
 
-        // NO TST-0004 on field → fallback_priority=30
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand =
-        [
+        var hand = new List<GD.UndeployedCard>
+        {
             new() { InstanceID = "hand_sh1", CardID = "TST-0001" },
             new() { InstanceID = "hand_tk5", CardID = "TST-0002" },
-        ];
-
-        var available = new List<AvailableAction>
-        {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = ["frontend_1"] },
         };
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_1" } },
+        };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // TST-0001 (50) before TST-0002 (fallback 30)
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_sh1");
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Deploy: choice resolution
+    //  デプロイ: choice 解決
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -514,19 +538,18 @@ public class NpcAiTests
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "TST-0007", tp: 400, av: 1000));
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_0006", CardID = "TST-0007" }];
-
-        var available = new List<AvailableAction>
+        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_0006", CardID = "TST-0007" } };
+        var available = new List<GD.AvailableAction>
         {
             new()
             {
                 Type = ActionTypes.PlayCard, HandInstanceID = "h_0006", CardID = "TST-0007",
-                ValidZones = ["frontend_0"], ChoiceOptions = ["use", "reserve"],
+                ValidZones = new() { "frontend_0" }, ChoiceOptions = new() { "use", "reserve" },
             },
         };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
 
         var req = (PlayCardRequest)deploy.Data;
@@ -539,45 +562,43 @@ public class NpcAiTests
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "UNKNOWN-C", tp: 300, av: 800));
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_unk", CardID = "UNKNOWN-C" }];
-
-        var available = new List<AvailableAction>
+        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_unk", CardID = "UNKNOWN-C" } };
+        var available = new List<GD.AvailableAction>
         {
             new()
             {
                 Type = ActionTypes.PlayCard, HandInstanceID = "h_unk", CardID = "UNKNOWN-C",
-                ValidZones = ["frontend_0"], ChoiceOptions = ["optionA", "optionB"],
+                ValidZones = new() { "frontend_0" }, ChoiceOptions = new() { "optionA", "optionB" },
             },
         };
+        var state = BuildState(hand: hand, available: available);
 
-        var act = () => ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var act = () => ai.DecideMainPhaseActions(state);
 
         act.Should().Throw<InvalidOperationException>()
             .WithMessage("*No deploy choice configured*UNKNOWN-C*");
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Deploy: zone preferences
+    //  デプロイ: zone preferences
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
     public void Deploy_ZonePreference_ComputePrefersFrontend()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_sh1", CardID = "TST-0001" }];
-
-        var available = new List<AvailableAction>
+        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_sh1", CardID = "TST-0001" } };
+        var available = new List<GD.AvailableAction>
         {
             new()
             {
                 Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001",
-                ValidZones = ["backend_0", "frontend_0"],
+                ValidZones = new() { "backend_0", "frontend_0" },
             },
         };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
         var req = (PlayCardRequest)deploy.Data;
 
@@ -588,19 +609,18 @@ public class NpcAiTests
     public void Deploy_ZonePreference_DataPrefersBackend()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_db", CardID = "TST-0003" }];
-
-        var available = new List<AvailableAction>
+        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-0003" } };
+        var available = new List<GD.AvailableAction>
         {
             new()
             {
                 Type = ActionTypes.PlayCard, HandInstanceID = "h_db", CardID = "TST-0003",
-                ValidZones = ["frontend_0", "backend_0"],
+                ValidZones = new() { "frontend_0", "backend_0" },
             },
         };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
         var req = (PlayCardRequest)deploy.Data;
 
@@ -608,7 +628,7 @@ public class NpcAiTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Scale up: conditional family
+    //  スケールアップ: conditional family
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -616,19 +636,21 @@ public class NpcAiTests
     {
         var ai = new NpcAi(MakeConditionalFamilyConfig(), _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        // 2 data cards in backend → condition met
-        state.Player1Field.Backend[0] = TestFactory.MakeResource(
-            cardId: "TST-0003", instanceId: "db1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
-        state.Player1Field.Backend[1] = TestFactory.MakeResource(
-            cardId: "TST-0004", instanceId: "db2", maxTP: null, currentTP: null, maxYield: 300, currentYield: 300);
-
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.ScaleUp, SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
         };
+        var state = BuildState(
+            available: available,
+            configureMyField: f =>
+            {
+                f.Backend[0] = TestFactory.MakeWireResource(
+                    cardId: "TST-0003", instanceId: "db1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+                f.Backend[1] = TestFactory.MakeWireResource(
+                    cardId: "TST-0004", instanceId: "db2", maxTP: null, currentTP: null, maxYield: 300, currentYield: 300);
+            });
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var scaleUp = actions.First(a => a.ActionType == ActionTypes.ScaleUp);
 
         ((ScaleUpRequest)scaleUp.Data).InstanceFamily.Should().Be("M");
@@ -639,24 +661,24 @@ public class NpcAiTests
     {
         var ai = new NpcAi(MakeConditionalFamilyConfig(), _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        // Only 1 data card → condition NOT met
-        state.Player1Field.Backend[0] = TestFactory.MakeResource(
-            cardId: "TST-0003", instanceId: "db1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
-
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.ScaleUp, SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
         };
+        var state = BuildState(
+            available: available,
+            configureMyField: f =>
+                f.Backend[0] = TestFactory.MakeWireResource(
+                    cardId: "TST-0003", instanceId: "db1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400));
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var scaleUp = actions.First(a => a.ActionType == ActionTypes.ScaleUp);
 
         ((ScaleUpRequest)scaleUp.Data).InstanceFamily.Should().Be("R");
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Monetize
+    //  収益化
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -698,22 +720,19 @@ public class NpcAiTests
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1InsightPool = 1000;
-
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.Monetize, SourceInstanceID = "res1", RemainingCapacity = 800 },
         };
+        var state = BuildState(insightPool: 1000, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var monetize = actions.FirstOrDefault(a => a.ActionType == ActionTypes.Monetize);
 
         monetize.Should().NotBeNull();
         var dists = ((MonetizeRequest)monetize!.Data).Distributions;
         var total = dists.Sum(d => d.Amount);
 
-        // 50% reserve of 1000 = 500 distributable
         total.Should().Be(500);
     }
 
@@ -721,15 +740,14 @@ public class NpcAiTests
     public void Monetize_ZeroInsightPool_NoMonetizeAction()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1InsightPool = 0;
 
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.Monetize, SourceInstanceID = "res1", RemainingCapacity = 500 },
         };
+        var state = BuildState(insightPool: 0, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
 
         actions.Should().NotContain(a => a.ActionType == ActionTypes.Monetize);
     }
@@ -738,25 +756,27 @@ public class NpcAiTests
     public void Monetize_HighestTP_DistributesToHighestTPFirst()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1InsightPool = 1000;
-        // res_high has TP=600, res_low has TP=200
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "res_high", currentTP: 600);
-        state.Player1Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "res_low", currentTP: 200);
 
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_low", RemainingCapacity = 500 },
             new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_high", RemainingCapacity = 500 },
         };
+        var state = BuildState(
+            insightPool: 1000,
+            available: available,
+            configureMyField: f =>
+            {
+                f.Frontend[0] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "res_high", currentTP: 600);
+                f.Frontend[1] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "res_low", currentTP: 200);
+            });
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var monetize = actions.First(a => a.ActionType == ActionTypes.Monetize);
         var dists = ((MonetizeRequest)monetize.Data).Distributions;
 
-        // highest_tp sorts by TP desc → res_high (TP=600) first
         dists[0].InstanceID.Should().Be("res_high");
     }
 
@@ -799,25 +819,27 @@ public class NpcAiTests
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1InsightPool = 1000;
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "res_a", currentTP: 600);
-        state.Player1Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "res_b", currentTP: 400);
-
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_a", RemainingCapacity = 500 },
             new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_b", RemainingCapacity = 400 },
         };
+        var state = BuildState(
+            insightPool: 1000,
+            available: available,
+            configureMyField: f =>
+            {
+                f.Frontend[0] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "res_a", currentTP: 600);
+                f.Frontend[1] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "res_b", currentTP: 400);
+            });
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var monetize = actions.First(a => a.ActionType == ActionTypes.Monetize);
         var dists = ((MonetizeRequest)monetize.Data).Distributions;
         var total = dists.Sum(d => d.Amount);
 
-        // 30% reserve of 1000 = 300 reserved → 700 distributable (capacity 合計 900 > 700)
         total.Should().Be(700);
     }
 
@@ -825,22 +847,20 @@ public class NpcAiTests
     public void Monetize_NoMonetizeActions_NoAction()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1InsightPool = 500;
 
-        // No monetize actions in available
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
         };
+        var state = BuildState(insightPool: 500, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
 
         actions.Should().NotContain(a => a.ActionType == ActionTypes.Monetize);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Immediate cards
+    //  即時効果カード
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -853,19 +873,18 @@ public class NpcAiTests
         }.WithCategory(EffectCategory.BudgetGain));
 
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_strat", CardID = "TST-STRAT" }];
-
-        var available = new List<AvailableAction>
+        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_strat", CardID = "TST-STRAT" } };
+        var available = new List<GD.AvailableAction>
         {
             new()
             {
                 Type = ActionTypes.PlayCard, HandInstanceID = "h_strat", CardID = "TST-STRAT",
-                ValidZones = ["support_0"],
+                ValidZones = new() { "support_0" },
             },
         };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var play = actions.FirstOrDefault(a =>
             a.ActionType == ActionTypes.PlayCard
             && ((PlayCardRequest)a.Data).CardInstanceID == "h_strat");
@@ -879,19 +898,18 @@ public class NpcAiTests
         _cc.Add(new CardDefinition { CardId = "TST-NOEFF", CardName = "NoEffect", CardType = "Strategy" });
 
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand = [new() { InstanceID = "h_noeff", CardID = "TST-NOEFF" }];
-
-        var available = new List<AvailableAction>
+        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_noeff", CardID = "TST-NOEFF" } };
+        var available = new List<GD.AvailableAction>
         {
             new()
             {
                 Type = ActionTypes.PlayCard, HandInstanceID = "h_noeff", CardID = "TST-NOEFF",
-                ValidZones = ["support_0"],
+                ValidZones = new() { "support_0" },
             },
         };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
 
         actions.Should().NotContain(a =>
             a.ActionType == ActionTypes.PlayCard
@@ -899,7 +917,7 @@ public class NpcAiTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Game phase overlay
+    //  ゲーム進行フェーズ overlay
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -947,18 +965,22 @@ public class NpcAiTests
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
 
-        var state = TestFactory.MakeGameState(turn: 8, phase: Phase.Battle);
-        state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 2000);
-        state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 400);
-
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
         };
+        var state = BuildState(
+            turn: 8, phase: "battle",
+            available: available,
+            configureOppField: f =>
+            {
+                f.Frontend[0] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 2000);
+                f.Frontend[1] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 400);
+            });
 
-        var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideBattlePhaseActions(state);
         var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
@@ -1009,22 +1031,24 @@ public class NpcAiTests
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
 
-        // Turn 3 → late condition NOT met
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
-        state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 400);
-        state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 2000);
-
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = ["low_tp", "high_tp"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
         };
+        var state = BuildState(
+            turn: 3, phase: "battle",
+            available: available,
+            configureOppField: f =>
+            {
+                f.Frontend[0] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 400);
+                f.Frontend[1] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 2000);
+            });
 
-        var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideBattlePhaseActions(state);
         var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
-        // weakest_av → low_tp has AV=400, high_tp has AV=2000
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("low_tp");
     }
 
@@ -1076,44 +1100,47 @@ public class NpcAiTests
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
 
-        // Turn 8 but only 1 resource → count condition NOT met → base config
-        var state = TestFactory.MakeGameState(turn: 8, phase: Phase.Battle);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(instanceId: "own1");
-        state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 400);
-        state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 2000);
-
-        var available = new List<AvailableAction>
+        var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "own1", ValidTargets = ["low_tp", "high_tp"] },
+            new() { Type = ActionTypes.Attack, SourceInstanceID = "own1", ValidTargets = new() { "low_tp", "high_tp" } },
         };
+        var state = BuildState(
+            turn: 8, phase: "battle",
+            available: available,
+            configureMyField: f =>
+                f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "own1"),
+            configureOppField: f =>
+            {
+                f.Frontend[0] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "low_tp", currentTP: 200, maxAV: 400);
+                f.Frontend[1] = TestFactory.MakeWireResource(
+                    cardId: "TST-0001", instanceId: "high_tp", currentTP: 900, maxAV: 2000);
+            });
 
-        var actions = ai.DecideBattlePhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideBattlePhaseActions(state);
         var attack = actions.First(a => a.ActionType == ActionTypes.Attack);
 
-        // Still weakest_av because count condition not met
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("low_tp");
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Main phase always ends with EndPhase
+    //  メインフェーズは常に EndPhase で終わる
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
     public void MainPhase_EmptyAvailable_StillEndsWithEndPhase()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
+        var state = BuildState(available: new List<GD.AvailableAction>());
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, []);
+        var actions = ai.DecideMainPhaseActions(state);
 
         actions.Should().HaveCount(1);
         actions[0].ActionType.Should().Be(ActionTypes.EndPhase);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Deploy: attachments
+    //  デプロイ: アタッチメント
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -1163,25 +1190,26 @@ public class NpcAiTests
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand =
-        [
+        var hand = new List<GD.UndeployedCard>
+        {
             new() { InstanceID = "h_sh1", CardID = "TST-0001" },
             new() { InstanceID = "h_att", CardID = "TST-0006" },
-        ];
-
-        var available = new List<AvailableAction>
-        {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = ["frontend_0"] },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-0006",
-                    ValidZones = ["support_0"], ValidTargets = ["res1"] },
         };
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res1");
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-0006",
+                    ValidZones = new() { "support_0" }, ValidTargets = new() { "res1" } },
+        };
+        var state = BuildState(
+            hand: hand,
+            available: available,
+            configureMyField: f =>
+                f.Frontend[0] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "res1"));
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // Both deployed: compute resource first, then attachment with target
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
         ((PlayCardRequest)deploys[1].Data).CardInstanceID.Should().Be("h_att");
@@ -1234,26 +1262,27 @@ public class NpcAiTests
         var config = AiConfigLoader.LoadFromString(yaml);
         var ai = new NpcAi(config, _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res1");
-        state.Player1Hand =
-        [
+        var hand = new List<GD.UndeployedCard>
+        {
             new() { InstanceID = "h_att1", CardID = "TST-0006" },
             new() { InstanceID = "h_att2", CardID = "TST-0008" },
-        ];
-
-        var available = new List<AvailableAction>
+        };
+        var available = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att1", CardID = "TST-0006",
-                    ValidZones = ["support_0"], ValidTargets = ["res1"] },
+                    ValidZones = new() { "support_0" }, ValidTargets = new() { "res1" } },
             new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att2", CardID = "TST-0008",
-                    ValidZones = ["support_1"], ValidTargets = ["res1"] },
+                    ValidZones = new() { "support_1" }, ValidTargets = new() { "res1" } },
         };
+        var state = BuildState(
+            hand: hand,
+            available: available,
+            configureMyField: f =>
+                f.Frontend[0] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "res1"));
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
-        // TST-0008 (pri=90) before TST-0006 (pri=40)
         deploys.Should().HaveCount(2);
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_att2");
         ((PlayCardRequest)deploys[1].Data).CardInstanceID.Should().Be("h_att1");
@@ -1262,29 +1291,27 @@ public class NpcAiTests
     [Fact]
     public void Deploy_NoAttachmentsConfig_AttachmentSkipped()
     {
-        // MakeConfig() has no attachments section → attachment always skipped
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
 
-        var state = TestFactory.MakeGameState(phase: Phase.Main);
-        state.Player1Hand =
-        [
+        var hand = new List<GD.UndeployedCard>
+        {
             new() { InstanceID = "h_att", CardID = "TST-0006" },
-        ];
-
-        var available = new List<AvailableAction>
+        };
+        var available = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-0006",
-                    ValidZones = ["support_0"], ValidTargets = ["res1"] },
+                    ValidZones = new() { "support_0" }, ValidTargets = new() { "res1" } },
         };
+        var state = BuildState(hand: hand, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state, new Game { GameID = "t" }, 1, available);
+        var actions = ai.DecideMainPhaseActions(state);
         var deploys = actions.Where(a => a.ActionType == ActionTypes.PlayCard).ToList();
 
         deploys.Should().BeEmpty();
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Test doubles
+    //  テストダブル
     // ═══════════════════════════════════════════════════════════════
 
     private class StubEffectRegistry : IEffectRegistry

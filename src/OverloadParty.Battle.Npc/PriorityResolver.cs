@@ -1,6 +1,7 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc;
 
@@ -43,13 +44,6 @@ public static class PriorityResolver
     /// <summary>
     /// Evaluates a card's effect and returns (priority, shouldUse, choiceData).
     /// </summary>
-    /// <param name="cardId">評価対象のカード ID。</param>
-    /// <param name="trigger">対象トリガー種別。</param>
-    /// <param name="ctx">意思決定コンテキスト。</param>
-    /// <param name="config">適用する AI 設定。</param>
-    /// <param name="effects">効果情報の参照元。</param>
-    /// <param name="cc">カード定義の参照元。</param>
-    /// <returns>優先度・使用可否・選択肢データのタプル。</returns>
     public static (int Priority, bool Use, Dictionary<string, object>? ChoiceData) Evaluate(
         string cardId, TriggerType trigger, DecisionContext ctx,
         AiConfig config, IEffectRegistry effects, ICardCache cc)
@@ -94,12 +88,6 @@ public static class PriorityResolver
     /// <summary>
     /// Resolves priority for a single effect category based on config.
     /// </summary>
-    /// <param name="cat">評価対象の効果カテゴリ。</param>
-    /// <param name="info">効果情報。</param>
-    /// <param name="ctx">意思決定コンテキスト。</param>
-    /// <param name="config">適用する AI 設定。</param>
-    /// <param name="cc">カード定義の参照元。</param>
-    /// <returns>優先度と使用可否のタプル。</returns>
     public static (int Priority, bool Use) Resolve(
         EffectCategory cat, EffectInfo info, DecisionContext ctx,
         AiConfig config, ICardCache cc)
@@ -136,7 +124,6 @@ public static class PriorityResolver
             return (0, false);
         }
 
-        // Resolve priority with thresholds
         int priority = ResolvePriority(cat, entry, ctx);
 
         return (priority, true);
@@ -170,7 +157,6 @@ public static class PriorityResolver
 
     private static int ResolvePriority(EffectCategory cat, EffectPriorityEntry entry, DecisionContext ctx)
     {
-        // バジェット-based threshold (e.g. budget_gain: high when budget < threshold)
         if (entry.Threshold is not null && entry.LowPriority is not null)
         {
             return ctx.Budget < entry.Threshold.Value
@@ -178,16 +164,12 @@ public static class PriorityResolver
                 : entry.LowPriority.Value;
         }
 
-        // Hand-based threshold (e.g. draw: high when hand <= threshold)
         if (entry.HandThreshold is not null && entry.LowPriority is not null)
         {
             return ctx.Hand.Count <= entry.HandThreshold.Value
                 ? entry.Priority
                 : entry.LowPriority.Value;
         }
-
-        // AoE min_targets override (already checked in IsFeasible, but entry can raise the bar)
-        // No additional logic needed — IsFeasible handles the minimum count
 
         return entry.Priority;
     }
@@ -199,7 +181,7 @@ public static class PriorityResolver
             ConditionTypes.MinBudget => ctx.Budget >= cond.Value,
             ConditionTypes.MaxBudget => ctx.Budget <= cond.Value,
             ConditionTypes.ResourceCount => CheckResourceCount(cond, ctx, cc),
-            ConditionTypes.OpponentBackend => ctx.OppField.Backend.Any(r => r.FaceUp),
+            ConditionTypes.OpponentBackend => ctx.OppField.Backend.Any(r => r is not null && r.FaceUp),
             var t => throw new InvalidOperationException($"Unknown effect condition type: '{t}'"),
         });
     }
@@ -209,47 +191,49 @@ public static class PriorityResolver
         int count = 0;
         if (cond.Owner is "myself" or "both")
         {
-            count += CountMatching(ctx.Field, cond, cc);
+            count += CountMatchingSelf(ctx.Field, cond, cc);
         }
         if (cond.Owner is "opponent" or "both")
         {
-            count += CountMatching(ctx.OppField, cond, cc);
+            count += CountMatchingOpp(ctx.OppField, cond, cc);
         }
         return (cond.Min is null || count >= cond.Min) && (cond.Max is null || count <= cond.Max);
     }
 
-    private static int CountMatching(Field field, EffectCondition cond, ICardCache cc)
+    private static int CountMatchingSelf(GD.Field field, EffectCondition cond, ICardCache cc) =>
+        WireFieldHelpers.AllFaceUpResources(field)
+            .Where(r => InZone(field.Frontend, field.Backend, r, cond.Zone))
+            .Count(r => MatchesCardFilter(r, cond, cc));
+
+    private static int CountMatchingOpp(GD.OpponentField field, EffectCondition cond, ICardCache cc) =>
+        WireFieldHelpers.AllFaceUpResources(field)
+            .Where(r => InZone(field.Frontend, field.Backend, r, cond.Zone))
+            .Count(r => MatchesCardFilter(r, cond, cc));
+
+    private static bool MatchesCardFilter(GD.DeployedResource r, EffectCondition cond, ICardCache cc)
     {
-        return FieldHelpers.AllFaceUpResources(field)
-            .Where(r => InZone(field, r, cond.Zone))
-            .Count(r =>
-            {
-                var card = cc.Get(r.CardID)
-                    ?? throw new InvalidOperationException($"Card '{r.CardID}' not found in card cache");
-                if (cond.Faction is not null && card.Faction != cond.Faction) { return false; }
-                if (cond.CardTypes is { Count: > 0 } && !cond.CardTypes.Contains(card.CardType)) { return false; }
-                if (cond.CardIds is { Count: > 0 } && !cond.CardIds.Contains(card.CardId)) { return false; }
-                return true;
-            });
+        var card = cc.Get(r.CardID)
+            ?? throw new InvalidOperationException($"Card '{r.CardID}' not found in card cache");
+        if (cond.Faction is not null && card.Faction != cond.Faction) { return false; }
+        if (cond.CardTypes is { Count: > 0 } && !cond.CardTypes.Contains(card.CardType)) { return false; }
+        if (cond.CardIds is { Count: > 0 } && !cond.CardIds.Contains(card.CardId)) { return false; }
+        return true;
     }
 
-    private static bool InZone(Field field, DeployedResource resource, string? zone) =>
+    private static bool InZone(
+        List<GD.DeployedResource?> frontend, List<GD.DeployedResource?> backend,
+        GD.DeployedResource resource, string? zone) =>
         zone switch
         {
             null => true,
-            "frontend" => field.Frontend.Any(r => r?.InstanceID == resource.InstanceID),
-            "backend" => field.Backend.Any(r => r?.InstanceID == resource.InstanceID),
+            "frontend" => frontend.Any(r => r?.InstanceID == resource.InstanceID),
+            "backend" => backend.Any(r => r?.InstanceID == resource.InstanceID),
             _ => throw new InvalidOperationException($"Unknown zone filter: '{zone}'"),
         };
 
     /// <summary>
     /// Target selection based on config TargetSpec definitions.
     /// </summary>
-    /// <param name="info">対象効果の情報。</param>
-    /// <param name="ctx">意思決定コンテキスト。</param>
-    /// <param name="targets">ターゲット選択設定。</param>
-    /// <param name="cc">カード定義の参照元。</param>
-    /// <returns>選択したターゲットの InstanceID。該当なしなら null。</returns>
     public static string? SelectTarget(EffectInfo info, DecisionContext ctx, TargetSelectionConfig targets, ICardCache cc)
     {
         if (info.HasCategory(EffectCategory.SingleDamage))
@@ -281,9 +265,6 @@ public static class PriorityResolver
             $"SelectTarget: effect categories [{string.Join(", ", info.Categories)}] have no resolvable target spec");
     }
 
-    /// <summary>
-    /// Resolves a target via the category's configured TargetSpec.
-    /// </summary>
     private static string? ResolveCategoryTarget(
         EffectCategory category, TargetSpec? spec, DecisionContext ctx, ICardCache cc)
     {

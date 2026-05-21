@@ -1,4 +1,4 @@
-using OverloadParty.Battle.Npc;
+using OverloadParty.Battle.Service;
 
 namespace OverloadParty.Battle.Server;
 

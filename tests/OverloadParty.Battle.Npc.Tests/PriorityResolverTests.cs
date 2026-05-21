@@ -2,6 +2,7 @@ using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Tests.Npc;
 
@@ -17,12 +18,12 @@ public class PriorityResolverTests
     }
 
     private DecisionContext MakeCtx(
-        Field? field = null, Field? oppField = null,
-        List<UndeployedCard>? hand = null, long budget = 5000)
+        GD.Field? field = null, GD.OpponentField? oppField = null,
+        List<GD.UndeployedCard>? hand = null, long budget = 5000)
     {
         return new DecisionContext(
-            field ?? TestFactory.MakeField(),
-            oppField ?? TestFactory.MakeField(),
+            field ?? TestFactory.MakeWireField(),
+            oppField ?? TestFactory.MakeWireOpponentField(),
             hand ?? [],
             budget,
             _cc);
@@ -88,7 +89,7 @@ public class PriorityResolverTests
     [Fact]
     public void Resolve_Draw_FewCards_ReturnsHighPriority()
     {
-        var hand = new List<UndeployedCard>
+        var hand = new List<GD.UndeployedCard>
         {
             new() { InstanceID = "h1", CardID = "TST-0001" },
             new() { InstanceID = "h2", CardID = "TST-0001" },
@@ -116,7 +117,7 @@ public class PriorityResolverTests
     public void Resolve_Draw_ManyCards_ReturnsLowPriority()
     {
         var hand = Enumerable.Range(0, 5)
-            .Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-0001" })
+            .Select(i => new GD.UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-0001" })
             .ToList();
         var ctx = MakeCtx(hand: hand);
         var config = MakeConfig(new()
@@ -202,8 +203,8 @@ public class PriorityResolverTests
     [Fact]
     public void Resolve_SingleDamage_WithTargets_Usable()
     {
-        var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(instanceId: "t1");
+        var oppField = TestFactory.MakeWireOpponentField();
+        oppField.Frontend[0] = TestFactory.MakeWireResource(instanceId: "t1");
         var ctx = MakeCtx(oppField: oppField);
         var config = MakeConfig(new()
         {
@@ -221,8 +222,8 @@ public class PriorityResolverTests
     [Fact]
     public void Resolve_Heal_NoDamage_NotUsable()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(damage: 0);
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(damage: 0);
         var ctx = MakeCtx(field: field);
         var config = MakeConfig(new()
         {

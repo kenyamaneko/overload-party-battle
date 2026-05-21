@@ -1,58 +1,42 @@
-using OverloadParty.Battle.Engine;
-using OverloadParty.Battle.Models;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
 /// Strategy defines the interface for NPC decision-making.
-/// Available actions are pre-computed by the engine; the AI selects which to take.
+/// 入力は情報秘匿済みの ClientGameState — human が見られない情報には触れない。
 /// </summary>
 public interface INpcStrategy
 {
     /// <summary>
     /// メインフェーズで実行するアクション列を決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="game">対象ゲーム。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
-    /// <param name="available">エンジンが事前計算した実行可能アクション一覧。</param>
+    /// <param name="clientState">NPC 視点の情報秘匿済みゲーム状態。</param>
     /// <returns>NPC が試行するアクション列。</returns>
-    List<NpcAction> DecideMainPhaseActions(BattleGameState state, Game game, long npcPlayerNum, List<AvailableAction> available);
+    List<NpcAction> DecideMainPhaseActions(GD.ClientGameState clientState);
 
     /// <summary>
     /// バトルフェーズで実行するアクション列を決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="game">対象ゲーム。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
-    /// <param name="available">エンジンが事前計算した実行可能アクション一覧。</param>
-    /// <returns>NPC が試行するアクション列。</returns>
-    List<NpcAction> DecideBattlePhaseActions(BattleGameState state, Game game, long npcPlayerNum, List<AvailableAction> available);
+    List<NpcAction> DecideBattlePhaseActions(GD.ClientGameState clientState);
 
     /// <summary>
     /// 手札上限超過分として捨てるカードを決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
+    /// <param name="clientState">NPC 視点の情報秘匿済みゲーム状態。</param>
     /// <param name="discardCount">捨てるべき枚数。</param>
     /// <returns>捨てるカードの InstanceID 列。</returns>
-    List<string> DecideDiscard(BattleGameState state, long npcPlayerNum, int discardCount);
+    List<string> DecideDiscard(GD.ClientGameState clientState, int discardCount);
 
     /// <summary>
-    /// 保留中のスロット選択への応答を決定します。
+    /// 効果由来のスロット選択への応答を決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
     /// <returns>選択アクション。応答対象がなければ null。</returns>
-    NpcAction? DecideSlotSelect(BattleGameState state, long npcPlayerNum);
+    NpcAction? DecideSlotSelect(GD.ClientGameState clientState);
 
     /// <summary>
-    /// 保留中の reactive 選択への応答を決定します。
+    /// 効果処理中のプレイヤー選択 (PendingEffectChoice) への応答を決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="npcPlayerNum">NPC (chooser) のプレイヤー番号。</param>
-    /// <param name="pending">解決対象の選択待ち状態。</param>
     /// <returns>解決アクション。候補が無いなど解決不能なら null。</returns>
-    NpcAction? DecidePendingEffectChoice(
-        BattleGameState state, long npcPlayerNum, PendingEffectChoice pending);
+    NpcAction? DecidePendingEffectChoice(GD.ClientGameState clientState);
 }

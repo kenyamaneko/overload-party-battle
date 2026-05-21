@@ -3,8 +3,10 @@ using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Npc;
+using GD = OverloadParty.GameState;
 
-namespace OverloadParty.Battle.Npc;
+namespace OverloadParty.Battle.Service;
 
 /// <summary>
 /// NpcAdvanceResult は 1 つの NPC アクション進行の結果を表現します
@@ -17,7 +19,6 @@ public record NpcAdvanceResult(
     /// <summary>
     /// NPC のアクションが不要であることを示す結果を返します。
     /// </summary>
-    /// <returns>進行不要を表す結果。</returns>
     public static NpcAdvanceResult Done() => new([], null, false);
 }
 
@@ -25,6 +26,7 @@ public record NpcAdvanceResult(
 /// Orchestrates NPC turns: resolves AI strategies, decides actions, and executes them via GameEngine.
 /// Each call to AdvanceOneAction processes exactly one NPC action, matching PvP's one-action-per-call flow.
 /// The gateway loops until NpcPending is false.
+/// NPC は human と同じく情報秘匿済み ClientGameState から意思決定する。
 /// </summary>
 public class NpcRunner
 {
@@ -58,16 +60,13 @@ public class NpcRunner
     /// Returns NpcPending=true if the active player is still an NPC after the action.
     /// The gateway calls this in a loop until NpcPending is false or GameOver is set.
     /// </summary>
-    /// <param name="game">対象ゲーム。</param>
-    /// <param name="ct">キャンセル制御トークン。</param>
-    /// <returns>1 アクション進行の結果。</returns>
     public async Task<NpcAdvanceResult> AdvanceOneAction(Game game, CancellationToken ct = default)
     {
         var gameID = game.GameID;
         var state = await _repo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} lost");
 
-        // 保留中の reactive choice は ActivePlayer ではなく chooser が解決するため、
+        // 保留中の効果中プレイヤー選択は ActivePlayer ではなく chooser が解決するため、
         // ActivePlayer の NPC 判定より先に chooser が NPC かを確認する。
         if (state.PendingEffectChoice is { } pendingChoice)
         {
@@ -78,7 +77,7 @@ public class NpcRunner
                 return NpcAdvanceResult.Done();
             }
             return await ProcessOnePendingEffectChoice(
-                game, state, pendingChoice.ChooserPlayerNum, chooserAI, pendingChoice, ct);
+                game, state, pendingChoice.ChooserPlayerNum, chooserAI, ct);
         }
 
         var npcAI = ResolveNpcAIForPlayer(game, state.ActivePlayer);
@@ -88,16 +87,16 @@ public class NpcRunner
         }
 
         var npcPlayerNum = state.ActivePlayer;
+        var clientState = BuildClientState(state, game, npcPlayerNum);
 
         // 保留中のスロット選択を優先処理
-        if (state.PendingSlotSelects.Count > 0
-            && state.PendingSlotSelects[0].PlayerNum == npcPlayerNum)
+        if (clientState.MyView.PendingSlotSelect is not null)
         {
-            return await ProcessOneSlotSelect(game, state, npcPlayerNum, npcAI, ct);
+            return await ProcessOneSlotSelect(game, npcAI, clientState, npcPlayerNum, ct);
         }
 
         // 現在のフェーズのアクションを決定
-        var actions = DecideActions(npcAI, state, game, npcPlayerNum);
+        var actions = DecideActions(npcAI, clientState, game.GameID);
 
         if (actions.Count == 0)
         {
@@ -133,6 +132,15 @@ public class NpcRunner
 
     // ─── Private ────────────────────────────────────────────────
 
+    private GD.ClientGameState BuildClientState(BattleGameState state, Game game, long playerNum)
+    {
+        if (_engine.EffectRegistry is null)
+        {
+            throw new InvalidOperationException("EffectRegistry is not configured");
+        }
+        return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
+    }
+
     private INpcStrategy ResolveAI(string npcModel)
     {
         if (_engine.EffectRegistry is null)
@@ -156,11 +164,11 @@ public class NpcRunner
     }
 
     private async Task<NpcAdvanceResult> ProcessOneSlotSelect(
-        Game game, BattleGameState state, long npcPlayerNum, INpcStrategy npcAI,
+        Game game, INpcStrategy npcAI, GD.ClientGameState clientState, long npcPlayerNum,
         CancellationToken ct)
     {
         var gameID = game.GameID;
-        var slotAction = npcAI.DecideSlotSelect(state, npcPlayerNum)
+        var slotAction = npcAI.DecideSlotSelect(clientState)
             ?? throw new InvalidOperationException($"NPC failed to decide slot selection (game={gameID})");
 
         var slotType = EnumExtensions.ParseActionType(slotAction.ActionType);
@@ -175,12 +183,13 @@ public class NpcRunner
 
     private async Task<NpcAdvanceResult> ProcessOnePendingEffectChoice(
         Game game, BattleGameState state, long chooserPlayerNum, INpcStrategy chooserAI,
-        PendingEffectChoice pendingChoice, CancellationToken ct)
+        CancellationToken ct)
     {
         var gameID = game.GameID;
-        var choiceAction = chooserAI.DecidePendingEffectChoice(state, chooserPlayerNum, pendingChoice)
+        var clientState = BuildClientState(state, game, chooserPlayerNum);
+        var choiceAction = chooserAI.DecidePendingEffectChoice(clientState)
             ?? throw new InvalidOperationException(
-                $"NPC failed to decide pending reactive choice (game={gameID})");
+                $"NPC failed to decide pending effect choice (game={gameID})");
 
         var actionType = EnumExtensions.ParseActionType(choiceAction.ActionType);
 
@@ -192,40 +201,30 @@ public class NpcRunner
         return new NpcAdvanceResult(result.Events, result.GameOver, pending);
     }
 
-    private List<NpcAction> DecideActions(
-        INpcStrategy npcAI, BattleGameState state, Game game, long npcPlayerNum)
+    private static List<NpcAction> DecideActions(
+        INpcStrategy npcAI, GD.ClientGameState clientState, string gameID)
     {
-        var myField = state.GetField(npcPlayerNum);
-        var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
-        var hand = state.GetHand(npcPlayerNum);
-        var budget = state.GetBudget(npcPlayerNum);
-        var insightPool = state.GetInsightPool(npcPlayerNum);
-        var available = AvailableActions.GetAllAvailableActions(
-            state, myField, oppField, hand, budget, insightPool,
-            _cardCache, _engine.EffectRegistry);
-
-        return state.CurrentPhase switch
+        return clientState.CurrentPhase switch
         {
-            Phase.Main => npcAI.DecideMainPhaseActions(state, game, npcPlayerNum, available),
-            Phase.Battle => npcAI.DecideBattlePhaseActions(state, game, npcPlayerNum, available),
-            Phase.End => BuildDiscardActions(npcAI, state, npcPlayerNum, game.GameID),
-            _ => throw new InvalidOperationException(
-                $"NPC encountered unexpected phase {state.CurrentPhase} (game={game.GameID})"),
+            "main" => npcAI.DecideMainPhaseActions(clientState),
+            "battle" => npcAI.DecideBattlePhaseActions(clientState),
+            "end" => BuildDiscardActions(npcAI, clientState, gameID),
+            var p => throw new InvalidOperationException(
+                $"NPC encountered unexpected phase '{p}' (game={gameID})"),
         };
     }
 
     private static List<NpcAction> BuildDiscardActions(
-        INpcStrategy npcAI, BattleGameState state, long npcPlayerNum, string gameID)
+        INpcStrategy npcAI, GD.ClientGameState clientState, string gameID)
     {
-        var hand = state.GetHand(npcPlayerNum);
-        var discardCount = hand.Count - BattleConstants.HandLimit;
+        var discardCount = clientState.MyView.Hand.Count - BattleConstants.HandLimit;
         if (discardCount <= 0)
         {
             throw new InvalidOperationException(
                 $"NPC in end phase but no discard needed (game={gameID})");
         }
 
-        var ids = npcAI.DecideDiscard(state, npcPlayerNum, discardCount);
+        var ids = npcAI.DecideDiscard(clientState, discardCount);
         if (ids.Count == 0)
         {
             throw new InvalidOperationException(
