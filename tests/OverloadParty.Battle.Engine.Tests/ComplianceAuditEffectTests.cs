@@ -42,7 +42,7 @@ public class ComplianceAuditEffectTests
 
         ExecuteEffect(state, playerNum: 1);
 
-        state.Player1Budget.Should().Be(800, "self pays 200");
+        state.Player1Budget.Should().Be(800, "myself pays 200");
     }
 
     [Fact]

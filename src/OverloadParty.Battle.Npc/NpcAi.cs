@@ -87,7 +87,7 @@ public class NpcAi : INpcStrategy
     public List<NpcAction> DecideBattlePhaseActions(GD.ClientGameState clientState)
     {
         var available = clientState.MyView.AvailableActions ?? new List<GD.AvailableAction>();
-        var selfField = clientState.MyView.Field;
+        var myField = clientState.MyView.Field;
         var oppField = clientState.OppView.Field;
         var attackActions = ActionFilter.FilterByType(available, ActionTypes.Attack);
 
@@ -98,7 +98,7 @@ public class NpcAi : INpcStrategy
                 Data = new AttackRequest
                 {
                     AttackerInstanceID = a.SourceInstanceID!,
-                    TargetInstanceID = ResolveAttackTarget(a.ValidTargets, selfField, oppField),
+                    TargetInstanceID = ResolveAttackTarget(a.ValidTargets, myField, oppField),
                 },
             })
             .ToList();
@@ -245,7 +245,7 @@ public class NpcAi : INpcStrategy
     //  攻撃ターゲット選択
     // ═══════════════════════════════════════════════════════════════
 
-    private string ResolveAttackTarget(List<string>? validTargets, GD.Field selfField, GD.OpponentField oppField)
+    private string ResolveAttackTarget(List<string>? validTargets, GD.Field myField, GD.OpponentField oppField)
     {
         if (!(validTargets?.Count > 0))
         {
@@ -256,7 +256,7 @@ public class NpcAi : INpcStrategy
             ?? throw new InvalidOperationException(
                 $"No attack target selection configured in model '{_config.Model}'");
 
-        return TargetSelector.ResolveFromValid(spec, validTargets, selfField, oppField, _cc)
+        return TargetSelector.ResolveFromValid(spec, validTargets, myField, oppField, _cc)
             ?? throw new InvalidOperationException("No valid attack target found on opponent field");
     }
 
