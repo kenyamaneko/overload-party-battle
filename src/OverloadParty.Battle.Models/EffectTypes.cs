@@ -31,6 +31,6 @@ public static class ConditionTypes
 {
     public const string MinBudget = "min_budget";
     public const string MaxBudget = "max_budget";
-    public const string FactionCount = "faction_count";
+    public const string ResourceCount = "resource_count";
     public const string OpponentBackend = "opponent_backend";
 }

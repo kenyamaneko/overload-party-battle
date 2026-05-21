@@ -41,28 +41,6 @@ public class RequireMaxBudgetOp(long max) : IEffectOp
 }
 
 /// <summary>
-/// RequireFactionCountOp はフィールド上のファクションカード数が最低値未満の場合に失敗します
-/// </summary>
-public class RequireFactionCountOp(string faction, int min) : IEffectOp
-{
-    /// <summary>Faction to count.</summary>
-    public string Faction => faction;
-
-    /// <summary>Minimum number of cards required.</summary>
-    public int Min => min;
-
-    /// <inheritdoc />
-    public void Execute(OpContext ctx)
-    {
-        int count = EffectHelpers.CountFactionCards(ctx.MyField, faction, ctx.CardCache);
-        if (count < min)
-        {
-            throw new GameRuleException($"Need {min}+ {faction} cards on field, have {count}");
-        }
-    }
-}
-
-/// <summary>
 /// RequireOpponentBackendOp は相手がバックエンドリソースを持たない場合に失敗します
 /// </summary>
 public class RequireOpponentBackendOp : IEffectOp
@@ -354,6 +332,27 @@ public class ResourceCountGuardOp(
     int? min,
     int? max) : IEffectOp
 {
+    /// <summary>Owner filter ("myself" / "opponent" / "both").</summary>
+    public string Owner => owner;
+
+    /// <summary>Zone filter (frontend / backend / support), or null for all zones.</summary>
+    public string? Zone => zone;
+
+    /// <summary>Faction filter, or null for all factions.</summary>
+    public string? Faction => faction;
+
+    /// <summary>Card type filter, or null for all types.</summary>
+    public IReadOnlyList<string>? CardTypes => cardTypes;
+
+    /// <summary>Card ID filter, or null for all card IDs.</summary>
+    public IReadOnlyList<string>? CardIds => cardIds;
+
+    /// <summary>Minimum number of matching resources, or null for no lower bound.</summary>
+    public int? Min => min;
+
+    /// <summary>Maximum number of matching resources, or null for no upper bound.</summary>
+    public int? Max => max;
+
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
