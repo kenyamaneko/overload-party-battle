@@ -868,7 +868,7 @@
             "count": {
               "selector": {
                 "owner": "myself",
-                "card_type": "ObjectStorage"
+                "subtype": "ObjectStorage"
               },
               "min": 1
             }
@@ -1070,7 +1070,7 @@
     "card_name": "エレファントDB",
     "resource_label": "On-premises",
     "faction": "Neutral",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": false,
     "elastic": false,
@@ -1134,7 +1134,7 @@
     "card_name": "調律部 DB",
     "resource_label": "On-premises",
     "faction": "Neutral",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": false,
     "elastic": false,
@@ -1325,7 +1325,7 @@
               "selector": {
                 "owner": "myself",
                 "faction": "SHE",
-                "card_type": "ObjectStorage"
+                "subtype": "ObjectStorage"
               },
               "min": 1
             }
@@ -1349,7 +1349,7 @@
     "card_name": "アデリース",
     "resource_label": "RDB",
     "faction": "SHE",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": true,
     "elastic": false,
@@ -1396,7 +1396,7 @@
     "card_name": "オオロバ",
     "resource_label": "DistributedDB",
     "faction": "SHE",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": true,
     "elastic": false,
@@ -1428,7 +1428,7 @@
                     "owner": "myself",
                     "zone": "backend",
                     "faction": "SHE",
-                    "card_type": "Database",
+                    "subtype": "Database",
                     "exclude": "source"
                   },
                   "value": 200
@@ -1446,7 +1446,7 @@
     "card_name": "えりり",
     "resource_label": "Storage",
     "faction": "SHE",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": false,
     "elastic": false,
@@ -1490,7 +1490,7 @@
     "card_name": "ダイノ",
     "resource_label": "NoSQL",
     "faction": "SHE",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": false,
     "elastic": true,
@@ -1547,7 +1547,7 @@
     "card_name": "メリーモ",
     "resource_label": "Cache",
     "faction": "SHE",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": true,
     "elastic": false,
@@ -2078,7 +2078,7 @@
     "card_name": "だっくん",
     "resource_label": "Cache",
     "faction": "SHE",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": true,
     "elastic": false,
@@ -2404,7 +2404,7 @@
     "card_name": "エクレアーエル",
     "resource_label": "RDB",
     "faction": "Sugar",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": true,
     "elastic": false,
@@ -2427,7 +2427,7 @@
     "card_name": "スーパーバナナ",
     "resource_label": "DistributedDB",
     "faction": "Sugar",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": false,
     "elastic": true,
@@ -2465,7 +2465,7 @@
     "card_name": "トーストア",
     "resource_label": "NoSQL",
     "faction": "Sugar",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": false,
     "elastic": true,
@@ -2500,7 +2500,7 @@
     "card_name": "アイスクエリム",
     "resource_label": "Datawarehouse",
     "faction": "Sugar",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": false,
     "elastic": false,
@@ -2535,7 +2535,7 @@
     "card_name": "メレンゲスト",
     "resource_label": "Cache",
     "faction": "Sugar",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": true,
     "elastic": false,
@@ -2583,7 +2583,7 @@
     "card_name": "シュトレーンジ",
     "resource_label": "Storage",
     "faction": "Sugar",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": false,
     "elastic": false,
@@ -3167,7 +3167,7 @@
                     "owner": "myself",
                     "zone": "backend",
                     "faction": "Tenki",
-                    "card_type": "Data"
+                    "card_type": "DataResource"
                   },
                   "value": 200
                 }
@@ -3207,7 +3207,7 @@
     "card_name": "シグレ",
     "resource_label": "RDB",
     "faction": "Tenki",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": true,
     "elastic": false,
@@ -3230,7 +3230,7 @@
     "card_name": "ハヤテ",
     "resource_label": "DB",
     "faction": "Tenki",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": true,
     "elastic": false,
@@ -3255,7 +3255,7 @@
             "match": {
               "selector": "target",
               "faction": "Tenki",
-              "card_type": "Data"
+              "card_type": "DataResource"
             }
           },
           {
@@ -3283,7 +3283,7 @@
     "card_name": "フブキ",
     "resource_label": "Storage",
     "faction": "Tenki",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": false,
     "elastic": false,
@@ -3306,7 +3306,7 @@
     "card_name": "百花の天穹<コスモ>",
     "resource_label": "NoSQL",
     "faction": "Tenki",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": false,
     "elastic": true,
@@ -3357,7 +3357,7 @@
     "card_name": "シュウウ",
     "resource_label": "Cache",
     "faction": "Tenki",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": true,
     "elastic": false,
@@ -4120,7 +4120,7 @@
     "card_name": "音の魔術師〈マジシャン・オブ・ミュージック〉",
     "resource_label": "DB",
     "faction": "Tuners",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": false,
     "elastic": true,
@@ -4143,7 +4143,7 @@
     "card_name": "エクサノーツ",
     "resource_label": "DB",
     "faction": "Tuners",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 1,
     "resizable": true,
     "elastic": false,
@@ -4166,7 +4166,7 @@
     "card_name": "スコアージ",
     "resource_label": "Storage",
     "faction": "Tuners",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": false,
     "elastic": false,
@@ -4189,7 +4189,7 @@
     "card_name": "カプリッシュ",
     "resource_label": "Cache",
     "faction": "Tuners",
-    "card_type": "Data",
+    "card_type": "DataResource",
     "deploy_turns": 0,
     "resizable": true,
     "elastic": false,
@@ -4349,7 +4349,7 @@
             "deploy_from_repo": {
               "filter": {
                 "faction": "Tuners",
-                "card_type": "Database"
+                "subtype": "Database"
               },
               "override_av": 200
             }
@@ -4465,7 +4465,7 @@
                 "owner": "myself",
                 "zone": "backend",
                 "faction": "Tuners",
-                "card_type": "Database",
+                "subtype": "Database",
                 "pick": "choice"
               },
               "amount": {
@@ -4502,7 +4502,7 @@
             "match": {
               "selector": "target",
               "faction": "Tuners",
-              "card_type": "Database"
+              "subtype": "Database"
             }
           }
         ],
@@ -4511,7 +4511,7 @@
             "deploy_from_hand": {
               "filter": {
                 "faction": "Tuners",
-                "card_type": "Database"
+                "subtype": "Database"
               }
             }
           }

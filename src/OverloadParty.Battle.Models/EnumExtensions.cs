@@ -238,7 +238,7 @@ public static class EnumExtensions
     public static CardTypeCategory GetCategory(string cardType) => cardType switch
     {
         CardTypes.Compute => CardTypeCategory.Compute,
-        CardTypes.Data => CardTypeCategory.Data,
+        CardTypes.DataResource => CardTypeCategory.DataResource,
         CardTypes.Platform or CardTypes.Attachment or CardTypes.Strategy
             or CardTypes.Reactive or CardTypes.Incident => CardTypeCategory.Support,
         _ => throw new ArgumentException($"Unknown card type: {cardType}")

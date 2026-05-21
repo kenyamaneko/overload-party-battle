@@ -93,7 +93,7 @@ public static class TestFactory
         {
             CardId = cardId,
             CardName = name,
-            CardType = CardTypes.Data,
+            CardType = CardTypes.DataResource,
             Subtype = subtype,
             Faction = faction,
             DeployTurns = deployTurns,
@@ -102,7 +102,7 @@ public static class TestFactory
             ElasticIncrement = elasticIncrement,
             FreeTier = freeTier,
             CostPerRequest = costPerRequest,
-            DataStats = new DataStats
+            DataResourceStats = new DataResourceStats
             {
                 Yield = yield,
                 Availability = av,

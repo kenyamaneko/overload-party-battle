@@ -135,7 +135,7 @@ public static class AvailableActions
         return EnumExtensions.GetCategory(card.CardType) switch
         {
             CardTypeCategory.Support => BuildSupportPlayAction(state, field, handCard, card, budget, cc, effects),
-            CardTypeCategory.Compute or CardTypeCategory.Data => BuildResourcePlayAction(field, handCard, card),
+            CardTypeCategory.Compute or CardTypeCategory.DataResource => BuildResourcePlayAction(field, handCard, card),
             _ => null,
         };
     }

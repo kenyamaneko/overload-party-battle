@@ -144,7 +144,7 @@ public static class EndPhaseProcessor
             }
 
             var card = cc.Get(res.CardID);
-            if (card is null || !card.IsDataType)
+            if (card is null || !card.IsDataResource)
             {
                 continue;
             }

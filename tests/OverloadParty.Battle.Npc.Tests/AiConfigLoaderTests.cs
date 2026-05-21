@@ -117,7 +117,7 @@ public class AiConfigLoaderTests
                 TST-0003: use
               zone_preferences:
                 Compute: [frontend, backend]
-                Data: [backend]
+                DataResource: [backend]
             """;
 
         var config = AiConfigLoader.LoadFromString(yaml);
@@ -201,7 +201,7 @@ public class AiConfigLoaderTests
               conditional_family:
                 - family: M
                   condition:
-                    selector: { owner: myself, card_type: Data, zone: backend }
+                    selector: { owner: myself, card_type: DataResource, zone: backend }
                     min: 2
               max_maintenance_ratio: 0.6
               order_by: tp_desc
@@ -214,7 +214,7 @@ public class AiConfigLoaderTests
         var cf = config.ScaleUp.ConditionalFamily![0];
         cf.Family.Should().Be("M");
         cf.Condition.Selector!.Zone.Should().Be("backend");
-        cf.Condition.Selector!.CardType.Should().Be("Data");
+        cf.Condition.Selector!.CardType.Should().Be("DataResource");
     }
 
     [Fact]

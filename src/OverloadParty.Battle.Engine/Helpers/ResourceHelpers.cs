@@ -93,7 +93,7 @@ public static class ResourceHelpers
             resource.MaxTP = cs.Throughput;
             resource.CurrentTP = cs.Throughput;
         }
-        else if (card.IsDataType && card.DataStats is { } ds)
+        else if (card.IsDataResource && card.DataResourceStats is { } ds)
         {
             resource.MaxAV = ds.Availability;
             resource.CurrentAV = ds.Availability;
@@ -120,14 +120,14 @@ public static class ResourceHelpers
         }
 
         // ObjectStorage は Data カテゴリの中で唯一 frontend にも置ける。優先は backend。
-        if (card.IsDataType && card.Subtype == "ObjectStorage")
+        if (card.IsDataResource && card.Subtype == "ObjectStorage")
         {
             if (field.Backend.TryPlace(instance)) { return; }
             if (field.Frontend.TryPlace(instance)) { return; }
             throw new GameRuleException("No empty slot for ObjectStorage");
         }
 
-        if (card.IsDataType)
+        if (card.IsDataResource)
         {
             if (field.Backend.TryPlace(instance)) { return; }
             throw new GameRuleException("No empty backend slot");
@@ -271,7 +271,7 @@ public static class ResourceHelpers
                 resource.MaxTP = newTP;
                 resource.CurrentTP = newTP;
             }
-            if (card.IsDataType)
+            if (card.IsDataResource)
             {
                 long newYield = StatCalculator.RecalculateMaxYield(resource, card);
                 resource.MaxYield = newYield;

@@ -63,7 +63,7 @@ deploy:
       priority: 100
     - card_type: Compute
       priority: 50
-    - card_type: Data
+    - card_type: DataResource
       priority: 40
     - card_type: Platform
       priority: 30
@@ -81,7 +81,7 @@ deploy:
 
   zone_preferences:
     Compute: [frontend, backend]
-    Data: [backend]
+    DataResource: [backend]
     ObjectStorage: [backend, frontend]
     Platform: [support]
     Attachment: [support]
@@ -170,7 +170,7 @@ scale_up:
   conditional_family:
     - family: M
       condition:
-        selector: { owner: myself, card_type: Data, zone: backend }
+        selector: { owner: myself, card_type: DataResource, zone: backend }
         min: 2
   max_maintenance_ratio: 0.6
   order_by: tp_desc

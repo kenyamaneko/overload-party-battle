@@ -28,7 +28,7 @@ public class CardDefinition
 
     // カードタイプカテゴリに応じてどちらか一方が設定される
     public ComputeStats? ComputeStats { get; set; }
-    public DataStats? DataStats { get; set; }
+    public DataResourceStats? DataResourceStats { get; set; }
 
     public List<EffectDef>? Effects { get; set; }
 
@@ -38,9 +38,9 @@ public class CardDefinition
     public bool IsComputeType => CardType == CardTypes.Compute;
 
     /// <summary>
-    /// IsDataType はカードタイプが Data カテゴリに属するかを返します
+    /// IsDataResource はカードタイプが Data カテゴリに属するかを返します
     /// </summary>
-    public bool IsDataType => CardType == CardTypes.Data;
+    public bool IsDataResource => CardType == CardTypes.DataResource;
 
     /// <summary>
     /// IsSupportType はカードタイプが Support カテゴリに属するかを返します
@@ -56,22 +56,22 @@ public class CardDefinition
     /// <summary>
     /// BaseYield はベースイールドを返します（非 Data カードの場合は 0）
     /// </summary>
-    public long BaseYield => DataStats?.Yield ?? 0;
+    public long BaseYield => DataResourceStats?.Yield ?? 0;
 
     /// <summary>
     /// BaseAvailability は Compute または Data のベース可用性を返します
     /// </summary>
-    public long BaseAvailability => ComputeStats?.Availability ?? DataStats?.Availability ?? 0;
+    public long BaseAvailability => ComputeStats?.Availability ?? DataResourceStats?.Availability ?? 0;
 
     /// <summary>
     /// MaintenanceCost は Compute または Data の維持コストを返します
     /// </summary>
-    public long MaintenanceCost => ComputeStats?.MaintenanceCost ?? DataStats?.MaintenanceCost ?? 0;
+    public long MaintenanceCost => ComputeStats?.MaintenanceCost ?? DataResourceStats?.MaintenanceCost ?? 0;
 
     /// <summary>
     /// SLAPenalty は Compute または Data の SLA ペナルティを返します
     /// </summary>
-    public long SLAPenalty => ComputeStats?.SLAPenalty ?? DataStats?.SLAPenalty ?? 0;
+    public long SLAPenalty => ComputeStats?.SLAPenalty ?? DataResourceStats?.SLAPenalty ?? 0;
 }
 
 /// <summary>
@@ -87,9 +87,9 @@ public class ComputeStats
 }
 
 /// <summary>
-/// DataStats は Data カテゴリカードのステータスを保持します
+/// DataResourceStats は Data カテゴリカードのステータスを保持します
 /// </summary>
-public class DataStats
+public class DataResourceStats
 {
     public long Yield { get; set; }
     public long? YieldMax { get; set; }

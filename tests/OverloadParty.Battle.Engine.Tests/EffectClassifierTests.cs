@@ -196,7 +196,7 @@ public class EffectClassifierTests
             [
                 new ResourceCountGuard(
                     owner: "myself", zone: null, faction: "SHE",
-                    cardTypes: null, cardIds: null, min: 3, max: null),
+                    cardTypes: null, subtypes: null, cardIds: null, min: 3, max: null),
             ],
         };
         var info = EffectClassifier.ClassifyBlock(block);
@@ -218,7 +218,7 @@ public class EffectClassifierTests
             [
                 new ResourceCountGuard(
                     owner: "myself", zone: null, faction: "Tuners",
-                    cardTypes: null, cardIds: null, min: null, max: 3),
+                    cardTypes: null, subtypes: null, cardIds: null, min: null, max: 3),
             ],
         };
         var info = EffectClassifier.ClassifyBlock(block);
