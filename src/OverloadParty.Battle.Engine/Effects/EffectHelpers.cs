@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// エフェクト固有のフィールド走査・カウント・フィルタ構築ヘルパー。
+/// 効果固有のフィールド走査・カウント・フィルタ構築ヘルパー。
 /// </summary>
 public static class EffectHelpers
 {

@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// IAmountResolver はエフェクト操作の動的な数値を解決します
+/// IAmountResolver は効果操作の動的な数値を解決します
 /// </summary>
 public interface IAmountResolver
 {

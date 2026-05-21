@@ -4,7 +4,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// EffectCategory は NPC 意思決定用にエフェクトの動作カテゴリを定義します
+/// EffectCategory は NPC 意思決定用に効果の動作カテゴリを定義します
 /// </summary>
 public enum EffectCategory
 {
@@ -32,7 +32,7 @@ public enum EffectCategory
 }
 
 /// <summary>
-/// EffectTargetType は NPC がエフェクトのターゲットを選択する方法を定義します
+/// EffectTargetType は NPC が効果のターゲットを選択する方法を定義します
 /// </summary>
 public enum EffectTargetType
 {
@@ -43,7 +43,7 @@ public enum EffectTargetType
 }
 
 /// <summary>
-/// EffectCondition はエフェクト発動の前提条件を表現します
+/// EffectCondition は効果発動の前提条件を表現します
 /// </summary>
 public class EffectCondition
 {
@@ -78,7 +78,7 @@ public class EffectCondition
 }
 
 /// <summary>
-/// EffectInfo は NPC AI 用のエフェクトパイプライン分類結果を保持します
+/// EffectInfo は NPC AI 用の効果パイプライン分類結果を保持します
 /// </summary>
 public class EffectInfo
 {
@@ -131,7 +131,7 @@ public class EffectInfo
 }
 
 /// <summary>
-/// EffectClassifier は NPC 意思決定用に Op パイプラインを検査してエフェクトを分類します
+/// EffectClassifier は NPC 意思決定用に Op パイプラインを検査して効果を分類します
 /// </summary>
 public static class EffectClassifier
 {

@@ -19,7 +19,7 @@ public class NpcAi : INpcStrategy
     private readonly DeployStrategy _deploy;
     private readonly AttachmentDeployStrategy _attachmentDeploy;
     private readonly ReactiveDeployStrategy _reactiveDeploy;
-    private readonly ActivateEffectStrategy _activateEffect;
+    private readonly IgnitionStrategy _ignition;
     private readonly ScaleUpStrategy _scaleUp;
     private readonly MonetizeStrategy _monetize;
 
@@ -32,7 +32,7 @@ public class NpcAi : INpcStrategy
         _deploy = new DeployStrategy(config, cc);
         _attachmentDeploy = new AttachmentDeployStrategy(config, cc);
         _reactiveDeploy = new ReactiveDeployStrategy(config, cc);
-        _activateEffect = new ActivateEffectStrategy(cc, effects);
+        _ignition = new IgnitionStrategy(cc, effects);
         _scaleUp = new ScaleUpStrategy(config, cc);
         _monetize = new MonetizeStrategy(config, cc);
     }
@@ -68,7 +68,7 @@ public class NpcAi : INpcStrategy
         {
             actions.AddRange(_reactiveDeploy.Decide(playActions, usedZones));
         }
-        actions.AddRange(_activateEffect.Decide(ctx, available, activeConfig));
+        actions.AddRange(_ignition.Decide(ctx, available, activeConfig));
         actions.AddRange(_scaleUp.Decide(ctx, available));
 
         var insightPool = state.GetInsightPool(npcPlayerNum);

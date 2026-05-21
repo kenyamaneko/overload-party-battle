@@ -24,7 +24,7 @@ public class DealDamageOp(ISelector sel, IAmountResolver value) : IEffectOp
 }
 
 /// <summary>
-/// エフェクト処理におけるリソースへのダメージ適用と on_damaged 発火の集約点です
+/// 効果処理におけるリソースへのダメージ適用と on_damaged 発火の集約点です
 /// </summary>
 internal static class DamageApplication
 {

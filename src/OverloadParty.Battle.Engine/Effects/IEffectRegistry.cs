@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// EffectResult はエフェクトハンドラの実行結果を保持します
+/// EffectResult は効果ハンドラの実行結果を保持します
 /// </summary>
 public class EffectResult
 {
@@ -21,7 +21,7 @@ public class EffectResult
 }
 
 /// <summary>
-/// EffectContext はエフェクトハンドラ実行時に渡されるコンテキストです
+/// EffectContext は効果ハンドラ実行時に渡されるコンテキストです
 /// </summary>
 public class EffectContext
 {
@@ -58,7 +58,7 @@ public class EffectContext
     /// <summary>on_attack_declared イベントの攻撃ダメージ</summary>
     public long? EventDamage { get; init; }
 
-    /// <summary>入れ子のトリガー発火に使うエフェクトレジストリ</summary>
+    /// <summary>入れ子のトリガー発火に使う効果レジストリ</summary>
     public required IEffectRegistry Effects { get; init; }
 
     /// <summary>
@@ -69,12 +69,12 @@ public class EffectContext
 }
 
 /// <summary>
-/// エフェクトハンドラのデリゲート型
+/// 効果ハンドラのデリゲート型
 /// </summary>
 public delegate EffectResult EffectHandler(EffectContext ctx);
 
 /// <summary>
-/// バジェットRequirement はエフェクトの Op から抽出されたバジェット条件を保持します
+/// バジェットRequirement は効果の Op から抽出されたバジェット条件を保持します
 /// </summary>
 public class BudgetRequirement
 {

@@ -92,7 +92,7 @@ public enum ActionType
 }
 
 /// <summary>
-/// TriggerType はエフェクトの発動条件を表現します
+/// TriggerType は効果の発動条件を表現します
 /// </summary>
 public enum TriggerType
 {

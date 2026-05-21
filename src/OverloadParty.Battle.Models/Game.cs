@@ -71,7 +71,7 @@ public class BattleGameState
     public long NextInstanceSeq { get; set; }
     public DateTime UpdatedAt { get; set; }
     /// <summary>
-    /// エフェクトデプロイのスロット選択待ちキュー。先頭から順に処理する。
+    /// 効果デプロイのスロット選択待ちキュー。先頭から順に処理する。
     /// </summary>
     public List<AwaitingSlotSelect> PendingSlotSelects { get; set; } = [];
 
