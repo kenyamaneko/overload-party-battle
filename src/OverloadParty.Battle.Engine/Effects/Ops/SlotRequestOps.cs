@@ -27,8 +27,8 @@ public class RequestSlotFromRepoOp : IEffectOp
 
         if (match is null) { return; }
 
-        // 盤面満杯のチェックは repo から取り除く前に行う。取り除き後に throw すると
-        // catch 撤去後にカードが宙に浮く部分変更ハザードになる。
+        // 配置先がないなら repo から取り除く前に GuardFailed で抜ける。
+        // 取り除いてから判定すると、解決失敗時に repo からカードが消えたまま戻せなくなる。
         var card = ctx.CardCache.MustGet(match.CardID);
         var field = ctx.GetField(ctx.PlayerNum);
         var validZones = ResourceHelpers.BuildValidZones(field, card);
@@ -86,7 +86,6 @@ public class RequestSlotFromHandOp : IEffectOp
                 ctx.Result.GuardFailed = true;
                 return;
             }
-            // 1 件しかない場合でも、選択 UI でカードを確認させる意義があるため候補を提示する。
             ctx.SuspendForChoice("cardId", ChoiceKinds.HandCard, candidates, ctx.PlayerNum);
             return;
         }

@@ -1,10 +1,10 @@
-using OverloadParty.GameLogicConstants;
+using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
 /// BuiltBlock または ops 列を EffectHandler に組み立てる。
-/// guard 述語が不成立のときの扱いは trigger に応じて切り替え (active = throw / passive = 空の結果)。
+/// guard 述語不成立時の扱いは trigger に応じて切り替え (Ignition = throw / その他 = 空の結果)。
 /// ops 内の GameRuleException は握り潰さず caller に素通りさせる。
 /// </summary>
 public static class EffectComposer
@@ -49,12 +49,12 @@ public static class EffectComposer
         {
             if (!guard.Check(ctx))
             {
-                // active 効果は AvailableActions が事前 gate しているはずなので、
-                // 実行時の guard 不成立は不正リクエスト (A-1) として例外で表面化する。
-                // passive 効果は guard 不成立が正常な不発なので GuardFailed=true を返す。
-                if (ctx.Trigger is { } trigger && TriggerActivation.IsActive(trigger))
+                // Ignition は AvailableActions が事前 gate しているはずで、ここに来るのは
+                // 不正リクエスト (A-1) なので例外で表面化する。それ以外のトリガー
+                // (passive / 従属サブブロック) は guard 不成立が正常な不発のため GuardFailed=true。
+                if (ctx.Trigger == TriggerType.Ignition)
                 {
-                    throw new GameRuleException("Active effect guard failed");
+                    throw new GameRuleException("Ignition effect guard failed");
                 }
                 octx.Result.GuardFailed = true;
                 return octx.Result;

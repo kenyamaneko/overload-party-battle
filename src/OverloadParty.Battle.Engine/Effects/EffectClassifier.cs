@@ -155,7 +155,7 @@ public static class EffectClassifier
     }
 
     /// <summary>
-    /// ops のみを分類します (テスト向け / 旧 API)。
+    /// ops のみを分類します。BranchOnChoiceOp / IfConditionOp が内部の枝を分類するときに使う。
     /// </summary>
     /// <param name="ops">分類対象の ops 列。</param>
     /// <returns>効果の振る舞いを表す分類結果。</returns>

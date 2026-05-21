@@ -428,12 +428,13 @@ public static class AvailableActions
         var reg = registry.GetRegistration(cardId, TriggerType.Ignition);
         if (reg?.Block?.Guards is not { Length: > 0 } guards) { return true; }
 
-        // active 効果は手番プレイヤーのフィールド上のカードからのみ発動するため、
+        // Ignition は手番プレイヤーのフィールド上のカードからのみ発動するため、
         // PlayerNum = ActivePlayer で固定して述語を評価する。
+        // Game メタデータは guard 述語からは参照しないため GameID のみ埋めて他は default のままにする。
         var ctx = new EffectContext
         {
             State = state,
-            Game = new Game { GameID = state.GameID, FirstPlayer = (int)state.ActivePlayer, Status = GameStatus.Playing },
+            Game = new Game { GameID = state.GameID },
             PlayerNum = state.ActivePlayer,
             Source = source,
             SupSource = supSource,

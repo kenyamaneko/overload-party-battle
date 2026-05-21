@@ -24,8 +24,8 @@ public static class SlotRequestHelpers
             throw new GameRuleException($"Card {choiceCardId} not in hand");
         }
 
-        // 盤面満杯のチェックは手札から取り除く前に行う。取り除き後に throw すると
-        // catch 撤去後にカードが宙に浮く部分変更ハザードになる。
+        // 配置先がないなら手札から取り除く前に GuardFailed で抜ける。
+        // 取り除いてから判定すると、解決失敗時に手札からカードが消えたまま戻せなくなる。
         var field = ctx.GetField(ctx.PlayerNum);
         var validZones = ResourceHelpers.BuildValidZones(field, card);
         if (validZones.Count == 0)
