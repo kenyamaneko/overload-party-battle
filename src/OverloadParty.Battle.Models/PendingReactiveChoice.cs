@@ -41,6 +41,17 @@ public class PendingReactiveChoice
     /// <summary>効果対象のリソースインスタンス ID。</summary>
     public string? TargetInstanceId { get; set; }
 
+    /// <summary>
+    /// 破壊済みのリソースを Target とする on_destroy 用のスナップショット。
+    /// 再実行時に state のフィールドから見つからない場合のフォールバックに使う。
+    /// </summary>
+    public DeployedResource? TargetSnapshot { get; set; }
+
+    /// <summary>
+    /// Source 側も同じ理由でスナップショットを保持する。
+    /// </summary>
+    public DeployedResource? SourceSnapshot { get; set; }
+
     /// <summary>トリガーイベントを起こしたプレイヤー番号 (event_owner)。</summary>
     public long? EventOwnerNum { get; set; }
 

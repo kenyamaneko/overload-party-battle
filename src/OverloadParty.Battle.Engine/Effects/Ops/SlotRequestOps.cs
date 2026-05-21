@@ -73,7 +73,19 @@ public class RequestSlotFromHandOp : IEffectOp
 
         if (choiceCardId is null)
         {
-            throw new GameRuleException("No card chosen for deploy from hand");
+            // reactive 経路では選択待ち。直接呼び出し経路では仕様外なので throw。
+            if (ctx.SupSource is null)
+            {
+                throw new GameRuleException("No card chosen for deploy from hand");
+            }
+            var candidates = EnumerateCandidates(ctx);
+            if (candidates.Count == 0)
+            {
+                throw new GameRuleException("No matching card in hand for deploy from hand");
+            }
+            // 1 件しかない場合でも、選択 UI でカードを確認させる意義があるため候補を提示する。
+            ctx.SuspendForChoice("cardId", ChoiceKinds.HandCard, candidates, ctx.PlayerNum);
+            return;
         }
 
         if (Filter is not null)
@@ -86,6 +98,21 @@ public class RequestSlotFromHandOp : IEffectOp
         }
 
         SlotRequestHelpers.DeployFromHand(ctx, choiceCardId);
+    }
+
+    private List<string> EnumerateCandidates(OpContext ctx)
+    {
+        // candidate は CardID 単位で重複排除する。SlotRequestHelpers.DeployFromHand は
+        // CardID で手札先頭を引くため、同名カードの 1 枚目で十分。
+        return ctx.State.GetHand(ctx.PlayerNum)
+            .Where(c =>
+            {
+                var card = ctx.CardCache.Get(c.CardID);
+                return card is not null && (Filter is null || Filter(card));
+            })
+            .Select(c => c.CardID)
+            .Distinct()
+            .ToList();
     }
 }
 

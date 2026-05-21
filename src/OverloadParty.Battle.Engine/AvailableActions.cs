@@ -422,15 +422,14 @@ public static class AvailableActions
     /// <returns>候補ごとに 1 件の ResolvePendingChoice アクション。</returns>
     private static List<AvailableAction> EnumerateResolvePendingChoiceActions(PendingReactiveChoice pending)
     {
+        // クライアントは選択時に候補 ID を ResolvePendingChoiceRequest.chosen_id として送る。
+        // ChoiceKind ごとに何の ID なのかが変わるため、UI が解釈しやすいよう別フィールドに載せる。
         return pending.Candidates
             .Select(id => new AvailableAction
             {
                 Type = ActionTypes.ResolvePendingChoice,
-                CardID = pending.ReactiveCardId,
                 SourceInstanceID = pending.ReactiveInstanceId,
-                // ChoiceKind に応じて手札 ID または対象 ID として伝える。
-                // クライアントは選択時にこれを ResolvePendingChoiceRequest.chosen_id として送る。
-                HandInstanceID = pending.ChoiceKind == ChoiceKinds.HandCard ? id : null,
+                CardID = pending.ChoiceKind == ChoiceKinds.HandCard ? id : pending.ReactiveCardId,
                 ValidTargets = pending.ChoiceKind == ChoiceKinds.FieldTarget ? [id] : null,
             })
             .ToList();

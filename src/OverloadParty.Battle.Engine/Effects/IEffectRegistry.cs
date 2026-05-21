@@ -60,6 +60,12 @@ public class EffectContext
 
     /// <summary>入れ子のトリガー発火に使うエフェクトレジストリ</summary>
     public required IEffectRegistry Effects { get; init; }
+
+    /// <summary>
+    /// 発動中のトリガー種別。EventTriggerFiring.Fire 経由の reactive ハンドラ実行時にのみ
+    /// セットされる。choice op が選択待ちを state に保存するときに使う。
+    /// </summary>
+    public TriggerType? Trigger { get; set; }
 }
 
 /// <summary>

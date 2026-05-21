@@ -96,7 +96,10 @@ public static class EventTriggerFiring
             if (reactive is not null && reactiveActivated) { continue; }
 
             var handler = effects.Get(candidate.CardId, trigger)!;
-            var result = handler(buildContext(candidate));
+            var effectCtx = buildContext(candidate);
+            // 発動中の trigger を ctx に注入する。choice op が選択待ちを state に保存するときに参照される。
+            effectCtx.Trigger = trigger;
+            var result = handler(effectCtx);
 
             // 発動条件を満たさなかったリアクティブは発動扱いにせず（消費しない）、次の候補へ。
             if (result.GuardFailed) { continue; }

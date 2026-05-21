@@ -40,13 +40,14 @@ public static class ResolvePendingChoiceProcessor
             ?? throw new InvalidOperationException(
                 $"Handler not found: {pending.ReactiveCardId} / {pending.Trigger}");
 
-        // resume context から source / target を解決
-        var source = pending.SourceInstanceId is not null
+        // resume context から source / target を解決。on_destroy のように対象がフィールドに
+        // 居ない場合は suspend 時のスナップショットにフォールバックする。
+        var source = (pending.SourceInstanceId is not null
             ? FindResourceInState(state, pending.SourceInstanceId)
-            : null;
-        var target = pending.TargetInstanceId is not null
+            : null) ?? pending.SourceSnapshot;
+        var target = (pending.TargetInstanceId is not null
             ? FindResourceInState(state, pending.TargetInstanceId)
-            : null;
+            : null) ?? pending.TargetSnapshot;
         CardDefinition? incidentCard = pending.IncidentCardId is not null
             ? cc.MustGet(pending.IncidentCardId)
             : null;
