@@ -181,6 +181,18 @@ internal static class ResourceRefResolver
             ?? throw new GameRuleException("Source is not an attachment with an equip host"),
         _ => throw new GameRuleException($"Unsupported resource reference: {refKind}"),
     };
+
+    /// <summary>指定参照のインスタンス ID を解決します。解決できないときは null を返します (述語向け)。</summary>
+    /// <param name="refKind">解決する参照の種別。</param>
+    /// <param name="ctx">効果実行コンテキスト。</param>
+    /// <returns>解決したインスタンス ID。解決できない場合は null。</returns>
+    public static string? TryResolve(ResourceRef refKind, EffectContext ctx) => refKind switch
+    {
+        ResourceRef.Source => ctx.Source?.InstanceID,
+        ResourceRef.Target => ctx.Target?.InstanceID,
+        ResourceRef.EquipHost => ctx.SupSource?.TargetInstanceID,
+        _ => null,
+    };
 }
 
 /// <summary>
