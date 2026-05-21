@@ -43,6 +43,7 @@ const (
 	ActionTypeForfeit = "forfeit"
 	ActionTypeSelectSlot = "select_slot"
 	ActionTypeReactive = "reactive"
+	ActionTypeResolvePendingChoice = "resolve_pending_choice"
 )
 
 // Event types.

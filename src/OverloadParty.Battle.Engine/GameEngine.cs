@@ -136,7 +136,11 @@ public class GameEngine
 
         await _repo.UpdateGameState(game.GameID, state =>
         {
-            if (state.ActivePlayer != playerNum)
+            // reactive 選択待ちの間は ActivePlayer 以外の chooser が解決アクションを送るため、
+            // ResolvePendingChoice は「自分のターン」チェックから除外して chooser 一致で判定する。
+            bool isChooserResolving = actionType == ActionType.ResolvePendingChoice
+                && state.PendingEffectChoice?.ChooserPlayerNum == playerNum;
+            if (!isChooserResolving && state.ActivePlayer != playerNum)
             {
                 throw new GameRuleException("not your turn");
             }
@@ -157,10 +161,22 @@ public class GameEngine
                 throw new GameRuleException("slot selection required");
             }
 
+            if (state.PendingEffectChoice is { } pendingChoice
+                && pendingChoice.ChooserPlayerNum == playerNum
+                && actionType != ActionType.ResolvePendingChoice)
+            {
+                throw new GameRuleException("reactive choice required");
+            }
+
             if (actionType == ActionType.SelectSlot)
             {
                 actionResult = SelectSlotProcessor.Process(
                     state, game, playerNum, (SelectSlotRequest)actionData, _cardCache);
+            }
+            else if (actionType == ActionType.ResolvePendingChoice)
+            {
+                actionResult = ResolvePendingChoiceProcessor.Process(
+                    state, game, playerNum, (ResolvePendingChoiceRequest)actionData, _cardCache, _effects);
             }
             else
             {

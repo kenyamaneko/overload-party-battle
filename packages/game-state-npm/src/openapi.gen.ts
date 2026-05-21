@@ -331,6 +331,22 @@ export interface components {
             oppView: components["schemas"]["OpponentView"];
             player1Summary: components["schemas"]["PlayerSummary"];
             player2Summary: components["schemas"]["PlayerSummary"];
+            /** @description 効果処理中にプレイヤー選択が必要な状態。null なら待ちなし。chooser は availableActions の候補から 1 件を選び resolve_pending_choice アクションで送信する。 */
+            pendingEffectChoice?: components["schemas"]["PendingEffectChoiceView"];
+        };
+        /** @description pendingEffectChoice の client 公開ビュー。 */
+        PendingEffectChoiceView: {
+            /**
+             * Format: int64
+             * @description 選択を行うプレイヤー番号
+             */
+            chooserPlayerNum: number;
+            /** @description 発動中の効果を持つカードの ID */
+            effectCardId: string;
+            /** @description 発動中の効果を持つカードのインスタンス ID */
+            effectInstanceId: string;
+            /** @description 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。 */
+            choiceKind: string;
         };
         /**
          * @description 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
@@ -528,7 +544,7 @@ export interface components {
          *     の実装を温存するため (oneOf による正規化は将来検討)。
          */
         AvailableAction: {
-            /** @description variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` のいずれか。 */
+            /** @description variant 種別。play_card / attack / scale_up / monetize / use_effect / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。 */
             type: string;
             handInstanceID?: string;
             cardID?: string;

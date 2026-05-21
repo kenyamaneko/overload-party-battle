@@ -96,7 +96,10 @@ public static class EventTriggerFiring
             if (reactive is not null && reactiveActivated) { continue; }
 
             var handler = effects.Get(candidate.CardId, trigger)!;
-            var result = handler(buildContext(candidate));
+            var effectCtx = buildContext(candidate);
+            // 発動中の trigger を ctx に注入する。choice op が選択待ちを state に保存するときに参照される。
+            effectCtx.Trigger = trigger;
+            var result = handler(effectCtx);
 
             // 発動条件を満たさなかったリアクティブは発動扱いにせず（消費しない）、次の候補へ。
             if (result.GuardFailed) { continue; }
@@ -107,6 +110,14 @@ public static class EventTriggerFiring
             {
                 reactiveActivated = true;
                 ReactiveCard.Consume(state, reactive, candidate.OwnerNum);
+            }
+
+            // choice op が ChoiceData 不足で suspend したら state に保存して後続を止める。
+            // 後続候補も同イベント契機なので、resume 後に必要であれば再走査する設計とする。
+            if (result.PendingChoice is not null)
+            {
+                state.PendingEffectChoice = result.PendingChoice;
+                break;
             }
 
             // アクションがキャンセルされたら、同じイベントを契機とする後続の効果は発火しない。

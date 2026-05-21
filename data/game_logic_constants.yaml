@@ -44,6 +44,7 @@ action_types:
 - forfeit
 - select_slot
 - reactive
+- resolve_pending_choice
 
 event_types:
 - play_card

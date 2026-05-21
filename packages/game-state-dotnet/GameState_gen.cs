@@ -85,6 +85,54 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("player2Summary")]
         public PlayerSummary Player2Summary { get; set; } = new PlayerSummary();
 
+        /// <summary>
+        /// 効果処理中にプレイヤー選択が必要な状態。null なら待ちなし。chooser は availableActions の候補から 1 件を選び resolve_pending_choice アクションで送信する。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("pendingEffectChoice")]
+        public PendingEffectChoiceView? PendingEffectChoice { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// pendingEffectChoice の client 公開ビュー。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PendingEffectChoiceView
+    {
+
+        /// <summary>
+        /// 選択を行うプレイヤー番号
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("chooserPlayerNum")]
+        public long ChooserPlayerNum { get; set; } = default!;
+
+        /// <summary>
+        /// 発動中の効果を持つカードの ID
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("effectCardId")]
+        public string EffectCardId { get; set; } = default!;
+
+        /// <summary>
+        /// 発動中の効果を持つカードのインスタンス ID
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("effectInstanceId")]
+        public string EffectInstanceId { get; set; } = default!;
+
+        /// <summary>
+        /// 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("choiceKind")]
+        public string ChoiceKind { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -602,8 +650,7 @@ namespace OverloadParty.GameState
     {
 
         /// <summary>
-        /// variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` のいずれか。
-        /// <br/>
+        /// variant 種別。play_card / attack / scale_up / monetize / use_effect / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("type")]
         public string Type { get; set; } = default!;

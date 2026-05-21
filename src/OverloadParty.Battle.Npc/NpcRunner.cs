@@ -67,6 +67,20 @@ public class NpcRunner
         var state = await _repo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} lost");
 
+        // 保留中の reactive choice は ActivePlayer ではなく chooser が解決するため、
+        // ActivePlayer の NPC 判定より先に chooser が NPC かを確認する。
+        if (state.PendingEffectChoice is { } pendingChoice)
+        {
+            var chooserAI = ResolveNpcAIForPlayer(game, pendingChoice.ChooserPlayerNum);
+            if (chooserAI is null)
+            {
+                // chooser が human の間は NPC 側に進められる手番がない。
+                return NpcAdvanceResult.Done();
+            }
+            return await ProcessOnePendingEffectChoice(
+                game, state, pendingChoice.ChooserPlayerNum, chooserAI, pendingChoice, ct);
+        }
+
         var npcAI = ResolveNpcAIForPlayer(game, state.ActivePlayer);
         if (npcAI is null)
         {
@@ -155,6 +169,25 @@ public class NpcRunner
             ?? throw new InvalidOperationException($"game {gameID} lost during NPC slot select");
 
         var result = await _engine.ProcessAction(game, npcPlayerNum, slotType, slotAction.Data, ct);
+        var pending = await IsNpcPending(game, result, ct);
+        return new NpcAdvanceResult(result.Events, result.GameOver, pending);
+    }
+
+    private async Task<NpcAdvanceResult> ProcessOnePendingEffectChoice(
+        Game game, BattleGameState state, long chooserPlayerNum, INpcStrategy chooserAI,
+        PendingEffectChoice pendingChoice, CancellationToken ct)
+    {
+        var gameID = game.GameID;
+        var choiceAction = chooserAI.DecidePendingEffectChoice(state, chooserPlayerNum, pendingChoice)
+            ?? throw new InvalidOperationException(
+                $"NPC failed to decide pending reactive choice (game={gameID})");
+
+        var actionType = EnumExtensions.ParseActionType(choiceAction.ActionType);
+
+        game = await _repo.GetGame(gameID, ct)
+            ?? throw new InvalidOperationException($"game {gameID} lost during NPC pending choice");
+
+        var result = await _engine.ProcessAction(game, chooserPlayerNum, actionType, choiceAction.Data, ct);
         var pending = await IsNpcPending(game, result, ct);
         return new NpcAdvanceResult(result.Events, result.GameOver, pending);
     }

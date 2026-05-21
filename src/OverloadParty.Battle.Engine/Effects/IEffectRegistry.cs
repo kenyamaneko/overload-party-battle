@@ -15,6 +15,9 @@ public class EffectResult
 
     /// <summary>ガード条件が不満足で効果が発動しなかった場合 true。</summary>
     public bool GuardFailed { get; set; }
+
+    /// <summary>選択待ち状態。choice op が ChoiceData 不足で suspend したとき設定される。</summary>
+    public PendingEffectChoice? PendingChoice { get; set; }
 }
 
 /// <summary>
@@ -57,6 +60,12 @@ public class EffectContext
 
     /// <summary>入れ子のトリガー発火に使うエフェクトレジストリ</summary>
     public required IEffectRegistry Effects { get; init; }
+
+    /// <summary>
+    /// 発動中のトリガー種別。EventTriggerFiring.Fire 経由の reactive ハンドラ実行時にのみ
+    /// セットされる。choice op が選択待ちを state に保存するときに使う。
+    /// </summary>
+    public TriggerType? Trigger { get; set; }
 }
 
 /// <summary>

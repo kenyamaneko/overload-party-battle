@@ -37,6 +37,8 @@ public static class EffectComposer
             foreach (var op in ops)
             {
                 op.Execute(octx);
+                // choice op が ChoiceData 不足を検知して PendingChoice を立てたら、以降の op は実行しない。
+                if (octx.Result.PendingChoice is not null) { break; }
             }
         }
         catch (GameRuleException)

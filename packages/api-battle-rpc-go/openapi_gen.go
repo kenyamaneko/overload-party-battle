@@ -82,7 +82,7 @@ type AvailableAction struct {
 	SourceInstanceID  *string   `json:"sourceInstanceID,omitempty"`
 	TargetRank        *string   `json:"targetRank,omitempty"`
 
-	// Type variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` のいずれか。
+	// Type variant 種別。play_card / attack / scale_up / monetize / use_effect / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
 	Type         string    `json:"type"`
 	ValidTargets *[]string `json:"validTargets,omitempty"`
 	ValidZones   *[]string `json:"validZones,omitempty"`
@@ -126,6 +126,9 @@ type ClientGameState struct {
 
 	// OppView 相手プレイヤー視点 (情報秘匿適用済み)。
 	OppView OpponentView `json:"oppView"`
+
+	// PendingEffectChoice pendingEffectChoice の client 公開ビュー。
+	PendingEffectChoice *PendingEffectChoiceView `json:"pendingEffectChoice,omitempty"`
 
 	// Player1Summary 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
 	// ClientGameState.player1Summary / player2Summary として client に pass-through される。
@@ -317,6 +320,21 @@ type OpponentView struct {
 	TimeBank    int64            `json:"timeBank"`
 	Trash       []UndeployedCard `json:"trash"`
 	TrashCount  int32            `json:"trashCount"`
+}
+
+// PendingEffectChoiceView pendingEffectChoice の client 公開ビュー。
+type PendingEffectChoiceView struct {
+	// ChoiceKind 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。
+	ChoiceKind string `json:"choiceKind"`
+
+	// ChooserPlayerNum 選択を行うプレイヤー番号
+	ChooserPlayerNum int64 `json:"chooserPlayerNum"`
+
+	// EffectCardId 発動中の効果を持つカードの ID
+	EffectCardId string `json:"effectCardId"`
+
+	// EffectInstanceId 発動中の効果を持つカードのインスタンス ID
+	EffectInstanceId string `json:"effectInstanceId"`
 }
 
 // PhaseChangeEventData defines model for PhaseChangeEventData.

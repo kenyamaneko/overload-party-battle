@@ -43,6 +43,7 @@ public static class ActionTypes
     public const string Forfeit = "forfeit";
     public const string SelectSlot = "select_slot";
     public const string Reactive = "reactive";
+    public const string ResolvePendingChoice = "resolve_pending_choice";
 }
 
 public static class EventTypes

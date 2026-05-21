@@ -99,15 +99,41 @@ public class CustomEffectRegistry
             throw new GameRuleException("No target");
         }
 
+        var targetCard = octx.CardCache.Get(octx.Target.CardID);
+        if (targetCard is null)
+        {
+            throw new GameRuleException("Target card not found");
+        }
+
         string? choiceCardId = octx.ChoiceData?.GetValueOrDefault("cardId")?.ToString();
         if (choiceCardId is null)
         {
-            throw new GameRuleException("No card chosen");
+            // reactive 経路のみ選択待ちに遷移する。
+            if (octx.SupSource is null)
+            {
+                throw new GameRuleException("No card chosen");
+            }
+            var candidates = octx.State.GetHand(octx.PlayerNum)
+                .Where(c =>
+                {
+                    var card = octx.CardCache.Get(c.CardID);
+                    return card is not null
+                        && card.CardType == targetCard.CardType
+                        && card.Subtype == targetCard.Subtype;
+                })
+                .Select(c => c.CardID)
+                .Distinct()
+                .ToList();
+            if (candidates.Count == 0)
+            {
+                throw new GameRuleException("No matching card in hand");
+            }
+            octx.SuspendForChoice("cardId", ChoiceKinds.HandCard, candidates, octx.PlayerNum);
+            return;
         }
 
-        var targetCard = octx.CardCache.Get(octx.Target.CardID);
         var choiceCard = octx.CardCache.Get(choiceCardId);
-        if (targetCard is null || choiceCard is null)
+        if (choiceCard is null)
         {
             throw new GameRuleException("Card not found");
         }
@@ -197,7 +223,22 @@ public class CustomEffectRegistry
         var instanceId = octx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
         if (instanceId is null)
         {
-            throw new GameRuleException("No redirect target chosen");
+            // 攻撃側 (= EventOwnerNum) が再ダメージ先を選ぶ。リアクティブの所有者ではない。
+            if (octx.SupSource is null || octx.EventOwnerNum is not { } chooserNum)
+            {
+                throw new GameRuleException("No redirect target chosen");
+            }
+            var candidates = octx.OpponentField.Frontend
+                .ToArray()
+                .Where(r => r is not null)
+                .Select(r => r!.InstanceID)
+                .ToList();
+            if (candidates.Count == 0)
+            {
+                throw new GameRuleException("No frontend resource to redirect to");
+            }
+            octx.SuspendForChoice("instanceId", ChoiceKinds.FieldTarget, candidates, chooserNum);
+            return;
         }
 
         var oppField = octx.OpponentField;

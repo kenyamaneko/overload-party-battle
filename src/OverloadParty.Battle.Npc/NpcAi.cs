@@ -221,6 +221,32 @@ public class NpcAi : INpcStrategy
         };
     }
 
+    /// <summary>
+    /// 保留中の reactive 選択への応答を決定します。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
+    /// <param name="pending">解決対象の選択待ち状態。</param>
+    /// <returns>解決アクション。候補が無い場合は null。</returns>
+    public NpcAction? DecidePendingEffectChoice(
+        BattleGameState state, long npcPlayerNum, PendingEffectChoice pending)
+    {
+        if (pending.ChooserPlayerNum != npcPlayerNum || pending.Candidates.Count == 0)
+        {
+            return null;
+        }
+
+        // baseline AI は先頭候補を deterministic に選ぶ。
+        return new NpcAction
+        {
+            ActionType = ActionTypes.ResolvePendingChoice,
+            Data = new ResolvePendingChoiceRequest
+            {
+                ChosenId = pending.Candidates[0],
+            },
+        };
+    }
+
     // ═══════════════════════════════════════════════════════════════
     //  Attack target selection
     // ═══════════════════════════════════════════════════════════════

@@ -87,7 +87,8 @@ public enum ActionType
     UseEffect,
     EndPhase,
     Forfeit,
-    SelectSlot
+    SelectSlot,
+    ResolvePendingChoice
 }
 
 /// <summary>
