@@ -198,22 +198,49 @@ public static class PriorityResolver
         {
             ConditionTypes.MinBudget => ctx.Budget >= cond.Value,
             ConditionTypes.MaxBudget => ctx.Budget <= cond.Value,
-            ConditionTypes.FactionCount => CountFactionOnField(ctx.Field, cond.Faction!, cc) >= cond.Value,
+            ConditionTypes.ResourceCount => CheckResourceCount(cond, ctx, cc),
             ConditionTypes.OpponentBackend => ctx.OppField.Backend.Any(r => r.FaceUp),
             var t => throw new InvalidOperationException($"Unknown effect condition type: '{t}'"),
         });
     }
 
-    private static int CountFactionOnField(Field field, string faction, ICardCache cc)
+    private static bool CheckResourceCount(EffectCondition cond, DecisionContext ctx, ICardCache cc)
+    {
+        int count = 0;
+        if (cond.Owner is "myself" or "both")
+        {
+            count += CountMatching(ctx.Field, cond, cc);
+        }
+        if (cond.Owner is "opponent" or "both")
+        {
+            count += CountMatching(ctx.OppField, cond, cc);
+        }
+        return (cond.Min is null || count >= cond.Min) && (cond.Max is null || count <= cond.Max);
+    }
+
+    private static int CountMatching(Field field, EffectCondition cond, ICardCache cc)
     {
         return FieldHelpers.AllFaceUpResources(field)
+            .Where(r => InZone(field, r, cond.Zone))
             .Count(r =>
             {
                 var card = cc.Get(r.CardID)
                     ?? throw new InvalidOperationException($"Card '{r.CardID}' not found in card cache");
-                return card.Faction == faction;
+                if (cond.Faction is not null && card.Faction != cond.Faction) { return false; }
+                if (cond.CardTypes is { Count: > 0 } && !cond.CardTypes.Contains(card.CardType)) { return false; }
+                if (cond.CardIds is { Count: > 0 } && !cond.CardIds.Contains(card.CardId)) { return false; }
+                return true;
             });
     }
+
+    private static bool InZone(Field field, DeployedResource resource, string? zone) =>
+        zone switch
+        {
+            null => true,
+            "frontend" => field.Frontend.Any(r => r?.InstanceID == resource.InstanceID),
+            "backend" => field.Backend.Any(r => r?.InstanceID == resource.InstanceID),
+            _ => throw new InvalidOperationException($"Unknown zone filter: '{zone}'"),
+        };
 
     /// <summary>
     /// Target selection based on config TargetSpec definitions.

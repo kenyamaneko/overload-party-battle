@@ -186,15 +186,39 @@ public class EffectClassifierTests
     }
 
     [Fact]
-    public void Classify_RequireFactionCount_AddsCondition()
+    public void Classify_ResourceCountGuard_AddsCondition()
     {
-        var ops = new IEffectOp[] { new RequireFactionCountOp("SHE", 3) };
+        var ops = new IEffectOp[]
+        {
+            new ResourceCountGuardOp(
+                owner: "myself", zone: null, faction: "SHE",
+                cardTypes: null, cardIds: null, min: 3, max: null),
+        };
         var info = EffectClassifier.ClassifyOps(ops);
 
         info.Conditions.Should().ContainSingle();
-        info.Conditions[0].Type.Should().Be("faction_count");
-        info.Conditions[0].Value.Should().Be(3);
+        info.Conditions[0].Type.Should().Be("resource_count");
+        info.Conditions[0].Owner.Should().Be("myself");
         info.Conditions[0].Faction.Should().Be("SHE");
+        info.Conditions[0].Min.Should().Be(3);
+        info.Conditions[0].Max.Should().BeNull();
+    }
+
+    [Fact]
+    public void Classify_ResourceCountGuard_MaxOnly_PreservesShape()
+    {
+        var ops = new IEffectOp[]
+        {
+            new ResourceCountGuardOp(
+                owner: "myself", zone: null, faction: "Tuners",
+                cardTypes: null, cardIds: null, min: null, max: 3),
+        };
+        var info = EffectClassifier.ClassifyOps(ops);
+
+        info.Conditions.Should().ContainSingle();
+        info.Conditions[0].Type.Should().Be("resource_count");
+        info.Conditions[0].Min.Should().BeNull();
+        info.Conditions[0].Max.Should().Be(3);
     }
 
     // ─── Branching ────────────────────────────────────────────

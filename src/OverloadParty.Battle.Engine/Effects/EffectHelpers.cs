@@ -10,24 +10,6 @@ public static class EffectHelpers
     // --- Field Scanning ---
 
     /// <summary>
-    /// Counts face-up resources and active supports of the given faction on a field.
-    /// </summary>
-    /// <param name="field">The field to scan.</param>
-    /// <param name="faction">Faction to match.</param>
-    /// <param name="cc">Card cache for definition lookups.</param>
-    /// <returns>Total count of matching resources and supports.</returns>
-    public static int CountFactionCards(Field field, string faction, ICardCache cc)
-    {
-        var resourceCount = FieldHelpers.AllFaceUpResources(field)
-            .Count(r => cc.Get(r.CardID)?.Faction == faction);
-
-        var supportCount = field.Support
-            .Count(s => s.DeployingTurnsLeft <= 0 && cc.Get(s.CardID)?.Faction == faction);
-
-        return resourceCount + supportCount;
-    }
-
-    /// <summary>
     /// Counts the number of resources in the opponent's backend zone.
     /// </summary>
     /// <param name="state">Current game state.</param>

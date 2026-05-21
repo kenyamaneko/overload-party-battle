@@ -47,14 +47,34 @@ public enum EffectTargetType
 /// </summary>
 public class EffectCondition
 {
-    /// <summary>Condition type identifier (e.g. "min_budget", "faction_count").</summary>
+    /// <summary>Condition type identifier (see <see cref="ConditionTypes"/>).</summary>
     public string Type { get; init; } = "";
 
-    /// <summary>Numeric threshold for the condition.</summary>
+    /// <summary>Numeric threshold for budget conditions (min_budget / max_budget).</summary>
     public long Value { get; init; }
 
-    /// <summary>Faction required by the condition, if applicable.</summary>
+    // ─── resource_count 条件用 (ResourceCountGuardOp の filter shape を運ぶ) ──
+
+    /// <summary>Owner filter for resource_count condition ("myself" / "opponent" / "both").</summary>
+    public string? Owner { get; init; }
+
+    /// <summary>Zone filter for resource_count condition (frontend / backend / support).</summary>
+    public string? Zone { get; init; }
+
+    /// <summary>Faction filter for resource_count condition.</summary>
     public string? Faction { get; init; }
+
+    /// <summary>Card type filter for resource_count condition.</summary>
+    public IReadOnlyList<string>? CardTypes { get; init; }
+
+    /// <summary>Card ID filter for resource_count condition.</summary>
+    public IReadOnlyList<string>? CardIds { get; init; }
+
+    /// <summary>Minimum count for resource_count condition.</summary>
+    public int? Min { get; init; }
+
+    /// <summary>Maximum count for resource_count condition.</summary>
+    public int? Max { get; init; }
 }
 
 /// <summary>
@@ -215,8 +235,18 @@ public static class EffectClassifier
             case RequireMaxBudgetOp rmb:
                 info.Conditions.Add(new EffectCondition { Type = ConditionTypes.MaxBudget, Value = rmb.Max });
                 break;
-            case RequireFactionCountOp rfc:
-                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.FactionCount, Value = rfc.Min, Faction = rfc.Faction });
+            case ResourceCountGuardOp rcg:
+                info.Conditions.Add(new EffectCondition
+                {
+                    Type = ConditionTypes.ResourceCount,
+                    Owner = rcg.Owner,
+                    Zone = rcg.Zone,
+                    Faction = rcg.Faction,
+                    CardTypes = rcg.CardTypes,
+                    CardIds = rcg.CardIds,
+                    Min = rcg.Min,
+                    Max = rcg.Max,
+                });
                 break;
             case RequireOpponentBackendOp:
                 info.Conditions.Add(new EffectCondition { Type = ConditionTypes.OpponentBackend });

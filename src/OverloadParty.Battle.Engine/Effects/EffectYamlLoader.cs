@@ -591,23 +591,6 @@ public static class EffectYamlLoader
         var selectorElement = element.GetProperty("selector");
         int? min = element.GetInt32OrNull("min");
         int? max = element.GetInt32OrNull("max");
-
-        // 「自分の陣営 N 体以上」型の guard は汎用 ResourceCountGuardOp ではなく RequireFactionCountOp に
-        // 変換する。EffectClassifier が NPC AI 向けに「必要陣営 / 必要枚数」をこの op の形で読み取るため。
-        if (min.HasValue && max is null && selectorElement.ValueKind == JsonValueKind.Object)
-        {
-            string? owner = selectorElement.GetStringOrNull("owner");
-            string? faction = selectorElement.GetStringOrNull("faction");
-            bool hasZone = selectorElement.HasProperty("zone");
-            bool hasCardType = selectorElement.HasProperty("card_type");
-            bool hasCardId = selectorElement.HasProperty("card_id");
-
-            if (owner == PlayerRefs.Myself && faction is not null && !hasZone && !hasCardType && !hasCardId)
-            {
-                return new RequireFactionCountOp(faction, min.Value);
-            }
-        }
-
         return BuildResourceCountGuard(selectorElement, min, max);
     }
 
