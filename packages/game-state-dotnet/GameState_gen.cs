@@ -223,6 +223,42 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("availableActions")]
         public System.Collections.Generic.List<AvailableAction> AvailableActions { get; set; } = default!;
 
+        /// <summary>
+        /// 効果由来のスロット選択待ち。null なら待ちなし。MyView 視点のプレイヤー番号が選択対象のときだけ値を持つ。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("pendingSlotSelect")]
+        public PendingSlotSelectView? PendingSlotSelect { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// 効果からのリソースデプロイを待っているスロット選択の client 公開ビュー。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PendingSlotSelectView
+    {
+
+        /// <summary>
+        /// 配置待ちのリソース。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("resource")]
+        public DeployedResource Resource { get; set; } = new DeployedResource();
+
+        /// <summary>
+        /// 配置可能なゾーンとスロット ("frontend_0" 等)。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("validZones")]
+        public System.Collections.Generic.List<string> ValidZones { get; set; } = new System.Collections.Generic.List<string>();
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]

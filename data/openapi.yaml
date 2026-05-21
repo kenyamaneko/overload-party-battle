@@ -580,6 +580,25 @@ components:
           description: 実行可能アクション一覧 (アクティブプレイヤーのみ)。
           items:
             $ref: "#/components/schemas/AvailableAction"
+        pendingSlotSelect:
+          $ref: "#/components/schemas/PendingSlotSelectView"
+          nullable: true
+          description: 効果由来のスロット選択待ち。null なら待ちなし。MyView 視点のプレイヤー番号が選択対象のときだけ値を持つ。
+
+    PendingSlotSelectView:
+      type: object
+      description: 効果からのリソースデプロイを待っているスロット選択の client 公開ビュー。
+      x-battle-csharp-package: state
+      required: [resource, validZones]
+      properties:
+        resource:
+          $ref: "#/components/schemas/DeployedResource"
+          description: 配置待ちのリソース。
+        validZones:
+          type: array
+          description: 配置可能なゾーンとスロット ("frontend_0" 等)。
+          items:
+            type: string
 
     OpponentView:
       type: object

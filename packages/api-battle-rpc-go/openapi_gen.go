@@ -337,6 +337,15 @@ type PendingEffectChoiceView struct {
 	EffectInstanceId string `json:"effectInstanceId"`
 }
 
+// PendingSlotSelectView 効果からのリソースデプロイを待っているスロット選択の client 公開ビュー。
+type PendingSlotSelectView struct {
+	// Resource フィールドに展開済みのリソースカードインスタンス。
+	Resource DeployedResource `json:"resource"`
+
+	// ValidZones 配置可能なゾーンとスロット ("frontend_0" 等)。
+	ValidZones []string `json:"validZones"`
+}
+
 // PhaseChangeEventData defines model for PhaseChangeEventData.
 type PhaseChangeEventData struct {
 	CurrentPhase  string `json:"currentPhase"`
@@ -389,7 +398,10 @@ type PlayerView struct {
 	Field       Field            `json:"field"`
 	Hand        []UndeployedCard `json:"hand"`
 	InsightPool int64            `json:"insightPool"`
-	PlayerNum   int64            `json:"playerNum"`
+
+	// PendingSlotSelect 効果からのリソースデプロイを待っているスロット選択の client 公開ビュー。
+	PendingSlotSelect *PendingSlotSelectView `json:"pendingSlotSelect,omitempty"`
+	PlayerNum         int64                  `json:"playerNum"`
 
 	// RepoCount リポジトリ残り枚数
 	RepoCount int32 `json:"repoCount"`
