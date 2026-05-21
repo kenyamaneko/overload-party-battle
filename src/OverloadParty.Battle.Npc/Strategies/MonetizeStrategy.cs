@@ -1,11 +1,12 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc.Strategies;
 
 /// <summary>
-/// Monetize (Insight 配分) の判断。
+/// 収益化 (Insight 配分) の判断。
 /// reserve_ratio 分を残して、優先順位の高い出口から埋めていく。
 /// </summary>
 internal sealed class MonetizeStrategy
@@ -22,11 +23,7 @@ internal sealed class MonetizeStrategy
     /// <summary>
     /// 収益化アクション列を決定します。
     /// </summary>
-    /// <param name="ctx">意思決定コンテキスト。</param>
-    /// <param name="available">エンジンが事前計算した実行可能アクション一覧。</param>
-    /// <param name="insightPool">自分のインサイトプールの残量。</param>
-    /// <returns>収益化アクション列。</returns>
-    public List<NpcAction> Decide(DecisionContext ctx, List<AvailableAction> available, long insightPool)
+    public List<NpcAction> Decide(DecisionContext ctx, List<GD.AvailableAction> available, long insightPool)
     {
         var yieldActions = ActionFilter.FilterByType(available, ActionTypes.Monetize);
         if (yieldActions.Count == 0)

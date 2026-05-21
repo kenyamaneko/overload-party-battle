@@ -4,12 +4,15 @@ using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
+using OverloadParty.Battle.Service;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Tests.Npc;
 
 /// <summary>
 /// Integration tests that load real YAML configs + real card data
 /// and verify NPC AI produces actions consistent with config.
+/// NPC は本番同様 GameStateView 経由で生成した情報秘匿済み ClientGameState を消費する。
 /// </summary>
 public class NpcAiIntegrationTests
 {
@@ -93,7 +96,7 @@ public class NpcAiIntegrationTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Main phase: deploy follows config priorities
+    //  メインフェーズ: デプロイ優先度に従う
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -103,7 +106,6 @@ public class NpcAiIntegrationTests
         var ai = new NpcAi(config, _cc, _effects);
 
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        // SH-0001 = Compute, SH-0007 = Database (both SHE cards)
         state.Player1Hand =
         [
             new() { InstanceID = "h_db", CardID = "SH-0007" },
@@ -111,16 +113,14 @@ public class NpcAiIntegrationTests
         ];
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideMainPhaseActions(state, game, 1, available);
+        var actions = ai.DecideMainPhaseActions(clientState);
 
         var deploys = actions
             .Where(a => a.ActionType == ActionTypes.PlayCard)
             .ToList();
 
-        // At minimum compute should be deployed; if both deployed, compute first
         deploys.Should().NotBeEmpty();
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_compute");
     }
@@ -128,7 +128,6 @@ public class NpcAiIntegrationTests
     [Fact]
     public void MainPhase_DeployChoice_UsesConfigValue()
     {
-        // SHE-easy config: SH-0006 choice = "use"
         var config = _configs["SHE-easy"];
         var ai = new NpcAi(config, _cc, _effects);
 
@@ -139,10 +138,9 @@ public class NpcAiIntegrationTests
         ];
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideMainPhaseActions(state, game, 1, available);
+        var actions = ai.DecideMainPhaseActions(clientState);
 
         var deploy = actions.FirstOrDefault(a =>
             a.ActionType == ActionTypes.PlayCard &&
@@ -158,7 +156,7 @@ public class NpcAiIntegrationTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Main phase: deploy zone preferences
+    //  メインフェーズ: デプロイ ZonePreferences
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -174,10 +172,9 @@ public class NpcAiIntegrationTests
         ];
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideMainPhaseActions(state, game, 1, available);
+        var actions = ai.DecideMainPhaseActions(clientState);
         var deploy = actions.FirstOrDefault(a =>
             a.ActionType == ActionTypes.PlayCard &&
             ((PlayCardRequest)a.Data).CardInstanceID == "h_compute");
@@ -188,7 +185,7 @@ public class NpcAiIntegrationTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Main phase: scale up uses config instance family
+    //  メインフェーズ: スケールアップは config のインスタンスファミリーを使う
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -202,10 +199,9 @@ public class NpcAiIntegrationTests
             cardId: "SH-0001", instanceId: "fe_1", rank: Rank.Small);
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideMainPhaseActions(state, game, 1, available);
+        var actions = ai.DecideMainPhaseActions(clientState);
 
         var scaleUp = actions.FirstOrDefault(a => a.ActionType == ActionTypes.ScaleUp);
         if (scaleUp is not null)
@@ -229,10 +225,9 @@ public class NpcAiIntegrationTests
             cardId: "SH-0001", instanceId: "fe_1", rank: Rank.Small);
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideMainPhaseActions(state, game, 1, available);
+        var actions = ai.DecideMainPhaseActions(clientState);
 
         var scaleUp = actions.FirstOrDefault(a => a.ActionType == ActionTypes.ScaleUp);
         if (scaleUp is not null)
@@ -246,7 +241,7 @@ public class NpcAiIntegrationTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Battle phase: target selection follows config
+    //  バトルフェーズ: ターゲット選択は config に従う
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -263,10 +258,9 @@ public class NpcAiIntegrationTests
         state.Player2Field.Frontend[1] = TestFactory.MakeResource(
             instanceId: "weak", maxAV: 400, currentAV: 400);
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideBattlePhaseActions(state, game, 1, available);
+        var actions = ai.DecideBattlePhaseActions(clientState);
 
         var attack = actions.FirstOrDefault(a => a.ActionType == ActionTypes.Attack);
         attack.Should().NotBeNull();
@@ -279,7 +273,6 @@ public class NpcAiIntegrationTests
         var config = _configs["SHE-hard"];
         var ai = new NpcAi(config, _cc, _effects);
 
-        // Late game: turn 8, 3+ own resources → game_phases.late activates
         var state = TestFactory.MakeGameState(turn: 8, phase: Phase.Battle);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(
             cardId: "SH-0001", instanceId: "atk1");
@@ -293,10 +286,9 @@ public class NpcAiIntegrationTests
         state.Player2Field.Frontend[1] = TestFactory.MakeResource(
             cardId: "SH-0001", instanceId: "high_tp", currentTP: 900, maxAV: 400, currentAV: 400);
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideBattlePhaseActions(state, game, 1, available);
+        var actions = ai.DecideBattlePhaseActions(clientState);
 
         var attack = actions.FirstOrDefault(a => a.ActionType == ActionTypes.Attack);
         attack.Should().NotBeNull();
@@ -304,7 +296,7 @@ public class NpcAiIntegrationTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Tenki hard: conditional deploy priority
+    //  Tenki hard: 条件付きデプロイ優先度
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -314,21 +306,19 @@ public class NpcAiIntegrationTests
         var ai = new NpcAi(config, _cc, _effects);
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        // TK-0010 already on field → conditional priority for TK-0005 = 90
         state.Player1Field.Backend[0] = TestFactory.MakeResource(
             cardId: "TK-0010", instanceId: "cosmo_1",
             maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
         state.Player1Hand =
         [
-            new() { InstanceID = "h_tk1", CardID = "TK-0001" },  // compute, priority 50
-            new() { InstanceID = "h_tk5", CardID = "TK-0005" },  // conditional 90
+            new() { InstanceID = "h_tk1", CardID = "TK-0001" },
+            new() { InstanceID = "h_tk5", CardID = "TK-0005" },
         ];
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideMainPhaseActions(state, game, 1, available);
+        var actions = ai.DecideMainPhaseActions(clientState);
 
         var deploys = actions
             .Where(a => a.ActionType == ActionTypes.PlayCard)
@@ -339,7 +329,7 @@ public class NpcAiIntegrationTests
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Discard: cheapest maintenance
+    //  手札調整: 維持コスト最小から捨てる
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -349,7 +339,6 @@ public class NpcAiIntegrationTests
         var ai = new NpcAi(config, _cc, _effects);
 
         var state = TestFactory.MakeGameState(phase: Phase.End);
-        // Hand limit + 1 → must discard 1
         var hand = new List<UndeployedCard>();
         for (int i = 0; i < BattleConstants.HandLimit; i++)
         {
@@ -358,15 +347,16 @@ public class NpcAiIntegrationTests
         hand.Add(new UndeployedCard { InstanceID = "extra", CardID = "SH-0001" });
         state.Player1Hand = hand;
 
-        var discards = ai.DecideDiscard(state, 1, 1);
+        var clientState = BuildClientState(state, 1);
+
+        var discards = ai.DecideDiscard(clientState, 1);
 
         discards.Should().HaveCount(1);
-        // Discards lowest keep-priority card
         hand.Select(h => h.InstanceID).Should().Contain(discards[0]);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Main phase always ends with EndPhase
+    //  メインフェーズは常に EndPhase で終わる
     // ═══════════════════════════════════════════════════════════════
 
     [Theory]
@@ -382,10 +372,9 @@ public class NpcAiIntegrationTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideMainPhaseActions(state, game, 1, available);
+        var actions = ai.DecideMainPhaseActions(clientState);
 
         actions.Should().NotBeEmpty();
         actions.Last().ActionType.Should().Be(ActionTypes.EndPhase);
@@ -402,23 +391,21 @@ public class NpcAiIntegrationTests
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideBattlePhaseActions(state, game, 1, available);
+        var actions = ai.DecideBattlePhaseActions(clientState);
 
         actions.Should().NotBeEmpty();
         actions.Last().ActionType.Should().Be(ActionTypes.EndPhase);
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Monetize: reserve ratio
+    //  収益化: reserve ratio
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
     public void MainPhase_HardConfig_ReservesInsightPool()
     {
-        // SHE-hard has reserve_ratio: 0.2
         var config = _configs["SHE-hard"];
         var ai = new NpcAi(config, _cc, _effects);
 
@@ -429,34 +416,26 @@ public class NpcAiIntegrationTests
             currentTP: 600, maxTP: 600);
         state.Player1Budget = 5000;
 
-        var available = BuildAvailable(state, 1);
-        var game = TestFactory.MakeGame();
+        var clientState = BuildClientState(state, 1);
 
-        var actions = ai.DecideMainPhaseActions(state, game, 1, available);
+        var actions = ai.DecideMainPhaseActions(clientState);
 
         var monetize = actions.FirstOrDefault(a => a.ActionType == ActionTypes.Monetize);
         if (monetize is not null)
         {
             var dists = ((MonetizeRequest)monetize.Data).Distributions;
             var totalDistributed = dists.Sum(d => d.Amount);
-            // With reserve_ratio 0.2, should distribute at most 800 of 1000
             totalDistributed.Should().BeLessThanOrEqualTo(800);
         }
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Helpers
+    //  ヘルパー
     // ═══════════════════════════════════════════════════════════════
 
-    private List<AvailableAction> BuildAvailable(BattleGameState state, long playerNum)
+    private GD.ClientGameState BuildClientState(BattleGameState state, long playerNum)
     {
-        var myField = state.GetField(playerNum);
-        var oppField = state.GetField(state.OpponentOf(playerNum));
-        var hand = state.GetHand(playerNum);
-        var budget = state.GetBudget(playerNum);
-        var insightPool = state.GetInsightPool(playerNum);
-        return AvailableActions.GetAllAvailableActions(
-            state, myField, oppField, hand, budget, insightPool, _cc, _effects);
+        var game = TestFactory.MakeGame();
+        return GameStateView.Build(state, game, playerNum, _cc, _effects);
     }
-
 }

@@ -2,13 +2,14 @@ using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc.Strategies;
 
 /// <summary>
-/// Strategy / Incident など "即時効果" カードの使用判断。
+/// ストラテジー / インシデント など即時効果カードの使用判断。
 /// hold_until / use_conditions / PriorityResolver で use=true となったものだけを
-/// support ゾーンに配置する。
+/// サポートゾーンに配置する。
 /// </summary>
 internal sealed class ImmediateActionStrategy
 {
@@ -24,14 +25,9 @@ internal sealed class ImmediateActionStrategy
     /// <summary>
     /// 即時効果カードの使用アクション列を決定します。
     /// </summary>
-    /// <param name="ctx">意思決定コンテキスト。</param>
-    /// <param name="playActions">PlayCard 系のアクション一覧。</param>
-    /// <param name="usedZones">既に使用済みのゾーン集合。決定時に追記される。</param>
-    /// <param name="activeConfig">現在の状況で有効な AI 設定。</param>
-    /// <returns>使用アクション列。</returns>
     public List<NpcAction> Decide(
         DecisionContext ctx,
-        List<AvailableAction> playActions,
+        List<GD.AvailableAction> playActions,
         HashSet<string> usedZones,
         AiConfig activeConfig)
     {

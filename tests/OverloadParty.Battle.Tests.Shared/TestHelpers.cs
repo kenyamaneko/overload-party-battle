@@ -265,6 +265,163 @@ public static class TestFactory
         return new Field();
     }
 
+    // ─── Wire (ClientGameState) ビルダー ──────────────────────
+
+    /// <summary>
+    /// 自フィールドの空の wire ビューを生成します (各ゾーン 3 スロット, 全て null)。
+    /// </summary>
+    public static OverloadParty.GameState.Field MakeWireField()
+    {
+        return new OverloadParty.GameState.Field
+        {
+            Frontend = new List<OverloadParty.GameState.DeployedResource?> { null, null, null },
+            Backend = new List<OverloadParty.GameState.DeployedResource?> { null, null, null },
+            Support = new List<OverloadParty.GameState.DeployedSupport?> { null, null, null },
+        };
+    }
+
+    /// <summary>
+    /// 相手フィールドの空の wire ビューを生成します (情報秘匿済み)。
+    /// </summary>
+    public static OverloadParty.GameState.OpponentField MakeWireOpponentField()
+    {
+        return new OverloadParty.GameState.OpponentField
+        {
+            Frontend = new List<OverloadParty.GameState.DeployedResource?> { null, null, null },
+            Backend = new List<OverloadParty.GameState.DeployedResource?> { null, null, null },
+            Support = new List<OverloadParty.GameState.HiddenDeployedSupport?> { null, null, null },
+        };
+    }
+
+    /// <summary>
+    /// wire リソースを生成します。
+    /// </summary>
+    public static OverloadParty.GameState.DeployedResource MakeWireResource(
+        string cardId = "TST-0001",
+        string instanceId = "inst_1",
+        bool faceUp = true,
+        long deployLeft = 0,
+        long maxAV = 1400,
+        long currentAV = 1400,
+        long? maxTP = 600,
+        long? currentTP = 600,
+        long? maxYield = null,
+        long? currentYield = null,
+        long damage = 0,
+        long elasticBonus = 0)
+    {
+        return new OverloadParty.GameState.DeployedResource
+        {
+            CardID = cardId,
+            InstanceID = instanceId,
+            FaceUp = faceUp,
+            DeployingTurnsLeft = deployLeft,
+            MaxAV = maxAV,
+            CurrentAV = currentAV,
+            MaxTP = maxTP,
+            CurrentTP = currentTP,
+            MaxYield = maxYield,
+            CurrentYield = currentYield,
+            Damage = damage,
+            ElasticBonus = elasticBonus,
+        };
+    }
+
+    /// <summary>
+    /// 自フィールド向け wire サポートを生成します。
+    /// </summary>
+    public static OverloadParty.GameState.DeployedSupport MakeWireSupport(
+        string instanceId,
+        string cardId = "TST-0200",
+        bool faceUp = true,
+        string? targetInstanceId = null)
+    {
+        return new OverloadParty.GameState.DeployedSupport
+        {
+            InstanceID = instanceId,
+            CardID = cardId,
+            FaceUp = faceUp,
+            TargetInstanceID = targetInstanceId,
+        };
+    }
+
+    /// <summary>
+    /// 相手フィールド向け wire サポート (情報秘匿) を生成します。
+    /// </summary>
+    public static OverloadParty.GameState.HiddenDeployedSupport MakeHiddenSupport(
+        string instanceId,
+        string? cardId = null,
+        bool faceDown = true,
+        bool peeked = false)
+    {
+        return new OverloadParty.GameState.HiddenDeployedSupport
+        {
+            InstanceID = instanceId,
+            CardID = cardId,
+            FaceDown = faceDown,
+            Peeked = peeked,
+        };
+    }
+
+    /// <summary>
+    /// 手札用 wire カードを生成します。
+    /// </summary>
+    public static OverloadParty.GameState.UndeployedCard MakeWireUndeployed(
+        string cardId = "TST-0001", string instanceId = "h_1") =>
+        new() { CardID = cardId, InstanceID = instanceId };
+
+    /// <summary>
+    /// 最小の ClientGameState を組み立てます (NPC テスト用)。
+    /// </summary>
+    public static OverloadParty.GameState.ClientGameState MakeClientState(
+        OverloadParty.GameState.Field? myField = null,
+        OverloadParty.GameState.OpponentField? oppField = null,
+        List<OverloadParty.GameState.UndeployedCard>? myHand = null,
+        long myBudget = 5000,
+        long myInsightPool = 0,
+        long oppBudget = 5000,
+        long turn = 1,
+        string phase = "main",
+        long myPlayerNum = 1,
+        long oppPlayerNum = 2,
+        long activePlayer = 1,
+        List<OverloadParty.GameState.AvailableAction>? availableActions = null,
+        OverloadParty.GameState.PendingSlotSelectView? pendingSlotSelect = null,
+        OverloadParty.GameState.PendingEffectChoiceView? pendingEffectChoice = null)
+    {
+        return new OverloadParty.GameState.ClientGameState
+        {
+            GameID = "test-game",
+            CurrentTurn = turn,
+            CurrentPhase = phase,
+            ActivePlayer = activePlayer,
+            IsMyTurn = activePlayer == myPlayerNum,
+            TurnStartedAt = DateTimeOffset.UtcNow,
+            MyView = new OverloadParty.GameState.PlayerView
+            {
+                PlayerNum = myPlayerNum,
+                Budget = myBudget,
+                InsightPool = myInsightPool,
+                TimeBank = 480,
+                Field = myField ?? MakeWireField(),
+                Hand = myHand ?? new List<OverloadParty.GameState.UndeployedCard>(),
+                Trash = new List<OverloadParty.GameState.UndeployedCard>(),
+                AvailableActions = availableActions,
+                PendingSlotSelect = pendingSlotSelect,
+            },
+            OppView = new OverloadParty.GameState.OpponentView
+            {
+                PlayerNum = oppPlayerNum,
+                Budget = oppBudget,
+                Field = oppField ?? MakeWireOpponentField(),
+                Trash = new List<OverloadParty.GameState.UndeployedCard>(),
+            },
+            Player1Summary = new OverloadParty.GameState.PlayerSummary { Name = "p1" },
+            Player2Summary = new OverloadParty.GameState.PlayerSummary { Name = "p2" },
+            PendingEffectChoice = pendingEffectChoice,
+        };
+    }
+
     // ─── BattleGameState Builder ────────────────────────────────────
 
     /// <summary>

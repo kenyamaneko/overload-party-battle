@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Engine;
-using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Tests.Npc;
 
@@ -36,7 +36,6 @@ public class ActionFilterTests
     [Fact]
     public void ParseZoneStr_MultipleUnderscores_UsesLastSegment()
     {
-        // "some_zone_3" → Zone="some_zone", Index=3
         var result = ActionFilter.ParseZoneStr("some_zone_3");
 
         result.Should().NotBeNull();
@@ -49,7 +48,7 @@ public class ActionFilterTests
     [Fact]
     public void FilterByType_ReturnsOnlyMatchingActions()
     {
-        var actions = new List<AvailableAction>
+        var actions = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.PlayCard, HandInstanceID = "h1" },
             new() { Type = ActionTypes.Attack, SourceInstanceID = "a1" },
@@ -66,7 +65,7 @@ public class ActionFilterTests
     [Fact]
     public void FilterByType_NoMatches_ReturnsEmptyList()
     {
-        var actions = new List<AvailableAction>
+        var actions = new List<GD.AvailableAction>
         {
             new() { Type = ActionTypes.Attack },
         };
@@ -190,8 +189,8 @@ public class ActionFilterTests
     [Fact]
     public void ResolveCardIdForInstance_FindsResourceInFrontend()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_42");
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "inst_42");
 
         ActionFilter.ResolveCardIdForInstance("inst_42", field).Should().Be("TST-0001");
     }
@@ -199,8 +198,8 @@ public class ActionFilterTests
     [Fact]
     public void ResolveCardIdForInstance_FindsDeployedSupport()
     {
-        var field = TestFactory.MakeField();
-        field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0002" };
+        var field = TestFactory.MakeWireField();
+        field.Support[0] = TestFactory.MakeWireSupport(instanceId: "sup_1", cardId: "TST-0002");
 
         ActionFilter.ResolveCardIdForInstance("sup_1", field).Should().Be("TST-0002");
     }
@@ -208,7 +207,7 @@ public class ActionFilterTests
     [Fact]
     public void ResolveCardIdForInstance_NotFound_Throws()
     {
-        var field = TestFactory.MakeField();
+        var field = TestFactory.MakeWireField();
         var act = () => ActionFilter.ResolveCardIdForInstance("missing", field);
         act.Should().Throw<InvalidOperationException>();
     }

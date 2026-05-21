@@ -3,6 +3,7 @@ using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc.Strategies;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc;
 
@@ -38,21 +39,16 @@ public class NpcAi : INpcStrategy
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Main Phase
+    //  メインフェーズ
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
     /// メインフェーズで実行するアクション列を決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="game">対象ゲーム。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
-    /// <param name="available">エンジンが事前計算した実行可能アクション一覧。</param>
-    /// <returns>NPC が試行するアクション列。</returns>
-    public List<NpcAction> DecideMainPhaseActions(
-        BattleGameState state, Game game, long npcPlayerNum, List<AvailableAction> available)
+    public List<NpcAction> DecideMainPhaseActions(GD.ClientGameState clientState)
     {
-        var ctx = BuildContext(state, npcPlayerNum);
+        var ctx = BuildContext(clientState);
+        var available = clientState.MyView.AvailableActions ?? new List<GD.AvailableAction>();
         var activeConfig = ResolveActiveConfig(ctx);
         var playActions = ActionFilter.FilterByType(available, ActionTypes.PlayCard);
         var usedZones = new HashSet<string>();
@@ -71,7 +67,7 @@ public class NpcAi : INpcStrategy
         actions.AddRange(_ignition.Decide(ctx, available, activeConfig));
         actions.AddRange(_scaleUp.Decide(ctx, available));
 
-        var insightPool = state.GetInsightPool(npcPlayerNum);
+        var insightPool = clientState.MyView.InsightPool;
         if (insightPool > 0)
         {
             actions.AddRange(_monetize.Decide(ctx, available, insightPool));
@@ -82,22 +78,17 @@ public class NpcAi : INpcStrategy
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Battle Phase
+    //  バトルフェーズ
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
     /// バトルフェーズで実行するアクション列を決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="game">対象ゲーム。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
-    /// <param name="available">エンジンが事前計算した実行可能アクション一覧。</param>
-    /// <returns>NPC が試行するアクション列。</returns>
-    public List<NpcAction> DecideBattlePhaseActions(
-        BattleGameState state, Game game, long npcPlayerNum, List<AvailableAction> available)
+    public List<NpcAction> DecideBattlePhaseActions(GD.ClientGameState clientState)
     {
-        var selfField = state.GetField(npcPlayerNum);
-        var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
+        var available = clientState.MyView.AvailableActions ?? new List<GD.AvailableAction>();
+        var selfField = clientState.MyView.Field;
+        var oppField = clientState.OppView.Field;
         var attackActions = ActionFilter.FilterByType(available, ActionTypes.Attack);
 
         var actions = attackActions
@@ -117,19 +108,15 @@ public class NpcAi : INpcStrategy
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Discard
+    //  手札調整
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
     /// 手札上限超過分として捨てるカードを決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
-    /// <param name="discardCount">捨てるべき枚数。</param>
-    /// <returns>捨てるカードの InstanceID 列。</returns>
-    public List<string> DecideDiscard(BattleGameState state, long npcPlayerNum, int discardCount)
+    public List<string> DecideDiscard(GD.ClientGameState clientState, int discardCount)
     {
-        var ctx = BuildContext(state, npcPlayerNum);
+        var ctx = BuildContext(clientState);
         return ctx.Hand
             .OrderBy(h => EvaluateCardKeepPriority(h, ctx))
             .Take(discardCount)
@@ -144,12 +131,12 @@ public class NpcAi : INpcStrategy
     ///   アタッチメント → プラットフォーム → リアクティブ → リソース → インシデント → ストラテジー
     /// 同タイプ内は config の優先度が低いものから捨てる。
     ///
-    /// アタッチメント/プラットフォーム/リアクティブが手札に残っている
+    /// アタッチメント / プラットフォーム / リアクティブが手札に残っている
     /// = フィールドが埋まっていてすぐに出せない可能性が高いので先に捨てる。
-    /// インシデント/ストラテジーはいつでも使えるカードなので、
+    /// インシデント / ストラテジーはいつでも使えるカードなので、
     /// 手札に残しているのはタイミングを狙っている可能性が高く、最後まで残す。
     /// </summary>
-    private (int TypeRank, int Priority) EvaluateCardKeepPriority(UndeployedCard handCard, DecisionContext ctx)
+    private (int TypeRank, int Priority) EvaluateCardKeepPriority(GD.UndeployedCard handCard, DecisionContext ctx)
     {
         var card = NpcSharedHelpers.ResolveCard(_cc, handCard.CardID);
 
@@ -160,7 +147,6 @@ public class NpcAi : INpcStrategy
             CardTypes.Reactive => (2, GetReactivePriority(card)),
             CardTypes.Incident => (4, 0),
             CardTypes.Strategy => (5, 0),
-            // リソース（Compute, Database, ObjectStorage 等）
             _ when !FieldHelpers.IsImmediateType(card.CardType) =>
                 (3, NpcSharedHelpers.ResolveDeployPriority(_config, _cc, card, ctx)),
             _ => throw new InvalidOperationException(
@@ -189,19 +175,16 @@ public class NpcAi : INpcStrategy
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Slot Select
+    //  スロット選択 / 効果中のプレイヤー選択
     // ═══════════════════════════════════════════════════════════════
 
     /// <summary>
-    /// 保留中のスロット選択への応答を決定します。
+    /// 効果由来のスロット選択への応答を決定します。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
-    /// <returns>選択アクション。応答対象がなければ null。</returns>
-    public NpcAction? DecideSlotSelect(BattleGameState state, long npcPlayerNum)
+    public NpcAction? DecideSlotSelect(GD.ClientGameState clientState)
     {
-        var pending = state.PendingSlotSelects.FirstOrDefault();
-        if (pending is null || pending.PlayerNum != npcPlayerNum || pending.ValidZones.Count == 0)
+        var pending = clientState.MyView.PendingSlotSelect;
+        if (pending is null || pending.ValidZones.Count == 0)
         {
             return null;
         }
@@ -222,36 +205,47 @@ public class NpcAi : INpcStrategy
     }
 
     /// <summary>
-    /// 保留中の reactive 選択への応答を決定します。
+    /// 効果処理中のプレイヤー選択 (PendingEffectChoice) への応答を決定します。
+    /// 候補は ClientGameState.MyView.AvailableActions 中の resolve_pending_choice variant として現れる。
     /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
-    /// <param name="pending">解決対象の選択待ち状態。</param>
-    /// <returns>解決アクション。候補が無い場合は null。</returns>
-    public NpcAction? DecidePendingEffectChoice(
-        BattleGameState state, long npcPlayerNum, PendingEffectChoice pending)
+    public NpcAction? DecidePendingEffectChoice(GD.ClientGameState clientState)
     {
-        if (pending.ChooserPlayerNum != npcPlayerNum || pending.Candidates.Count == 0)
+        var pending = clientState.PendingEffectChoice;
+        if (pending is null || pending.ChooserPlayerNum != clientState.MyView.PlayerNum)
+        {
+            return null;
+        }
+
+        var available = clientState.MyView.AvailableActions ?? new List<GD.AvailableAction>();
+        var first = available.FirstOrDefault(a => a.Type == ActionTypes.ResolvePendingChoice);
+        if (first is null)
         {
             return null;
         }
 
         // baseline AI は先頭候補を deterministic に選ぶ。
+        // ChoiceKind ごとに chosen_id の出所が異なる (AvailableActions.EnumerateResolvePendingChoiceActions)。
+        var chosenId = pending.ChoiceKind == ChoiceKinds.HandCard
+            ? first.CardID
+            : first.ValidTargets?.FirstOrDefault()
+              ?? throw new InvalidOperationException(
+                  "resolve_pending_choice action missing validTargets for field-target choice");
+
         return new NpcAction
         {
             ActionType = ActionTypes.ResolvePendingChoice,
             Data = new ResolvePendingChoiceRequest
             {
-                ChosenId = pending.Candidates[0],
+                ChosenId = chosenId,
             },
         };
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Attack target selection
+    //  攻撃ターゲット選択
     // ═══════════════════════════════════════════════════════════════
 
-    private string ResolveAttackTarget(List<string>? validTargets, Field selfField, Field oppField)
+    private string ResolveAttackTarget(List<string>? validTargets, GD.Field selfField, GD.OpponentField oppField)
     {
         if (!(validTargets?.Count > 0))
         {
@@ -267,7 +261,7 @@ public class NpcAi : INpcStrategy
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  Game phase overlay
+    //  ゲーム進行フェーズによる overlay
     // ═══════════════════════════════════════════════════════════════
 
     private AiConfig ResolveActiveConfig(DecisionContext ctx)
@@ -335,15 +329,16 @@ public class NpcAi : INpcStrategy
     //  Helpers
     // ═══════════════════════════════════════════════════════════════
 
-    private DecisionContext BuildContext(BattleGameState state, long npcPlayerNum)
+    private DecisionContext BuildContext(GD.ClientGameState clientState)
     {
-        var field = state.GetField(npcPlayerNum);
-        var oppField = state.GetField(state.OpponentOf(npcPlayerNum));
-        var hand = state.GetHand(npcPlayerNum);
-        var budget = state.GetBudget(npcPlayerNum);
-        return new DecisionContext(field, oppField, hand, budget, _cc)
+        return new DecisionContext(
+            clientState.MyView.Field,
+            clientState.OppView.Field,
+            clientState.MyView.Hand,
+            clientState.MyView.Budget,
+            _cc)
         {
-            CurrentTurn = state.CurrentTurn,
+            CurrentTurn = clientState.CurrentTurn,
         };
     }
 

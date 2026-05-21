@@ -1,11 +1,12 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Npc.Strategies;
 
 /// <summary>
-/// Reactive カードのデプロイ判断。
+/// リアクティブカードのデプロイ判断。
 /// サポートゾーンの max_slots を越えない範囲で優先度順に置く。
 /// </summary>
 internal sealed class ReactiveDeployStrategy
@@ -22,10 +23,7 @@ internal sealed class ReactiveDeployStrategy
     /// <summary>
     /// リアクティブのデプロイアクション列を決定します。
     /// </summary>
-    /// <param name="playActions">PlayCard 系のアクション一覧。</param>
-    /// <param name="usedZones">既に使用済みのゾーン集合。決定時に追記される。</param>
-    /// <returns>リアクティブのデプロイアクション列。</returns>
-    public List<NpcAction> Decide(List<AvailableAction> playActions, HashSet<string> usedZones)
+    public List<NpcAction> Decide(List<GD.AvailableAction> playActions, HashSet<string> usedZones)
     {
         var reactive = _config.Reactive!;
 

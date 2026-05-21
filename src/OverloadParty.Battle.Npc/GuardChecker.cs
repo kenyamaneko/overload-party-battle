@@ -1,5 +1,4 @@
 using OverloadParty.Battle.Engine;
-using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Npc;
 
@@ -118,24 +117,16 @@ public static class GuardChecker
 
     private static int CountResources(SelectorDef sel, DecisionContext ctx, ICardCache cc)
     {
-        var field = sel.Owner switch
-        {
-            "myself" => ctx.Field,
-            "opponent" => ctx.OppField,
-            var o => throw new InvalidOperationException($"Unknown selector owner: '{o}'"),
-        };
-
-        // サポートゾーンの裏向きカード数 (リアクティブ検出用)
+        // 相手サポートゾーンの裏向きカード数 (リアクティブ検出用)。
+        // wire の HiddenDeployedSupport は FaceDown フラグだけが見える。
         if (sel.Owner == "opponent" && sel.FaceDown == true && sel.Zone == "support")
         {
-            return field.Support.Count(s => !s.FaceUp);
+            return WireFieldHelpers.AllSupports(ctx.OppField).Count(s => s.FaceDown);
         }
 
-        return TargetSelector.FilterResources(field, sel, cc).Count();
+        return TargetSelector.FilterResources(sel, ctx.Field, ctx.OppField, cc).Count();
     }
 
-    private static long AggregateDamage(DecisionContext ctx)
-    {
-        return FieldHelpers.AllFaceUpResources(ctx.Field).Sum(r => r.Damage);
-    }
+    private static long AggregateDamage(DecisionContext ctx) =>
+        WireFieldHelpers.AllFaceUpResources(ctx.Field).Sum(r => r.Damage);
 }

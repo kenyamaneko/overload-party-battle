@@ -1,6 +1,6 @@
 using OverloadParty.Battle.Engine;
-using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
+using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Tests.Npc;
 
@@ -15,12 +15,12 @@ public class GuardCheckerTests
     }
 
     private DecisionContext MakeCtx(
-        Field? field = null, Field? oppField = null,
-        List<UndeployedCard>? hand = null, long budget = 5000, long turn = 1)
+        GD.Field? field = null, GD.OpponentField? oppField = null,
+        List<GD.UndeployedCard>? hand = null, long budget = 5000, long turn = 1)
     {
         return new DecisionContext(
-            field ?? TestFactory.MakeField(),
-            oppField ?? TestFactory.MakeField(),
+            field ?? TestFactory.MakeWireField(),
+            oppField ?? TestFactory.MakeWireOpponentField(),
             hand ?? [],
             budget,
             _cc)
@@ -77,9 +77,9 @@ public class GuardCheckerTests
     [Fact]
     public void Check_DamageStat_CountsAllOwnDamage()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(damage: 200);
-        field.Backend[0] = TestFactory.MakeResource(instanceId: "be_1", damage: 100);
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(damage: 200);
+        field.Backend[0] = TestFactory.MakeWireResource(instanceId: "be_1", damage: 100);
         var ctx = MakeCtx(field: field);
 
         var cond = new ConditionDef { Stat = "damage", Selector = new SelectorDef { Owner = "myself" }, Min = 300 };
@@ -94,9 +94,9 @@ public class GuardCheckerTests
     [Fact]
     public void Check_CountSelf_Min()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(instanceId: "r1");
-        field.Frontend[1] = TestFactory.MakeResource(instanceId: "r2");
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(instanceId: "r1");
+        field.Frontend[1] = TestFactory.MakeWireResource(instanceId: "r2");
         var ctx = MakeCtx(field: field);
 
         var cond = new ConditionDef { Selector = new SelectorDef { Owner = "myself" }, Min = 2 };
@@ -109,8 +109,8 @@ public class GuardCheckerTests
     [Fact]
     public void Check_CountOpponent_Min()
     {
-        var oppField = TestFactory.MakeField();
-        oppField.Frontend[0] = TestFactory.MakeResource(instanceId: "opp1");
+        var oppField = TestFactory.MakeWireOpponentField();
+        oppField.Frontend[0] = TestFactory.MakeWireResource(instanceId: "opp1");
         var ctx = MakeCtx(oppField: oppField);
 
         var cond = new ConditionDef { Selector = new SelectorDef { Owner = "opponent" }, Min = 1 };
@@ -120,10 +120,10 @@ public class GuardCheckerTests
     [Fact]
     public void Check_CountWithZone_Backend()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(instanceId: "fe_1");
-        field.Backend[0] = TestFactory.MakeResource(instanceId: "be_1");
-        field.Backend[1] = TestFactory.MakeResource(instanceId: "be_2");
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(instanceId: "fe_1");
+        field.Backend[0] = TestFactory.MakeWireResource(instanceId: "be_1");
+        field.Backend[1] = TestFactory.MakeWireResource(instanceId: "be_2");
         var ctx = MakeCtx(field: field);
 
         var cond = new ConditionDef
@@ -137,9 +137,9 @@ public class GuardCheckerTests
     [Fact]
     public void Check_CountWithFaction()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r1");
-        field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0002", instanceId: "r2");
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "r1");
+        field.Frontend[1] = TestFactory.MakeWireResource(cardId: "TST-0002", instanceId: "r2");
         var ctx = MakeCtx(field: field);
 
         var cond = new ConditionDef
@@ -160,9 +160,9 @@ public class GuardCheckerTests
     [Fact]
     public void Check_CountWithCardId()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r1");
-        field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r2");
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "r1");
+        field.Frontend[1] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "r2");
         var ctx = MakeCtx(field: field);
 
         var cond = new ConditionDef
@@ -232,10 +232,10 @@ public class GuardCheckerTests
     [Fact]
     public void CheckPhaseCondition_TurnMinAndCount_BothMet()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(instanceId: "r1");
-        field.Frontend[1] = TestFactory.MakeResource(instanceId: "r2");
-        field.Backend[0] = TestFactory.MakeResource(instanceId: "r3");
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(instanceId: "r1");
+        field.Frontend[1] = TestFactory.MakeWireResource(instanceId: "r2");
+        field.Backend[0] = TestFactory.MakeWireResource(instanceId: "r3");
         var ctx = MakeCtx(field: field, turn: 7);
 
         var cond = new PhaseCondition
@@ -250,8 +250,8 @@ public class GuardCheckerTests
     [Fact]
     public void CheckPhaseCondition_TurnMetButCountNotMet()
     {
-        var field = TestFactory.MakeField();
-        field.Frontend[0] = TestFactory.MakeResource(instanceId: "r1");
+        var field = TestFactory.MakeWireField();
+        field.Frontend[0] = TestFactory.MakeWireResource(instanceId: "r1");
         var ctx = MakeCtx(field: field, turn: 7);
 
         var cond = new PhaseCondition
