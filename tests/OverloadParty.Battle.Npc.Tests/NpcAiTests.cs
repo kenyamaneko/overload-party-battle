@@ -323,6 +323,74 @@ public class NpcAiTests
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //  Pending reactive choice
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void PendingReactiveChoice_PicksFirstCandidate()
+    {
+        var ai = new NpcAi(MakeConfig(), _cc, _effects);
+        var state = TestFactory.MakeGameState();
+        var pending = new PendingReactiveChoice
+        {
+            ChooserPlayerNum = 1,
+            OwnerPlayerNum = 1,
+            ReactiveCardId = "NT-0023",
+            ReactiveInstanceId = "react_1",
+            Trigger = TriggerType.OnDestroy,
+            ChoiceKey = "cardId",
+            ChoiceKind = ChoiceKinds.HandCard,
+            Candidates = ["TST-0001", "TST-0002"],
+        };
+
+        var action = ai.DecidePendingReactiveChoice(state, 1, pending);
+
+        action.Should().NotBeNull();
+        action!.ActionType.Should().Be(ActionTypes.ResolvePendingChoice);
+        ((ResolvePendingChoiceRequest)action.Data).ChosenId.Should().Be("TST-0001");
+    }
+
+    [Fact]
+    public void PendingReactiveChoice_WrongChooser_ReturnsNull()
+    {
+        var ai = new NpcAi(MakeConfig(), _cc, _effects);
+        var state = TestFactory.MakeGameState();
+        var pending = new PendingReactiveChoice
+        {
+            ChooserPlayerNum = 2,
+            OwnerPlayerNum = 1,
+            ReactiveCardId = "NT-0023",
+            ReactiveInstanceId = "react_1",
+            Trigger = TriggerType.OnDestroy,
+            ChoiceKey = "cardId",
+            ChoiceKind = ChoiceKinds.HandCard,
+            Candidates = ["TST-0001"],
+        };
+
+        ai.DecidePendingReactiveChoice(state, 1, pending).Should().BeNull();
+    }
+
+    [Fact]
+    public void PendingReactiveChoice_EmptyCandidates_ReturnsNull()
+    {
+        var ai = new NpcAi(MakeConfig(), _cc, _effects);
+        var state = TestFactory.MakeGameState();
+        var pending = new PendingReactiveChoice
+        {
+            ChooserPlayerNum = 1,
+            OwnerPlayerNum = 1,
+            ReactiveCardId = "NT-0023",
+            ReactiveInstanceId = "react_1",
+            Trigger = TriggerType.OnDestroy,
+            ChoiceKey = "cardId",
+            ChoiceKind = ChoiceKinds.HandCard,
+            Candidates = [],
+        };
+
+        ai.DecidePendingReactiveChoice(state, 1, pending).Should().BeNull();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //  Deploy: priority resolution
     // ═══════════════════════════════════════════════════════════════
 

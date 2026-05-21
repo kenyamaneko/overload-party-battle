@@ -45,4 +45,14 @@ public interface INpcStrategy
     /// <param name="npcPlayerNum">NPC のプレイヤー番号。</param>
     /// <returns>選択アクション。応答対象がなければ null。</returns>
     NpcAction? DecideSlotSelect(BattleGameState state, long npcPlayerNum);
+
+    /// <summary>
+    /// 保留中の reactive 選択への応答を決定します。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="npcPlayerNum">NPC (chooser) のプレイヤー番号。</param>
+    /// <param name="pending">解決対象の選択待ち状態。</param>
+    /// <returns>解決アクション。候補が無いなど解決不能なら null。</returns>
+    NpcAction? DecidePendingReactiveChoice(
+        BattleGameState state, long npcPlayerNum, PendingReactiveChoice pending);
 }
