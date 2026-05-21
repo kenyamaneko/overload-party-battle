@@ -134,7 +134,6 @@ public class EffectClassifierTests
     [Theory]
     [InlineData("draw", EffectCategory.Draw)]
     [InlineData("search", EffectCategory.Search)]
-    [InlineData("deployhand", EffectCategory.DeployFree)]
     [InlineData("deployrepo", EffectCategory.DeployFree)]
     [InlineData("trashtohand", EffectCategory.RecoverCard)]
     [InlineData("reveal", EffectCategory.RevealReactive)]
@@ -147,7 +146,6 @@ public class EffectClassifierTests
         {
             "draw" => new DrawCardsOp(1),
             "search" => new SearchRepoOp(),
-            "deployhand" => new DeployFromHandOp(),
             "deployrepo" => new DeployFromRepoOp(),
             "trashtohand" => new TrashToHandOp(),
             "reveal" => new RevealReactiveOp(),

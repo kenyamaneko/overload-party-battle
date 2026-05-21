@@ -241,13 +241,7 @@ public static class EffectClassifier
             case SearchRepoOp:
                 info.AddCategory(EffectCategory.Search);
                 break;
-            case DeployFromHandOp:
-                info.AddCategory(EffectCategory.DeployFree);
-                break;
             case DeployFromRepoOp:
-                info.AddCategory(EffectCategory.DeployFree);
-                break;
-            case DeployFromRepoSameCardOp:
                 info.AddCategory(EffectCategory.DeployFree);
                 break;
             case AddToHandOp:
