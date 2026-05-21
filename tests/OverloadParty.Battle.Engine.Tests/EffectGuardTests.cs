@@ -228,9 +228,9 @@ public class GuardOpTests
     [Fact]
     public void NotSame_SourceAndTarget_FailsWhenSameResource()
     {
-        var self = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "myself");
+        var resource = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "myself");
         ShouldFail(
             new NotSameGuard(ResourceRef.Source, ResourceRef.Target),
-            Ctx(source: self, target: self));
+            Ctx(source: resource, target: resource));
     }
 }

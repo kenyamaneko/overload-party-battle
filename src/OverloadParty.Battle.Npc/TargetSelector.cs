@@ -149,13 +149,13 @@ public static class TargetSelector
     /// Resolves a single target from a TargetSpec.
     /// </summary>
     /// <param name="spec">ターゲット仕様。</param>
-    /// <param name="selfField">自フィールド。</param>
+    /// <param name="myField">自フィールド。</param>
     /// <param name="oppField">相手フィールド。</param>
     /// <param name="cc">カード定義の参照元。</param>
     /// <returns>解決したターゲットの InstanceID。該当なしなら null。</returns>
-    public static string? Resolve(TargetSpec spec, GD.Field selfField, GD.OpponentField oppField, ICardCache cc)
+    public static string? Resolve(TargetSpec spec, GD.Field myField, GD.OpponentField oppField, ICardCache cc)
     {
-        var resources = FilterResources(spec.Selector, selfField, oppField, cc);
+        var resources = FilterResources(spec.Selector, myField, oppField, cc);
         return OrderAndPick(resources, spec.OrderBy, cc);
     }
 
@@ -164,16 +164,16 @@ public static class TargetSelector
     /// </summary>
     public static string? ResolveFromValid(
         TargetSpec spec, List<string> validTargets,
-        GD.Field selfField, GD.OpponentField oppField, ICardCache cc)
+        GD.Field myField, GD.OpponentField oppField, ICardCache cc)
     {
         var validSet = new HashSet<string>(validTargets);
-        var resources = FilterResources(spec.Selector, selfField, oppField, cc)
+        var resources = FilterResources(spec.Selector, myField, oppField, cc)
             .Where(r => validSet.Contains(r.InstanceID));
         return OrderAndPick(resources, spec.OrderBy, cc);
     }
 
     /// <summary>
-    /// Orders AvailableActions by the given order_by stat applied to their source resource on the self field.
+    /// Orders AvailableActions by the given order_by stat applied to their source resource on the given field.
     /// </summary>
     public static List<GD.AvailableAction> OrderActions(
         List<GD.AvailableAction> actions, string orderBy, GD.Field field, ICardCache cc)
@@ -192,11 +192,11 @@ public static class TargetSelector
     /// セレクタ条件に一致するリソースを返します。
     /// </summary>
     public static IEnumerable<GD.DeployedResource> FilterResources(
-        SelectorDef sel, GD.Field selfField, GD.OpponentField oppField, ICardCache cc)
+        SelectorDef sel, GD.Field myField, GD.OpponentField oppField, ICardCache cc)
     {
         var (frontend, backend) = sel.Owner switch
         {
-            "myself" => (selfField.Frontend, selfField.Backend),
+            "myself" => (myField.Frontend, myField.Backend),
             "opponent" => (oppField.Frontend, oppField.Backend),
             var o => throw new InvalidOperationException($"Unknown selector owner: '{o}'"),
         };
