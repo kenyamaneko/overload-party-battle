@@ -78,10 +78,10 @@ public delegate EffectResult EffectHandler(EffectContext ctx);
 /// </summary>
 public class BudgetRequirement
 {
-    /// <summary>Minimum budget needed (from RequireBudgetOp). Null if no minimum.</summary>
+    /// <summary>Minimum budget needed (from MinBudgetGuard). Null if no minimum.</summary>
     public long? MinBudget { get; init; }
 
-    /// <summary>Maximum budget allowed (from RequireMaxBudgetOp). Null if no maximum.</summary>
+    /// <summary>Maximum budget allowed (from MaxBudgetGuard). Null if no maximum.</summary>
     public long? MaxBudget { get; init; }
 
     /// <summary>

@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// Pairs a card with its trigger type, handler, and ops for NPC classification.
+/// Pairs a card with its trigger type, handler, and built block for NPC classification.
 /// </summary>
 public class EffectRegistration
 {
@@ -16,8 +16,14 @@ public class EffectRegistration
     /// <summary>The compiled effect handler.</summary>
     public required EffectHandler Handler { get; init; }
 
-    /// <summary>Raw ops sequence, stored for NPC classification. Null for custom handlers.</summary>
-    public IEffectOp[]? Ops { get; init; }
+    /// <summary>Top-level guards / ops, stored for NPC classification. Null for custom handlers.</summary>
+    public BuiltBlock? Block { get; init; }
+
+    /// <summary>後方互換: top-level ops のみ参照したい consumer 向け。</summary>
+    public IEffectOp[]? Ops => Block?.Ops;
+
+    /// <summary>top-level guards のみ参照したい consumer 向け。</summary>
+    public IEffectGuard[]? Guards => Block?.Guards;
 }
 
 /// <summary>
@@ -46,22 +52,44 @@ public class EffectRegistry : IEffectRegistry
     }
 
     /// <summary>
-    /// Builds a handler from ops via Compose and stores both
-    /// the handler and the ops for NPC classification.
+    /// BuiltBlock から handler を生成し、ブロックと一緒に登録します。
     /// </summary>
     /// <param name="cardId">カード ID。</param>
     /// <param name="trigger">トリガー種別。</param>
-    /// <param name="ops">構成する効果 op の列。</param>
-    public void RegisterComposed(string cardId, TriggerType trigger, params IEffectOp[] ops)
+    /// <param name="block">guards / ops の組。</param>
+    public void RegisterComposed(string cardId, TriggerType trigger, BuiltBlock block)
     {
         var key = (cardId, trigger);
         _handlers[key] = new EffectRegistration
         {
             CardId = cardId,
             TriggerType = trigger,
-            Handler = EffectComposer.Compose(ops),
-            Ops = ops,
+            Handler = EffectComposer.Compose(block),
+            Block = block,
         };
+    }
+
+    /// <summary>
+    /// ops のみ (guard なし) を BuiltBlock に包んで登録する shorthand。テスト向け。
+    /// </summary>
+    /// <param name="cardId">カード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
+    /// <param name="ops">構成する ops 列。</param>
+    public void RegisterComposed(string cardId, TriggerType trigger, params IEffectOp[] ops)
+    {
+        RegisterComposed(cardId, trigger, new BuiltBlock { Ops = ops });
+    }
+
+    /// <summary>
+    /// guards + ops を BuiltBlock に包んで登録する shorthand。テスト向け。
+    /// </summary>
+    /// <param name="cardId">カード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
+    /// <param name="guards">guard 述語列。</param>
+    /// <param name="ops">構成する ops 列。</param>
+    public void RegisterComposed(string cardId, TriggerType trigger, IEffectGuard[] guards, params IEffectOp[] ops)
+    {
+        RegisterComposed(cardId, trigger, new BuiltBlock { Guards = guards, Ops = ops });
     }
 
     /// <inheritdoc />
@@ -96,7 +124,7 @@ public class EffectRegistry : IEffectRegistry
     public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger)
     {
         var reg = GetRegistration(cardId, trigger);
-        if (reg?.Ops is null)
+        if (reg?.Guards is null)
         {
             return null;
         }
@@ -104,15 +132,15 @@ public class EffectRegistry : IEffectRegistry
         long? minBudget = null;
         long? maxBudget = null;
 
-        foreach (var op in reg.Ops)
+        foreach (var guard in reg.Guards)
         {
-            switch (op)
+            switch (guard)
             {
-                case Ops.RequireBudgetOp rb:
-                    minBudget = rb.Min;
+                case MinBudgetGuard min:
+                    minBudget = min.Min;
                     break;
-                case Ops.RequireMaxBudgetOp rmb:
-                    maxBudget = rmb.Max;
+                case MaxBudgetGuard max:
+                    maxBudget = max.Max;
                     break;
             }
         }
@@ -136,11 +164,11 @@ public class EffectRegistry : IEffectRegistry
     public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger)
     {
         var reg = GetRegistration(cardId, trigger);
-        if (reg?.Ops is null)
+        if (reg?.Block is null)
         {
             return null;
         }
-        return EffectClassifier.ClassifyOps(reg.Ops);
+        return EffectClassifier.ClassifyBlock(reg.Block);
     }
 
     /// <summary>

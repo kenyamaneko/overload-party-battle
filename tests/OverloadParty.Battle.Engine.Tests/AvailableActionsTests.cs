@@ -1039,7 +1039,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TST-0009", TriggerType.Ignition,
-            new RequireBudgetOp(400),
+            [new MinBudgetGuard(400)],
             new LoseBudgetOp(PlayerRef.Myself, new StaticAmount(400)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 300);
@@ -1060,7 +1060,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TST-0009", TriggerType.Ignition,
-            new RequireBudgetOp(400),
+            [new MinBudgetGuard(400)],
             new LoseBudgetOp(PlayerRef.Myself, new StaticAmount(400)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 500);
@@ -1081,7 +1081,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TST-0010", TriggerType.Ignition,
-            new RequireMaxBudgetOp(1000),
+            [new MaxBudgetGuard(1000)],
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(900)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 1500);
@@ -1102,7 +1102,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TST-0010", TriggerType.Ignition,
-            new RequireMaxBudgetOp(1000),
+            [new MaxBudgetGuard(1000)],
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(900)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 800);
@@ -1145,7 +1145,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TST-0006", TriggerType.Ignition,
-            new RequireBudgetOp(500),
+            [new MinBudgetGuard(500)],
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(1000)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 200);
@@ -1165,7 +1165,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TST-0006", TriggerType.Ignition,
-            new RequireBudgetOp(500),
+            [new MinBudgetGuard(500)],
             new GainBudgetOp(PlayerRef.Myself, new StaticAmount(1000)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 600);
@@ -1185,7 +1185,7 @@ public class AvailableActionsTests
 
         var registry = new EffectRegistry();
         registry.RegisterComposed("TST-0008", TriggerType.Ignition,
-            new RequireBudgetOp(300),
+            [new MinBudgetGuard(300)],
             new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)));
 
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 100);

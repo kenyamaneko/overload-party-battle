@@ -53,7 +53,7 @@ public class EffectCondition
     /// <summary>Numeric threshold for budget conditions (min_budget / max_budget).</summary>
     public long Value { get; init; }
 
-    // ─── resource_count 条件用 (ResourceCountGuardOp の filter shape を運ぶ) ──
+    // ─── resource_count 条件用 (ResourceCountGuard の filter shape を運ぶ) ──
 
     /// <summary>Owner filter for resource_count condition ("myself" / "opponent" / "both").</summary>
     public string? Owner { get; init; }
@@ -136,10 +136,29 @@ public class EffectInfo
 public static class EffectClassifier
 {
     /// <summary>
-    /// Classifies an array of ops into an <see cref="EffectInfo"/> for NPC decision-making.
+    /// guards / ops を NPC 意思決定用の <see cref="EffectInfo"/> に分類します。
     /// </summary>
-    /// <param name="ops">The ops to classify.</param>
-    /// <returns>Classification result describing the effect's behavior.</returns>
+    /// <param name="block">分類対象のブロック。</param>
+    /// <returns>効果の振る舞いを表す分類結果。</returns>
+    public static EffectInfo ClassifyBlock(BuiltBlock block)
+    {
+        var info = new EffectInfo();
+        foreach (var guard in block.Guards)
+        {
+            ClassifyGuard(info, guard);
+        }
+        foreach (var op in block.Ops)
+        {
+            ClassifyOp(info, op);
+        }
+        return info;
+    }
+
+    /// <summary>
+    /// ops のみを分類します (テスト向け / 旧 API)。
+    /// </summary>
+    /// <param name="ops">分類対象の ops 列。</param>
+    /// <returns>効果の振る舞いを表す分類結果。</returns>
     public static EffectInfo ClassifyOps(IEffectOp[] ops)
     {
         var info = new EffectInfo();
@@ -148,6 +167,32 @@ public static class EffectClassifier
             ClassifyOp(info, op);
         }
         return info;
+    }
+
+    private static void ClassifyGuard(EffectInfo info, IEffectGuard guard)
+    {
+        switch (guard)
+        {
+            case MinBudgetGuard min:
+                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.MinBudget, Value = min.Min });
+                break;
+            case MaxBudgetGuard max:
+                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.MaxBudget, Value = max.Max });
+                break;
+            case ResourceCountGuard rcg:
+                info.Conditions.Add(new EffectCondition
+                {
+                    Type = ConditionTypes.ResourceCount,
+                    Owner = rcg.Owner,
+                    Zone = rcg.Zone,
+                    Faction = rcg.Faction,
+                    CardTypes = rcg.CardTypes,
+                    CardIds = rcg.CardIds,
+                    Min = rcg.Min,
+                    Max = rcg.Max,
+                });
+                break;
+        }
     }
 
     private static void ClassifyOp(EffectInfo info, IEffectOp op)
@@ -226,30 +271,6 @@ public static class EffectClassifier
                 break;
             case SurviveDestructionOp:
                 info.AddCategory(EffectCategory.Survive);
-                break;
-
-            // 条件
-            case RequireBudgetOp rb:
-                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.MinBudget, Value = rb.Min });
-                break;
-            case RequireMaxBudgetOp rmb:
-                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.MaxBudget, Value = rmb.Max });
-                break;
-            case ResourceCountGuardOp rcg:
-                info.Conditions.Add(new EffectCondition
-                {
-                    Type = ConditionTypes.ResourceCount,
-                    Owner = rcg.Owner,
-                    Zone = rcg.Zone,
-                    Faction = rcg.Faction,
-                    CardTypes = rcg.CardTypes,
-                    CardIds = rcg.CardIds,
-                    Min = rcg.Min,
-                    Max = rcg.Max,
-                });
-                break;
-            case RequireOpponentBackendOp:
-                info.Conditions.Add(new EffectCondition { Type = ConditionTypes.OpponentBackend });
                 break;
 
             // 分岐

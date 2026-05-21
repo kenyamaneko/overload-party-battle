@@ -165,8 +165,12 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_RequireBudget_AddsCondition()
     {
-        var ops = new IEffectOp[] { new RequireBudgetOp(1000), new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
-        var info = EffectClassifier.ClassifyOps(ops);
+        var block = new BuiltBlock
+        {
+            Guards = [new MinBudgetGuard(1000)],
+            Ops = [new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500))],
+        };
+        var info = EffectClassifier.ClassifyBlock(block);
 
         info.Conditions.Should().ContainSingle();
         info.Conditions[0].Type.Should().Be("min_budget");
@@ -177,8 +181,8 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_RequireMaxBudget_AddsCondition()
     {
-        var ops = new IEffectOp[] { new RequireMaxBudgetOp(2000) };
-        var info = EffectClassifier.ClassifyOps(ops);
+        var block = new BuiltBlock { Guards = [new MaxBudgetGuard(2000)] };
+        var info = EffectClassifier.ClassifyBlock(block);
 
         info.Conditions.Should().ContainSingle();
         info.Conditions[0].Type.Should().Be("max_budget");
@@ -188,13 +192,16 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_ResourceCountGuard_AddsCondition()
     {
-        var ops = new IEffectOp[]
+        var block = new BuiltBlock
         {
-            new ResourceCountGuardOp(
-                owner: "myself", zone: null, faction: "SHE",
-                cardTypes: null, cardIds: null, min: 3, max: null),
+            Guards =
+            [
+                new ResourceCountGuard(
+                    owner: "myself", zone: null, faction: "SHE",
+                    cardTypes: null, cardIds: null, min: 3, max: null),
+            ],
         };
-        var info = EffectClassifier.ClassifyOps(ops);
+        var info = EffectClassifier.ClassifyBlock(block);
 
         info.Conditions.Should().ContainSingle();
         info.Conditions[0].Type.Should().Be("resource_count");
@@ -207,13 +214,16 @@ public class EffectClassifierTests
     [Fact]
     public void Classify_ResourceCountGuard_MaxOnly_PreservesShape()
     {
-        var ops = new IEffectOp[]
+        var block = new BuiltBlock
         {
-            new ResourceCountGuardOp(
-                owner: "myself", zone: null, faction: "Tuners",
-                cardTypes: null, cardIds: null, min: null, max: 3),
+            Guards =
+            [
+                new ResourceCountGuard(
+                    owner: "myself", zone: null, faction: "Tuners",
+                    cardTypes: null, cardIds: null, min: null, max: 3),
+            ],
         };
-        var info = EffectClassifier.ClassifyOps(ops);
+        var info = EffectClassifier.ClassifyBlock(block);
 
         info.Conditions.Should().ContainSingle();
         info.Conditions[0].Type.Should().Be("resource_count");

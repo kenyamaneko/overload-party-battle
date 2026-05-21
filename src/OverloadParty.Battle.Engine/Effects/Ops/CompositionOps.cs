@@ -1,71 +1,76 @@
-using OverloadParty.Battle.Models;
-
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Wraps a named group of ops so that guard failures (GameRuleException) are caught,
-/// allowing subsequent independent groups in the same pipeline to run.
-/// The success/failure result is recorded in <see cref="OpContext.GroupResults"/>.
+/// 名前付きのブロックを実行し、guard 述語が成立した場合だけ ops を流す。
+/// 成否を <see cref="OpContext.GroupResults"/> に記録し、後続の独立ブロックが続けて動けるようにする。
 /// </summary>
-public class EffectGroupOp(string groupId, IEffectOp[] ops) : IEffectOp
+public class EffectGroupOp(string groupId, BuiltBlock block) : IEffectOp
 {
-    /// <summary>グループの op を順次実行し、成否を <see cref="OpContext.GroupResults"/> に記録します。</summary>
-    /// <param name="ctx">パイプライン実行コンテキスト。</param>
+    /// <summary>このグループの識別子。</summary>
+    public string GroupId => groupId;
+
+    /// <summary>このグループの guards / ops を保持する block。</summary>
+    public BuiltBlock Block => block;
+
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        try
+        foreach (var guard in block.Guards)
         {
-            foreach (var op in ops)
+            if (!guard.Check(ctx.Ctx))
             {
-                op.Execute(ctx);
+                ctx.GroupResults[groupId] = false;
+                return;
             }
-
-            ctx.GroupResults[groupId] = true;
         }
-        catch (GameRuleException)
+        foreach (var op in block.Ops)
         {
-            ctx.GroupResults[groupId] = false;
+            op.Execute(ctx);
+            if (ctx.Result.PendingChoice is not null) { return; }
+        }
+        ctx.GroupResults[groupId] = true;
+    }
+}
+
+/// <summary>
+/// 親グループが成功している場合に限り、従属ブロックの guards / ops を実行する。
+/// 従属ブロックの guard 不成立は静かにスキップする (例外を経由しない)。
+/// </summary>
+public class DependentEffectOp(string parentGroupId, BuiltBlock block) : IEffectOp
+{
+    /// <summary>親グループの識別子。</summary>
+    public string ParentGroupId => parentGroupId;
+
+    /// <summary>従属ブロックの guards / ops。</summary>
+    public BuiltBlock Block => block;
+
+    /// <inheritdoc />
+    public void Execute(OpContext ctx)
+    {
+        if (!ctx.GroupResults.GetValueOrDefault(parentGroupId)) { return; }
+
+        foreach (var guard in block.Guards)
+        {
+            if (!guard.Check(ctx.Ctx)) { return; }
+        }
+        foreach (var op in block.Ops)
+        {
+            op.Execute(ctx);
+            if (ctx.Result.PendingChoice is not null) { return; }
         }
     }
 }
 
 /// <summary>
-/// Runs child ops only if the parent group succeeded.
-/// Guard failures in the child ops are silently swallowed.
-/// </summary>
-public class DependentEffectOp(string parentGroupId, IEffectOp[] ops) : IEffectOp
-{
-    /// <summary>親グループが成功している場合に限り従属 op を実行します。</summary>
-    /// <param name="ctx">パイプライン実行コンテキスト。</param>
-    public void Execute(OpContext ctx)
-    {
-        if (!ctx.GroupResults.GetValueOrDefault(parentGroupId))
-        {
-            return;
-        }
-
-        try
-        {
-            foreach (var op in ops)
-            {
-                op.Execute(ctx);
-            }
-        }
-        catch (GameRuleException)
-        {
-            // 従属グループのガード失敗は無視される
-        }
-    }
-}
-
-/// <summary>
-/// Records that a group succeeded in <see cref="OpContext.GroupResults"/>.
-/// Used when the root block runs without exception isolation (single independent + dependents).
+/// 指定グループの成功を <see cref="OpContext.GroupResults"/> に記録する。
+/// root ブロック (例外隔離なし) の成功を後続の DependentEffectOp に伝えるために使う。
 /// </summary>
 public class MarkGroupSucceededOp(string groupId) : IEffectOp
 {
-    /// <summary>指定グループの成功を <see cref="OpContext.GroupResults"/> に記録します。</summary>
-    /// <param name="ctx">パイプライン実行コンテキスト。</param>
+    /// <summary>記録対象のグループ識別子。</summary>
+    public string GroupId => groupId;
+
+    /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
         ctx.GroupResults[groupId] = true;
