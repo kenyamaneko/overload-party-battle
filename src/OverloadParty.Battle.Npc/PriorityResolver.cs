@@ -5,7 +5,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Npc;
 
 /// <summary>
-/// PriorityResolver はハードコードされた NpcParams の代わりに AiConfig からエフェクトカテゴリの優先度を解決します
+/// PriorityResolver はハードコードされた NpcParams の代わりに AiConfig から効果カテゴリの優先度を解決します
 /// </summary>
 public static class PriorityResolver
 {

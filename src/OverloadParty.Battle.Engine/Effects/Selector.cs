@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// ISelector はエフェクト操作のターゲットリソースを選択します
+/// ISelector は効果操作のターゲットリソースを選択します
 /// </summary>
 public interface ISelector
 {

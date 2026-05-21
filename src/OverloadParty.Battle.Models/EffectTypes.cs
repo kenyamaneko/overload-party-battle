@@ -5,7 +5,7 @@ namespace OverloadParty.Battle.Models;
 ///
 /// buff_ と debuff_ を分けている理由:
 /// - Value は常に正の数で管理し、加算(buff)か減算(debuff)かを EffectType で区別する
-/// - エフェクト除去時に buff だけ / debuff だけを選択的にクリアできる
+/// - 効果除去時に buff だけ / debuff だけを選択的にクリアできる
 /// - NPC AI の判断で Buff / Debuff を明確に分類できる（EffectClassifier）
 /// </summary>
 public static class EffectTypes
@@ -24,7 +24,7 @@ public static class EffectTypes
 }
 
 /// <summary>
-/// NPC エフェクト評価で使う条件タイプの文字列定数。
+/// NPC 効果評価で使う条件タイプの文字列定数。
 /// EffectClassifier で条件を生成し、ActionEvaluator で判定する。
 /// </summary>
 public static class ConditionTypes

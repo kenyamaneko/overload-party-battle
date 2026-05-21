@@ -158,11 +158,11 @@ public class DiscardHandRequest
 }
 
 /// <summary>
-/// Request to activate a resource's or support card's effect.
+/// リソース / サポートカードの起動効果を発動するリクエスト。
 /// </summary>
 public class UseEffectRequest
 {
-    /// <summary>The instance ID of the resource or support card whose effect to activate.</summary>
+    /// <summary>起動効果を発動するリソース / サポートカードのインスタンス ID。</summary>
     [JsonPropertyName("instanceId")]
     public string InstanceID { get; set; } = "";
 

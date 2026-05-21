@@ -3,7 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// SetCancelActionOp はトリガーとなったアクションをキャンセルします（リアクティブエフェクト用）
+/// SetCancelActionOp はトリガーとなったアクションをキャンセルします（リアクティブ効果用）
 /// </summary>
 public class SetCancelActionOp : IEffectOp
 {

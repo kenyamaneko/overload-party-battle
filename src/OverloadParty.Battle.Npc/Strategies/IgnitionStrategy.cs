@@ -8,12 +8,12 @@ namespace OverloadParty.Battle.Npc.Strategies;
 /// <summary>
 /// フィールド上のカードの起動効果 (UseEffect) の実行判断。
 /// </summary>
-internal sealed class ActivateEffectStrategy
+internal sealed class IgnitionStrategy
 {
     private readonly ICardCache _cc;
     private readonly IEffectRegistry _effects;
 
-    public ActivateEffectStrategy(ICardCache cc, IEffectRegistry effects)
+    public IgnitionStrategy(ICardCache cc, IEffectRegistry effects)
     {
         _cc = cc;
         _effects = effects;
@@ -29,9 +29,9 @@ internal sealed class ActivateEffectStrategy
     public List<NpcAction> Decide(
         DecisionContext ctx, List<AvailableAction> available, AiConfig activeConfig)
     {
-        var activateActions = ActionFilter.FilterByType(available, ActionTypes.UseEffect);
+        var ignitionActions = ActionFilter.FilterByType(available, ActionTypes.UseEffect);
 
-        var candidates = activateActions
+        var candidates = ignitionActions
             .Select(a =>
             {
                 var cardId = ActionFilter.ResolveCardIdForInstance(a.SourceInstanceID!, ctx.Field);

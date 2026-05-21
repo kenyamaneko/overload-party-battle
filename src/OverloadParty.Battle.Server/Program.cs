@@ -65,7 +65,7 @@ builder.Services.AddSingleton(sp =>
     var gameRepo = sp.GetRequiredService<IGameRepository>();
     var cc = sp.GetRequiredService<ICardCache>();
 
-    // カード定義からエフェクトを初期化（YAML 駆動）
+    // カード定義から効果を初期化（YAML 駆動）
     var registry = new EffectRegistry();
     var customEffects = new CustomEffectRegistry();
     EffectYamlLoader.LoadFromCards(cc.All().Values, registry, customEffects);

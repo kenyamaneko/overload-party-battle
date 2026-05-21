@@ -119,7 +119,7 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 |------|------|---------|
 | 1 | Strategy/Incident カードを使用 | `DoImmediateActions()` — `EvaluateCard` でスコアリング |
 | 2 | Resource カードをデプロイ | `DoDeployActions()` — `PickBestZone` でゾーン選択 |
-| 3 | フィールドエフェクトを発動 | `DecideActivateActions()` — `SelectTargetFromValid` でターゲット制約 |
+| 3 | フィールド効果を発動 | `DecideActivateActions()` — `SelectTargetFromValid` でターゲット制約 |
 | 4 | スケールアップ | `DoScaleUpActions()` — `AvailableAction.Cost` / `TargetRank` を使用 |
 | 5 | Insight 配分 | `DoDistributeYieldActions()` — `RemainingCapacity` で greedy 配分 |
 | 6 | フェーズ終了 | `MakeEndPhaseAction()` |

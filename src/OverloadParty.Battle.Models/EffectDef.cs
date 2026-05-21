@@ -3,7 +3,7 @@ using System.Text.Json;
 namespace OverloadParty.Battle.Models;
 
 /// <summary>
-/// EffectDef はカード JSON の "effects" 配列からデシリアライズされた 1 エフェクトブロックを表現します
+/// EffectDef はカード JSON の "effects" 配列からデシリアライズされた 1 効果ブロックを表現します
 /// </summary>
 public class EffectDef
 {

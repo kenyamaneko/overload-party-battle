@@ -13,7 +13,7 @@ public class AvailableActionsTests
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void MainPhase_ReturnsPlayScaleDistributeActivateActions()
+    public void MainPhase_ReturnsPlayScaleDistributeIgniteActions()
     {
         var cc = new TestCardCache();
         var compute = TestFactory.ComputeCard(cardId: "TST-0001");
@@ -38,7 +38,7 @@ public class AvailableActionsTests
     }
 
     [Fact]
-    public void BattlePhase_ReturnsAttackAndActivateOnly()
+    public void BattlePhase_ReturnsAttackAndIgniteOnly()
     {
         var cc = new TestCardCache();
         var compute = TestFactory.ComputeCard(cardId: "TST-0001");
@@ -1011,7 +1011,7 @@ public class AvailableActionsTests
     [Fact]
     public void UseEffect_AvailableInBattlePhase()
     {
-        // エフェクト発動はバトルフェーズでも可能
+        // 効果発動はバトルフェーズでも可能
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
 

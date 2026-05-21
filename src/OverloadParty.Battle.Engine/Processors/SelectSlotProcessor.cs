@@ -3,12 +3,12 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// SelectSlotProcessor は保留中のエフェクトデプロイをプレイヤーが選択したスロットに配置して解決します
+/// SelectSlotProcessor は保留中の効果デプロイをプレイヤーが選択したスロットに配置して解決します
 /// </summary>
 public static class SelectSlotProcessor
 {
     /// <summary>
-    /// 保留中のエフェクトデプロイをプレイヤーが選択したスロットに配置して解決します。
+    /// 保留中の効果デプロイをプレイヤーが選択したスロットに配置して解決します。
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
     /// <param name="game">対象ゲームのメタデータ。</param>

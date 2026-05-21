@@ -196,7 +196,7 @@ public class EffectRegistrationTests
     // ─── Budget effect behavior ──────────────────────────────────
 
     [Fact]
-    public void NT0010_Activate_GainsBudget400()
+    public void NT0010_Ignite_GainsBudget400()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000);
 
@@ -206,7 +206,7 @@ public class EffectRegistrationTests
     }
 
     [Fact]
-    public void NT0026_Activate_FailsIfBudgetOver1000()
+    public void NT0026_Ignite_FailsIfBudgetOver1000()
     {
         var state = TestFactory.MakeGameState(p1Budget: 2000);
 
@@ -217,7 +217,7 @@ public class EffectRegistrationTests
     }
 
     [Fact]
-    public void SH0019_Activate_FailsIfFewerThan3SHE()
+    public void SH0019_Ignite_FailsIfFewerThan3SHE()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000);
         // Only 2 SHE resources on field — guard requires 3+

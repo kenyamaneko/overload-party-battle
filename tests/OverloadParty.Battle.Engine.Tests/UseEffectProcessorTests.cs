@@ -41,7 +41,7 @@ public class UseEffectProcessorTests
     }
 
     [Fact]
-    public void Process_ResourceEffect_GeneratesActivateEvent()
+    public void Process_ResourceEffect_GeneratesUseEffectEvent()
     {
         var reg = new EffectRegistry();
         reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
@@ -222,7 +222,7 @@ public class UseEffectProcessorTests
     }
 
     [Fact]
-    public void Process_SupportEffect_GeneratesActivateEvent()
+    public void Process_SupportEffect_GeneratesUseEffectEvent()
     {
         var reg = new EffectRegistry();
         reg.Register("TEST-0200", TriggerType.Ignition, _ => new EffectResult());

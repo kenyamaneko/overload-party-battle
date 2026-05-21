@@ -35,7 +35,7 @@ public class ComplianceAuditEffectTests
     // ─── 基本発動コスト ──────────────────────────────────────────
 
     [Fact]
-    public void Activate_PaysCost200_FromSelfBudget()
+    public void Ignite_PaysCost200_FromSelfBudget()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
@@ -46,7 +46,7 @@ public class ComplianceAuditEffectTests
     }
 
     [Fact]
-    public void Activate_InsufficientBudget_GuardFails()
+    public void Ignite_InsufficientBudget_GuardFails()
     {
         var state = TestFactory.MakeGameState(p1Budget: 100, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
@@ -60,7 +60,7 @@ public class ComplianceAuditEffectTests
     // ─── 相手 Budget 減少 ─────────────────────────────────────────
 
     [Fact]
-    public void Activate_WithoutCompliancePlatform_OpponentLoses800()
+    public void Ignite_WithoutCompliancePlatform_OpponentLoses800()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
@@ -72,7 +72,7 @@ public class ComplianceAuditEffectTests
     }
 
     [Fact]
-    public void Activate_WithIsmsPlatform_OpponentLoses400Only()
+    public void Ignite_WithIsmsPlatform_OpponentLoses400Only()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
@@ -84,7 +84,7 @@ public class ComplianceAuditEffectTests
     }
 
     [Fact]
-    public void Activate_WithSoc2Platform_OpponentLoses400Only()
+    public void Ignite_WithSoc2Platform_OpponentLoses400Only()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
@@ -96,7 +96,7 @@ public class ComplianceAuditEffectTests
     }
 
     [Fact]
-    public void Activate_WithBothPlatforms_OpponentLoses400Only()
+    public void Ignite_WithBothPlatforms_OpponentLoses400Only()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
@@ -111,7 +111,7 @@ public class ComplianceAuditEffectTests
     // ─── フェイスダウン・未展開のプラットフォームは無効 ─────────────────
 
     [Fact]
-    public void Activate_WithFaceDownIsmsPlatform_OpponentLoses800()
+    public void Ignite_WithFaceDownIsmsPlatform_OpponentLoses800()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
@@ -124,7 +124,7 @@ public class ComplianceAuditEffectTests
     }
 
     [Fact]
-    public void Activate_WithDeployingIsmsPlatform_OpponentLoses800()
+    public void Ignite_WithDeployingIsmsPlatform_OpponentLoses800()
     {
         var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
         AddComplianceAuditSupport(state, playerNum: 1);
@@ -139,7 +139,7 @@ public class ComplianceAuditEffectTests
     // ─── Player 2 が発動する場合 ─────────────────────────────────
 
     [Fact]
-    public void Activate_AsPlayer2_ReducesPlayer1Budget()
+    public void Ignite_AsPlayer2_ReducesPlayer1Budget()
     {
         var state = TestFactory.MakeGameState(activePlayer: 2, p1Budget: 2000, p2Budget: 1000);
         AddComplianceAuditSupport(state, playerNum: 2);

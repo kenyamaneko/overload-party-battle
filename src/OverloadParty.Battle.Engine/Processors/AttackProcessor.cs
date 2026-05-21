@@ -85,7 +85,7 @@ public static class AttackProcessor
             events.AddRange(result.Events);
         }
 
-        // 防御者とそのアタッチメントの OnHit エフェクトを発動
+        // 防御者とそのアタッチメントの OnHit 効果を発動
         var onHitEvents = FireOnHit(state, game, opponentNum, defender, cc, effects);
         events.AddRange(onHitEvents);
 

@@ -5,17 +5,17 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// UseEffectProcessor はリソースおよびサポートカードのエフェクト発動アクションを処理します
+/// UseEffectProcessor はリソースおよびサポートカードの起動効果アクションを処理します
 /// </summary>
 public static class UseEffectProcessor
 {
     /// <summary>
-    /// Activates the effect of a resource or support card on the player's field.
+    /// プレイヤーのフィールド上のリソース / サポートカードの起動効果を発動します。
     /// </summary>
     /// <param name="state">The current game state.</param>
     /// <param name="game">The game metadata.</param>
-    /// <param name="playerNum">The player number activating the effect.</param>
-    /// <param name="req">The activate effect request containing the source and optional target.</param>
+    /// <param name="playerNum">起動効果を発動するプレイヤー番号。</param>
+    /// <param name="req">発動元のインスタンスと任意の対象を含むリクエスト。</param>
     /// <param name="cc">The card definition cache.</param>
     /// <param name="effects">The optional effect registry containing effect handlers.</param>
     /// <returns>The action result containing effect events and state update flag.</returns>
@@ -29,20 +29,20 @@ public static class UseEffectProcessor
         var resource = FieldHelpers.FindResourceByID(field, req.InstanceID);
         if (resource is not null)
         {
-            return ActivateResourceEffect(state, game, playerNum, resource, req, cc, effects);
+            return IgniteResource(state, game, playerNum, resource, req, cc, effects);
         }
 
         // サポートゾーンを検索
         var support = FieldHelpers.FindSupportByID(field, req.InstanceID);
         if (support is not null)
         {
-            return ActivateSupportEffect(state, game, playerNum, field, support, req, cc, effects);
+            return IgniteSupport(state, game, playerNum, field, support, req, cc, effects);
         }
 
         throw new GameRuleException($"resource {req.InstanceID} not found on field");
     }
 
-    private static ActionResult ActivateResourceEffect(
+    private static ActionResult IgniteResource(
         BattleGameState state, Game game, long playerNum,
         DeployedResource source,
         UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
@@ -90,7 +90,7 @@ public static class UseEffectProcessor
         return new ActionResult { Events = events, StateUpdated = true };
     }
 
-    private static ActionResult ActivateSupportEffect(
+    private static ActionResult IgniteSupport(
         BattleGameState state, Game game, long playerNum,
         Field field, DeployedSupport support,
         UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
