@@ -85,6 +85,60 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("player2Summary")]
         public PlayerSummary Player2Summary { get; set; } = new PlayerSummary();
 
+        /// <summary>
+        /// reactive 効果の処理中にプレイヤー選択が必要な状態。null なら待ちなし。
+        /// <br/>choose 側プレイヤーは availableActions に提示された候補から 1 件を選び
+        /// <br/>`resolve_pending_choice` アクションで送信する。非選択者はこの値を見て
+        /// <br/>「相手の割り込み処理中」を表示する。
+        /// <br/>
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("pendingReactiveChoice")]
+        public PendingReactiveChoiceView? PendingReactiveChoice { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// pendingReactiveChoice の client 公開ビュー。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PendingReactiveChoiceView
+    {
+
+        /// <summary>
+        /// 選択を行うプレイヤー番号
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("chooserPlayerNum")]
+        public long ChooserPlayerNum { get; set; } = default!;
+
+        /// <summary>
+        /// 発動中のリアクティブのカード ID
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("reactiveCardId")]
+        public string ReactiveCardId { get; set; } = default!;
+
+        /// <summary>
+        /// 発動中のリアクティブのインスタンス ID
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("reactiveInstanceId")]
+        public string ReactiveInstanceId { get; set; } = default!;
+
+        /// <summary>
+        /// 選択対象の種別。`hand_card` ならば候補は手札カード、
+        /// <br/>`field_target` ならばフィールド上のリソース。
+        /// <br/>
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("choiceKind")]
+        public string ChoiceKind { get; set; } = default!;
+
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
         [System.Text.Json.Serialization.JsonExtensionData]
@@ -602,7 +656,9 @@ namespace OverloadParty.GameState
     {
 
         /// <summary>
-        /// variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` のいずれか。
+        /// variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` /
+        /// <br/>`resolve_pending_choice` のいずれか。`resolve_pending_choice` は pending reactive choice
+        /// <br/>の候補 1 件を表し、選択時の `chosen_id` は handInstanceID または validTargets[0] から取る。
         /// <br/>
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("type")]

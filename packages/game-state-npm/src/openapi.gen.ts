@@ -331,6 +331,30 @@ export interface components {
             oppView: components["schemas"]["OpponentView"];
             player1Summary: components["schemas"]["PlayerSummary"];
             player2Summary: components["schemas"]["PlayerSummary"];
+            /**
+             * @description reactive 効果の処理中にプレイヤー選択が必要な状態。null なら待ちなし。
+             *     choose 側プレイヤーは availableActions に提示された候補から 1 件を選び
+             *     `resolve_pending_choice` アクションで送信する。非選択者はこの値を見て
+             *     「相手の割り込み処理中」を表示する。
+             */
+            pendingReactiveChoice?: components["schemas"]["PendingReactiveChoiceView"];
+        };
+        /** @description pendingReactiveChoice の client 公開ビュー。 */
+        PendingReactiveChoiceView: {
+            /**
+             * Format: int64
+             * @description 選択を行うプレイヤー番号
+             */
+            chooserPlayerNum: number;
+            /** @description 発動中のリアクティブのカード ID */
+            reactiveCardId: string;
+            /** @description 発動中のリアクティブのインスタンス ID */
+            reactiveInstanceId: string;
+            /**
+             * @description 選択対象の種別。`hand_card` ならば候補は手札カード、
+             *     `field_target` ならばフィールド上のリソース。
+             */
+            choiceKind: string;
         };
         /**
          * @description 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
@@ -528,7 +552,11 @@ export interface components {
          *     の実装を温存するため (oneOf による正規化は将来検討)。
          */
         AvailableAction: {
-            /** @description variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` のいずれか。 */
+            /**
+             * @description variant 種別。`play_card` / `attack` / `scale_up` / `monetize` / `use_effect` /
+             *     `resolve_pending_choice` のいずれか。`resolve_pending_choice` は pending reactive choice
+             *     の候補 1 件を表し、選択時の `chosen_id` は handInstanceID または validTargets[0] から取る。
+             */
             type: string;
             handInstanceID?: string;
             cardID?: string;

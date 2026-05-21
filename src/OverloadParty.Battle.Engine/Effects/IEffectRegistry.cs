@@ -15,6 +15,9 @@ public class EffectResult
 
     /// <summary>ガード条件が不満足で効果が発動しなかった場合 true。</summary>
     public bool GuardFailed { get; set; }
+
+    /// <summary>選択待ち状態。choice op が ChoiceData 不足で suspend したとき設定される。</summary>
+    public PendingReactiveChoice? PendingChoice { get; set; }
 }
 
 /// <summary>

@@ -25,6 +25,9 @@ public class EventDataSerializerCoverageTests
         // and reactive_revealed instead. No dedicated EventData type exists.
         ActionTypes.SetReactive,
         ActionTypes.Reactive,
+        // 保留中の reactive 選択を解決する操作。effect 再実行で発生するイベント
+        // (play_card / attack 等) を返すだけで、resolve 自体の payload は持たない。
+        ActionTypes.ResolvePendingChoice,
     };
 
     public static IEnumerable<string> AllEventTypeStrings() =>

@@ -9,7 +9,7 @@ export type GameStatus = (typeof GAME_STATUS)[number];
 export const WIN_REASONS = ["budget_zero", "system_down", "repository_out", "turn_timeout", "disconnect", "turn_limit", "draw", "launch_failure", "surrender"] as const;
 export type WinReason = (typeof WIN_REASONS)[number];
 
-export const ACTION_TYPES = ["play_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "set_reactive", "end_phase", "forfeit", "select_slot", "reactive"] as const;
+export const ACTION_TYPES = ["play_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "set_reactive", "end_phase", "forfeit", "select_slot", "reactive", "resolve_pending_choice"] as const;
 export type GameActionType = (typeof ACTION_TYPES)[number];
 
 export const EVENT_TYPES = ["play_card", "attach_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "reactive_revealed", "phase_change", "phase_end", "turn_end", "turn_start", "game_over", "battle_start"] as const;

@@ -201,3 +201,13 @@ public class ForfeitRequest
     [JsonPropertyName("reason")]
     public string? Reason { get; set; }
 }
+
+/// <summary>
+/// Request to resolve a pending reactive choice, by supplying the chosen value.
+/// </summary>
+public class ResolvePendingChoiceRequest
+{
+    /// <summary>選択された ID (PendingReactiveChoice.Candidates のいずれか)。</summary>
+    [JsonPropertyName("chosen_id")]
+    public string ChosenId { get; set; } = "";
+}

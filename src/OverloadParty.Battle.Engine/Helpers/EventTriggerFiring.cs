@@ -109,6 +109,14 @@ public static class EventTriggerFiring
                 ReactiveCard.Consume(state, reactive, candidate.OwnerNum);
             }
 
+            // choice op が ChoiceData 不足で suspend したら state に保存して後続を止める。
+            // 後続候補も同イベント契機なので、resume 後に必要であれば再走査する設計とする。
+            if (result.PendingChoice is not null)
+            {
+                state.PendingReactiveChoice = result.PendingChoice;
+                break;
+            }
+
             // アクションがキャンセルされたら、同じイベントを契機とする後続の効果は発火しない。
             // キャンセルでアクションが「発生しなかった」扱いになり、後続効果は発動契機を失う。
             if (result.CancelAction)
