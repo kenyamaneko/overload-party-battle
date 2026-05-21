@@ -171,16 +171,17 @@ public class SlotRequestOpsTests
     }
 
     [Fact]
-    public void RequestSlotFromHand_NoChoice_GuardFails()
+    public void RequestSlotFromHand_NoChoice_Throws()
     {
         var state = TestFactory.MakeGameState();
         state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
         var op = new RequestSlotFromHandOp();
 
         var handler = EffectComposer.Compose(op);
-        var result = handler(MakeContext(state));
+        // ChoiceData が無い直接呼び出し経路は不正リクエスト (A-1) として例外を伝搬する。
+        var act = () => handler(MakeContext(state));
 
-        result.GuardFailed.Should().BeTrue();
+        act.Should().Throw<GameRuleException>();
     }
 
     // ─── RequestSlotFromRepoSameCardOp ─────────────────────
@@ -207,20 +208,21 @@ public class SlotRequestOpsTests
     }
 
     [Fact]
-    public void RequestSlotFromRepoSameCard_NoTarget_GuardFails()
+    public void RequestSlotFromRepoSameCard_NoTarget_Throws()
     {
         var state = TestFactory.MakeGameState();
         state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" }];
         var op = new RequestSlotFromRepoSameCardOp();
 
         var handler = EffectComposer.Compose(op);
-        var result = handler(MakeContext(state));
+        // Target は呼び出し側 (FireOnDestroy 等) が保証するべき。null は内部不変条件違反 (A-2)。
+        var act = () => handler(MakeContext(state));
 
-        result.GuardFailed.Should().BeTrue();
+        act.Should().Throw<GameRuleException>();
     }
 
     [Fact]
-    public void RequestSlotFromHand_FilterRejectsCard_GuardFails()
+    public void RequestSlotFromHand_FilterRejectsCard_Throws()
     {
         var state = TestFactory.MakeGameState();
         state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
@@ -228,9 +230,10 @@ public class SlotRequestOpsTests
         var choiceData = new Dictionary<string, object> { ["cardId"] = "TST-0001" };
 
         var handler = EffectComposer.Compose(op);
-        var result = handler(MakeContext(state, choiceData: choiceData));
+        // 選んだカードが filter に合わないのは不正リクエスト (A-1)。
+        var act = () => handler(MakeContext(state, choiceData: choiceData));
 
-        result.GuardFailed.Should().BeTrue();
+        act.Should().Throw<GameRuleException>();
         state.Player1Hand.Should().HaveCount(1);
     }
 }

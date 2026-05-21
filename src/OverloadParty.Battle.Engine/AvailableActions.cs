@@ -377,9 +377,7 @@ public static class AvailableActions
             var card = cc.MustGet(resource.CardID);
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
 
-            // budget 条件を満たさなければ除外
-            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Ignition);
-            if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
+            if (!AllPreCheckableGuardsSatisfied(state, source: resource, supSource: null, card.CardId, cc, effects)) { continue; }
 
             var action = new AvailableAction
             {
@@ -400,9 +398,7 @@ public static class AvailableActions
             var card = cc.MustGet(support.CardID);
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
 
-            // budget 条件を満たさなければ除外
-            var budgetReq = effects.GetBudgetRequirement(card.CardId, TriggerType.Ignition);
-            if (budgetReq is not null && !budgetReq.IsSatisfied(budget)) { continue; }
+            if (!AllPreCheckableGuardsSatisfied(state, source: null, supSource: support, card.CardId, cc, effects)) { continue; }
 
             var action = new AvailableAction
             {
@@ -413,6 +409,41 @@ public static class AvailableActions
             if (!TryPopulateTrashChoice(action, state, card.CardId, cc, effects)) { continue; }
             yield return action;
         }
+    }
+
+    /// <summary>
+    /// active 効果の top-level guard 述語を事前評価する。Target を必要としない
+    /// state-only な guard (バジェット / リソース数 等) のみが対象 (target 依存 guard は
+    /// プレイヤーが target を選ぶまで判定できない)。
+    /// </summary>
+    private static bool AllPreCheckableGuardsSatisfied(
+        BattleGameState state,
+        DeployedResource? source,
+        DeployedSupport? supSource,
+        string cardId,
+        ICardCache cc,
+        IEffectRegistry effects)
+    {
+        if (effects is not EffectRegistry registry) { return true; }
+        var reg = registry.GetRegistration(cardId, TriggerType.Ignition);
+        if (reg?.Block?.Guards is not { Length: > 0 } guards) { return true; }
+
+        // Ignition は手番プレイヤーのフィールド上のカードからのみ発動するため、
+        // PlayerNum = ActivePlayer で固定して述語を評価する。
+        // Game メタデータは guard 述語からは参照しないため GameID のみ埋めて他は default のままにする。
+        var ctx = new EffectContext
+        {
+            State = state,
+            Game = new Game { GameID = state.GameID },
+            PlayerNum = state.ActivePlayer,
+            Source = source,
+            SupSource = supSource,
+            CardCache = cc,
+            Effects = effects,
+            Trigger = TriggerType.Ignition,
+        };
+
+        return guards.All(g => g.Check(ctx));
     }
 
     /// <summary>

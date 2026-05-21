@@ -52,10 +52,10 @@ public static class EffectYamlLoader
         foreach (var group in byTrigger)
         {
             var defs = group.ToList();
-            var ops = BuildTriggerOps(defs, customRegistry);
-            if (ops.Count > 0)
+            var block = BuildTriggerBlock(defs, customRegistry);
+            if (block.Guards.Length > 0 || block.Ops.Length > 0)
             {
-                registry.RegisterComposed(cardId, group.Key, ops.ToArray());
+                registry.RegisterComposed(cardId, group.Key, block);
             }
         }
     }
@@ -64,7 +64,7 @@ public static class EffectYamlLoader
     // Block composition
     // ================================================================
 
-    private static List<IEffectOp> BuildTriggerOps(
+    private static BuiltBlock BuildTriggerBlock(
         List<EffectDef> defs,
         CustomEffectRegistry customRegistry)
     {
@@ -78,79 +78,77 @@ public static class EffectYamlLoader
 
         if (independent.Count == 1 && dependent.Count > 0)
         {
-            // Single root: guards propagate normally (no exception isolation).
-            // Record success in GroupResults so DependentEffectOp can check.
+            // Single root: 親 guard が top-level に上がる。dependent は wrap して
+            // 親成功時のみ起動する DependentEffectOp に格納する。
             string rootId = independent[0].Id
                 ?? throw new InvalidOperationException("Root block with dependents must have an id");
-            var allOps = BuildSingleBlock(independent[0], customRegistry);
-            allOps.Add(new MarkGroupSucceededOp(rootId));
+            var rootBlock = BuildSingleBlock(independent[0], customRegistry);
+            var ops = new List<IEffectOp>(rootBlock.Ops) { new MarkGroupSucceededOp(rootId) };
 
             foreach (var dep in dependent)
             {
-                var depOps = BuildSingleBlock(dep, customRegistry);
-                if (depOps.Count == 0) { continue; }
+                var depBlock = BuildSingleBlock(dep, customRegistry);
+                if (depBlock.Guards.Length == 0 && depBlock.Ops.Length == 0) { continue; }
 
                 if (dep.After is null || dep.After != rootId)
                 {
                     throw new InvalidOperationException(
                         $"Effect block references unknown after target '{dep.After}'");
                 }
-                allOps.Add(new DependentEffectOp(dep.After, depOps.ToArray()));
+                ops.Add(new DependentEffectOp(dep.After, depBlock));
             }
-            return allOps;
+            return new BuiltBlock { Guards = rootBlock.Guards, Ops = ops.ToArray() };
         }
 
-        // Multiple independent blocks: wrap each for exception isolation.
+        // Multiple independent blocks: 各ブロックの guard / ops を EffectGroupOp に包む。
         var effectGroupIds = new HashSet<string>();
         var isolatedOps = new List<IEffectOp>();
         int autoId = 0;
 
         foreach (var def in independent)
         {
-            var ops = BuildSingleBlock(def, customRegistry);
-            if (ops.Count == 0) { continue; }
+            var block = BuildSingleBlock(def, customRegistry);
+            if (block.Guards.Length == 0 && block.Ops.Length == 0) { continue; }
 
             string groupId = def.Id ?? $"_auto_{autoId++}";
-            isolatedOps.Add(new EffectGroupOp(groupId, ops.ToArray()));
+            isolatedOps.Add(new EffectGroupOp(groupId, block));
             effectGroupIds.Add(groupId);
         }
 
         foreach (var def in dependent)
         {
-            var ops = BuildSingleBlock(def, customRegistry);
-            if (ops.Count == 0) { continue; }
+            var block = BuildSingleBlock(def, customRegistry);
+            if (block.Guards.Length == 0 && block.Ops.Length == 0) { continue; }
 
-            if (def.After is null)
-            {
-                continue;
-            }
+            if (def.After is null) { continue; }
             if (!effectGroupIds.Contains(def.After))
             {
                 throw new InvalidOperationException(
                     $"Effect block references unknown after target '{def.After}'");
             }
-            isolatedOps.Add(new DependentEffectOp(def.After, ops.ToArray()));
+            isolatedOps.Add(new DependentEffectOp(def.After, block));
         }
 
-        return isolatedOps;
+        return new BuiltBlock { Ops = isolatedOps.ToArray() };
     }
 
-    private static List<IEffectOp> BuildSingleBlock(
+    private static BuiltBlock BuildSingleBlock(
         EffectDef def,
         CustomEffectRegistry customRegistry)
     {
         if (def.Custom is { } customName)
         {
-            return BuildCustomBlock(customName, def.Meta, customRegistry);
+            return new BuiltBlock { Ops = BuildCustomBlock(customName, def.Meta, customRegistry).ToArray() };
         }
 
+        var guards = new List<IEffectGuard>();
         var ops = new List<IEffectOp>();
 
         if (def.Guard is { Count: > 0 })
         {
             foreach (var guardElement in def.Guard)
             {
-                ops.Add(BuildGuard(guardElement));
+                guards.Add(BuildGuard(guardElement));
             }
         }
 
@@ -182,7 +180,7 @@ public static class EffectYamlLoader
             ops.Add(new MarkUseLimitOp(perGame));
         }
 
-        return ops;
+        return new BuiltBlock { Guards = guards.ToArray(), Ops = ops.ToArray() };
     }
 
     private static List<IEffectOp> BuildCustomBlock(
@@ -485,17 +483,17 @@ public static class EffectYamlLoader
     // Guard builder
     // ================================================================
 
-    private static IEffectOp BuildGuard(JsonElement element)
+    private static IEffectGuard BuildGuard(JsonElement element)
     {
-        // negate は反転条件であって判定種別ではないため、sub-builder に持たせるとガード種別ごとに
-        // 反転ラップが重複する。外側で 1 度だけ NegateGuardOp を被せる責務分離。
+        // negate は反転条件であって判定種別ではないため、sub-builder に持たせると種別ごとに
+        // 反転ラップが重複する。外側で 1 度だけ NegateGuard を被せる責務分離。
         bool negate = element.GetBoolOrFalse("negate");
 
-        IEffectOp op = BuildGuardBody(element);
-        return negate ? new NegateGuardOp(op) : op;
+        IEffectGuard guard = BuildGuardBody(element);
+        return negate ? new NegateGuard(guard) : guard;
     }
 
-    private static IEffectOp BuildGuardBody(JsonElement element)
+    private static IEffectGuard BuildGuardBody(JsonElement element)
     {
         if (element.TryGetProperty("stat", out var statElement))
         {
@@ -515,13 +513,13 @@ public static class EffectYamlLoader
         if (element.TryGetProperty("not_same", out var notSameElement))
         {
             var (a, b) = ParseResourceRefPair(notSameElement);
-            return new GuardNotSameOp(a, b);
+            return new NotSameGuard(a, b);
         }
 
         if (element.TryGetProperty("same", out var sameElement))
         {
             var (a, b) = ParseResourceRefPair(sameElement);
-            return new GuardSameOp(a, b);
+            return new SameGuard(a, b);
         }
 
         if (element.TryGetProperty("event_owner", out var ownerElement))
@@ -532,12 +530,12 @@ public static class EffectYamlLoader
                 PlayerRefs.Opponent => false,
                 _ => throw new InvalidOperationException($"Unknown event_owner: {ownerElement.GetString()}"),
             };
-            return new GuardEventOwnerOp(isSelf);
+            return new EventOwnerGuard(isSelf);
         }
 
         if (element.GetBoolOrFalse("lethal"))
         {
-            return GuardLethalOp.Instance;
+            return LethalGuard.Instance;
         }
 
         throw new InvalidOperationException($"Unknown guard type: {element}");
@@ -558,7 +556,7 @@ public static class EffectYamlLoader
         _ => throw new InvalidOperationException($"Unknown resource reference: {s}"),
     };
 
-    private static IEffectOp BuildStatGuard(JsonElement element)
+    private static IEffectGuard BuildStatGuard(JsonElement element)
     {
         string selectorStr = element.GetProperty("selector").GetString()!;
         string stat = element.GetProperty("stat").GetString()!;
@@ -567,11 +565,11 @@ public static class EffectYamlLoader
         {
             if (element.GetInt64OrNull("min") is long min)
             {
-                return new RequireBudgetOp(min);
+                return new MinBudgetGuard(min);
             }
             if (element.GetInt64OrNull("max") is long max)
             {
-                return new RequireMaxBudgetOp(max);
+                return new MaxBudgetGuard(max);
             }
         }
 
@@ -579,14 +577,14 @@ public static class EffectYamlLoader
         {
             if (element.GetInt64OrNull("max") is long max)
             {
-                return new GuardTargetAVOp(max);
+                return new TargetAVGuard(max);
             }
         }
 
         throw new InvalidOperationException($"Unsupported stat guard: selector={selectorStr}, stat={stat}");
     }
 
-    private static IEffectOp BuildCountGuard(JsonElement element)
+    private static IEffectGuard BuildCountGuard(JsonElement element)
     {
         var selectorElement = element.GetProperty("selector");
         int? min = element.GetInt32OrNull("min");
@@ -594,7 +592,7 @@ public static class EffectYamlLoader
         return BuildResourceCountGuard(selectorElement, min, max);
     }
 
-    private static IEffectOp BuildResourceCountGuard(JsonElement selectorElement, int? min, int? max)
+    private static IEffectGuard BuildResourceCountGuard(JsonElement selectorElement, int? min, int? max)
     {
         string? owner = null;
         string? zone = null;
@@ -611,11 +609,11 @@ public static class EffectYamlLoader
             cardIds = ParseCardIds(selectorElement);
         }
 
-        return new ResourceCountGuardOp(
+        return new ResourceCountGuard(
             owner ?? PlayerRefs.Myself, zone, faction, cardTypes, cardIds, min, max);
     }
 
-    private static IEffectOp BuildMatchGuard(JsonElement element)
+    private static IEffectGuard BuildMatchGuard(JsonElement element)
     {
         var selector = ParseMatchSelector(element.GetProperty("selector").GetString()!);
         string? faction = element.GetStringOrNull("faction");
@@ -630,7 +628,7 @@ public static class EffectYamlLoader
             }
             : null;
 
-        return new GuardMatchOp(selector, faction, cardTypes, cardIds, ownerIsOpponent);
+        return new MatchGuard(selector, faction, cardTypes, cardIds, ownerIsOpponent);
     }
 
     private static MatchSelector ParseMatchSelector(string s) => s switch

@@ -66,20 +66,19 @@ public class PendingEffectChoiceTests
         result.PendingChoice.Should().BeNull();
     }
 
-    // ─── 直接呼び出し (SupSource 無し) は suspend せず guard fail ──
+    // ─── 直接呼び出し (SupSource 無し) は suspend せず例外 ──
 
     [Fact]
-    public void DeployFromHandOp_DirectCall_WithoutChoice_FailsGuard()
+    public void DeployFromHandOp_DirectCall_WithoutChoice_Throws()
     {
         var state = TestFactory.MakeGameState();
         state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = HandDummyCardId, ArtNo = 1 });
 
         var handler = EffectComposer.Compose(new RequestSlotFromHandOp());
-        var result = handler(MakeCtx(state));
+        // SupSource なし + ChoiceData なし は active 経路の不正リクエスト (A-1)、例外を伝搬する。
+        var act = () => handler(MakeCtx(state));
 
-        // SupSource なし + ChoiceData なし → 旧来通り throw → composer が catch して GuardFailed=true。
-        result.GuardFailed.Should().BeTrue();
-        result.PendingChoice.Should().BeNull();
+        act.Should().Throw<GameRuleException>();
     }
 
     // ─── FieldTarget 選択: chooser が所有者と異なるケース ──

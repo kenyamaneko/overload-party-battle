@@ -34,7 +34,7 @@ public class GuardOpTests
         });
     }
 
-    private OpContext Ctx(
+    private EffectContext Ctx(
         long playerNum = 1,
         DeployedResource? source = null,
         DeployedResource? target = null,
@@ -43,7 +43,7 @@ public class GuardOpTests
         CardDefinition? incidentCard = null,
         long? eventDamage = null)
     {
-        return new OpContext(new EffectContext
+        return new EffectContext
         {
             State = TestFactory.MakeGameState(),
             Game = _game,
@@ -56,47 +56,47 @@ public class GuardOpTests
             EventDamage = eventDamage,
             CardCache = _cc,
             Effects = new EffectRegistry(),
-        });
+        };
     }
 
-    private static void ShouldPass(IEffectOp op, OpContext ctx) =>
-        op.Invoking(o => o.Execute(ctx)).Should().NotThrow();
+    private static void ShouldPass(IEffectGuard guard, EffectContext ctx) =>
+        guard.Check(ctx).Should().BeTrue();
 
-    private static void ShouldFail(IEffectOp op, OpContext ctx) =>
-        op.Invoking(o => o.Execute(ctx)).Should().Throw<GameRuleException>();
+    private static void ShouldFail(IEffectGuard guard, EffectContext ctx) =>
+        guard.Check(ctx).Should().BeFalse();
 
     // ─── event_owner ────────────────────────────────────────────
 
     [Fact]
     public void EventOwner_Opponent_PassesWhenEventOwnerIsOpponent()
-        => ShouldPass(new GuardEventOwnerOp(isSelf: false), Ctx(playerNum: 1, eventOwnerNum: 2));
+        => ShouldPass(new EventOwnerGuard(isSelf: false), Ctx(playerNum: 1, eventOwnerNum: 2));
 
     [Fact]
     public void EventOwner_Opponent_FailsWhenEventOwnerIsSelf()
-        => ShouldFail(new GuardEventOwnerOp(isSelf: false), Ctx(playerNum: 1, eventOwnerNum: 1));
+        => ShouldFail(new EventOwnerGuard(isSelf: false), Ctx(playerNum: 1, eventOwnerNum: 1));
 
     [Fact]
     public void EventOwner_Self_PassesWhenEventOwnerIsSelf()
-        => ShouldPass(new GuardEventOwnerOp(isSelf: true), Ctx(playerNum: 1, eventOwnerNum: 1));
+        => ShouldPass(new EventOwnerGuard(isSelf: true), Ctx(playerNum: 1, eventOwnerNum: 1));
 
     // ─── match: event_card selector ─────────────────────────────
 
     [Fact]
     public void MatchEventCard_PassesWhenEventCardIdMatches()
         => ShouldPass(
-            new GuardMatchOp(MatchSelector.EventCard, cardIds: ["INC-A", "INC-B"]),
+            new MatchGuard(MatchSelector.EventCard, cardIds: ["INC-A", "INC-B"]),
             Ctx(incidentCard: _cc.MustGet("INC-A")));
 
     [Fact]
     public void MatchEventCard_FailsWhenEventCardIdNotInSet()
         => ShouldFail(
-            new GuardMatchOp(MatchSelector.EventCard, cardIds: ["INC-B"]),
+            new MatchGuard(MatchSelector.EventCard, cardIds: ["INC-B"]),
             Ctx(incidentCard: _cc.MustGet("INC-A")));
 
     [Fact]
     public void MatchEventCard_FailsWhenNoEventCardInContext()
         => ShouldFail(
-            new GuardMatchOp(MatchSelector.EventCard, cardIds: ["INC-A"]),
+            new MatchGuard(MatchSelector.EventCard, cardIds: ["INC-A"]),
             Ctx());
 
     // ─── match: attacker selector ───────────────────────────────
@@ -106,7 +106,7 @@ public class GuardOpTests
     {
         var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
         ShouldPass(
-            new GuardMatchOp(MatchSelector.Attacker, faction: "Tenki"),
+            new MatchGuard(MatchSelector.Attacker, faction: "Tenki"),
             Ctx(source: attacker));
     }
 
@@ -115,7 +115,7 @@ public class GuardOpTests
     {
         var attacker = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "atk");
         ShouldFail(
-            new GuardMatchOp(MatchSelector.Attacker, faction: "Tenki"),
+            new MatchGuard(MatchSelector.Attacker, faction: "Tenki"),
             Ctx(source: attacker));
     }
 
@@ -124,7 +124,7 @@ public class GuardOpTests
     {
         var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
         ShouldPass(
-            new GuardMatchOp(MatchSelector.Attacker, ownerIsOpponent: true),
+            new MatchGuard(MatchSelector.Attacker, ownerIsOpponent: true),
             Ctx(playerNum: 1, source: attacker, eventOwnerNum: 2));
     }
 
@@ -133,7 +133,7 @@ public class GuardOpTests
     {
         var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
         ShouldFail(
-            new GuardMatchOp(MatchSelector.Attacker, ownerIsOpponent: true),
+            new MatchGuard(MatchSelector.Attacker, ownerIsOpponent: true),
             Ctx(playerNum: 1, source: attacker, eventOwnerNum: 1));
     }
 
@@ -144,7 +144,7 @@ public class GuardOpTests
     {
         var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
         ShouldPass(
-            new GuardMatchOp(MatchSelector.Target, faction: "SHE", cardTypes: ["Compute", "Data"]),
+            new MatchGuard(MatchSelector.Target, faction: "SHE", cardTypes: ["Compute", "Data"]),
             Ctx(target: target));
     }
 
@@ -153,7 +153,7 @@ public class GuardOpTests
     {
         var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
         ShouldFail(
-            new GuardMatchOp(MatchSelector.Target, faction: "SHE", cardTypes: ["Compute"]),
+            new MatchGuard(MatchSelector.Target, faction: "SHE", cardTypes: ["Compute"]),
             Ctx(target: target));
     }
 
@@ -162,7 +162,7 @@ public class GuardOpTests
     {
         var target = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "def");
         ShouldFail(
-            new GuardMatchOp(MatchSelector.Target, faction: "SHE"),
+            new MatchGuard(MatchSelector.Target, faction: "SHE"),
             Ctx(target: target));
     }
 
@@ -172,14 +172,14 @@ public class GuardOpTests
     public void Lethal_PassesWhenDamageAtOrAboveTargetAv()
     {
         var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "def", maxAV: 800, currentAV: 800);
-        ShouldPass(GuardLethalOp.Instance, Ctx(target: target, eventDamage: 800));
+        ShouldPass(LethalGuard.Instance, Ctx(target: target, eventDamage: 800));
     }
 
     [Fact]
     public void Lethal_FailsWhenDamageBelowTargetAv()
     {
         var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "def", maxAV: 800, currentAV: 800);
-        ShouldFail(GuardLethalOp.Instance, Ctx(target: target, eventDamage: 799));
+        ShouldFail(LethalGuard.Instance, Ctx(target: target, eventDamage: 799));
     }
 
     // ─── same: target / equip_host ──────────────────────────────
@@ -190,7 +190,7 @@ public class GuardOpTests
         var host = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "host");
         var attachment = new DeployedSupport { InstanceID = "att", CardID = "SHE-VM", TargetInstanceID = "host" };
         ShouldPass(
-            new GuardSameOp(ResourceRef.Target, ResourceRef.EquipHost),
+            new SameGuard(ResourceRef.Target, ResourceRef.EquipHost),
             Ctx(target: host, supSource: attachment));
     }
 
@@ -200,7 +200,7 @@ public class GuardOpTests
         var other = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "other");
         var attachment = new DeployedSupport { InstanceID = "att", CardID = "SHE-VM", TargetInstanceID = "host" };
         ShouldFail(
-            new GuardSameOp(ResourceRef.Target, ResourceRef.EquipHost),
+            new SameGuard(ResourceRef.Target, ResourceRef.EquipHost),
             Ctx(target: other, supSource: attachment));
     }
 
@@ -209,7 +209,7 @@ public class GuardOpTests
     {
         var host = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "host");
         ShouldFail(
-            new GuardSameOp(ResourceRef.Target, ResourceRef.EquipHost),
+            new SameGuard(ResourceRef.Target, ResourceRef.EquipHost),
             Ctx(target: host));
     }
 
@@ -221,7 +221,7 @@ public class GuardOpTests
         var source = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "src");
         var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "tgt");
         ShouldPass(
-            new GuardNotSameOp(ResourceRef.Source, ResourceRef.Target),
+            new NotSameGuard(ResourceRef.Source, ResourceRef.Target),
             Ctx(source: source, target: target));
     }
 
@@ -230,7 +230,7 @@ public class GuardOpTests
     {
         var self = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "myself");
         ShouldFail(
-            new GuardNotSameOp(ResourceRef.Source, ResourceRef.Target),
+            new NotSameGuard(ResourceRef.Source, ResourceRef.Target),
             Ctx(source: self, target: self));
     }
 }

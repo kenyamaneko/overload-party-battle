@@ -7,9 +7,10 @@ namespace OverloadParty.Battle.Engine.Effects;
 public interface IEffectOp
 {
     /// <summary>
-    /// Execute this operation.
-    /// ガード条件が満たされない場合は GameRuleException を投げてパイプラインを中断する。
-    /// EffectComposer がキャッチして EffectResult.GuardFailed = true に変換する。
+    /// Execute this operation. ops 内で投げた GameRuleException は composer が
+    /// 握り潰さず caller (UseExceptionHandler) まで伝搬する (A-1 不正入力 / A-2 内部不変条件違反)。
+    /// passive trigger 経路で「発動条件不成立」を表すときは throw せず
+    /// ctx.Result.GuardFailed = true をセットして return する。
     /// </summary>
     /// <param name="ctx">パイプライン実行コンテキスト。</param>
     void Execute(OpContext ctx);
