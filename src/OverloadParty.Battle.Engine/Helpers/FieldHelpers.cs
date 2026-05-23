@@ -186,7 +186,7 @@ public static class FieldHelpers
     /// Check if card is a compute type.
     /// </summary>
     /// <param name="cardType">判定対象のカードタイプ。</param>
-    /// <returns>コンピュート系リソースなら true。</returns>
+    /// <returns>Compute系リソースなら true。</returns>
     public static bool IsComputeType(string cardType)
     {
         return cardType == CardTypes.Compute;
