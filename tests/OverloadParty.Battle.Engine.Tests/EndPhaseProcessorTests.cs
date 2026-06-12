@@ -350,8 +350,8 @@ public class EndPhaseProcessorTests
     {
         // Turn 5 → personalTurn = (5+1)/2 = 3, which >= LaunchFailureTurn=3
         var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle, activePlayer: 1);
-        // Player has never deployed (HasHadActiveResource = false)
-        state.SetHasHadActiveResource(1, false);
+        // Player has never deployed (HasOperated = false)
+        state.SetHasOperated(1, false);
 
         var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
 
@@ -378,7 +378,7 @@ public class EndPhaseProcessorTests
     public void Process_EndPhase_EmptyRepository_GameOver()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
-        state.SetHasHadActiveResource(1, true);
+        state.SetHasOperated(1, true);
         // Do NOT add repo cards for player 2 (next draw will fail)
         // But make sure player 1's end-phase logic works
         // After turn switch, player 2 (active) has empty repo

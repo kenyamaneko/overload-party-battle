@@ -96,6 +96,8 @@ CREATE TABLE battle.game_states (
   player1_repository   JSONB NOT NULL,               -- Player 1 リポジトリ（山札）
   player1_trash        JSONB NOT NULL,               -- Player 1 トラッシュ
   player1_time_bank    BIGINT NOT NULL,              -- Player 1 残り時間
+  player1_incident_played_this_turn BOOLEAN NOT NULL, -- Player 1 がこのターンにインシデントを使用済みか
+  player1_has_operated   BOOLEAN NOT NULL, -- Player 1 の稼働実績フラグ
   player2_budget       BIGINT NOT NULL,              -- Player 2 Budget
   player2_insight_pool BIGINT NOT NULL,              -- Player 2 Insight Pool
   player2_field        JSONB NOT NULL,               -- Player 2 フィールド上のカード
@@ -103,8 +105,14 @@ CREATE TABLE battle.game_states (
   player2_repository   JSONB NOT NULL,               -- Player 2 リポジトリ（山札）
   player2_trash        JSONB NOT NULL,               -- Player 2 トラッシュ
   player2_time_bank    BIGINT NOT NULL,              -- Player 2 残り時間
+  player2_incident_played_this_turn BOOLEAN NOT NULL, -- Player 2 がこのターンにインシデントを使用済みか
+  player2_has_operated   BOOLEAN NOT NULL, -- Player 2 の稼働実績フラグ
   current_action_timer BIGINT,                       -- アクションタイマー
   next_instance_seq    BIGINT NOT NULL DEFAULT 0,    -- インスタンスID発番用シーケンス
+  turn_started_at      TIMESTAMPTZ NOT NULL,         -- 現在のターンの開始日時（タイムバンク減算の基準点）
+  next_deploy_order_seq BIGINT NOT NULL,             -- デプロイ順発番用シーケンス
+  pending_slot_selects JSONB NOT NULL,               -- 効果デプロイのスロット選択待ちキュー
+  pending_effect_choice JSONB,                       -- 効果の選択待ち状態（NULL=待ちなし）
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT now() -- 更新日時
 );
 CREATE TRIGGER trg_game_states_updated_at BEFORE UPDATE ON battle.game_states FOR EACH ROW EXECUTE FUNCTION battle.update_updated_at();

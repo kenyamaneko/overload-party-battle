@@ -28,7 +28,7 @@ public class GameLogServiceTests
         await _repo.CreateGame(game, state);
 
         // Add sample events
-        await _repo.AppendEvent(new GameEvent
+        _repo.SeedEvent(new GameEvent
         {
             GameID = "test-game",
             SequenceNumber = 1,
@@ -36,7 +36,7 @@ public class GameLogServiceTests
             PlayerNum = 1,
             EventData = new PlayCardEventData { CardId = "TST-0001", Zone = "frontend", Index = 0 },
         });
-        await _repo.AppendEvent(new GameEvent
+        _repo.SeedEvent(new GameEvent
         {
             GameID = "test-game",
             SequenceNumber = 2,
@@ -51,7 +51,7 @@ public class GameLogServiceTests
                 SlaPenalty = 400,
             },
         });
-        await _repo.AppendEvent(new GameEvent
+        _repo.SeedEvent(new GameEvent
         {
             GameID = "test-game",
             SequenceNumber = 3,
@@ -65,7 +65,7 @@ public class GameLogServiceTests
                 CurrentPhase = "draw",
             },
         });
-        await _repo.AppendEvent(new GameEvent
+        _repo.SeedEvent(new GameEvent
         {
             GameID = "test-game",
             SequenceNumber = 4,
@@ -188,7 +188,7 @@ public class GameLogServiceTests
             _ => throw new InvalidOperationException($"Unhandled event type in test fixture: {eventType}"),
         };
 
-        await _repo.AppendEvent(new GameEvent
+        _repo.SeedEvent(new GameEvent
         {
             GameID = "test-game",
             SequenceNumber = 1,

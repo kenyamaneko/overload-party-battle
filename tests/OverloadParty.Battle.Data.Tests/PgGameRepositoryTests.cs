@@ -54,6 +54,7 @@ public class PgGameRepositoryTests
             Player2Trash = [],
             Player2TimeBank = 480,
             NextInstanceSeq = 1,
+            TurnStartedAt = now,
             UpdatedAt = now,
         };
 
@@ -152,7 +153,7 @@ public class PgGameRepositoryTests
             s.ActivePlayer = 2;
             s.Player1Budget = 4500;
             s.Player2Budget = 4800;
-            return Task.CompletedTask;
+            return Task.FromResult<IReadOnlyList<GameEvent>>([]);
         });
 
         var got = await repo.GetGameState(game.GameID);
@@ -169,14 +170,113 @@ public class PgGameRepositoryTests
     {
         var repo = CreateRepo();
 
-        var act = () => repo.UpdateGameState("nonexistent", _ => Task.CompletedTask);
+        var act = () => repo.UpdateGameState("nonexistent", _ => Task.FromResult<IReadOnlyList<GameEvent>>([]));
         await act.Should().ThrowAsync<InvalidOperationException>();
     }
 
-    // ─── AppendEvent / GetEvents / GetEventCount ────────────
-
+    /// <summary>
+    /// ターン進行・選択待ちなどエンジンが書き換える進行状態が、リロード後も保持されることを検証する。
+    /// </summary>
     [Fact]
-    public async Task AppendEvent_and_GetEvents_roundtrip()
+    public async Task UpdateGameState_engine_progress_fields_roundtrip()
+    {
+        var repo = CreateRepo();
+        var (game, state) = MakeFixture();
+        await repo.CreateGame(game, state);
+
+        var turnStartedAt = new DateTime(2026, 3, 1, 10, 30, 0, DateTimeKind.Utc);
+        await repo.UpdateGameState(game.GameID, s =>
+        {
+            s.Player1IncidentPlayedThisTurn = true;
+            s.Player1HasOperated = true;
+            s.Player2IncidentPlayedThisTurn = false;
+            s.Player2HasOperated = true;
+            s.TurnStartedAt = turnStartedAt;
+            s.NextDeployOrderSeq = 7;
+            s.PendingSlotSelects =
+            [
+                new AwaitingSlotSelect
+                {
+                    PlayerNum = 1,
+                    Resource = new DeployedResource { InstanceID = "inst_9", CardID = "TST-0001" },
+                    ValidZones = ["frontend", "backend"],
+                },
+            ];
+            s.PendingEffectChoice = new PendingEffectChoice
+            {
+                ChooserPlayerNum = 2,
+                OwnerPlayerNum = 1,
+                EffectCardId = "TST-0003",
+                EffectInstanceId = "inst_3",
+                Trigger = TriggerType.OnDestroy,
+                ChoiceKey = "instanceId",
+                Candidates = ["inst_1", "inst_2"],
+                ChoiceKind = "select_resource",
+            };
+            return Task.FromResult<IReadOnlyList<GameEvent>>([]);
+        });
+
+        var got = await repo.GetGameState(game.GameID);
+        got!.Player1IncidentPlayedThisTurn.Should().BeTrue();
+        got.Player1HasOperated.Should().BeTrue();
+        got.Player2IncidentPlayedThisTurn.Should().BeFalse();
+        got.Player2HasOperated.Should().BeTrue();
+        got.TurnStartedAt.Should().Be(turnStartedAt);
+        got.NextDeployOrderSeq.Should().Be(7);
+
+        got.PendingSlotSelects.Should().HaveCount(1);
+        got.PendingSlotSelects[0].PlayerNum.Should().Be(1);
+        got.PendingSlotSelects[0].Resource.InstanceID.Should().Be("inst_9");
+        got.PendingSlotSelects[0].ValidZones.Should().Equal("frontend", "backend");
+
+        got.PendingEffectChoice.Should().NotBeNull();
+        got.PendingEffectChoice!.ChooserPlayerNum.Should().Be(2);
+        got.PendingEffectChoice.EffectCardId.Should().Be("TST-0003");
+        got.PendingEffectChoice.Trigger.Should().Be(TriggerType.OnDestroy);
+        got.PendingEffectChoice.Candidates.Should().Equal("inst_1", "inst_2");
+    }
+
+    /// <summary>
+    /// 選択待ちが解消されたとき、null / 空に戻した状態が保存されることを検証する。
+    /// </summary>
+    [Fact]
+    public async Task UpdateGameState_clears_pending_choice_state()
+    {
+        var repo = CreateRepo();
+        var (game, state) = MakeFixture();
+        state.PendingEffectChoice = new PendingEffectChoice
+        {
+            ChooserPlayerNum = 1,
+            OwnerPlayerNum = 1,
+            EffectCardId = "TST-0003",
+            EffectInstanceId = "inst_3",
+            Trigger = TriggerType.OnDeploy,
+            ChoiceKey = "cardId",
+            Candidates = ["TST-0001"],
+            ChoiceKind = "select_card",
+        };
+        await repo.CreateGame(game, state);
+
+        await repo.UpdateGameState(game.GameID, s =>
+        {
+            s.PendingEffectChoice = null;
+            s.PendingSlotSelects = [];
+            return Task.FromResult<IReadOnlyList<GameEvent>>([]);
+        });
+
+        var got = await repo.GetGameState(game.GameID);
+        got!.PendingEffectChoice.Should().BeNull();
+        got.PendingSlotSelects.Should().BeEmpty();
+    }
+
+    // ─── イベント永続化 (UpdateGameState 経由) ──────────────
+
+    /// <summary>
+    /// fn が返したイベントが state 更新と同一トランザクションで保存され、
+    /// sequence_number が DB 採番されてイベントへ書き戻されることを検証する。
+    /// </summary>
+    [Fact]
+    public async Task UpdateGameState_persists_events_and_assigns_sequence_numbers()
     {
         var repo = CreateRepo();
         var (game, state) = MakeFixture();
@@ -185,7 +285,6 @@ public class PgGameRepositoryTests
         var evt1 = new GameEvent
         {
             GameID = game.GameID,
-            SequenceNumber = 1,
             EventType = EventTypes.PlayCard,
             PlayerNum = 1,
             EventData = new PlayCardEventData
@@ -194,20 +293,20 @@ public class PgGameRepositoryTests
                 Zone = "frontend",
                 Index = 0,
             },
-            CreatedAt = DateTime.UtcNow,
         };
         var evt2 = new GameEvent
         {
             GameID = game.GameID,
-            SequenceNumber = 2,
             EventType = EventTypes.TurnStart,
             PlayerNum = null,
             EventData = new TurnStartInternalEventData { Turn = 1, ActivePlayer = 2 },
-            CreatedAt = DateTime.UtcNow,
         };
 
-        await repo.AppendEvent(evt1);
-        await repo.AppendEvent(evt2);
+        await repo.UpdateGameState(game.GameID,
+            _ => Task.FromResult<IReadOnlyList<GameEvent>>([evt1, evt2]));
+
+        evt1.SequenceNumber.Should().Be(1);
+        evt2.SequenceNumber.Should().Be(2);
 
         var events = await repo.GetEvents(game.GameID);
         events.Should().HaveCount(2);
@@ -223,25 +322,42 @@ public class PgGameRepositoryTests
             .Which.Turn.Should().Be(1);
     }
 
+    /// <summary>
+    /// 複数回の UpdateGameState をまたいで sequence_number が連番で継続することを検証する。
+    /// </summary>
     [Fact]
-    public async Task GetEventCount_returns_correct_count()
+    public async Task UpdateGameState_continues_sequence_numbers_across_calls()
     {
         var repo = CreateRepo();
         var (game, state) = MakeFixture();
         await repo.CreateGame(game, state);
 
-        (await repo.GetEventCount(game.GameID)).Should().Be(0);
+        await repo.UpdateGameState(game.GameID,
+            _ => Task.FromResult<IReadOnlyList<GameEvent>>([new GameEvent
+            {
+                GameID = game.GameID,
+                EventType = EventTypes.Monetize,
+                EventData = new MonetizeEventData { TotalAmount = 0 },
+            }]));
 
-        await repo.AppendEvent(new GameEvent
+        var evtNext = new GameEvent
         {
             GameID = game.GameID,
-            SequenceNumber = 1,
-            EventType = EventTypes.Monetize,
-            EventData = new MonetizeEventData { TotalAmount = 0 },
-            CreatedAt = DateTime.UtcNow,
-        });
+            EventType = EventTypes.TurnEnd,
+            EventData = new TurnEndEventData
+            {
+                Phase = "battle",
+                NextTurn = 2,
+                ActivePlayer = 2,
+                CurrentPhase = "draw",
+            },
+        };
+        await repo.UpdateGameState(game.GameID,
+            _ => Task.FromResult<IReadOnlyList<GameEvent>>([evtNext]));
 
-        (await repo.GetEventCount(game.GameID)).Should().Be(1);
+        evtNext.SequenceNumber.Should().Be(2);
+        var events = await repo.GetEvents(game.GameID);
+        events.Select(e => e.SequenceNumber).Should().Equal(1, 2);
     }
 
     // ─── FinishGame ─────────────────────────────────────────

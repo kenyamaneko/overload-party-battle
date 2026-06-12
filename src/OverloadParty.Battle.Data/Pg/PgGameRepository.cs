@@ -141,13 +141,13 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return ReadGameState(reader);
     }
 
-    /// <summary>行ロック下でゲーム状態を読み出し、更新関数を適用して保存する。pending action があれば同じトランザクションで追記する。</summary>
+    /// <summary>行ロック下でゲーム状態を読み出し、更新関数を適用して保存する。fn が返したイベントと pending action も同じトランザクションで追記する。</summary>
     /// <param name="gameID">更新対象のゲーム ID。</param>
-    /// <param name="fn">読み出した状態に対して適用する更新関数。</param>
+    /// <param name="fn">読み出した状態に対して適用する更新関数。永続化するイベントを返す。</param>
     /// <param name="pendingAction">追記する pending action。不要なら null。</param>
     /// <param name="ct">キャンセレーショントークン。</param>
     /// <returns>非同期処理を表すタスク。</returns>
-    public async Task UpdateGameState(string gameID, Func<BattleGameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
+    public async Task UpdateGameState(string gameID, Func<BattleGameState, Task<IReadOnlyList<GameEvent>>> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var tx = await conn.BeginTransactionAsync(ct);
@@ -164,7 +164,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             state = ReadGameState(reader);
         }
 
-        await fn(state);
+        var events = await fn(state);
 
         state.Version++;
         state.UpdatedAt = DateTime.UtcNow;
@@ -174,14 +174,23 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 version = $1, current_turn = $2, current_phase = $3, active_player = $4,
                 player1_budget = $5, player1_insight_pool = $6, player1_field = $7, player1_hand = $8,
                 player1_repository = $9, player1_trash = $10, player1_time_bank = $11,
-                player2_budget = $12, player2_insight_pool = $13, player2_field = $14, player2_hand = $15,
-                player2_repository = $16, player2_trash = $17, player2_time_bank = $18,
-                current_action_timer = $19, next_instance_seq = $20, updated_at = $21
-            WHERE game_id = $22", conn, tx))
+                player1_incident_played_this_turn = $12, player1_has_operated = $13,
+                player2_budget = $14, player2_insight_pool = $15, player2_field = $16, player2_hand = $17,
+                player2_repository = $18, player2_trash = $19, player2_time_bank = $20,
+                player2_incident_played_this_turn = $21, player2_has_operated = $22,
+                current_action_timer = $23, next_instance_seq = $24,
+                turn_started_at = $25, next_deploy_order_seq = $26,
+                pending_slot_selects = $27, pending_effect_choice = $28, updated_at = $29
+            WHERE game_id = $30", conn, tx))
         {
             AddGameStateParams(cmd, state);
             cmd.Parameters.AddWithValue(state.GameID);
             await cmd.ExecuteNonQueryAsync(ct);
+        }
+
+        foreach (var evt in events)
+        {
+            await AppendEventInTx(conn, tx, gameID, evt, ct);
         }
 
         if (pendingAction is not null)
@@ -205,24 +214,26 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await tx.CommitAsync(ct);
     }
 
-    /// <summary>イベントを game_events に追記する。</summary>
-    /// <param name="evt">追記するイベント。</param>
-    /// <param name="ct">キャンセレーショントークン。</param>
-    /// <returns>非同期処理を表すタスク。</returns>
-    public async Task AppendEvent(GameEvent evt, CancellationToken ct = default)
+    /// <summary>イベントを game_events に追記する。sequence_number は SQL 側で採番し evt に書き戻す。</summary>
+    private static async Task AppendEventInTx(
+        NpgsqlConnection conn, NpgsqlTransaction tx, string gameID, GameEvent evt, CancellationToken ct)
     {
-        await using var conn = await ds.OpenConnectionAsync(ct);
+        evt.CreatedAt = DateTime.UtcNow;
         await using var cmd = new NpgsqlCommand(@"
             INSERT INTO game_events (
                 game_id, sequence_number, event_type, player_num, event_data, created_at
-            ) VALUES ($1,$2,$3,$4,$5,$6)", conn);
-        cmd.Parameters.AddWithValue(evt.GameID);
-        cmd.Parameters.AddWithValue(evt.SequenceNumber);
+            ) VALUES (
+                $1,
+                COALESCE((SELECT MAX(sequence_number) FROM game_events WHERE game_id = $1), 0) + 1,
+                $2, $3, $4, $5
+            )
+            RETURNING sequence_number", conn, tx);
+        cmd.Parameters.AddWithValue(gameID);
         cmd.Parameters.AddWithValue(evt.EventType);
         cmd.Parameters.AddWithValue(evt.PlayerNum.HasValue ? (object)(short)evt.PlayerNum.Value : DBNull.Value);
         cmd.Parameters.Add(EventDataJsonbParam(evt.EventData));
         cmd.Parameters.AddWithValue(evt.CreatedAt);
-        await cmd.ExecuteNonQueryAsync(ct);
+        evt.SequenceNumber = (long)(await cmd.ExecuteScalarAsync(ct))!;
     }
 
     /// <summary>ゲームを終了状態にし、勝者と勝因を記録する。</summary>
@@ -246,19 +257,6 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(now);
         cmd.Parameters.AddWithValue(gameID);
         await cmd.ExecuteNonQueryAsync(ct);
-    }
-
-    /// <summary>指定ゲームに記録されたイベント数を取得する。</summary>
-    /// <param name="gameID">取得対象のゲーム ID。</param>
-    /// <param name="ct">キャンセレーショントークン。</param>
-    /// <returns>記録されたイベント数。</returns>
-    public async Task<long> GetEventCount(string gameID, CancellationToken ct = default)
-    {
-        await using var conn = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand(
-            "SELECT COUNT(*) FROM game_events WHERE game_id = $1", conn);
-        cmd.Parameters.AddWithValue(gameID);
-        return (long)(await cmd.ExecuteScalarAsync(ct))!;
     }
 
     /// <summary>指定ゲームのイベントを sequence_number 昇順で取得する。</summary>
@@ -321,9 +319,13 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         SELECT game_id, version, current_turn, current_phase, active_player,
                player1_budget, player1_insight_pool, player1_field, player1_hand,
                player1_repository, player1_trash, player1_time_bank,
+               player1_incident_played_this_turn, player1_has_operated,
                player2_budget, player2_insight_pool, player2_field, player2_hand,
                player2_repository, player2_trash, player2_time_bank,
-               current_action_timer, next_instance_seq, updated_at
+               player2_incident_played_this_turn, player2_has_operated,
+               current_action_timer, next_instance_seq,
+               turn_started_at, next_deploy_order_seq,
+               pending_slot_selects, pending_effect_choice, updated_at
         FROM game_states WHERE game_id = $1";
 
     // ─── Helpers ─────────────────────────────────────────────────
@@ -371,18 +373,28 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             Player1Repository = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(9), DbJsonOptions.Default) ?? [],
             Player1Trash = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(10), DbJsonOptions.Default) ?? [],
             Player1TimeBank = r.GetInt64(11),
+            Player1IncidentPlayedThisTurn = r.GetBoolean(12),
+            Player1HasOperated = r.GetBoolean(13),
 
-            Player2Budget = r.GetInt64(12),
-            Player2InsightPool = r.GetInt64(13),
-            Player2Field = JsonSerializer.Deserialize<Field>(r.GetString(14), DbJsonOptions.Default) ?? new(),
-            Player2Hand = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(15), DbJsonOptions.Default) ?? [],
-            Player2Repository = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(16), DbJsonOptions.Default) ?? [],
-            Player2Trash = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(17), DbJsonOptions.Default) ?? [],
-            Player2TimeBank = r.GetInt64(18),
+            Player2Budget = r.GetInt64(14),
+            Player2InsightPool = r.GetInt64(15),
+            Player2Field = JsonSerializer.Deserialize<Field>(r.GetString(16), DbJsonOptions.Default) ?? new(),
+            Player2Hand = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(17), DbJsonOptions.Default) ?? [],
+            Player2Repository = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(18), DbJsonOptions.Default) ?? [],
+            Player2Trash = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(19), DbJsonOptions.Default) ?? [],
+            Player2TimeBank = r.GetInt64(20),
+            Player2IncidentPlayedThisTurn = r.GetBoolean(21),
+            Player2HasOperated = r.GetBoolean(22),
 
-            CurrentActionTimer = r.IsDBNull(19) ? null : r.GetInt64(19),
-            NextInstanceSeq = r.GetInt64(20),
-            UpdatedAt = r.GetDateTime(21),
+            CurrentActionTimer = r.IsDBNull(23) ? null : r.GetInt64(23),
+            NextInstanceSeq = r.GetInt64(24),
+            TurnStartedAt = r.GetDateTime(25),
+            NextDeployOrderSeq = r.GetInt64(26),
+            PendingSlotSelects = JsonSerializer.Deserialize<List<AwaitingSlotSelect>>(r.GetString(27), DbJsonOptions.Default) ?? [],
+            PendingEffectChoice = r.IsDBNull(28)
+                ? null
+                : JsonSerializer.Deserialize<PendingEffectChoice>(r.GetString(28), DbJsonOptions.Default),
+            UpdatedAt = r.GetDateTime(29),
         };
     }
 
@@ -395,10 +407,14 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 game_id, initial_state, version, current_turn, current_phase, active_player,
                 player1_budget, player1_insight_pool, player1_field, player1_hand,
                 player1_repository, player1_trash, player1_time_bank,
+                player1_incident_played_this_turn, player1_has_operated,
                 player2_budget, player2_insight_pool, player2_field, player2_hand,
                 player2_repository, player2_trash, player2_time_bank,
-                current_action_timer, next_instance_seq, updated_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)", conn, tx);
+                player2_incident_played_this_turn, player2_has_operated,
+                current_action_timer, next_instance_seq,
+                turn_started_at, next_deploy_order_seq,
+                pending_slot_selects, pending_effect_choice, updated_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)", conn, tx);
         cmd.Parameters.AddWithValue(state.GameID);
         cmd.Parameters.Add(new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = stateJson });
         AddGameStateParams(cmd, state);
@@ -419,6 +435,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.Add(JsonbParam(state.Player1Repository));
         cmd.Parameters.Add(JsonbParam(state.Player1Trash));
         cmd.Parameters.AddWithValue(state.Player1TimeBank);
+        cmd.Parameters.AddWithValue(state.Player1IncidentPlayedThisTurn);
+        cmd.Parameters.AddWithValue(state.Player1HasOperated);
 
         cmd.Parameters.AddWithValue(state.Player2Budget);
         cmd.Parameters.AddWithValue(state.Player2InsightPool);
@@ -427,9 +445,15 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.Add(JsonbParam(state.Player2Repository));
         cmd.Parameters.Add(JsonbParam(state.Player2Trash));
         cmd.Parameters.AddWithValue(state.Player2TimeBank);
+        cmd.Parameters.AddWithValue(state.Player2IncidentPlayedThisTurn);
+        cmd.Parameters.AddWithValue(state.Player2HasOperated);
 
         cmd.Parameters.AddWithValue((object?)state.CurrentActionTimer ?? DBNull.Value);
         cmd.Parameters.AddWithValue(state.NextInstanceSeq);
+        cmd.Parameters.AddWithValue(state.TurnStartedAt);
+        cmd.Parameters.AddWithValue(state.NextDeployOrderSeq);
+        cmd.Parameters.Add(JsonbParam(state.PendingSlotSelects));
+        cmd.Parameters.Add(JsonbParam(state.PendingEffectChoice));
         cmd.Parameters.AddWithValue(state.UpdatedAt);
     }
 

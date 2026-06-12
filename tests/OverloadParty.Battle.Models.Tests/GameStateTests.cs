@@ -391,45 +391,45 @@ public class GameStateTests
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
-    // ─── GetHasHadActiveResource / SetHasHadActiveResource ─────
+    // ─── GetHasOperated / SetHasOperated ─────
 
     [Fact]
-    public void GetHasHadActiveResource_DefaultsFalse()
+    public void GetHasOperated_DefaultsFalse()
     {
         var gs = TestFactory.MakeGameState();
-        gs.GetHasHadActiveResource(1).Should().BeFalse();
-        gs.GetHasHadActiveResource(2).Should().BeFalse();
+        gs.GetHasOperated(1).Should().BeFalse();
+        gs.GetHasOperated(2).Should().BeFalse();
     }
 
     [Fact]
-    public void SetHasHadActiveResource_Player1_Updates()
+    public void SetHasOperated_Player1_Updates()
     {
         var gs = TestFactory.MakeGameState();
-        gs.SetHasHadActiveResource(1, true);
-        gs.Player1HasHadActiveResource.Should().BeTrue();
+        gs.SetHasOperated(1, true);
+        gs.Player1HasOperated.Should().BeTrue();
     }
 
     [Fact]
-    public void SetHasHadActiveResource_Player2_Updates()
+    public void SetHasOperated_Player2_Updates()
     {
         var gs = TestFactory.MakeGameState();
-        gs.SetHasHadActiveResource(2, true);
-        gs.Player2HasHadActiveResource.Should().BeTrue();
+        gs.SetHasOperated(2, true);
+        gs.Player2HasOperated.Should().BeTrue();
     }
 
     [Fact]
-    public void GetHasHadActiveResource_InvalidPlayer_Throws()
+    public void GetHasOperated_InvalidPlayer_Throws()
     {
         var gs = TestFactory.MakeGameState();
-        var act = () => gs.GetHasHadActiveResource(0);
+        var act = () => gs.GetHasOperated(0);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
     [Fact]
-    public void SetHasHadActiveResource_InvalidPlayer_Throws()
+    public void SetHasOperated_InvalidPlayer_Throws()
     {
         var gs = TestFactory.MakeGameState();
-        var act = () => gs.SetHasHadActiveResource(3, true);
+        var act = () => gs.SetHasOperated(3, true);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
