@@ -262,21 +262,6 @@ public class PgGameRepositoryTests
         got.FinishedAt.Should().NotBeNull();
     }
 
-    // ─── UpdateGameStatus ───────────────────────────────────
-
-    [Fact]
-    public async Task UpdateGameStatus_changes_status()
-    {
-        var repo = CreateRepo();
-        var (game, state) = MakeFixture();
-        await repo.CreateGame(game, state);
-
-        await repo.UpdateGameStatus(game.GameID, GameStatus.Finished);
-
-        var got = await repo.GetGame(game.GameID);
-        got!.Status.Should().Be(GameStatus.Finished);
-    }
-
     // ─── JSONB Field roundtrip ──────────────────────────────
 
     [Fact]

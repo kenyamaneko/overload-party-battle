@@ -180,11 +180,6 @@ public static class EndPhaseProcessor
             support.EffectUsedThisTurn = false;
         }
 
-        foreach (var att in field.Support)
-        {
-            att.EffectUsedThisTurn = false;
-        }
-
         state.SetIncidentPlayedThisTurn(playerNum, false);
     }
 

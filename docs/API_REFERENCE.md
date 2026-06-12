@@ -1,7 +1,6 @@
 # Battle Service API Reference
 
-> 型テーブルは `data/models.yaml` から自動生成。エンドポイント説明は手書き。
-> `python3 scripts/generate_api_docs.py` でマーカー間を更新。
+> 型の SSoT は `data/openapi.yaml`。型テーブル・エンドポイント説明とも手動で同期する。
 
 ## 概要
 
@@ -51,6 +50,8 @@ NPC 戦を作成する。
 |---|---|---|---|
 | `DeckCards` | `[]BattleDeckCard` | `deck_cards` |  |
 | `NpcModel` | `string` | `npc_model` |  |
+| `Player1Summary` | `PlayerSummaryRequest` | `player1_summary` | 人間プレイヤーの表示用スナップショット |
+| `Player2Summary` | `PlayerSummaryRequest` | `player2_summary` | NPC の表示用スナップショット (level は null) |
 <!-- END GENERATED: NpcBattleRequest -->
 
 **レスポンス:** `GameCreatedResult`
@@ -74,6 +75,8 @@ PvP 戦を作成する。マッチメイキング後に Gateway が呼び出す�
 |---|---|---|---|
 | `Deck1Cards` | `[]BattleDeckCard` | `deck1_cards` |  |
 | `Deck2Cards` | `[]BattleDeckCard` | `deck2_cards` |  |
+| `Player1Summary` | `PlayerSummaryRequest` | `player1_summary` | Player 1 の表示用スナップショット |
+| `Player2Summary` | `PlayerSummaryRequest` | `player2_summary` | Player 2 の表示用スナップショット |
 <!-- END GENERATED: PvpBattleRequest -->
 
 **レスポンス:** `GameCreatedResult`（同上）
@@ -203,6 +206,19 @@ NPC のターンを進行させる。NPC 戦で `game_enter` 後に Gateway が�
 | `CardID` | `string` | `card_id` |  |
 | `ArtNo` | `int64` | `art_no` |  |
 <!-- END GENERATED: BattleDeckCard -->
+
+---
+
+### PlayerSummaryRequest
+
+ゲーム作成時に battle へ渡す player の name / level スナップショット。battle は upstream に依存せず、渡された値を `player_summary` テーブルへ永続化する。
+
+<!-- BEGIN GENERATED: PlayerSummaryRequest -->
+| フィールド | 型 | JSON | 説明 |
+|---|---|---|---|
+| `Name` | `string` | `name` | 表示名スナップショット |
+| `Level` | `*int64` | `level` | level スナップショット (NPC など level を持たない player では null) |
+<!-- END GENERATED: PlayerSummaryRequest -->
 
 ---
 

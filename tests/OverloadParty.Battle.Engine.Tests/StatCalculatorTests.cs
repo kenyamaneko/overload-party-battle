@@ -265,6 +265,25 @@ public class StatCalculatorTests
         StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(0);
     }
 
+    /// <summary>
+    /// Rulebook: C系（攻撃特化）はスループット/Yield ×1.3、R系（耐久特化）は ×0.7
+    /// </summary>
+    [Theory]
+    [InlineData(InstanceFamily.M, 400)] // 400 * 1.0
+    [InlineData(InstanceFamily.C, 520)] // 400 * 1.3
+    [InlineData(InstanceFamily.R, 280)] // 400 * 0.7
+    public void CalculateEffectiveInsight_FamilyAppliesThroughputSideMultiplier(InstanceFamily family, long expected)
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardId: "TST-0002", yield: 400));
+
+        var field = TestFactory.MakeField();
+        var resource = TestFactory.MakeResource(
+            cardId: "TST-0002", maxYield: 400, currentYield: 400, maxTP: null, currentTP: null, family: family);
+
+        StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(expected);
+    }
+
     // ─── CalculateMaxAV ───────────────────────────────────────
 
     /// <summary>
@@ -461,24 +480,30 @@ public class StatCalculatorTests
         StatCalculator.RecalculateMaxYield(resource, card).Should().Be(1200);
     }
 
+    /// <summary>
+    /// Rulebook: R系（耐久特化）はスループット/Yield ×0.7
+    /// </summary>
     [Fact]
-    public void RecalculateMaxYield_WithFamilyR_AppliesAVMultiplier()
+    public void RecalculateMaxYield_WithFamilyR_ReducesYield()
     {
         var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400);
         var resource = TestFactory.MakeResource(cardId: "TST-0002", rank: Rank.Small, family: InstanceFamily.R);
 
-        // 400 * 1 * 1.3 = 520
-        StatCalculator.RecalculateMaxYield(resource, card).Should().Be(520);
+        // 400 * 1 * 0.7 = 280
+        StatCalculator.RecalculateMaxYield(resource, card).Should().Be(280);
     }
 
+    /// <summary>
+    /// Rulebook: C系（攻撃特化）はスループット/Yield ×1.3
+    /// </summary>
     [Fact]
-    public void RecalculateMaxYield_WithFamilyC_AppliesAVMultiplier()
+    public void RecalculateMaxYield_WithFamilyC_IncreasesYield()
     {
         var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400);
         var resource = TestFactory.MakeResource(cardId: "TST-0002", rank: Rank.Small, family: InstanceFamily.C);
 
-        // 400 * 1 * 0.7 = 280
-        StatCalculator.RecalculateMaxYield(resource, card).Should().Be(280);
+        // 400 * 1 * 1.3 = 520
+        StatCalculator.RecalculateMaxYield(resource, card).Should().Be(520);
     }
 
     [Fact]
@@ -508,40 +533,6 @@ public class StatCalculatorTests
         // base=300, elastic bonus = 300 * ln(1 + 100/300) = 300 * ln(1.333) ≈ 300 * 0.2876 ≈ 86
         // total = 300 + 86 = 386
         StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(386);
-    }
-
-    // ─── Instance family on Insight ─────────────────────────────
-
-    [Fact]
-    public void CalculateEffectiveInsight_FamilyR_IncreasesYield()
-    {
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-0002", yield: 400));
-
-        var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(
-            cardId: "TST-0002", instanceId: "db_1", family: InstanceFamily.R,
-            maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
-        field.Backend[0] = resource;
-
-        // 400 * 1 * 1.3 = 520
-        StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(520);
-    }
-
-    [Fact]
-    public void CalculateEffectiveInsight_FamilyC_DecreasesYield()
-    {
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.DataCard(cardId: "TST-0002", yield: 400));
-
-        var field = TestFactory.MakeField();
-        var resource = TestFactory.MakeResource(
-            cardId: "TST-0002", instanceId: "db_1", family: InstanceFamily.C,
-            maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
-        field.Backend[0] = resource;
-
-        // 400 * 1 * 0.7 = 280
-        StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(280);
     }
 
     // ─── Insight with temp buff and debuff ──────────────────────

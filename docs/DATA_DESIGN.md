@@ -52,6 +52,25 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 
 ---
 
+### player_summary
+
+プレイヤー表示用スナップショット。ゲーム作成時に渡された name / level をそのまま保存する (account 同期依存なし)。
+
+- **PK:** `(game_id, player_num)`
+- **FK:** `game_id` → `games(game_id) ON DELETE CASCADE`
+
+<!-- BEGIN GENERATED: player_summary -->
+| カラム名 | 型 | Nullable | 説明 |
+|---|---|---|---|
+| `game_id` | VARCHAR(26) | No | 親テーブル参照 |
+| `player_num` | SMALLINT | No | 1 or 2 |
+| `name` | TEXT | No | battle 開始時点の name snapshot |
+| `level` | INT | Yes | battle 開始時点の level snapshot (NPC は NULL) |
+| `created_at` | TIMESTAMPTZ | No | 作成日時 |
+<!-- END GENERATED: player_summary -->
+
+---
+
 ### game_decks
 
 デッキスナップショット。ゲーム作成時に各プレイヤーのデッキを JSONB で保存。常に 2 行。
@@ -71,7 +90,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 
 ### game_states
 
-ゲーム状態。games と 1:1。楽観的ロック（version）で排他制御。
+ゲーム状態。games と 1:1。更新は `SELECT ... FOR UPDATE` の行ロックで排他制御する。
 
 - **PK:** `game_id`
 - **FK:** `game_id` → `games(game_id) ON DELETE CASCADE`
@@ -82,7 +101,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 |---|---|---|---|
 | `game_id` | VARCHAR(26) | No | 親テーブル参照 |
 | `initial_state` | JSONB | No | ゲーム開始時の初期状態スナップショット（作成後は上書きされない） |
-| `version` | BIGINT | No | 楽観的ロック用バージョン |
+| `version` | BIGINT | No | 更新回数カウンタ（行ロック下で更新ごとに +1） |
 | `current_turn` | BIGINT | No | 現在ターン数 |
 | `current_phase` | VARCHAR(20) | No | 'draw' / 'main' / 'battle' / 'end' |
 | `active_player` | BIGINT | No | 現在のターンプレイヤー (1 or 2) |

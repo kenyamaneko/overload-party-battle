@@ -4,7 +4,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// MonetizeProcessor はバックエンド Compute リソースのインサイトイールドをバジェットに変換するマネタイズアクションを処理します
+/// 収益化アクションの検証と適用を担う。
 /// </summary>
 public static class MonetizeProcessor
 {

@@ -4,7 +4,7 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// AttackProcessor はフロントエンドの Compute リソースが相手リソースにダメージを与える攻撃アクションを処理します
+/// 攻撃アクションの検証と適用を担う。
 /// </summary>
 public static class AttackProcessor
 {

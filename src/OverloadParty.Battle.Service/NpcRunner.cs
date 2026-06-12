@@ -119,8 +119,9 @@ public class NpcRunner
             }
             catch (GameRuleException ex)
             {
+                // 個別の rejection は候補を順に試す正常系の一部なので Debug に留め、全件拒否のみ Warn を出す
                 rejections.Add($"{action.ActionType}:{ex.Message}");
-                _logger.LogWarning(ex, "NPC action rejected (game={GameID}, action={Action})", gameID, action.ActionType);
+                _logger.LogDebug(ex, "NPC action rejected (game={GameID}, action={Action})", gameID, action.ActionType);
             }
         }
 

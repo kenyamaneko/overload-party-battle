@@ -85,7 +85,7 @@ CREATE TABLE battle.game_decks (
 CREATE TABLE battle.game_states (
   game_id              VARCHAR(26) PRIMARY KEY REFERENCES battle.games(game_id) ON DELETE CASCADE, -- 親テーブル参照
   initial_state        JSONB NOT NULL DEFAULT '{}',  -- ゲーム開始時の初期状態スナップショット（作成後は上書きされない）
-  version              BIGINT NOT NULL,              -- 楽観的ロック用バージョン
+  version              BIGINT NOT NULL,              -- 更新回数カウンタ（行ロック下で更新ごとに +1）
   current_turn         BIGINT NOT NULL,              -- 現在ターン数
   current_phase        VARCHAR(20) NOT NULL,         -- 'draw' / 'main' / 'battle' / 'end'
   active_player        BIGINT NOT NULL,              -- 現在のターンプレイヤー (1 or 2)
