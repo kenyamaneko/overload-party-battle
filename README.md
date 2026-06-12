@@ -49,7 +49,7 @@ Battle (このサービス, :9002)
 | 変数名 | デフォルト | 説明 |
 |---|---|---|
 | `CARDS_JSON_PATH` | *(空)* | ローカル開発モード（`ASPNETCORE_ENVIRONMENT=Development`）時のみ。card service の代わりにこの JSON ファイルからカード定義を読み込む |
-| `NPC_AI_CONFIG_DIR` | `src/OverloadParty.Battle.Npc/Data` | NPC AI 設定 YAML ディレクトリ |
+| `NPC_AI_CONFIG_DIR` | *(必須)* | NPC AI 設定 YAML ディレクトリ。未設定または非実在パスなら起動時にエラー。コンテナイメージは同梱データを指す `/app/NpcData` を設定済み |
 
 ## 公開パッケージ
 
@@ -63,4 +63,4 @@ Battle (このサービス, :9002)
 | `packages/game-logic-constants-dotnet/` | NuGet | ゲームロジック定数 |
 | `packages/game-logic-constants-npm/` | npm | ゲームロジック定数 |
 
-SSoT: `data/models.yaml` + `data/game_logic_constants.yaml` + `data/event_schemas.yaml` → `python3 scripts/generate_types.py` で再生成。
+SSoT: `data/openapi.yaml` + `data/game_logic_constants.yaml` → `bash scripts/generate_types.sh` で再生成。
