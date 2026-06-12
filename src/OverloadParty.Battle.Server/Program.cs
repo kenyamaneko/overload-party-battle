@@ -1,10 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Google.Cloud.Firestore;
 using Microsoft.AspNetCore.Diagnostics;
 using Npgsql;
 using OverloadParty.Battle.Data;
-using OverloadParty.Battle.Data.Firestore;
 using OverloadParty.Battle.Data.Pg;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
@@ -43,15 +41,6 @@ var dataSource = NpgsqlDataSource.Create(connStr);
 builder.Services.AddSingleton(dataSource);
 builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
 
-// ─── Game config (Firestore) ────────────────────────────────
-// Required env var even in local mode; the Google SDK auto-routes to the
-// emulator when FIRESTORE_EMULATOR_HOST is set.
-var googleCloudProjectId = Environment.GetEnvironmentVariable("GOOGLE_CLOUD_PROJECT_ID")
-    ?? throw new InvalidOperationException("GOOGLE_CLOUD_PROJECT_ID not set");
-builder.Services.AddSingleton(FirestoreDb.Create(googleCloudProjectId));
-builder.Services.AddSingleton<IGameConfigRepository>(sp =>
-    new FirestoreGameConfigRepository(sp.GetRequiredService<FirestoreDb>()));
-
 // ─── Card cache ─────────────────────────────────────────────
 
 var cardCache = new CardCache();
@@ -76,10 +65,12 @@ builder.Services.AddSingleton(sp =>
 // ─── Services ───────────────────────────────────────────────
 
 var aiConfigDir = Environment.GetEnvironmentVariable("NPC_AI_CONFIG_DIR")
-    ?? Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "OverloadParty.Battle.Npc", "Data");
-var aiConfigs = Directory.Exists(aiConfigDir)
-    ? AiConfigLoader.LoadAll(aiConfigDir)
-    : new Dictionary<string, AiConfig>();
+    ?? throw new InvalidOperationException("NPC_AI_CONFIG_DIR not set");
+if (!Directory.Exists(aiConfigDir))
+{
+    throw new DirectoryNotFoundException($"NPC AI config directory not found: {aiConfigDir}");
+}
+var aiConfigs = AiConfigLoader.LoadAll(aiConfigDir);
 
 builder.Services.AddSingleton<NpcRunner>(sp =>
     new NpcRunner(

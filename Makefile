@@ -33,6 +33,7 @@ run: db-up  ## Run local dev server (port 9002, compose Postgres 接続)
 	ASPNETCORE_ENVIRONMENT=Development \
 	DATABASE_CONN="Host=localhost;Port=5432;Database=battle;Username=battle;Password=battle;Search Path=battle" \
 	CARDS_JSON_PATH=$(COMMON_DIR)/packages/game-state-dotnet/cache/cards_gen.json \
+	NPC_AI_CONFIG_DIR=$(CURDIR)/src/OverloadParty.Battle.Npc/Data \
 		dotnet run --project $(SERVER)
 
 # ─── Test ────────────────────────────────────────────────
