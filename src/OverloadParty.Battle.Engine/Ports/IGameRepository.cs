@@ -62,12 +62,6 @@ public interface IGameRepository
     /// <returns>記録されているイベント総数。</returns>
     Task<long> GetEventCount(string gameID, CancellationToken ct = default);
 
-    /// <summary>Updates the game's status (e.g. playing → finished).</summary>
-    /// <param name="gameID">対象のゲーム ID。</param>
-    /// <param name="status">The new status.</param>
-    /// <param name="ct">キャンセル用トークン。</param>
-    Task UpdateGameStatus(string gameID, GameStatus status, CancellationToken ct = default);
-
     /// <summary>Returns all events for a game in order.</summary>
     /// <param name="gameID">対象のゲーム ID。</param>
     /// <param name="ct">キャンセル用トークン。</param>

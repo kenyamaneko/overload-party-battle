@@ -261,22 +261,6 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return (long)(await cmd.ExecuteScalarAsync(ct))!;
     }
 
-    /// <summary>指定ゲームのステータスを更新する。</summary>
-    /// <param name="gameID">更新対象のゲーム ID。</param>
-    /// <param name="status">新しいゲームステータス。</param>
-    /// <param name="ct">キャンセレーショントークン。</param>
-    /// <returns>非同期処理を表すタスク。</returns>
-    public async Task UpdateGameStatus(string gameID, GameStatus status, CancellationToken ct = default)
-    {
-        await using var conn = await ds.OpenConnectionAsync(ct);
-        await using var cmd = new NpgsqlCommand(@"
-            UPDATE games SET status = $1, updated_at = $2 WHERE game_id = $3", conn);
-        cmd.Parameters.AddWithValue(status.ToWireString());
-        cmd.Parameters.AddWithValue(DateTime.UtcNow);
-        cmd.Parameters.AddWithValue(gameID);
-        await cmd.ExecuteNonQueryAsync(ct);
-    }
-
     /// <summary>指定ゲームのイベントを sequence_number 昇順で取得する。</summary>
     /// <param name="gameID">取得対象のゲーム ID。</param>
     /// <param name="ct">キャンセレーショントークン。</param>

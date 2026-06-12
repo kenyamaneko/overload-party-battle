@@ -103,18 +103,6 @@ public class FakeGameRepository : IGameRepository
         }
     }
 
-    public Task UpdateGameStatus(string gameID, GameStatus status, CancellationToken ct = default)
-    {
-        lock (_lock)
-        {
-            if (_games.TryGetValue(gameID, out var game))
-            {
-                game.Status = status;
-            }
-        }
-        return Task.CompletedTask;
-    }
-
     public Task<List<GameEvent>> GetEvents(string gameID, CancellationToken ct = default)
     {
         lock (_lock)
