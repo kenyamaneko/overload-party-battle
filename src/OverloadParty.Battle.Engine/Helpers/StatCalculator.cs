@@ -82,12 +82,12 @@ public static class StatCalculator
         long baseYield = card.DataStats.Yield;
         long rankMult = BattleConstants.RankMultiplier(instance.Rank);
 
-        // インスタンスファミリー倍率 (uses AV multiplier for yield)
+        // インスタンスファミリー倍率 (Yield はスループットと同じ倍率系統)
         double yieldMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {
-            var (_, av) = BattleConstants.FamilyMultiplier(family);
-            yieldMult = av;
+            var (tp, _) = BattleConstants.FamilyMultiplier(family);
+            yieldMult = tp;
         }
 
         long baseValue = Truncate(baseYield * rankMult * yieldMult);
@@ -168,8 +168,8 @@ public static class StatCalculator
         double yieldMult = 1.0;
         if (resource.InstanceFamily is { } family)
         {
-            var (_, av) = BattleConstants.FamilyMultiplier(family);
-            yieldMult = av;
+            var (tp, _) = BattleConstants.FamilyMultiplier(family);
+            yieldMult = tp;
         }
 
         return Truncate(baseYield * rankMult * yieldMult);
