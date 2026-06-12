@@ -205,7 +205,7 @@ public static class PlayCardProcessor
             return false;
         }
 
-        ctx.State.SetHasHadActiveResource(ctx.PlayerNum, true);
+        ctx.State.SetHasOperated(ctx.PlayerNum, true);
 
         // 相手の on_deploy 誘発はデプロイをキャンセルしうるため先に解決し、
         // キャンセルされなかった場合のみデプロイされたカード自身の効果を走らせる（2 段解決）。

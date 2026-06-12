@@ -54,7 +54,7 @@ public static class DrawPhaseProcessor
                 if (resource.DeployingTurnsLeft <= 0)
                 {
                     resource.FaceUp = true;
-                    state.SetHasHadActiveResource(playerNum, true);
+                    state.SetHasOperated(playerNum, true);
                     FireOnDeploy(state, game, playerNum, cc, effects, source: resource, supSource: null);
                 }
             }

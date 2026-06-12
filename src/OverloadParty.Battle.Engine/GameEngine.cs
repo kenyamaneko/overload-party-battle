@@ -76,7 +76,7 @@ public class GameEngine
         {
             gameOverResult = DrawPhaseProcessor.Process(state, game, _cardCache, _effects);
 
-            return Task.CompletedTask;
+            return Task.FromResult<IReadOnlyList<GameEvent>>([]);
         }, ct: ct);
 
         if (gameOverResult is not null)
@@ -151,7 +151,7 @@ public class GameEngine
             if (timeoutResult is not null)
             {
                 actionResult = new ActionResult { GameOver = timeoutResult };
-                return Task.CompletedTask;
+                return Task.FromResult<IReadOnlyList<GameEvent>>(actionResult.Events);
             }
 
             if (state.PendingSlotSelects.Count > 0
@@ -212,18 +212,8 @@ public class GameEngine
 
             actionResult.GameOver ??= WinConditionChecker.Check(state, game);
 
-            return Task.CompletedTask;
+            return Task.FromResult<IReadOnlyList<GameEvent>>(actionResult.Events);
         }, pending, ct);
-
-        // イベントを永続化
-        var eventCount = await _repo.GetEventCount(game.GameID, ct);
-        foreach (var evt in actionResult.Events)
-        {
-            eventCount++;
-            evt.SequenceNumber = eventCount;
-            evt.CreatedAt = DateTime.UtcNow;
-            await _repo.AppendEvent(evt, ct);
-        }
 
         if (actionResult.GameOver is { } over)
         {

@@ -45,7 +45,7 @@ public class FakeGameRepository : IGameRepository
         lock (_lock) { return Task.FromResult(_states.GetValueOrDefault(gameID)); }
     }
 
-    public async Task UpdateGameState(string gameID, Func<BattleGameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
+    public async Task UpdateGameState(string gameID, Func<BattleGameState, Task<IReadOnlyList<GameEvent>>> fn, PendingAction? pendingAction = null, CancellationToken ct = default)
     {
         BattleGameState state;
         lock (_lock)
@@ -54,18 +54,32 @@ public class FakeGameRepository : IGameRepository
                 ?? throw new InvalidOperationException($"game state {gameID} not found");
         }
 
-        await fn(state);
+        var events = await fn(state);
 
         lock (_lock)
         {
             state.Version++;
             state.UpdatedAt = DateTime.UtcNow;
 
+            if (!_events.TryGetValue(gameID, out var list))
+            {
+                list = [];
+                _events[gameID] = list;
+            }
+            foreach (var evt in events)
+            {
+                evt.SequenceNumber = list.Count + 1;
+                evt.CreatedAt = DateTime.UtcNow;
+                list.Add(evt);
+            }
+
             // pendingAction は本番では DB に書き込まれるがインメモリでは追跡しない
         }
     }
 
-    public Task AppendEvent(GameEvent evt, CancellationToken ct = default)
+    /// <summary>イベントログを直接シードするテスト用ヘルパー。SequenceNumber は呼び出し側の値を保持する。</summary>
+    /// <param name="evt">シードするイベント。</param>
+    public void SeedEvent(GameEvent evt)
     {
         lock (_lock)
         {
@@ -76,7 +90,6 @@ public class FakeGameRepository : IGameRepository
             }
             list.Add(evt);
         }
-        return Task.CompletedTask;
     }
 
     public Task FinishGame(string gameID, long winnerNum, string winReason, CancellationToken ct = default)
@@ -92,15 +105,6 @@ public class FakeGameRepository : IGameRepository
             }
         }
         return Task.CompletedTask;
-    }
-
-    public Task<long> GetEventCount(string gameID, CancellationToken ct = default)
-    {
-        lock (_lock)
-        {
-            var count = _events.GetValueOrDefault(gameID)?.Count ?? 0;
-            return Task.FromResult((long)count);
-        }
     }
 
     public Task<List<GameEvent>> GetEvents(string gameID, CancellationToken ct = default)

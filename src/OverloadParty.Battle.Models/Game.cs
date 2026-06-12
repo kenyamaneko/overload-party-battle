@@ -52,7 +52,7 @@ public class BattleGameState
     public List<UndeployedCard> Player1Trash { get; set; } = [];
     public long Player1TimeBank { get; set; }
     public bool Player1IncidentPlayedThisTurn { get; set; }
-    public bool Player1HasHadActiveResource { get; set; }
+    public bool Player1HasOperated { get; set; }
 
     // プレイヤー 2 の状態
     public long Player2Budget { get; set; }
@@ -63,7 +63,7 @@ public class BattleGameState
     public List<UndeployedCard> Player2Trash { get; set; } = [];
     public long Player2TimeBank { get; set; }
     public bool Player2IncidentPlayedThisTurn { get; set; }
-    public bool Player2HasHadActiveResource { get; set; }
+    public bool Player2HasOperated { get; set; }
 
     // 共有状態
     public long? CurrentActionTimer { get; set; }
@@ -295,10 +295,10 @@ public class BattleGameState
     /// </summary>
     /// <param name="playerNum">対象プレイヤー番号</param>
     /// <returns>稼働実績ありなら true</returns>
-    public bool GetHasHadActiveResource(long playerNum) => playerNum switch
+    public bool GetHasOperated(long playerNum) => playerNum switch
     {
-        1 => Player1HasHadActiveResource,
-        2 => Player2HasHadActiveResource,
+        1 => Player1HasOperated,
+        2 => Player2HasOperated,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
     };
     /// <summary>
@@ -306,12 +306,12 @@ public class BattleGameState
     /// </summary>
     /// <param name="playerNum">対象プレイヤー番号</param>
     /// <param name="value">設定する稼働実績フラグ</param>
-    public void SetHasHadActiveResource(long playerNum, bool value)
+    public void SetHasOperated(long playerNum, bool value)
     {
         switch (playerNum)
         {
-            case 1: Player1HasHadActiveResource = value; break;
-            case 2: Player2HasHadActiveResource = value; break;
+            case 1: Player1HasOperated = value; break;
+            case 2: Player2HasOperated = value; break;
             default: throw new ArgumentOutOfRangeException(nameof(playerNum));
         }
     }

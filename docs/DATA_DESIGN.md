@@ -112,6 +112,8 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 | `player1_repository` | JSONB | No | Player 1 リポジトリ（山札） |
 | `player1_trash` | JSONB | No | Player 1 トラッシュ |
 | `player1_time_bank` | BIGINT | No | Player 1 残り時間 |
+| `player1_incident_played_this_turn` | BOOLEAN | No | Player 1 がこのターンにインシデントを使用済みか |
+| `player1_has_operated` | BOOLEAN | No | Player 1 の稼働実績フラグ |
 | `player2_budget` | BIGINT | No | Player 2 Budget |
 | `player2_insight_pool` | BIGINT | No | Player 2 Insight Pool |
 | `player2_field` | JSONB | No | Player 2 フィールド上のカード |
@@ -119,9 +121,14 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 | `player2_repository` | JSONB | No | Player 2 リポジトリ（山札） |
 | `player2_trash` | JSONB | No | Player 2 トラッシュ |
 | `player2_time_bank` | BIGINT | No | Player 2 残り時間 |
-| `chain_stack` | JSONB | Yes | 現在積まれているチェーンスタック |
+| `player2_incident_played_this_turn` | BOOLEAN | No | Player 2 がこのターンにインシデントを使用済みか |
+| `player2_has_operated` | BOOLEAN | No | Player 2 の稼働実績フラグ |
 | `current_action_timer` | BIGINT | Yes | アクションタイマー |
 | `next_instance_seq` | BIGINT | No | インスタンスID発番用シーケンス |
+| `turn_started_at` | TIMESTAMPTZ | No | 現在のターンの開始日時（タイムバンク減算の基準点） |
+| `next_deploy_order_seq` | BIGINT | No | デプロイ順発番用シーケンス |
+| `pending_slot_selects` | JSONB | No | 効果デプロイのスロット選択待ちキュー |
+| `pending_effect_choice` | JSONB | Yes | 効果の選択待ち状態（NULL=待ちなし） |
 | `updated_at` | TIMESTAMPTZ | No | 更新日時 |
 <!-- END GENERATED: game_states -->
 

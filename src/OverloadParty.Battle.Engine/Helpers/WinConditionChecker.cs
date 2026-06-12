@@ -102,7 +102,7 @@ public static class WinConditionChecker
     /// <returns>システムダウン条件を満たしていれば true。</returns>
     public static bool IsSystemDown(BattleGameState state, long playerNum)
     {
-        if (!state.GetHasHadActiveResource(playerNum))
+        if (!state.GetHasOperated(playerNum))
         {
             return false;
         }
@@ -124,6 +124,6 @@ public static class WinConditionChecker
             return false;
         }
 
-        return !state.GetHasHadActiveResource(playerNum);
+        return !state.GetHasOperated(playerNum);
     }
 }

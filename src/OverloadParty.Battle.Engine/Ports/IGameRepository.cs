@@ -33,21 +33,16 @@ public interface IGameRepository
 
     /// <summary>
     /// Updates BattleGameState within a read-write transaction.
-    /// The callback receives the current state; it must modify it in place.
-    /// The implementation handles optimistic locking (version check + increment).
-    /// If <paramref name="pendingAction"/> is provided, it is appended atomically
-    /// within the same transaction with a safe auto-incremented seq number.
+    /// The callback receives the current state; it must modify it in place and
+    /// return the events to persist. The events and <paramref name="pendingAction"/>
+    /// are appended atomically within the same transaction with auto-incremented
+    /// sequence numbers, which are written back to the event objects.
     /// </summary>
     /// <param name="gameID">対象のゲーム ID。</param>
-    /// <param name="fn">状態を書き換えるコールバック。</param>
+    /// <param name="fn">状態を書き換え、永続化するイベントを返すコールバック。</param>
     /// <param name="pendingAction">同一トランザクションで追記するアクション。</param>
     /// <param name="ct">キャンセル用トークン。</param>
-    Task UpdateGameState(string gameID, Func<BattleGameState, Task> fn, PendingAction? pendingAction = null, CancellationToken ct = default);
-
-    /// <summary>Persists a game event to the event log.</summary>
-    /// <param name="evt">The event to append.</param>
-    /// <param name="ct">キャンセル用トークン。</param>
-    Task AppendEvent(GameEvent evt, CancellationToken ct = default);
+    Task UpdateGameState(string gameID, Func<BattleGameState, Task<IReadOnlyList<GameEvent>>> fn, PendingAction? pendingAction = null, CancellationToken ct = default);
 
     /// <summary>Marks the game as finished and records the winner and reason.</summary>
     /// <param name="gameID">対象のゲーム ID。</param>
@@ -55,12 +50,6 @@ public interface IGameRepository
     /// <param name="winReason">The wire-format win reason string.</param>
     /// <param name="ct">キャンセル用トークン。</param>
     Task FinishGame(string gameID, long winnerNum, string winReason, CancellationToken ct = default);
-
-    /// <summary>Returns the total number of events recorded for a game.</summary>
-    /// <param name="gameID">対象のゲーム ID。</param>
-    /// <param name="ct">キャンセル用トークン。</param>
-    /// <returns>記録されているイベント総数。</returns>
-    Task<long> GetEventCount(string gameID, CancellationToken ct = default);
 
     /// <summary>Returns all events for a game in order.</summary>
     /// <param name="gameID">対象のゲーム ID。</param>

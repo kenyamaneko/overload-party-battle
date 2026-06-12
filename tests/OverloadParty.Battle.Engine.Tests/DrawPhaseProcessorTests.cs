@@ -88,6 +88,6 @@ public class DrawPhaseProcessorTests
 
         resource.DeployingTurnsLeft.Should().Be(0);
         resource.FaceUp.Should().BeTrue();
-        state.Player1HasHadActiveResource.Should().BeTrue();
+        state.Player1HasOperated.Should().BeTrue();
     }
 }

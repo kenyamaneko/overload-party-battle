@@ -111,7 +111,7 @@ public class PlayCardProcessorTests
             state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, new EffectRegistry());
 
         state.Player1Field.Frontend[0]!.FaceUp.Should().BeTrue();
-        state.Player1HasHadActiveResource.Should().BeTrue();
+        state.Player1HasOperated.Should().BeTrue();
     }
 
     // RULEBOOK §3 / ARCHITECTURE §3: 手札に無いカードはプレイ不可

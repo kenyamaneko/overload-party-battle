@@ -58,8 +58,8 @@ public class WinConditionTests
     public void Check_BothSystemDown_Draw()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1HasHadActiveResource = true;
-        state.Player2HasHadActiveResource = true;
+        state.Player1HasOperated = true;
+        state.Player2HasOperated = true;
         var game = TestFactory.MakeGame();
 
         var result = WinConditionChecker.Check(state, game);
@@ -93,7 +93,7 @@ public class WinConditionTests
         var game = TestFactory.MakeGame();
 
         // Player 1 had active resources before, but now all face-down
-        state.Player1HasHadActiveResource = true;
+        state.Player1HasOperated = true;
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(faceUp: false);
 
         var result = WinConditionChecker.Check(state, game);
@@ -114,7 +114,7 @@ public class WinConditionTests
         var game = TestFactory.MakeGame();
 
         // Player 1 has never had an active resource
-        state.Player1HasHadActiveResource = false;
+        state.Player1HasOperated = false;
 
         WinConditionChecker.Check(state, game).Should().BeNull();
     }
@@ -123,7 +123,7 @@ public class WinConditionTests
     public void IsSystemDown_WithFaceUpResource_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState();
-        state.Player1HasHadActiveResource = true;
+        state.Player1HasOperated = true;
         state.Player1Field.Backend[0] = TestFactory.MakeResource(faceUp: true);
 
         WinConditionChecker.IsSystemDown(state, 1).Should().BeFalse();
@@ -227,7 +227,7 @@ public class WinConditionTests
     public void CheckLaunchFailure_Turn5_FirstPlayer_NoResources_True()
     {
         var state = TestFactory.MakeGameState(turn: 5);
-        state.Player1HasHadActiveResource = false;
+        state.Player1HasOperated = false;
 
         WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeTrue();
     }
@@ -239,7 +239,7 @@ public class WinConditionTests
     public void CheckLaunchFailure_Turn6_SecondPlayer_NoResources_True()
     {
         var state = TestFactory.MakeGameState(turn: 6);
-        state.Player2HasHadActiveResource = false;
+        state.Player2HasOperated = false;
 
         WinConditionChecker.CheckLaunchFailure(state, 2).Should().BeTrue();
     }
@@ -248,7 +248,7 @@ public class WinConditionTests
     public void CheckLaunchFailure_BeforeTurn3_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState(turn: 3); // personalTurn = 2
-        state.Player1HasHadActiveResource = false;
+        state.Player1HasOperated = false;
 
         WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeFalse();
     }
@@ -257,7 +257,7 @@ public class WinConditionTests
     public void CheckLaunchFailure_HasDeployed_ReturnsFalse()
     {
         var state = TestFactory.MakeGameState(turn: 5);
-        state.Player1HasHadActiveResource = true;
+        state.Player1HasOperated = true;
 
         WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeFalse();
     }
@@ -268,7 +268,7 @@ public class WinConditionTests
     public void Check_BudgetZero_TakesPriority_OverSystemDown()
     {
         var state = TestFactory.MakeGameState(p1Budget: 0);
-        state.Player1HasHadActiveResource = true;
+        state.Player1HasOperated = true;
         // No resources at all → would also be system down
         var game = TestFactory.MakeGame();
 
@@ -283,9 +283,9 @@ public class WinConditionTests
     public void Check_NormalState_NoGameOver()
     {
         var state = TestFactory.MakeGameState(turn: 5, p1Budget: 4000, p2Budget: 3500);
-        state.Player1HasHadActiveResource = true;
+        state.Player1HasOperated = true;
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(faceUp: true);
-        state.Player2HasHadActiveResource = true;
+        state.Player2HasOperated = true;
         state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "inst_2", faceUp: true);
         var game = TestFactory.MakeGame();
 
