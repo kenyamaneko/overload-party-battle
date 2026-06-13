@@ -176,6 +176,20 @@ public class UseEffectRequest
 }
 
 /// <summary>
+/// プロダクトの施策を使用するリクエスト。
+/// </summary>
+public class UseInitiativeRequest
+{
+    /// <summary>使用する施策の区分 (ルーチン / スペシャル)。</summary>
+    [JsonPropertyName("kind")]
+    public string Kind { get; set; } = "";
+
+    /// <summary>対象を選ぶ施策 (焼きたてのお菓子など) の選択データ。</summary>
+    [JsonPropertyName("choiceData")]
+    public Dictionary<string, object>? ChoiceData { get; set; }
+}
+
+/// <summary>
 /// Request to select a deployment slot for a pending effect deploy.
 /// </summary>
 public class SelectSlotRequest

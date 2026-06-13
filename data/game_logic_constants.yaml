@@ -39,6 +39,7 @@ action_types:
 - monetize
 - discard_hand
 - use_effect
+- use_initiative
 - set_reactive
 - end_phase
 - forfeit
@@ -54,6 +55,7 @@ event_types:
 - monetize
 - discard_hand
 - use_effect
+- use_initiative
 - reactive_revealed
 - phase_change
 - phase_end
@@ -113,6 +115,7 @@ buff_types:
 - yield
 - av
 - cannot_attack
+- dormant
 - incident_immune
 - incident_block
 - incident_reduction
@@ -136,6 +139,7 @@ custom_effects:
 - cancel_nth_deploy
 - chain_attack_bonus
 - cloud_shift
+- convert_all_insight
 - deploy_same_type_from_hand
 - disable_high_tp_deploy
 - reattach

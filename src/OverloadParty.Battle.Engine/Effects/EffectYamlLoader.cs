@@ -702,7 +702,7 @@ public static class EffectYamlLoader
     private static readonly HashSet<string> KnownBuffTypes =
     [
         BuffTypes.Tp, BuffTypes.Yield, BuffTypes.Av,
-        BuffTypes.CannotAttack, BuffTypes.IncidentImmune, BuffTypes.IncidentBlock,
+        BuffTypes.CannotAttack, BuffTypes.Dormant, BuffTypes.IncidentImmune, BuffTypes.IncidentBlock,
         BuffTypes.IncidentReduction, BuffTypes.Ransomware, BuffTypes.ReservedInstance,
         BuffTypes.ScaleCostReduction, BuffTypes.DeployDiscount, BuffTypes.MaintenanceReduction,
         BuffTypes.PendingRevival, BuffTypes.AttackDamageReduction, BuffTypes.CountMultiplier,

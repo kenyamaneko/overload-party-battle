@@ -25,6 +25,23 @@ public class MonetizeProcessorTests
     private static MonetizeDistribution Dist(string instanceId, long amount) =>
         new() { InstanceID = instanceId, Amount = amount };
 
+    // ─── 休止リソースは収益化できない ─────────
+
+    [Fact]
+    public void Process_DormantResource_Throws()
+    {
+        var state = TestFactory.MakeGameState(turn: 2);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
+        resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+        state.Player1Field.Backend[0] = resource;
+        state.SetInsightPool(1, 500);
+
+        var act = () => MonetizeProcessor.Process(
+            state, _game, 1, MakeReq(Dist("be_1", 300)), _cc);
+
+        act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
+    }
+
     // ─── 1. Basic monetize transfers insight to budget ─────────
 
     [Fact]

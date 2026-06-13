@@ -148,6 +148,10 @@ public static class EndPhaseProcessor
             {
                 continue;
             }
+            if (FieldHelpers.HasTemporaryEffect(res, BuffTypes.Dormant))
+            {
+                continue;
+            }
 
             totalYield += StatCalculator.CalculateEffectiveInsight(res, field, cc);
 
@@ -162,7 +166,9 @@ public static class EndPhaseProcessor
         foreach (var resource in FieldHelpers.AllResources(field))
         {
             resource.TemporaryEffects.RemoveAll(e =>
-                e.Duration is EffectDurations.ThisTurn or EffectDurations.UntilNextOwnTurnEnd);
+                e.Duration is EffectDurations.ThisTurn
+                    or EffectDurations.UntilNextTurnEnd
+                    or EffectDurations.UntilNextOwnTurnEnd);
         }
     }
 
@@ -181,6 +187,7 @@ public static class EndPhaseProcessor
         }
 
         state.SetIncidentPlayedThisTurn(playerNum, false);
+        state.SetRoutineUsedThisTurn(playerNum, false);
     }
 
     static void FirePassiveEffects(

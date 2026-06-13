@@ -106,6 +106,7 @@ PvP 戦を作成する。マッチメイキング後に Gateway が呼び出す�
 | `scale_up` | `{sourceInstanceID, targetRank, instanceFamily?}` | リソースをスケールアップ |
 | `monetize` | `{sourceInstanceID}` | データリソースを収益化 |
 | `use_effect` | `{sourceInstanceID, targetInstanceIDs?}` | カード効果を発動 |
+| `use_initiative` | `{kind, choiceData?}` | プロダクトの施策（ルーチン / スペシャル）を発動 |
 | `discard_hand` | `{instanceIDs}` | 手札を破棄（end フェーズ、手札 > 6 枚時） |
 | `end_phase` | `{}` | フェーズを終了 |
 | `forfeit` | `{reason?}` | 降参 |

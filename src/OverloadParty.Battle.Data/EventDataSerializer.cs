@@ -29,6 +29,7 @@ public static class EventDataSerializer
         [EventTypes.Monetize] = typeof(MonetizeEventData),
         [EventTypes.DiscardHand] = typeof(DiscardHandEventData),
         [EventTypes.UseEffect] = typeof(UseEffectEventData),
+        [EventTypes.UseInitiative] = typeof(UseInitiativeEventData),
         [EventTypes.PhaseChange] = typeof(PhaseChangeEventData),
         [EventTypes.PhaseEnd] = typeof(PhaseEndEventData),
         [EventTypes.TurnEnd] = typeof(TurnEndEventData),

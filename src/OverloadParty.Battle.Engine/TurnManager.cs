@@ -42,7 +42,7 @@ public static class TurnManager
     public static bool IsActionAllowedInPhase(Phase phase, ActionType action) => phase switch
     {
         Phase.Main => action is ActionType.PlayCard or ActionType.ScaleUp or ActionType.Monetize
-            or ActionType.UseEffect or ActionType.EndPhase,
+            or ActionType.UseEffect or ActionType.UseInitiative or ActionType.EndPhase,
         Phase.Battle => action is ActionType.Attack or ActionType.UseEffect
             or ActionType.EndPhase,
         Phase.End => action is ActionType.DiscardHand,

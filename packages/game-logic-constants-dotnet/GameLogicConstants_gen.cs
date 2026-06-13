@@ -38,6 +38,7 @@ public static class ActionTypes
     public const string Monetize = "monetize";
     public const string DiscardHand = "discard_hand";
     public const string UseEffect = "use_effect";
+    public const string UseInitiative = "use_initiative";
     public const string SetReactive = "set_reactive";
     public const string EndPhase = "end_phase";
     public const string Forfeit = "forfeit";
@@ -55,6 +56,7 @@ public static class EventTypes
     public const string Monetize = "monetize";
     public const string DiscardHand = "discard_hand";
     public const string UseEffect = "use_effect";
+    public const string UseInitiative = "use_initiative";
     public const string ReactiveRevealed = "reactive_revealed";
     public const string PhaseChange = "phase_change";
     public const string PhaseEnd = "phase_end";
@@ -122,6 +124,7 @@ public static class BuffTypes
     public const string Yield = "yield";
     public const string Av = "av";
     public const string CannotAttack = "cannot_attack";
+    public const string Dormant = "dormant";
     public const string IncidentImmune = "incident_immune";
     public const string IncidentBlock = "incident_block";
     public const string IncidentReduction = "incident_reduction";
@@ -149,6 +152,7 @@ public static class CustomEffects
     public const string CancelNthDeploy = "cancel_nth_deploy";
     public const string ChainAttackBonus = "chain_attack_bonus";
     public const string CloudShift = "cloud_shift";
+    public const string ConvertAllInsight = "convert_all_insight";
     public const string DeploySameTypeFromHand = "deploy_same_type_from_hand";
     public const string DisableHighTpDeploy = "disable_high_tp_deploy";
     public const string Reattach = "reattach";

@@ -156,9 +156,9 @@ public static class AttackProcessor
         {
             throw new GameRuleException("attacker has already attacked this turn");
         }
-        if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate))
+        if (FieldHelpers.HasTemporaryEffect(attacker, BuffTypes.Dormant))
         {
-            throw new GameRuleException("attacker cannot operate");
+            throw new GameRuleException("dormant resource cannot attack");
         }
 
         return (attacker, card);

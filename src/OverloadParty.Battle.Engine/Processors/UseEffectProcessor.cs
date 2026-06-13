@@ -146,10 +146,6 @@ public static class UseEffectProcessor
         {
             throw new GameRuleException("effect already used this turn");
         }
-        if (FieldHelpers.HasTemporaryEffect(source, EffectTypes.CannotOperate))
-        {
-            throw new GameRuleException("resource cannot operate");
-        }
 
         return card;
     }

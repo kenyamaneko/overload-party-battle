@@ -15,5 +15,9 @@ public class DeckSnapshotCard
 public class DeckSnapshot
 {
     public string DeckID { get; set; } = "";
+
+    /// <summary>デッキが宣言した陣営。プレイヤーが使用できるプロダクト (施策) を規定します。</summary>
+    public string Faction { get; set; } = "";
+
     public List<DeckSnapshotCard> Cards { get; set; } = [];
 }

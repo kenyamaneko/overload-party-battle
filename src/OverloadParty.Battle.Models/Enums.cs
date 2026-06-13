@@ -85,6 +85,7 @@ public enum ActionType
     Monetize,
     DiscardHand,
     UseEffect,
+    UseInitiative,
     EndPhase,
     Forfeit,
     SelectSlot,

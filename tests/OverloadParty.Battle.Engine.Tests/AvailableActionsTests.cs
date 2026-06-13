@@ -609,7 +609,7 @@ public class AvailableActionsTests
     }
 
     [Fact]
-    public void Attack_CannotOperateExcluded()
+    public void Attack_DormantExcluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
@@ -617,7 +617,7 @@ public class AvailableActionsTests
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
         var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
-        attacker.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.CannotOperate });
+        attacker.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
         myField.Frontend[0] = attacker;
 
         var oppField = TestFactory.MakeField();
@@ -901,28 +901,6 @@ public class AvailableActionsTests
         var myField = TestFactory.MakeField();
         var res = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
         res.EffectUsedThisTurn = true;
-        myField.Frontend[0] = res;
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
-
-        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
-    }
-
-    [Fact]
-    public void UseEffect_CannotOperateExcluded()
-    {
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
-
-        var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
-        res.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.CannotOperate });
         myField.Frontend[0] = res;
 
         var actions = AvailableActions.GetAllAvailableActions(

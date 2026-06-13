@@ -281,7 +281,7 @@ public static class AvailableActions
             var attackerCard = cc.MustGet(attacker.CardID);
             if (!attackerCard.IsComputeType) { continue; }
             if (attacker.HasAttacked) { continue; }
-            if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate)) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(attacker, BuffTypes.Dormant)) { continue; }
 
             yield return new AvailableAction
             {
@@ -349,6 +349,7 @@ public static class AvailableActions
         {
             var card = cc.MustGet(res.CardID);
             if (!card.IsComputeType) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(res, BuffTypes.Dormant)) { continue; }
 
             long effectiveTP = StatCalculator.CalculateEffectiveTP(res, field, cc);
             long remaining = effectiveTP - res.MonetizedAmount;
@@ -372,7 +373,6 @@ public static class AvailableActions
         foreach (var resource in FieldHelpers.AllFaceUpResources(myField))
         {
             if (resource.EffectUsedThisTurn) { continue; }
-            if (FieldHelpers.HasTemporaryEffect(resource, EffectTypes.CannotOperate)) { continue; }
 
             var card = cc.MustGet(resource.CardID);
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }

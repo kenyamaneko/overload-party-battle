@@ -135,17 +135,17 @@ public class AttackProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*already attacked*");
     }
 
-    // ─── 6. Attacker has CannotOperate effect → throws ─────
+    // ─── 6. Dormant attacker → throws ─────
 
     [Fact]
-    public void Process_AttackerCannotOperate_Throws()
+    public void Process_AttackerDormant_Throws()
     {
         var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
         var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
         attacker.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = EffectTypes.CannotOperate,
+            EffectType = BuffTypes.Dormant,
             Value = 1,
             Duration = "this_turn",
             SourceID = "test",
@@ -158,7 +158,7 @@ public class AttackProcessorTests
         var act = () => AttackProcessor.Process(
             state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
 
-        act.Should().Throw<GameRuleException>().WithMessage("*cannot operate*");
+        act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
     }
 
     // ─── 7-8. Attacker or defender face-down → throws ──────

@@ -13,16 +13,19 @@ public class GameEngine
     private readonly IGameRepository _repo;
     private readonly ICardCache _cardCache;
     private readonly IEffectRegistry _effects;
+    private readonly IProductCatalog _products;
 
     /// <summary>Initializes a new instance of <see cref="GameEngine"/>.</summary>
     /// <param name="repo">The game persistence layer.</param>
     /// <param name="cardCache">Read-only card definitions.</param>
     /// <param name="effects">The effect registry (card effect handlers).</param>
-    public GameEngine(IGameRepository repo, ICardCache cardCache, IEffectRegistry effects)
+    /// <param name="products">陣営からプロダクト (施策) を解決するカタログ。</param>
+    public GameEngine(IGameRepository repo, ICardCache cardCache, IEffectRegistry effects, IProductCatalog products)
     {
         _repo = repo;
         _cardCache = cardCache;
         _effects = effects;
+        _products = products;
     }
 
     /// <summary>Gets the configured effect registry.</summary>
@@ -201,6 +204,8 @@ public class GameEngine
                         state, game, playerNum, (DiscardHandRequest)actionData, _cardCache, _effects),
                     ActionType.UseEffect => UseEffectProcessor.Process(
                         state, game, playerNum, (UseEffectRequest)actionData, _cardCache, _effects),
+                    ActionType.UseInitiative => UseInitiativeProcessor.Process(
+                        state, game, playerNum, (UseInitiativeRequest)actionData, _cardCache, _effects, _products),
                     _ => throw new GameRuleException($"unknown action type: {actionType}")
                 };
             }
