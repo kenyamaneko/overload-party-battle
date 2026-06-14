@@ -16,8 +16,14 @@ public class DeckSnapshot
 {
     public string DeckID { get; set; } = "";
 
-    /// <summary>デッキが宣言した陣営。プレイヤーが使用できるプロダクト (施策) を規定します。</summary>
-    public string Faction { get; set; } = "";
+    /// <summary>デッキが選んだプロダクトの ID。セットした施策の所属を規定します。</summary>
+    public string ProductId { get; set; } = "";
+
+    /// <summary>セットしたルーチン施策の ID。</summary>
+    public string RoutineId { get; set; } = "";
+
+    /// <summary>セットしたスペシャル施策の ID。</summary>
+    public string SpecialId { get; set; } = "";
 
     public List<DeckSnapshotCard> Cards { get; set; } = [];
 }

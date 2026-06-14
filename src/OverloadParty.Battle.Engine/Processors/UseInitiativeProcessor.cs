@@ -32,14 +32,16 @@ public static class UseInitiativeProcessor
             throw new GameRuleException("cannot use initiative on first turn");
         }
 
-        string faction = state.GetFaction(playerNum);
-        var product = products.GetByFaction(faction)
-            ?? throw new GameRuleException($"no product for faction '{faction}'");
+        CheckUsageLimit(state, playerNum, req.Kind);
 
-        var initiative = product.Initiatives.FirstOrDefault(i => i.Kind == req.Kind)
-            ?? throw new GameRuleException($"unknown initiative kind '{req.Kind}'");
+        string productId = state.GetProductId(playerNum);
+        var product = products.GetById(productId)
+            ?? throw new GameRuleException($"no product for id '{productId}'");
 
-        CheckUsageLimit(state, playerNum, initiative.Kind);
+        string initiativeId = state.GetInitiativeId(playerNum, req.Kind);
+        var initiative = product.FindInitiative(initiativeId, req.Kind)
+            ?? throw new GameRuleException(
+                $"initiative '{initiativeId}' ({req.Kind}) not found in product '{productId}'");
 
         long pool = state.GetInsightPool(playerNum);
         if (pool < initiative.InsightCost)
@@ -48,8 +50,8 @@ public static class UseInitiativeProcessor
                 $"insufficient insight: have {pool}, need {initiative.InsightCost}");
         }
 
-        var handler = effects.Get(InitiativeEffects.HandlerCardId(faction, initiative.Kind), TriggerType.Ignition)
-            ?? throw new GameRuleException($"no handler for initiative {faction}/{initiative.Kind}");
+        var handler = effects.Get(InitiativeEffects.HandlerCardId(initiative.InitiativeId), TriggerType.Ignition)
+            ?? throw new GameRuleException($"no handler for initiative '{initiative.InitiativeId}'");
 
         state.SetInsightPool(playerNum, pool - initiative.InsightCost);
 
@@ -75,7 +77,8 @@ public static class UseInitiativeProcessor
             PlayerNum = playerNum,
             EventData = new UseInitiativeEventData
             {
-                Faction = faction,
+                ProductId = productId,
+                InitiativeId = initiative.InitiativeId,
                 Kind = initiative.Kind,
                 InitiativeName = initiative.Name,
                 InsightCost = initiative.InsightCost,

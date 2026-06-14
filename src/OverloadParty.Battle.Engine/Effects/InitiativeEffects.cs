@@ -11,10 +11,9 @@ namespace OverloadParty.Battle.Engine.Effects;
 public static class InitiativeEffects
 {
     /// <summary>施策 handler を引くための合成カード ID を返します。</summary>
-    /// <param name="faction">プロダクトの陣営。</param>
-    /// <param name="kind">施策の区分 (ルーチン / スペシャル)。</param>
+    /// <param name="initiativeId">施策 ID。</param>
     /// <returns>EffectRegistry の検索キーとなる合成カード ID。</returns>
-    public static string HandlerCardId(string faction, string kind) => $"initiative:{faction}:{kind}";
+    public static string HandlerCardId(string initiativeId) => $"initiative:{initiativeId}";
 
     /// <summary>
     /// プロダクト群の各施策効果を起動効果として EffectRegistry に登録します。
@@ -35,7 +34,7 @@ public static class InitiativeEffects
                 initiative.Effect.Trigger = TriggerTypes.Ignition;
                 syntheticCards.Add(new CardDefinition
                 {
-                    CardId = HandlerCardId(product.Faction, initiative.Kind),
+                    CardId = HandlerCardId(initiative.InitiativeId),
                     Effects = [initiative.Effect],
                 });
             }

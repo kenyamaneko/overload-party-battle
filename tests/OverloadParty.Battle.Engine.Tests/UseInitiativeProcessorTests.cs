@@ -8,7 +8,9 @@ namespace OverloadParty.Battle.Tests.Engine;
 
 public class UseInitiativeProcessorTests
 {
-    private const string Faction = "TST-FA";
+    private const string ProductId = "PD-TST";
+    private const string RoutineId = "IN-TST-R";
+    private const string SpecialId = "IN-TST-S";
 
     private static readonly JsonSerializerOptions JsonOpts = new()
     {
@@ -28,18 +30,18 @@ public class UseInitiativeProcessorTests
     private static EffectDef Effect(string json) =>
         JsonSerializer.Deserialize<EffectDef>(json, JsonOpts)!;
 
-    /// <summary>1 つの陣営に routine / special を持つテストプロダクトを作る。</summary>
+    /// <summary>routine / special を 1 つずつ持つテストプロダクトを作る。</summary>
     private static Product Product(
         long routineCost, string routineJson,
         long specialCost, string specialJson) => new()
     {
-        ProductId = "PD-TST",
-        Faction = Faction,
+        ProductId = ProductId,
+        Faction = "TST-FA",
         ProductName = "Test Product",
         Initiatives =
         [
-            new Initiative { Kind = InitiativeKinds.Routine, Name = "R", InsightCost = routineCost, Effect = Effect(routineJson) },
-            new Initiative { Kind = InitiativeKinds.Special, Name = "S", InsightCost = specialCost, Effect = Effect(specialJson) },
+            new Initiative { InitiativeId = RoutineId, Kind = InitiativeKinds.Routine, Name = "R", InsightCost = routineCost, Effect = Effect(routineJson) },
+            new Initiative { InitiativeId = SpecialId, Kind = InitiativeKinds.Special, Name = "S", InsightCost = specialCost, Effect = Effect(specialJson) },
         ],
     };
 
@@ -67,7 +69,9 @@ public class UseInitiativeProcessorTests
     private BattleGameState MakeState(long turn = 3, long insight = 1000)
     {
         var state = TestFactory.MakeGameState(turn: turn, phase: Phase.Main);
-        state.Player1Faction = Faction;
+        state.Player1ProductId = ProductId;
+        state.Player1RoutineId = RoutineId;
+        state.Player1SpecialId = SpecialId;
         state.Player1InsightPool = insight;
         return state;
     }
@@ -86,15 +90,27 @@ public class UseInitiativeProcessorTests
     }
 
     [Fact]
-    public void UnknownFaction_Throws()
+    public void UnknownProduct_Throws()
     {
         var (effects, catalog) = Setup(StandardProduct());
         var state = MakeState();
-        state.Player1Faction = "TST-OTHER";
+        state.Player1ProductId = "PD-OTHER";
 
         var act = () => Use(state, InitiativeKinds.Routine, effects, catalog);
 
         act.Should().Throw<GameRuleException>().WithMessage("*no product*");
+    }
+
+    [Fact]
+    public void SelectedInitiativeNotInProduct_Throws()
+    {
+        var (effects, catalog) = Setup(StandardProduct());
+        var state = MakeState();
+        state.Player1RoutineId = "IN-NOPE";
+
+        var act = () => Use(state, InitiativeKinds.Routine, effects, catalog);
+
+        act.Should().Throw<GameRuleException>().WithMessage("*not found*");
     }
 
     [Fact]

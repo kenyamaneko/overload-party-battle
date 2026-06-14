@@ -53,7 +53,9 @@ public class BattleGameState
     public long Player1TimeBank { get; set; }
     public bool Player1IncidentPlayedThisTurn { get; set; }
     public bool Player1HasOperated { get; set; }
-    public string Player1Faction { get; set; } = "";
+    public string Player1ProductId { get; set; } = "";
+    public string Player1RoutineId { get; set; } = "";
+    public string Player1SpecialId { get; set; } = "";
     public bool Player1RoutineUsedThisTurn { get; set; }
     public bool Player1SpecialUsedThisGame { get; set; }
 
@@ -67,7 +69,9 @@ public class BattleGameState
     public long Player2TimeBank { get; set; }
     public bool Player2IncidentPlayedThisTurn { get; set; }
     public bool Player2HasOperated { get; set; }
-    public string Player2Faction { get; set; } = "";
+    public string Player2ProductId { get; set; } = "";
+    public string Player2RoutineId { get; set; } = "";
+    public string Player2SpecialId { get; set; } = "";
     public bool Player2RoutineUsedThisTurn { get; set; }
     public bool Player2SpecialUsedThisGame { get; set; }
 
@@ -323,15 +327,30 @@ public class BattleGameState
     }
 
     /// <summary>
-    /// 指定したプレイヤーが宣言した陣営を返します
+    /// 指定したプレイヤーが選んだプロダクトの ID を返します
     /// </summary>
     /// <param name="playerNum">対象プレイヤー番号</param>
-    /// <returns>宣言した陣営。プロダクト (施策) を規定する</returns>
-    public string GetFaction(long playerNum) => playerNum switch
+    /// <returns>選んだプロダクトの ID</returns>
+    public string GetProductId(long playerNum) => playerNum switch
     {
-        1 => Player1Faction,
-        2 => Player2Faction,
+        1 => Player1ProductId,
+        2 => Player2ProductId,
         _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+
+    /// <summary>
+    /// 指定したプレイヤーがセットした施策の ID を返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="kind">施策の区分 (ルーチン / スペシャル)</param>
+    /// <returns>セットした施策の ID</returns>
+    public string GetInitiativeId(long playerNum, string kind) => (playerNum, kind) switch
+    {
+        (1, InitiativeKinds.Routine) => Player1RoutineId,
+        (1, InitiativeKinds.Special) => Player1SpecialId,
+        (2, InitiativeKinds.Routine) => Player2RoutineId,
+        (2, InitiativeKinds.Special) => Player2SpecialId,
+        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
     };
 
     /// <summary>

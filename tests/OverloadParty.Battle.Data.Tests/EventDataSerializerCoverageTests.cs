@@ -99,7 +99,7 @@ public class EventDataSerializerCoverageTests
         [typeof(MonetizeEventData)] = new MonetizeEventData { TotalAmount = 100 },
         [typeof(DiscardHandEventData)] = new DiscardHandEventData { DiscardedCount = 2, DiscardedIds = ["x", "y"] },
         [typeof(UseEffectEventData)] = new UseEffectEventData { CardId = "c", SourceId = "s", TargetId = "t" },
-        [typeof(UseInitiativeEventData)] = new UseInitiativeEventData { Faction = "SHE", Kind = "routine", InitiativeName = "R", InsightCost = 400 },
+        [typeof(UseInitiativeEventData)] = new UseInitiativeEventData { ProductId = "PD-TST", InitiativeId = "IN-TST-R", Kind = "routine", InitiativeName = "R", InsightCost = 400 },
         [typeof(PhaseChangeEventData)] = new PhaseChangeEventData { PreviousPhase = "main", CurrentPhase = "battle" },
         [typeof(PhaseEndEventData)] = new PhaseEndEventData { Phase = "end", NeedsDiscard = false },
         [typeof(TurnEndEventData)] = new TurnEndEventData { Phase = "end", NextTurn = 2, ActivePlayer = 2, CurrentPhase = "draw" },
