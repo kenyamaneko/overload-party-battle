@@ -34,16 +34,16 @@ public class UseInitiativeProcessorTests
     private static Product Product(
         long routineCost, string routineJson,
         long specialCost, string specialJson) => new()
-    {
-        ProductId = ProductId,
-        Faction = "TST-FA",
-        ProductName = "Test Product",
-        Initiatives =
+        {
+            ProductId = ProductId,
+            Faction = "TST-FA",
+            ProductName = "Test Product",
+            Initiatives =
         [
             new Initiative { InitiativeId = RoutineId, Kind = InitiativeKinds.Routine, Name = "R", InsightCost = routineCost, Effect = Effect(routineJson) },
             new Initiative { InitiativeId = SpecialId, Kind = InitiativeKinds.Special, Name = "S", InsightCost = specialCost, Effect = Effect(specialJson) },
         ],
-    };
+        };
 
     private static (IEffectRegistry Effects, ProductCatalog Catalog) Setup(Product product)
     {
