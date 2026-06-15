@@ -21,11 +21,11 @@ public static class UseInitiativeProcessor
     /// <param name="req">施策の区分と選択データを含むリクエスト。</param>
     /// <param name="cc">カード定義キャッシュ。</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
-    /// <param name="products">陣営からプロダクトを解決するカタログ。</param>
+    /// <param name="initiatives">ID から施策を解決するカタログ。</param>
     /// <returns>施策イベントと状態更新フラグを含むアクション結果。</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        UseInitiativeRequest req, ICardCache cc, IEffectRegistry effects, IProductCatalog products)
+        UseInitiativeRequest req, ICardCache cc, IEffectRegistry effects, IInitiativeCatalog initiatives)
     {
         if (TurnManager.IsFirstTurn(state.CurrentTurn))
         {
@@ -34,14 +34,13 @@ public static class UseInitiativeProcessor
 
         CheckUsageLimit(state, playerNum, req.Kind);
 
-        string productId = state.GetProductId(playerNum);
-        var product = products.GetById(productId)
-            ?? throw new GameRuleException($"no product for id '{productId}'");
-
         string initiativeId = state.GetInitiativeId(playerNum, req.Kind);
-        var initiative = product.FindInitiative(initiativeId, req.Kind)
-            ?? throw new GameRuleException(
-                $"initiative '{initiativeId}' ({req.Kind}) not found in product '{productId}'");
+        var initiative = initiatives.GetById(initiativeId)
+            ?? throw new GameRuleException($"initiative '{initiativeId}' not found");
+        if (initiative.Kind != req.Kind)
+        {
+            throw new GameRuleException($"initiative '{initiativeId}' is not a {req.Kind}");
+        }
 
         long pool = state.GetInsightPool(playerNum);
         if (pool < initiative.InsightCost)
@@ -77,7 +76,7 @@ public static class UseInitiativeProcessor
             PlayerNum = playerNum,
             EventData = new UseInitiativeEventData
             {
-                ProductId = productId,
+                ProductId = state.GetProductId(playerNum),
                 InitiativeId = initiative.InitiativeId,
                 Kind = initiative.Kind,
                 InitiativeName = initiative.Name,

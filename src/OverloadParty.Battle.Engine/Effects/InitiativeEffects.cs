@@ -18,26 +18,23 @@ public static class InitiativeEffects
     /// <summary>
     /// プロダクト群の各施策効果を起動効果として EffectRegistry に登録します。
     /// </summary>
-    /// <param name="products">登録対象のプロダクト群。</param>
+    /// <param name="initiatives">登録対象の施策群。</param>
     /// <param name="registry">登録先の効果レジストリ。</param>
     /// <param name="customRegistry">カスタム効果のレジストリ。</param>
     public static void LoadIntoRegistry(
-        IEnumerable<Product> products,
+        IEnumerable<Initiative> initiatives,
         EffectRegistry registry,
         CustomEffectRegistry customRegistry)
     {
         var syntheticCards = new List<CardDefinition>();
-        foreach (var product in products)
+        foreach (var initiative in initiatives)
         {
-            foreach (var initiative in product.Initiatives)
+            initiative.Effect.Trigger = TriggerTypes.Ignition;
+            syntheticCards.Add(new CardDefinition
             {
-                initiative.Effect.Trigger = TriggerTypes.Ignition;
-                syntheticCards.Add(new CardDefinition
-                {
-                    CardId = HandlerCardId(initiative.InitiativeId),
-                    Effects = [initiative.Effect],
-                });
-            }
+                CardId = HandlerCardId(initiative.InitiativeId),
+                Effects = [initiative.Effect],
+            });
         }
 
         EffectYamlLoader.LoadFromCards(syntheticCards, registry, customRegistry);

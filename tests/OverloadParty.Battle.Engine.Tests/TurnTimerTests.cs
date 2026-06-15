@@ -140,7 +140,7 @@ public class TurnTimerTests
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
         var repo = new FakeGameRepository();
-        var engine = new GameEngine(repo, cc, new EffectRegistry(), new ProductCatalog([]));
+        var engine = new GameEngine(repo, cc, new EffectRegistry(), new InitiativeCatalog([]));
         var deck = TestFactory.MakeDeck("TST-0001");
 
         var gameID = await engine.CreateNewGame(deck, deck, 1);
@@ -178,7 +178,7 @@ public class TurnTimerTests
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
         var repo = new FakeGameRepository();
-        var engine = new GameEngine(repo, cc, new EffectRegistry(), new ProductCatalog([]));
+        var engine = new GameEngine(repo, cc, new EffectRegistry(), new InitiativeCatalog([]));
         var deck = TestFactory.MakeDeck("TST-0001");
 
         var gameID = await engine.CreateNewGame(deck, deck, 1);

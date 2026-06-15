@@ -59,21 +59,21 @@ public sealed class CardServiceClient : IDisposable
         return cards;
     }
 
-    /// <summary>カードサービスの internal プロダクト一覧エンドポイントから全プロダクト定義を取得する。</summary>
+    /// <summary>カードサービスの internal 施策一覧エンドポイントから全施策定義を取得する。</summary>
     /// <param name="ct">キャンセレーショントークン。</param>
-    /// <returns>取得したプロダクト定義の一覧。</returns>
-    public async Task<List<Product>> ListAllProductsAsync(CancellationToken ct = default)
+    /// <returns>取得した施策定義の一覧。</returns>
+    public async Task<List<Initiative>> ListAllInitiativesAsync(CancellationToken ct = default)
     {
-        using var response = await _http.GetAsync("internal/v1/products", ct);
+        using var response = await _http.GetAsync("internal/v1/initiatives", ct);
         response.EnsureSuccessStatusCode();
 
-        var products = await response.Content.ReadFromJsonAsync<List<Product>>(JsonOptions, ct);
-        if (products is null)
+        var initiatives = await response.Content.ReadFromJsonAsync<List<Initiative>>(JsonOptions, ct);
+        if (initiatives is null)
         {
-            throw new InvalidOperationException("card service returned null body for /internal/v1/products");
+            throw new InvalidOperationException("card service returned null body for /internal/v1/initiatives");
         }
 
-        return products;
+        return initiatives;
     }
 
     public void Dispose()

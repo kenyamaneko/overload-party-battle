@@ -47,9 +47,9 @@ var cardCache = new CardCache();
 builder.Services.AddSingleton<ICardCache>(cardCache);
 builder.Services.AddSingleton(cardCache);
 
-// プロダクト定義。card サービス (またはローカル JSON) から起動時に読み込む。
+// 施策定義。card サービス (またはローカル JSON) から起動時に読み込む。
 // engine ファクトリはカードロード後に遅延実行されるため、この変数はその時点で確定している。
-var products = new List<Product>();
+var initiatives = new List<Initiative>();
 
 // ─── Engine ─────────────────────────────────────────────────
 
@@ -62,9 +62,9 @@ builder.Services.AddSingleton(sp =>
     var registry = new EffectRegistry();
     var customEffects = new CustomEffectRegistry();
     EffectYamlLoader.LoadFromCards(cc.All().Values, registry, customEffects);
-    InitiativeEffects.LoadIntoRegistry(products, registry, customEffects);
+    InitiativeEffects.LoadIntoRegistry(initiatives, registry, customEffects);
 
-    return new GameEngine(gameRepo, cc, registry, new ProductCatalog(products));
+    return new GameEngine(gameRepo, cc, registry, new InitiativeCatalog(initiatives));
 });
 
 // ─── Services ───────────────────────────────────────────────
@@ -111,7 +111,7 @@ var app = builder.Build();
 // Local dev keeps the JSON file path so offline development doesn't require the card service
 // running. Everything else (k8s, CI) must hit the card service.
 var localCardsPath = isLocalDev ? Environment.GetEnvironmentVariable("CARDS_JSON_PATH") : null;
-var localProductsPath = isLocalDev ? Environment.GetEnvironmentVariable("PRODUCTS_JSON_PATH") : null;
+var localInitiativesPath = isLocalDev ? Environment.GetEnvironmentVariable("INITIATIVES_JSON_PATH") : null;
 
 var masterJsonOptions = new JsonSerializerOptions
 {
@@ -135,16 +135,16 @@ if (!string.IsNullOrEmpty(localCardsPath))
     cardCache.LoadFromList(cards);
     app.Logger.LogInformation("Loaded {Count} cards from {Path}", cardCache.Count, localCardsPath);
 
-    if (string.IsNullOrEmpty(localProductsPath) || !File.Exists(localProductsPath))
+    if (string.IsNullOrEmpty(localInitiativesPath) || !File.Exists(localInitiativesPath))
     {
         throw new FileNotFoundException(
-            $"Product data not found at {localProductsPath}. Set PRODUCTS_JSON_PATH and run 'python3 scripts/generate_products.py' in the card repo.");
+            $"Initiative data not found at {localInitiativesPath}. Set INITIATIVES_JSON_PATH and run 'python3 scripts/generate_products.py' in the card repo.");
     }
-    var loadedProducts = JsonSerializer.Deserialize<List<Product>>(
-        File.ReadAllText(localProductsPath), masterJsonOptions)
-        ?? throw new InvalidOperationException($"failed to deserialize products from {localProductsPath}");
-    products.AddRange(loadedProducts);
-    app.Logger.LogInformation("Loaded {Count} products from {Path}", products.Count, localProductsPath);
+    var loadedInitiatives = JsonSerializer.Deserialize<List<Initiative>>(
+        File.ReadAllText(localInitiativesPath), masterJsonOptions)
+        ?? throw new InvalidOperationException($"failed to deserialize initiatives from {localInitiativesPath}");
+    initiatives.AddRange(loadedInitiatives);
+    app.Logger.LogInformation("Loaded {Count} initiatives from {Path}", initiatives.Count, localInitiativesPath);
 }
 else
 {
@@ -156,10 +156,10 @@ else
     {
         var cards = await cardClient.ListAllCardsAsync();
         cardCache.LoadFromList(cards);
-        products.AddRange(await cardClient.ListAllProductsAsync());
+        initiatives.AddRange(await cardClient.ListAllInitiativesAsync());
         app.Logger.LogInformation(
-            "Loaded {CardCount} cards and {ProductCount} products from card service at {Url}",
-            cardCache.Count, products.Count, cardServiceUrl);
+            "Loaded {CardCount} cards and {InitiativeCount} initiatives from card service at {Url}",
+            cardCache.Count, initiatives.Count, cardServiceUrl);
     }
     catch (Exception ex)
     {
