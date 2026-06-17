@@ -300,6 +300,7 @@ public static class AvailableActions
         {
             var card = cc.MustGet(resource.CardID);
             if (!card.Resizable) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(resource, BuffTypes.Dormant)) { continue; }
 
             if (resource.Rank is not { } currentRank || currentRank == Rank.Large) { continue; }
 
@@ -373,6 +374,7 @@ public static class AvailableActions
         foreach (var resource in FieldHelpers.AllFaceUpResources(myField))
         {
             if (resource.EffectUsedThisTurn) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(resource, BuffTypes.Dormant)) { continue; }
 
             var card = cc.MustGet(resource.CardID);
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }

@@ -28,6 +28,10 @@ public static class ScaleUpProcessor
             ?? throw new GameRuleException($"resource {req.InstanceID} not found");
         var card = cc.MustGet(resource.CardID);
 
+        if (FieldHelpers.HasTemporaryEffect(resource, BuffTypes.Dormant))
+        {
+            throw new GameRuleException("dormant resource cannot scale up");
+        }
         if (!card.Resizable)
         {
             throw new GameRuleException("card is not resizable");

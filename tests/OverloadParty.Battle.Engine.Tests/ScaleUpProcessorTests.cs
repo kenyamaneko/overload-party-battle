@@ -53,6 +53,23 @@ public class ScaleUpProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*not resizable*");
     }
 
+    // ─── 休止リソースはスケールアップできない ────────────────
+
+    [Fact]
+    public void Process_DormantResource_Throws()
+    {
+        var state = TestFactory.MakeGameState(turn: 3);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
+        resource.DeployedOnTurn = 1;
+        resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+        state.Player1Field.Frontend[0] = resource;
+
+        var act = () => ScaleUpProcessor.Process(
+            state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, new EffectRegistry());
+
+        act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
+    }
+
     // ─── 4. Deploy turn でもスケールアップ可能 ────────────────
 
     [Fact]

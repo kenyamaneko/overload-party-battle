@@ -4,9 +4,7 @@ using OverloadParty.GameLogicConstants;
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
-/// プロダクトの施策効果を、カード効果と同じ EffectRegistry に登録するヘルパー。
-/// 施策ごとに合成カード定義 (CardId = HandlerCardId、trigger = ignition) を作り、
-/// 既存の YAML ローダで handler を構築する。
+/// 施策効果をカード効果と同じ EffectRegistry に登録するヘルパー。
 /// </summary>
 public static class InitiativeEffects
 {

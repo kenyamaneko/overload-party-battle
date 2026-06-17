@@ -146,6 +146,10 @@ public static class UseEffectProcessor
         {
             throw new GameRuleException("effect already used this turn");
         }
+        if (FieldHelpers.HasTemporaryEffect(source, BuffTypes.Dormant))
+        {
+            throw new GameRuleException("dormant resource cannot use effect");
+        }
 
         return card;
     }

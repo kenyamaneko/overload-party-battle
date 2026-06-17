@@ -486,6 +486,25 @@ public class AvailableActionsTests
     }
 
     [Fact]
+    public void ScaleUp_DormantExcluded()
+    {
+        // 休止リソースはスケールアップ不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", resizable: true));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1", rank: Rank.Small);
+        resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+        myField.Frontend[0] = resource;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
+    }
+
+    [Fact]
     public void ScaleUp_ElasticOnlyExcluded()
     {
         // Elastic-only カード（Resizable=false）は手動スケールアップ不可
@@ -880,6 +899,29 @@ public class AvailableActionsTests
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         var myField = TestFactory.MakeField();
         myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
+    }
+
+    [Fact]
+    public void UseEffect_DormantExcluded()
+    {
+        // 休止リソースは起動効果を使用不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var resource = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
+        resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+        myField.Frontend[0] = resource;
 
         var actions = AvailableActions.GetAllAvailableActions(
             state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);

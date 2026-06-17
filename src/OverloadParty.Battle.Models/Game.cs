@@ -350,7 +350,8 @@ public class BattleGameState
         (1, InitiativeKinds.Special) => Player1SpecialId,
         (2, InitiativeKinds.Routine) => Player2RoutineId,
         (2, InitiativeKinds.Special) => Player2SpecialId,
-        _ => throw new ArgumentOutOfRangeException(nameof(kind)),
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(playerNum), $"no initiative for (playerNum={playerNum}, kind={kind})"),
     };
 
     /// <summary>

@@ -26,7 +26,6 @@ public static class InitiativeKinds
 
 /// <summary>
 /// UseInitiativeEventData は施策使用イベントのペイロードを保持します。
-/// client 向けの wire 型は未提供のため、現状はエンジン内部・永続化用です。
 /// </summary>
 public class UseInitiativeEventData : IEventData
 {
