@@ -38,10 +38,10 @@ public class LoseBudgetOp(PlayerRef player, IAmountResolver value) : IEffectOp
 }
 
 /// <summary>
-/// ConvertInsightOp は効果所有者の Insight プール全量を ratePercent 倍の Budget に変換し、プールを 0 にします。
+/// ConvertAllInsightOp は効果所有者の Insight プール全量を ratePercent 倍の Budget に変換し、プールを 0 にします。
 /// </summary>
 /// <param name="ratePercent">Insight を Budget に変換する倍率 (パーセント)。</param>
-public class ConvertInsightOp(long ratePercent) : IEffectOp
+public class ConvertAllInsightOp(long ratePercent) : IEffectOp
 {
     /// <inheritdoc />
     public void Execute(OpContext ctx)

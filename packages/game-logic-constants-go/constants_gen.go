@@ -116,7 +116,7 @@ const (
 	EffectOpReduceDeployTurns = "reduce_deploy_turns"
 	EffectOpAbsorbInsight = "absorb_insight"
 	EffectOpGainInsight = "gain_insight"
-	EffectOpConvertInsight = "convert_insight"
+	EffectOpConvertAllInsight = "convert_all_insight"
 )
 
 // Buff types.

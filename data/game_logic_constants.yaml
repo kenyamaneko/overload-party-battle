@@ -109,7 +109,7 @@ effect_ops:
 - reduce_deploy_turns
 - absorb_insight
 - gain_insight
-- convert_insight
+- convert_all_insight
 
 buff_types:
 - tp

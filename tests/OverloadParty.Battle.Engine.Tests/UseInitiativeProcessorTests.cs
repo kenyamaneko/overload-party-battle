@@ -201,7 +201,7 @@ public class UseInitiativeProcessorTests
             routineCost: 0,
             routineJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}""",
             specialCost: 0,
-            specialJson: """{"ops":[{"convert_insight":{"rate_percent":150}}]}""");
+            specialJson: """{"ops":[{"convert_all_insight":{"rate_percent":150}}]}""");
         var (effects, catalog) = Setup(initiatives);
         var state = MakeState(insight: 1000);
 

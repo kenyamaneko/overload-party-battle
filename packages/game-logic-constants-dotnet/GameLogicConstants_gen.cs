@@ -116,7 +116,7 @@ public static class EffectOps
     public const string ReduceDeployTurns = "reduce_deploy_turns";
     public const string AbsorbInsight = "absorb_insight";
     public const string GainInsight = "gain_insight";
-    public const string ConvertInsight = "convert_insight";
+    public const string ConvertAllInsight = "convert_all_insight";
 }
 
 public static class BuffTypes

@@ -325,22 +325,6 @@ public class BattleGameState
     }
 
     /// <summary>
-    /// 指定したプレイヤーがセットした施策の ID を返します
-    /// </summary>
-    /// <param name="playerNum">対象プレイヤー番号</param>
-    /// <param name="kind">施策の区分 (ルーチン / スペシャル)</param>
-    /// <returns>セットした施策の ID</returns>
-    public string GetInitiativeId(long playerNum, string kind) => (playerNum, kind) switch
-    {
-        (1, InitiativeKinds.Routine) => Player1RoutineId,
-        (1, InitiativeKinds.Special) => Player1SpecialId,
-        (2, InitiativeKinds.Routine) => Player2RoutineId,
-        (2, InitiativeKinds.Special) => Player2SpecialId,
-        _ => throw new ArgumentOutOfRangeException(
-            nameof(playerNum), $"no initiative for (playerNum={playerNum}, kind={kind})"),
-    };
-
-    /// <summary>
     /// 指定したプレイヤーが現ターンにルーチンを使用済みかを返します
     /// </summary>
     /// <param name="playerNum">対象プレイヤー番号</param>
