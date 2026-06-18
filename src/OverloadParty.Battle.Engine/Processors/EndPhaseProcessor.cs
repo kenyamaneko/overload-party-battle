@@ -40,7 +40,7 @@ public static class EndPhaseProcessor
                 CurrentPhase = state.CurrentPhase.ToWireString(),
             },
         });
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static ActionResult ProcessEndPhaseTransition(
@@ -48,7 +48,7 @@ public static class EndPhaseProcessor
         IEffectRegistry effects, List<GameEvent> events)
     {
         bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects);
-        var result = new ActionResult { Events = events, StateUpdated = true };
+        var result = new ActionResult { Events = events };
 
         if (needsDiscard)
         {

@@ -63,7 +63,6 @@ public static class SelectSlotProcessor
         return new ActionResult
         {
             Events = events,
-            StateUpdated = true,
             NeedsSlotSelect = state.PendingSlotSelects.Count > 0,
         };
     }

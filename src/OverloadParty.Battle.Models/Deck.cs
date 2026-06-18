@@ -16,9 +16,6 @@ public class DeckSnapshot
 {
     public string DeckID { get; set; } = "";
 
-    /// <summary>デッキが選んだプロダクトの ID。セットした施策の所属を規定します。</summary>
-    public string ProductId { get; set; } = "";
-
     /// <summary>セットしたルーチン施策の ID。</summary>
     public string RoutineId { get; set; } = "";
 

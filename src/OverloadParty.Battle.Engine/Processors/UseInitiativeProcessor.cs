@@ -22,7 +22,7 @@ public static class UseInitiativeProcessor
     /// <param name="cc">カード定義キャッシュ。</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <param name="initiatives">ID から施策を解決するカタログ。</param>
-    /// <returns>施策イベントと状態更新フラグを含むアクション結果。</returns>
+    /// <returns>施策イベントを含むアクション結果。</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
         UseInitiativeRequest req, ICardCache cc, IEffectRegistry effects, IInitiativeCatalog initiatives)
@@ -76,7 +76,7 @@ public static class UseInitiativeProcessor
             PlayerNum = playerNum,
             EventData = new UseInitiativeEventData
             {
-                ProductId = state.GetProductId(playerNum),
+                ProductId = initiative.ProductId,
                 InitiativeId = initiative.InitiativeId,
                 Kind = initiative.Kind,
                 InitiativeName = initiative.Name,
@@ -84,7 +84,7 @@ public static class UseInitiativeProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static void CheckUsageLimit(BattleGameState state, long playerNum, string kind)

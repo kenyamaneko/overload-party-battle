@@ -109,6 +109,7 @@ effect_ops:
 - reduce_deploy_turns
 - absorb_insight
 - gain_insight
+- convert_insight
 
 buff_types:
 - tp
@@ -139,7 +140,6 @@ custom_effects:
 - cancel_nth_deploy
 - chain_attack_bonus
 - cloud_shift
-- convert_all_insight
 - deploy_same_type_from_hand
 - disable_high_tp_deploy
 - reattach

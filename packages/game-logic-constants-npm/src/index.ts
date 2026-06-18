@@ -21,7 +21,7 @@ export type EffectDuration = (typeof EFFECT_DURATIONS)[number];
 export const TRIGGER_TYPES = ["ignition", "passive", "on_deploy", "on_end_phase", "on_field_change", "on_scale_up", "on_attack", "on_attack_declared", "on_hit", "on_destroy", "on_damaged", "on_incident"] as const;
 export type TriggerType = (typeof TRIGGER_TYPES)[number];
 
-export const EFFECT_OPS = ["gain_budget", "lose_budget", "deal_damage", "heal_damage", "destroy_check", "survive_destruction", "apply_buff", "draw", "search_repo", "add_to_hand", "trash_to_hand", "deploy_from_hand", "deploy_from_repo", "deploy_from_repo_same_card", "destroy_platform", "scale_to_rank", "cancel_action", "reveal_reactive", "peek_reactive", "reduce_deploy_turns", "absorb_insight", "gain_insight"] as const;
+export const EFFECT_OPS = ["gain_budget", "lose_budget", "deal_damage", "heal_damage", "destroy_check", "survive_destruction", "apply_buff", "draw", "search_repo", "add_to_hand", "trash_to_hand", "deploy_from_hand", "deploy_from_repo", "deploy_from_repo_same_card", "destroy_platform", "scale_to_rank", "cancel_action", "reveal_reactive", "peek_reactive", "reduce_deploy_turns", "absorb_insight", "gain_insight", "convert_insight"] as const;
 export type EffectOp = (typeof EFFECT_OPS)[number];
 
 export const BUFF_TYPES = ["tp", "yield", "av", "cannot_attack", "dormant", "incident_immune", "incident_block", "incident_reduction", "ransomware", "reserved_instance", "scale_cost_reduction", "deploy_discount", "maintenance_reduction", "pending_revival", "attack_damage_reduction", "count_multiplier", "sla_penalty", "sla_penalty_reduction", "tp_suppressed"] as const;
@@ -30,7 +30,7 @@ export type BuffType = (typeof BUFF_TYPES)[number];
 export const BUFF_MODES = ["flat", "percent"] as const;
 export type BuffMode = (typeof BUFF_MODES)[number];
 
-export const CUSTOM_EFFECTS = ["cancel_nth_deploy", "chain_attack_bonus", "cloud_shift", "convert_all_insight", "deploy_same_type_from_hand", "disable_high_tp_deploy", "reattach", "redirect_attack", "scale_to_zero", "spot_expiry", "target_shield"] as const;
+export const CUSTOM_EFFECTS = ["cancel_nth_deploy", "chain_attack_bonus", "cloud_shift", "deploy_same_type_from_hand", "disable_high_tp_deploy", "reattach", "redirect_attack", "scale_to_zero", "spot_expiry", "target_shield"] as const;
 export type CustomEffect = (typeof CUSTOM_EFFECTS)[number];
 
 export const EFFECT_CATEGORIES = ["budget_gain", "budget_penalty", "insight_absorb", "insight_gain", "single_damage", "aoe_damage", "buff", "debuff", "heal", "draw", "search", "deploy_free", "recover_card", "reveal_reactive", "destroy_platform", "cancel_action", "survive"] as const;

@@ -297,6 +297,9 @@ public static class EffectYamlLoader
             EffectOps.GainInsight => new GainInsightOp(
                 BuildAmount(p.GetProperty("amount"))),
 
+            EffectOps.ConvertInsight => new ConvertInsightOp(
+                p.GetProperty("rate_percent").GetInt64()),
+
             _ => throw new InvalidOperationException($"Unknown op: {opName}"),
         };
     }

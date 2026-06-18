@@ -62,7 +62,6 @@ public class EndPhaseProcessorTests
 
         state.CurrentPhase.Should().Be(Phase.Battle);
         result.GameOver.Should().BeNull();
-        result.StateUpdated.Should().BeTrue();
     }
 
     [Fact]

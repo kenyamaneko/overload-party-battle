@@ -76,7 +76,6 @@ public static class MonetizeProcessor
                     }
                 }
             ],
-            StateUpdated = true,
         };
     }
 

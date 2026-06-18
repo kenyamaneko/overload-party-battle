@@ -23,10 +23,6 @@ public class CustomEffectRegistry
         [CustomEffects.CloudShift] = BuildCloudShift,
         [CustomEffects.SpotExpiry] = BuildSpotExpiry,
         [CustomEffects.Reattach] = _ => Reattach,
-
-        // 施策 (大感謝セール): Insight プール全量を倍率変換して Budget へ。
-        [CustomEffects.ConvertAllInsight] = BuildConvertAllInsight,
-
         [CustomEffects.ScaleToZero] = _ => ScaleToZero,
 
         // target_shield はカード定義を passive に検査する marker（FieldHelpers.IsTargetShielded）。
@@ -188,30 +184,6 @@ public class CustomEffectRegistry
         {
             found.TemporaryEffects = target.TemporaryEffects;
         }
-    }
-
-    /// <summary>
-    /// 施策「大感謝セール」: Insight プールの全量を multiplier_percent 倍の Budget に変換し、
-    /// プールを 0 にする。スループットによる収益化上限は適用しない。
-    /// meta: { multiplier_percent }
-    /// </summary>
-    /// <param name="meta">変換倍率 (パーセント) を含むメタ情報。</param>
-    /// <returns>構築した効果関数。multiplier_percent が欠ける場合は null。</returns>
-    private static Action<OpContext>? BuildConvertAllInsight(Dictionary<string, JsonElement>? meta)
-    {
-        if (meta is null || !meta.TryGetValue("multiplier_percent", out var mpEl))
-        {
-            return null;
-        }
-        long multiplierPercent = mpEl.GetInt64();
-
-        return octx =>
-        {
-            long pool = octx.State.GetInsightPool(octx.PlayerNum);
-            long gained = pool * multiplierPercent / 100;
-            octx.State.SetBudget(octx.PlayerNum, octx.State.GetBudget(octx.PlayerNum) + gained);
-            octx.State.SetInsightPool(octx.PlayerNum, 0);
-        };
     }
 
     /// <summary>

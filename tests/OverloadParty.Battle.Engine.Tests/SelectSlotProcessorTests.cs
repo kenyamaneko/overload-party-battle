@@ -37,7 +37,6 @@ public class SelectSlotProcessorTests
         state.Player1Field.Frontend[0].Should().NotBeNull();
         state.Player1Field.Frontend[0]!.InstanceID.Should().Be("pending_1");
         state.PendingSlotSelects.Should().BeEmpty();
-        result.StateUpdated.Should().BeTrue();
     }
 
     [Fact]

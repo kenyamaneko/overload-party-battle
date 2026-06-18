@@ -57,7 +57,7 @@ public static class AttackProcessor
                     Cancelled = true,
                 },
             });
-            return new ActionResult { Events = events, StateUpdated = true };
+            return new ActionResult { Events = events };
         }
 
         // ダメージを適用（防御者の attack_damage_reduction バフで軽減）し、on_damaged を発火
@@ -129,7 +129,7 @@ public static class AttackProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static (DeployedResource Attacker, CardDefinition Card) ValidateAttacker(

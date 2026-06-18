@@ -116,6 +116,7 @@ const (
 	EffectOpReduceDeployTurns = "reduce_deploy_turns"
 	EffectOpAbsorbInsight = "absorb_insight"
 	EffectOpGainInsight = "gain_insight"
+	EffectOpConvertInsight = "convert_insight"
 )
 
 // Buff types.
@@ -152,7 +153,6 @@ const (
 	CustomEffectCancelNthDeploy = "cancel_nth_deploy"
 	CustomEffectChainAttackBonus = "chain_attack_bonus"
 	CustomEffectCloudShift = "cloud_shift"
-	CustomEffectConvertAllInsight = "convert_all_insight"
 	CustomEffectDeploySameTypeFromHand = "deploy_same_type_from_hand"
 	CustomEffectDisableHighTpDeploy = "disable_high_tp_deploy"
 	CustomEffectReattach = "reattach"

@@ -53,7 +53,6 @@ public class BattleGameState
     public long Player1TimeBank { get; set; }
     public bool Player1IncidentPlayedThisTurn { get; set; }
     public bool Player1HasOperated { get; set; }
-    public string Player1ProductId { get; set; } = "";
     public string Player1RoutineId { get; set; } = "";
     public string Player1SpecialId { get; set; } = "";
     public bool Player1RoutineUsedThisTurn { get; set; }
@@ -69,7 +68,6 @@ public class BattleGameState
     public long Player2TimeBank { get; set; }
     public bool Player2IncidentPlayedThisTurn { get; set; }
     public bool Player2HasOperated { get; set; }
-    public string Player2ProductId { get; set; } = "";
     public string Player2RoutineId { get; set; } = "";
     public string Player2SpecialId { get; set; } = "";
     public bool Player2RoutineUsedThisTurn { get; set; }
@@ -325,18 +323,6 @@ public class BattleGameState
             default: throw new ArgumentOutOfRangeException(nameof(playerNum));
         }
     }
-
-    /// <summary>
-    /// 指定したプレイヤーが選んだプロダクトの ID を返します
-    /// </summary>
-    /// <param name="playerNum">対象プレイヤー番号</param>
-    /// <returns>選んだプロダクトの ID</returns>
-    public string GetProductId(long playerNum) => playerNum switch
-    {
-        1 => Player1ProductId,
-        2 => Player2ProductId,
-        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
-    };
 
     /// <summary>
     /// 指定したプレイヤーがセットした施策の ID を返します

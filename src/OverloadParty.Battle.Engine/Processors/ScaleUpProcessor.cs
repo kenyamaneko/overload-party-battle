@@ -82,7 +82,7 @@ public static class ScaleUpProcessor
         };
 
         events.Insert(0, evt);
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static void FireOnScaleUp(

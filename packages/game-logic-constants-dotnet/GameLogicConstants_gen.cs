@@ -116,6 +116,7 @@ public static class EffectOps
     public const string ReduceDeployTurns = "reduce_deploy_turns";
     public const string AbsorbInsight = "absorb_insight";
     public const string GainInsight = "gain_insight";
+    public const string ConvertInsight = "convert_insight";
 }
 
 public static class BuffTypes
@@ -152,7 +153,6 @@ public static class CustomEffects
     public const string CancelNthDeploy = "cancel_nth_deploy";
     public const string ChainAttackBonus = "chain_attack_bonus";
     public const string CloudShift = "cloud_shift";
-    public const string ConvertAllInsight = "convert_all_insight";
     public const string DeploySameTypeFromHand = "deploy_same_type_from_hand";
     public const string DisableHighTpDeploy = "disable_high_tp_deploy";
     public const string Reattach = "reattach";

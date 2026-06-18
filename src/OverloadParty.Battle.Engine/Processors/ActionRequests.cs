@@ -184,7 +184,7 @@ public class UseInitiativeRequest
     [JsonPropertyName("kind")]
     public string Kind { get; set; } = "";
 
-    /// <summary>対象を選ぶ施策 (焼きたてのお菓子など) の選択データ。</summary>
+    /// <summary>対象を選ぶ施策の選択データ。</summary>
     [JsonPropertyName("choiceData")]
     public Dictionary<string, object>? ChoiceData { get; set; }
 }

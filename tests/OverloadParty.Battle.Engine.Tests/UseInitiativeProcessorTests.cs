@@ -66,7 +66,6 @@ public class UseInitiativeProcessorTests
     private BattleGameState MakeState(long turn = 3, long insight = 1000)
     {
         var state = TestFactory.MakeGameState(turn: turn, phase: Phase.Main);
-        state.Player1ProductId = ProductId;
         state.Player1RoutineId = RoutineId;
         state.Player1SpecialId = SpecialId;
         state.Player1InsightPool = insight;
@@ -202,7 +201,7 @@ public class UseInitiativeProcessorTests
             routineCost: 0,
             routineJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}""",
             specialCost: 0,
-            specialJson: """{"custom":"convert_all_insight","meta":{"multiplier_percent":150}}""");
+            specialJson: """{"ops":[{"convert_insight":{"rate_percent":150}}]}""");
         var (effects, catalog) = Setup(initiatives);
         var state = MakeState(insight: 1000);
 

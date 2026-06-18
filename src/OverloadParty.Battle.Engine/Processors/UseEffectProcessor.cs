@@ -87,7 +87,7 @@ public static class UseEffectProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static ActionResult IgniteSupport(
@@ -130,7 +130,7 @@ public static class UseEffectProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static CardDefinition ValidateResourceActivation(

@@ -81,7 +81,6 @@ public static class ResolvePendingChoiceProcessor
         return new ActionResult
         {
             Events = result.Events,
-            StateUpdated = true,
         };
     }
 }
