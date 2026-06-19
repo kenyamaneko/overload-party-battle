@@ -439,18 +439,18 @@ public static class AvailableActions
     {
         if (TurnManager.IsFirstTurn(state.CurrentTurn)) { yield break; }
 
-        long activePlayerNum = state.ActivePlayer;
+        long activePlayer = state.ActivePlayer;
         (string Kind, bool IsUsed)[] kinds =
         [
-            (InitiativeKinds.Routine, state.GetRoutineUsedThisTurn(activePlayerNum)),
-            (InitiativeKinds.Special, state.GetSpecialUsedThisGame(activePlayerNum)),
+            (InitiativeKinds.Routine, state.GetRoutineUsedThisTurn(activePlayer)),
+            (InitiativeKinds.Special, state.GetSpecialUsedThisGame(activePlayer)),
         ];
 
         foreach (var (kind, isUsed) in kinds)
         {
             if (isUsed) { continue; }
 
-            string initiativeId = InitiativeSelection.ResolveId(state, activePlayerNum, kind);
+            string initiativeId = InitiativeSelection.ResolveId(state, activePlayer, kind);
             var initiative = initiatives.GetById(initiativeId)
                 ?? throw new GameRuleException($"initiative '{initiativeId}' not found");
             if (insightPool < initiative.InsightCost) { continue; }
@@ -463,8 +463,8 @@ public static class AvailableActions
                 Cost = initiative.InsightCost,
             };
 
-            // 施策効果は initiative:<id> をハンドラキーに登録されるため、trash choice も同キーで引く。
-            string handlerCardId = InitiativeEffects.HandlerCardId(initiativeId);
+            // 施策効果は EffectSourceId をハンドラキーに登録されるため、trash choice も同キーで引く。
+            string handlerCardId = initiative.EffectSourceId;
             if (!TryPopulateTrashChoice(action, state, handlerCardId, cc, effects)) { continue; }
 
             yield return action;

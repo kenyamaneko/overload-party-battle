@@ -4,8 +4,11 @@ namespace OverloadParty.Battle.Models;
 /// Initiative はプロダクトに属する施策 1 件分を保持します。Effect は効果 DSL (ops / custom) で、
 /// 起動効果と同じパイプラインで実行します。
 /// </summary>
-public class Initiative
+public class Initiative : IEffectSource
 {
+    // 施策効果はカード ID と衝突しない合成キーで EffectRegistry に登録する。
+    private const string EffectSourceIdPrefix = "initiative:";
+
     public string InitiativeId { get; set; } = "";
     public string ProductId { get; set; } = "";
     public string Kind { get; set; } = "";
@@ -13,6 +16,12 @@ public class Initiative
     public long InsightCost { get; set; }
     public string EffectText { get; set; } = "";
     public EffectDef Effect { get; set; } = new();
+
+    /// <summary>EffectRegistry への登録キーを合成キーとして返します。</summary>
+    public string EffectSourceId => EffectSourceIdPrefix + InitiativeId;
+
+    /// <summary>登録対象の効果定義群を返します。</summary>
+    public IReadOnlyList<EffectDef> EffectDefs => [Effect];
 }
 
 /// <summary>

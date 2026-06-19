@@ -49,7 +49,7 @@ public static class UseInitiativeProcessor
                 $"insufficient insight: have {pool}, need {initiative.InsightCost}");
         }
 
-        var handler = effects.Get(InitiativeEffects.HandlerCardId(initiative.InitiativeId), TriggerType.Ignition)
+        var handler = effects.Get(initiative.EffectSourceId, TriggerType.Ignition)
             ?? throw new GameRuleException($"no handler for initiative '{initiative.InitiativeId}'");
 
         state.SetInsightPool(playerNum, pool - initiative.InsightCost);

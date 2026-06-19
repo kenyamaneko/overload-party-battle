@@ -526,7 +526,7 @@ public static class TestEffectSetup
 
         var registry = new EffectRegistry();
         var customEffects = new CustomEffectRegistry();
-        EffectYamlLoader.LoadFromCards(cards, registry, customEffects);
+        EffectYamlLoader.LoadEffectSources(cards, registry, customEffects);
 
         return (registry, cardCache);
     }

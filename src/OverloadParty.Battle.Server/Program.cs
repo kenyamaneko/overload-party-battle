@@ -61,7 +61,7 @@ builder.Services.AddSingleton(sp =>
     // カード定義と施策効果を初期化（YAML 駆動）
     var registry = new EffectRegistry();
     var customEffects = new CustomEffectRegistry();
-    EffectYamlLoader.LoadFromCards(cc.All().Values, registry, customEffects);
+    EffectYamlLoader.LoadEffectSources(cc.All().Values, registry, customEffects);
     InitiativeEffects.LoadIntoRegistry(initiatives, registry, customEffects);
 
     return new GameEngine(gameRepo, cc, registry, new InitiativeCatalog(initiatives));

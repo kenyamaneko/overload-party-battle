@@ -19,31 +19,31 @@ public static class EffectYamlLoader
     };
 
     /// <summary>
-    /// Loads effects from card definitions and registers them into the registry.
-    /// Cards with a <c>custom</c> effect require a matching entry in the custom registry.
+    /// Loads effects from effect sources and registers them into the registry.
+    /// Sources with a <c>custom</c> effect require a matching entry in the custom registry.
     /// </summary>
-    /// <param name="cards">読み込み対象のカード定義群。</param>
+    /// <param name="sources">読み込み対象の効果供給元群。</param>
     /// <param name="registry">登録先の効果レジストリ。</param>
     /// <param name="customRegistry">カスタム効果のレジストリ。</param>
-    public static void LoadFromCards(
-        IEnumerable<CardDefinition> cards,
+    public static void LoadEffectSources(
+        IEnumerable<IEffectSource> sources,
         EffectRegistry registry,
         CustomEffectRegistry customRegistry)
     {
-        foreach (var card in cards)
+        foreach (var source in sources)
         {
-            if (card.Effects is not { Count: > 0 })
+            if (source.EffectDefs is not { Count: > 0 } effectDefs)
             {
                 continue;
             }
 
-            LoadCardEffects(card.CardId, card.Effects, registry, customRegistry);
+            LoadSourceEffects(source.EffectSourceId, effectDefs, registry, customRegistry);
         }
     }
 
-    private static void LoadCardEffects(
-        string cardId,
-        List<EffectDef> effects,
+    private static void LoadSourceEffects(
+        string sourceId,
+        IReadOnlyList<EffectDef> effects,
         EffectRegistry registry,
         CustomEffectRegistry customRegistry)
     {
@@ -55,7 +55,7 @@ public static class EffectYamlLoader
             var block = BuildTriggerBlock(defs, customRegistry);
             if (block.Guards.Length > 0 || block.Ops.Length > 0)
             {
-                registry.RegisterComposed(cardId, group.Key, block);
+                registry.RegisterComposed(sourceId, group.Key, block);
             }
         }
     }
