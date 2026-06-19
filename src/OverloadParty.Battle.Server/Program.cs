@@ -47,6 +47,10 @@ var cardCache = new CardCache();
 builder.Services.AddSingleton<ICardCache>(cardCache);
 builder.Services.AddSingleton(cardCache);
 
+// 施策定義。card サービス (またはローカル JSON) から起動時に読み込む。
+// engine ファクトリはカードロード後に遅延実行されるため、この変数はその時点で確定している。
+var initiatives = new List<Initiative>();
+
 // ─── Engine ─────────────────────────────────────────────────
 
 builder.Services.AddSingleton(sp =>
@@ -54,12 +58,13 @@ builder.Services.AddSingleton(sp =>
     var gameRepo = sp.GetRequiredService<IGameRepository>();
     var cc = sp.GetRequiredService<ICardCache>();
 
-    // カード定義から効果を初期化（YAML 駆動）
+    // カード定義と施策効果を初期化（YAML 駆動）
     var registry = new EffectRegistry();
     var customEffects = new CustomEffectRegistry();
-    EffectYamlLoader.LoadFromCards(cc.All().Values, registry, customEffects);
+    EffectYamlLoader.LoadEffectSources(cc.All().Values, registry, customEffects);
+    InitiativeEffects.LoadIntoRegistry(initiatives, registry, customEffects);
 
-    return new GameEngine(gameRepo, cc, registry);
+    return new GameEngine(gameRepo, cc, registry, new InitiativeCatalog(initiatives));
 });
 
 // ─── Services ───────────────────────────────────────────────
@@ -106,6 +111,13 @@ var app = builder.Build();
 // Local dev keeps the JSON file path so offline development doesn't require the card service
 // running. Everything else (k8s, CI) must hit the card service.
 var localCardsPath = isLocalDev ? Environment.GetEnvironmentVariable("CARDS_JSON_PATH") : null;
+var localInitiativesPath = isLocalDev ? Environment.GetEnvironmentVariable("INITIATIVES_JSON_PATH") : null;
+
+var masterJsonOptions = new JsonSerializerOptions
+{
+    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
+    PropertyNameCaseInsensitive = true,
+};
 
 if (!string.IsNullOrEmpty(localCardsPath))
 {
@@ -115,17 +127,24 @@ if (!string.IsNullOrEmpty(localCardsPath))
             $"Card data not found at {localCardsPath}. Run 'python3 scripts/generate_cards.py' in the common repo.");
     }
     var cards = JsonSerializer.Deserialize<List<CardDefinition>>(
-        File.ReadAllText(localCardsPath), new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-            PropertyNameCaseInsensitive = true,
-        });
+        File.ReadAllText(localCardsPath), masterJsonOptions);
     if (cards is null)
     {
         throw new InvalidOperationException($"failed to deserialize cards from {localCardsPath}");
     }
     cardCache.LoadFromList(cards);
     app.Logger.LogInformation("Loaded {Count} cards from {Path}", cardCache.Count, localCardsPath);
+
+    if (string.IsNullOrEmpty(localInitiativesPath) || !File.Exists(localInitiativesPath))
+    {
+        throw new FileNotFoundException(
+            $"Initiative data not found at {localInitiativesPath}. Set INITIATIVES_JSON_PATH and run 'python3 scripts/generate_products.py' in the card repo.");
+    }
+    var loadedInitiatives = JsonSerializer.Deserialize<List<Initiative>>(
+        File.ReadAllText(localInitiativesPath), masterJsonOptions)
+        ?? throw new InvalidOperationException($"failed to deserialize initiatives from {localInitiativesPath}");
+    initiatives.AddRange(loadedInitiatives);
+    app.Logger.LogInformation("Loaded {Count} initiatives from {Path}", initiatives.Count, localInitiativesPath);
 }
 else
 {
@@ -137,13 +156,15 @@ else
     {
         var cards = await cardClient.ListAllCardsAsync();
         cardCache.LoadFromList(cards);
+        initiatives.AddRange(await cardClient.ListAllInitiativesAsync());
         app.Logger.LogInformation(
-            "Loaded {Count} cards from card service at {Url}", cardCache.Count, cardServiceUrl);
+            "Loaded {CardCount} cards and {InitiativeCount} initiatives from card service at {Url}",
+            cardCache.Count, initiatives.Count, cardServiceUrl);
     }
     catch (Exception ex)
     {
         app.Logger.LogCritical(
-            ex, "Failed to load cards from card service at {Url}; exiting", cardServiceUrl);
+            ex, "Failed to load master data from card service at {Url}; exiting", cardServiceUrl);
         Environment.Exit(1);
     }
 }
@@ -233,7 +254,7 @@ api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
         new() { PlayerNum = 1, Name = req.Player1Summary.Name, Level = req.Player1Summary.Level },
         new() { PlayerNum = 2, Name = req.Player2Summary.Name, Level = req.Player2Summary.Level },
     };
-    var game = await gameSvc.StartNPCBattle(cards, req.NpcModel, summaries);
+    var game = await gameSvc.StartNPCBattle(cards, req.RoutineId, req.SpecialId, req.NpcModel, summaries);
     return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 
@@ -247,7 +268,9 @@ api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
         new() { PlayerNum = 1, Name = req.Player1Summary.Name, Level = req.Player1Summary.Level },
         new() { PlayerNum = 2, Name = req.Player2Summary.Name, Level = req.Player2Summary.Level },
     };
-    var game = await gameSvc.CreateGameFromMatch(p1Cards, p2Cards, summaries);
+    var game = await gameSvc.CreateGameFromMatch(
+        p1Cards, req.Deck1RoutineId, req.Deck1SpecialId,
+        p2Cards, req.Deck2RoutineId, req.Deck2SpecialId, summaries);
     return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 
@@ -357,6 +380,7 @@ public static class ActionDataDeserializer
         ActionType.Monetize => data.Deserialize<MonetizeRequest>(JsonOpts)!,
         ActionType.DiscardHand => data.Deserialize<DiscardHandRequest>(JsonOpts)!,
         ActionType.UseEffect => data.Deserialize<UseEffectRequest>(JsonOpts)!,
+        ActionType.UseInitiative => data.Deserialize<UseInitiativeRequest>(JsonOpts)!,
         ActionType.EndPhase => new object(),
         ActionType.Forfeit => data.Deserialize<ForfeitRequest>(JsonOpts)!,
         _ => throw new ArgumentException($"unknown action type: {actionType}"),

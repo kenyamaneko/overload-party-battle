@@ -70,6 +70,23 @@ public class UseEffectProcessorTests
     }
 
     [Fact]
+    public void Process_DormantResource_Throws()
+    {
+        var reg = new EffectRegistry();
+        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
+
+        var state = TestFactory.MakeGameState(turn: 2);
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+        resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+        state.Player1Field.Frontend[0] = resource;
+
+        var req = new UseEffectRequest { InstanceID = "r_1" };
+        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+
+        act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
+    }
+
+    [Fact]
     public void Process_EffectAlreadyUsedThisTurn_Throws()
     {
         var reg = new EffectRegistry();
@@ -84,29 +101,6 @@ public class UseEffectProcessorTests
         var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
         act.Should().Throw<GameRuleException>().WithMessage("*already used*");
-    }
-
-    [Fact]
-    public void Process_CannotOperateEffect_Throws()
-    {
-        var reg = new EffectRegistry();
-        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
-
-        var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
-        resource.TemporaryEffects.Add(new TemporaryEffect
-        {
-            EffectType = EffectTypes.CannotOperate,
-            Value = 1,
-            Duration = "permanent",
-            SourceID = "test",
-        });
-        state.Player1Field.Frontend[0] = resource;
-
-        var req = new UseEffectRequest { InstanceID = "r_1" };
-        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*cannot operate*");
     }
 
     [Fact]

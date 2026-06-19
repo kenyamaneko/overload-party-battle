@@ -3,7 +3,7 @@ namespace OverloadParty.Battle.Models;
 /// <summary>
 /// CardDefinition はカードマスターの定義情報を保持します
 /// </summary>
-public class CardDefinition
+public class CardDefinition : IEffectSource
 {
     public string CardId { get; set; } = "";
     public string CardName { get; set; } = "";
@@ -31,6 +31,12 @@ public class CardDefinition
     public DataStats? DataStats { get; set; }
 
     public List<EffectDef>? Effects { get; set; }
+
+    /// <summary>EffectRegistry への登録キーとしてカード ID を返します。</summary>
+    public string EffectSourceId => CardId;
+
+    /// <summary>登録対象の効果定義群を返します（未定義なら空）。</summary>
+    public IReadOnlyList<EffectDef> EffectDefs => Effects ?? [];
 
     /// <summary>
     /// IsComputeType はカードタイプが Compute カテゴリに属するかを返します

@@ -16,7 +16,7 @@ public class GameEngineTests
         _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
         _cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
-        _engine = new GameEngine(_repo, _cc, new EffectRegistry());
+        _engine = new GameEngine(_repo, _cc, new EffectRegistry(), new InitiativeCatalog([]));
     }
 
     private DeckSnapshot MakeSingleCardDeck(string cardId)

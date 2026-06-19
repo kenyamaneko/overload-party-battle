@@ -259,6 +259,10 @@ export interface components {
         /** @description POST /api/v1/games/npc のリクエスト body。 */
         NpcBattleRequest: {
             deck_cards: components["schemas"]["BattleDeckCard"][];
+            /** @description デッキに設定されたルーチン施策の ID。 */
+            routine_id: string;
+            /** @description デッキに設定されたスペシャル施策の ID。 */
+            special_id: string;
             npc_model: string;
             player1_summary: components["schemas"]["PlayerSummaryRequest"];
             player2_summary: components["schemas"]["PlayerSummaryRequest"];
@@ -266,7 +270,15 @@ export interface components {
         /** @description POST /api/v1/games/pvp のリクエスト body。 */
         PvpBattleRequest: {
             deck1_cards: components["schemas"]["BattleDeckCard"][];
+            /** @description デッキ 1 に設定されたルーチン施策の ID。 */
+            deck1_routine_id: string;
+            /** @description デッキ 1 に設定されたスペシャル施策の ID。 */
+            deck1_special_id: string;
             deck2_cards: components["schemas"]["BattleDeckCard"][];
+            /** @description デッキ 2 に設定されたルーチン施策の ID。 */
+            deck2_routine_id: string;
+            /** @description デッキ 2 に設定されたスペシャル施策の ID。 */
+            deck2_special_id: string;
             player1_summary: components["schemas"]["PlayerSummaryRequest"];
             player2_summary: components["schemas"]["PlayerSummaryRequest"];
         };
@@ -553,13 +565,13 @@ export interface components {
          *     の実装を温存するため (oneOf による正規化は将来検討)。
          */
         AvailableAction: {
-            /** @description variant 種別。play_card / attack / scale_up / monetize / use_effect / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。 */
+            /** @description variant 種別。play_card / attack / scale_up / monetize / use_effect / use_initiative / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。 */
             type: string;
             handInstanceID?: string;
             cardID?: string;
             validZones?: string[];
             validTargets?: string[];
-            /** Format: int32 */
+            /** Format: int64 */
             cost?: number;
             choiceOptions?: string[];
             sourceInstanceID?: string;
@@ -571,6 +583,8 @@ export interface components {
             effectTargetType?: string;
             /** Format: int32 */
             requiredCount?: number;
+            /** @description 施策の区分 (routine / special)。use_initiative variant でのみ使用。 */
+            kind?: string;
         };
         PlayCardEventData: {
             cardId: string;

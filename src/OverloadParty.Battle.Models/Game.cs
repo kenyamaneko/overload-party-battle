@@ -53,6 +53,10 @@ public class BattleGameState
     public long Player1TimeBank { get; set; }
     public bool Player1IncidentPlayedThisTurn { get; set; }
     public bool Player1HasOperated { get; set; }
+    public string Player1RoutineId { get; set; } = "";
+    public string Player1SpecialId { get; set; } = "";
+    public bool Player1RoutineUsedThisTurn { get; set; }
+    public bool Player1SpecialUsedThisGame { get; set; }
 
     // プレイヤー 2 の状態
     public long Player2Budget { get; set; }
@@ -64,6 +68,10 @@ public class BattleGameState
     public long Player2TimeBank { get; set; }
     public bool Player2IncidentPlayedThisTurn { get; set; }
     public bool Player2HasOperated { get; set; }
+    public string Player2RoutineId { get; set; } = "";
+    public string Player2SpecialId { get; set; } = "";
+    public bool Player2RoutineUsedThisTurn { get; set; }
+    public bool Player2SpecialUsedThisGame { get; set; }
 
     // 共有状態
     public long? CurrentActionTimer { get; set; }
@@ -312,6 +320,58 @@ public class BattleGameState
         {
             case 1: Player1HasOperated = value; break;
             case 2: Player2HasOperated = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
+
+    /// <summary>
+    /// 指定したプレイヤーが現ターンにルーチンを使用済みかを返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>現ターンにルーチンを使用済みなら true</returns>
+    public bool GetRoutineUsedThisTurn(long playerNum) => playerNum switch
+    {
+        1 => Player1RoutineUsedThisTurn,
+        2 => Player2RoutineUsedThisTurn,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    /// <summary>
+    /// 指定したプレイヤーの現ターンのルーチン使用フラグを設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="value">設定するフラグ値</param>
+    public void SetRoutineUsedThisTurn(long playerNum, bool value)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1RoutineUsedThisTurn = value; break;
+            case 2: Player2RoutineUsedThisTurn = value; break;
+            default: throw new ArgumentOutOfRangeException(nameof(playerNum));
+        }
+    }
+
+    /// <summary>
+    /// 指定したプレイヤーが本ゲームでスペシャルを使用済みかを返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>本ゲームでスペシャルを使用済みなら true</returns>
+    public bool GetSpecialUsedThisGame(long playerNum) => playerNum switch
+    {
+        1 => Player1SpecialUsedThisGame,
+        2 => Player2SpecialUsedThisGame,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
+    /// <summary>
+    /// 指定したプレイヤーの本ゲームのスペシャル使用フラグを設定します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <param name="value">設定するフラグ値</param>
+    public void SetSpecialUsedThisGame(long playerNum, bool value)
+    {
+        switch (playerNum)
+        {
+            case 1: Player1SpecialUsedThisGame = value; break;
+            case 2: Player2SpecialUsedThisGame = value; break;
             default: throw new ArgumentOutOfRangeException(nameof(playerNum));
         }
     }

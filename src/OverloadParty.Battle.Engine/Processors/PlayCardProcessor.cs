@@ -87,7 +87,7 @@ public static class PlayCardProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     /// <summary>
@@ -147,7 +147,7 @@ public static class PlayCardProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static void PlaceSupport(
@@ -301,7 +301,7 @@ public static class PlayCardProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static void ValidatePlayPosition(CardDefinition cardDef, Field field, PlayCardRequest req)

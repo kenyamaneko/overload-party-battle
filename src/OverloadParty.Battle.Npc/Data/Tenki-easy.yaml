@@ -1,5 +1,7 @@
 model: Tenki-easy
 faction: Tenki
+routine_id: IN-0003
+special_id: IN-0004
 display_name: 見習い天候士
 
 deck:

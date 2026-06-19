@@ -19,10 +19,11 @@ public static class GameStateView
     /// <param name="playerNum">視点となるプレイヤー番号。</param>
     /// <param name="cc">カード定義の参照元キャッシュ。</param>
     /// <param name="effects">効果レジストリ。null の場合は操作可能アクションを計算しない。</param>
+    /// <param name="initiatives">施策カタログ。null の場合 use_initiative アクションは列挙しない。</param>
     /// <returns>視点プレイヤー向けの ClientGameState。</returns>
     public static GD.ClientGameState Build(
         BattleGameState state, Game game, long playerNum,
-        ICardCache cc, IEffectRegistry effects)
+        ICardCache cc, IEffectRegistry effects, IInitiativeCatalog? initiatives = null)
     {
         var oppNum = state.OpponentOf(playerNum);
 
@@ -49,7 +50,7 @@ public static class GameStateView
         if (game.Status == GameStatus.Playing && (isActivePlayer || isChooser))
         {
             availableActions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, myHand, budget, insightPool, cc, effects)
+                state, myField, oppField, myHand, budget, insightPool, cc, effects, initiatives)
                 .Select(MapAvailableAction)
                 .ToList();
         }
@@ -218,6 +219,8 @@ public static class GameStateView
             RemainingCapacity = a.RemainingCapacity,
             EffectTargetType = a.EffectTargetType,
             RequiredCount = a.RequiredCount,
+            Kind = a.Kind,
+            Cost = a.Cost,
         };
     }
 

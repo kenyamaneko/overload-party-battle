@@ -51,7 +51,7 @@ public static class DiscardProcessor
             },
         });
 
-        var result = new ActionResult { Events = events, StateUpdated = true };
+        var result = new ActionResult { Events = events };
 
         if (WinConditionChecker.CheckLaunchFailure(state, playerNum))
         {

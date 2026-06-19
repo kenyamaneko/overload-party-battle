@@ -686,7 +686,7 @@ namespace OverloadParty.GameState
     {
 
         /// <summary>
-        /// variant 種別。play_card / attack / scale_up / monetize / use_effect / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
+        /// variant 種別。play_card / attack / scale_up / monetize / use_effect / use_initiative / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("type")]
         public string Type { get; set; } = default!;
@@ -704,7 +704,7 @@ namespace OverloadParty.GameState
         public System.Collections.Generic.List<string> ValidTargets { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("cost")]
-        public int Cost { get; set; } = default!;
+        public long Cost { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("choiceOptions")]
         public System.Collections.Generic.List<string> ChoiceOptions { get; set; } = default!;
@@ -729,6 +729,12 @@ namespace OverloadParty.GameState
 
         [System.Text.Json.Serialization.JsonPropertyName("requiredCount")]
         public int RequiredCount { get; set; } = default!;
+
+        /// <summary>
+        /// 施策の区分 (routine / special)。use_initiative variant でのみ使用。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("kind")]
+        public string Kind { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

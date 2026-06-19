@@ -12,6 +12,43 @@ public class EndPhaseProcessorTests
     public EndPhaseProcessorTests()
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0002", subtype: "Database", yield: 400));
+    }
+
+    // ─── 休止 ────────────────────────────────────────────────
+
+    [Fact]
+    public void Process_EndPhase_DormantDb_SkipsYieldGeneration()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+        var db = TestFactory.MakeResource(cardId: "TST-0002", instanceId: "db_1", faceUp: true,
+            maxYield: 400, currentYield: 400);
+        db.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant, Duration = "this_turn" });
+        state.Player1Field.Backend[0] = db;
+        state.SetInsightPool(1, 0);
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+
+        state.Player1InsightPool.Should().Be(0, "dormant DB does not generate yield");
+    }
+
+    [Fact]
+    public void Process_EndPhase_UntilNextTurnEndDormant_Expires()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+        AddRepoCards(state, 2);
+        var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+        res.TemporaryEffects.Add(new TemporaryEffect
+        {
+            EffectType = BuffTypes.Dormant,
+            Duration = "until_next_turn_end",
+        });
+        state.Player1Field.Frontend[0] = res;
+
+        EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+
+        FieldHelpers.HasTemporaryEffect(res, BuffTypes.Dormant).Should().BeFalse();
     }
 
     // ─── Phase transition: Main → Battle (one step) ──────────
@@ -25,7 +62,6 @@ public class EndPhaseProcessorTests
 
         state.CurrentPhase.Should().Be(Phase.Battle);
         result.GameOver.Should().BeNull();
-        result.StateUpdated.Should().BeTrue();
     }
 
     [Fact]

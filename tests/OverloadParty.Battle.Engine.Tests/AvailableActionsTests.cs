@@ -61,6 +61,107 @@ public class AvailableActionsTests
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //  UseInitiative — 列挙ルール
+    // ═══════════════════════════════════════════════════════════════
+
+    private const string TestRoutineId = "IN-TST-R";
+    private const string TestSpecialId = "IN-TST-S";
+
+    private static InitiativeCatalog InitiativeCatalogWith(long routineCost, long specialCost) =>
+        new(
+        [
+            new Initiative { InitiativeId = TestRoutineId, Kind = InitiativeKinds.Routine, Name = "R", InsightCost = routineCost },
+            new Initiative { InitiativeId = TestSpecialId, Kind = InitiativeKinds.Special, Name = "S", InsightCost = specialCost },
+        ]);
+
+    private static BattleGameState MakeInitiativeState(long turn = 3)
+    {
+        var state = TestFactory.MakeGameState(turn: turn, phase: Phase.Main);
+        state.Player1RoutineId = TestRoutineId;
+        state.Player1SpecialId = TestSpecialId;
+        return state;
+    }
+
+    [Fact]
+    public void UseInitiative_EnumeratesRoutineAndSpecial_WhenAffordableAndUnused()
+    {
+        var state = MakeInitiativeState();
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        var inits = actions.Where(a => a.Type == ActionTypes.UseInitiative).ToList();
+        inits.Should().Contain(a => a.Kind == InitiativeKinds.Routine && a.CardID == TestRoutineId && a.Cost == 100);
+        inits.Should().Contain(a => a.Kind == InitiativeKinds.Special && a.CardID == TestSpecialId && a.Cost == 300);
+    }
+
+    [Fact]
+    public void UseInitiative_ExcludesUnaffordableKind()
+    {
+        var state = MakeInitiativeState();
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 150,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        var inits = actions.Where(a => a.Type == ActionTypes.UseInitiative).ToList();
+        inits.Should().Contain(a => a.Kind == InitiativeKinds.Routine);    // 100 <= 150
+        inits.Should().NotContain(a => a.Kind == InitiativeKinds.Special); // 300 > 150
+    }
+
+    [Fact]
+    public void UseInitiative_ExcludesAlreadyUsed()
+    {
+        var state = MakeInitiativeState();
+        state.SetRoutineUsedThisTurn(1, true);
+        state.SetSpecialUsedThisGame(1, true);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void UseInitiative_NotEnumeratedOnFirstTurn()
+    {
+        var state = MakeInitiativeState(turn: 1);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void UseInitiative_NotEnumeratedWhenCatalogOmitted()
+    {
+        var state = MakeInitiativeState();
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry());
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void UseInitiative_Throws_WhenSlotInitiativeNotInCatalog()
+    {
+        var state = MakeInitiativeState();
+        state.Player1RoutineId = "IN-NOPE"; // カタログに無い ID = データ整合性エラー
+
+        var act = () => AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        act.Should().Throw<GameRuleException>().WithMessage("*not found*");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //  PlayCard — ゾーン配置ルール
     // ═══════════════════════════════════════════════════════════════
 
@@ -486,6 +587,25 @@ public class AvailableActionsTests
     }
 
     [Fact]
+    public void ScaleUp_DormantExcluded()
+    {
+        // 休止リソースはスケールアップ不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", resizable: true));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1", rank: Rank.Small);
+        resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+        myField.Frontend[0] = resource;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
+    }
+
+    [Fact]
     public void ScaleUp_ElasticOnlyExcluded()
     {
         // Elastic-only カード（Resizable=false）は手動スケールアップ不可
@@ -609,7 +729,7 @@ public class AvailableActionsTests
     }
 
     [Fact]
-    public void Attack_CannotOperateExcluded()
+    public void Attack_DormantExcluded()
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
@@ -617,7 +737,7 @@ public class AvailableActionsTests
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
         var myField = TestFactory.MakeField();
         var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
-        attacker.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.CannotOperate });
+        attacker.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
         myField.Frontend[0] = attacker;
 
         var oppField = TestFactory.MakeField();
@@ -888,6 +1008,29 @@ public class AvailableActionsTests
     }
 
     [Fact]
+    public void UseEffect_DormantExcluded()
+    {
+        // 休止リソースは起動効果を使用不可
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
+
+        var registry = new EffectRegistry();
+        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+        var myField = TestFactory.MakeField();
+        var resource = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
+        resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+        myField.Frontend[0] = resource;
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
+    }
+
+    [Fact]
     public void UseEffect_EffectUsedThisTurnExcluded()
     {
         var cc = new TestCardCache();
@@ -901,28 +1044,6 @@ public class AvailableActionsTests
         var myField = TestFactory.MakeField();
         var res = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
         res.EffectUsedThisTurn = true;
-        myField.Frontend[0] = res;
-
-        var actions = AvailableActions.GetAllAvailableActions(
-            state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
-
-        actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
-    }
-
-    [Fact]
-    public void UseEffect_CannotOperateExcluded()
-    {
-        var cc = new TestCardCache();
-        cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
-
-        var registry = new EffectRegistry();
-        registry.RegisterComposed("TST-0009", TriggerType.Ignition,
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
-
-        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-        var myField = TestFactory.MakeField();
-        var res = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
-        res.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.CannotOperate });
         myField.Frontend[0] = res;
 
         var actions = AvailableActions.GetAllAvailableActions(

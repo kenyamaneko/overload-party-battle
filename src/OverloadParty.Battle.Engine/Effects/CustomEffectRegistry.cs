@@ -23,7 +23,6 @@ public class CustomEffectRegistry
         [CustomEffects.CloudShift] = BuildCloudShift,
         [CustomEffects.SpotExpiry] = BuildSpotExpiry,
         [CustomEffects.Reattach] = _ => Reattach,
-
         [CustomEffects.ScaleToZero] = _ => ScaleToZero,
 
         // target_shield はカード定義を passive に検査する marker（FieldHelpers.IsTargetShielded）。
@@ -149,7 +148,7 @@ public class CustomEffectRegistry
     }
 
     /// <summary>
-    /// When opponent deploys a Compute/AI_ML card with TP >= 900, apply cannot_operate.
+    /// When opponent deploys a Compute/AI_ML card with TP >= 900, apply dormant.
     /// </summary>
     /// <param name="octx">効果実行コンテキスト。</param>
     public static void DisableHighTpDeploy(OpContext octx)
@@ -172,7 +171,7 @@ public class CustomEffectRegistry
 
         target.TemporaryEffects.Add(new TemporaryEffect
         {
-            EffectType = EffectTypes.CannotOperate,
+            EffectType = BuffTypes.Dormant,
             Value = 1,
             Duration = EffectDurations.ThisTurn,
             SourceID = "rate_limiter",

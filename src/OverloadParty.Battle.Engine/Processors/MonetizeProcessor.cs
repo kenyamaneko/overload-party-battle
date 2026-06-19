@@ -76,7 +76,6 @@ public static class MonetizeProcessor
                     }
                 }
             ],
-            StateUpdated = true,
         };
     }
 
@@ -100,6 +99,10 @@ public static class MonetizeProcessor
         if (!card.IsComputeType)
         {
             throw new GameRuleException("can only distribute yield from compute resources");
+        }
+        if (FieldHelpers.HasTemporaryEffect(resource, BuffTypes.Dormant))
+        {
+            throw new GameRuleException("dormant resource cannot monetize");
         }
 
         long effectiveTP = StatCalculator.CalculateEffectiveTP(resource, field, cc);

@@ -144,7 +144,6 @@ public class PendingEffectChoiceTests
         var result = ResolvePendingChoiceProcessor.Process(state, _game, 1, req, _cc, _registry);
 
         state.PendingEffectChoice.Should().BeNull();
-        result.StateUpdated.Should().BeTrue();
         capturedChoice.Should().Be(HandDummyCardId);
     }
 

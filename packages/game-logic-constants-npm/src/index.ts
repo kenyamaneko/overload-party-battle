@@ -9,10 +9,10 @@ export type GameStatus = (typeof GAME_STATUS)[number];
 export const WIN_REASONS = ["budget_zero", "system_down", "repository_out", "turn_timeout", "disconnect", "turn_limit", "draw", "launch_failure", "surrender"] as const;
 export type WinReason = (typeof WIN_REASONS)[number];
 
-export const ACTION_TYPES = ["play_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "set_reactive", "end_phase", "forfeit", "select_slot", "reactive", "resolve_pending_choice"] as const;
+export const ACTION_TYPES = ["play_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "use_initiative", "set_reactive", "end_phase", "forfeit", "select_slot", "reactive", "resolve_pending_choice"] as const;
 export type GameActionType = (typeof ACTION_TYPES)[number];
 
-export const EVENT_TYPES = ["play_card", "attach_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "reactive_revealed", "phase_change", "phase_end", "turn_end", "turn_start", "game_over", "battle_start"] as const;
+export const EVENT_TYPES = ["play_card", "attach_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "use_initiative", "reactive_revealed", "phase_change", "phase_end", "turn_end", "turn_start", "game_over", "battle_start"] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
 export const EFFECT_DURATIONS = ["this_turn", "until_next_turn_end", "until_next_own_turn_end", "while_on_field", "permanent", "next_turn"] as const;
@@ -21,10 +21,10 @@ export type EffectDuration = (typeof EFFECT_DURATIONS)[number];
 export const TRIGGER_TYPES = ["ignition", "passive", "on_deploy", "on_end_phase", "on_field_change", "on_scale_up", "on_attack", "on_attack_declared", "on_hit", "on_destroy", "on_damaged", "on_incident"] as const;
 export type TriggerType = (typeof TRIGGER_TYPES)[number];
 
-export const EFFECT_OPS = ["gain_budget", "lose_budget", "deal_damage", "heal_damage", "destroy_check", "survive_destruction", "apply_buff", "draw", "search_repo", "add_to_hand", "trash_to_hand", "deploy_from_hand", "deploy_from_repo", "deploy_from_repo_same_card", "destroy_platform", "scale_to_rank", "cancel_action", "reveal_reactive", "peek_reactive", "reduce_deploy_turns", "absorb_insight", "gain_insight"] as const;
+export const EFFECT_OPS = ["gain_budget", "lose_budget", "deal_damage", "heal_damage", "destroy_check", "survive_destruction", "apply_buff", "draw", "search_repo", "add_to_hand", "trash_to_hand", "deploy_from_hand", "deploy_from_repo", "deploy_from_repo_same_card", "destroy_platform", "scale_to_rank", "cancel_action", "reveal_reactive", "peek_reactive", "reduce_deploy_turns", "absorb_insight", "gain_insight", "convert_all_insight"] as const;
 export type EffectOp = (typeof EFFECT_OPS)[number];
 
-export const BUFF_TYPES = ["tp", "yield", "av", "cannot_attack", "incident_immune", "incident_block", "incident_reduction", "ransomware", "reserved_instance", "scale_cost_reduction", "deploy_discount", "maintenance_reduction", "pending_revival", "attack_damage_reduction", "count_multiplier", "sla_penalty", "sla_penalty_reduction", "tp_suppressed"] as const;
+export const BUFF_TYPES = ["tp", "yield", "av", "cannot_attack", "dormant", "incident_immune", "incident_block", "incident_reduction", "ransomware", "reserved_instance", "scale_cost_reduction", "deploy_discount", "maintenance_reduction", "pending_revival", "attack_damage_reduction", "count_multiplier", "sla_penalty", "sla_penalty_reduction", "tp_suppressed"] as const;
 export type BuffType = (typeof BUFF_TYPES)[number];
 
 export const BUFF_MODES = ["flat", "percent"] as const;

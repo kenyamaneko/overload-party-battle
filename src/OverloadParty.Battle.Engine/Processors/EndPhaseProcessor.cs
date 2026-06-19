@@ -40,7 +40,7 @@ public static class EndPhaseProcessor
                 CurrentPhase = state.CurrentPhase.ToWireString(),
             },
         });
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static ActionResult ProcessEndPhaseTransition(
@@ -48,7 +48,7 @@ public static class EndPhaseProcessor
         IEffectRegistry effects, List<GameEvent> events)
     {
         bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects);
-        var result = new ActionResult { Events = events, StateUpdated = true };
+        var result = new ActionResult { Events = events };
 
         if (needsDiscard)
         {
@@ -148,6 +148,10 @@ public static class EndPhaseProcessor
             {
                 continue;
             }
+            if (FieldHelpers.HasTemporaryEffect(res, BuffTypes.Dormant))
+            {
+                continue;
+            }
 
             totalYield += StatCalculator.CalculateEffectiveInsight(res, field, cc);
 
@@ -162,7 +166,9 @@ public static class EndPhaseProcessor
         foreach (var resource in FieldHelpers.AllResources(field))
         {
             resource.TemporaryEffects.RemoveAll(e =>
-                e.Duration is EffectDurations.ThisTurn or EffectDurations.UntilNextOwnTurnEnd);
+                e.Duration is EffectDurations.ThisTurn
+                    or EffectDurations.UntilNextTurnEnd
+                    or EffectDurations.UntilNextOwnTurnEnd);
         }
     }
 
@@ -181,6 +187,7 @@ public static class EndPhaseProcessor
         }
 
         state.SetIncidentPlayedThisTurn(playerNum, false);
+        state.SetRoutineUsedThisTurn(playerNum, false);
     }
 
     static void FirePassiveEffects(

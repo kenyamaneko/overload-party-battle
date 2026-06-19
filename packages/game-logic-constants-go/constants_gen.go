@@ -38,6 +38,7 @@ const (
 	ActionTypeMonetize = "monetize"
 	ActionTypeDiscardHand = "discard_hand"
 	ActionTypeUseEffect = "use_effect"
+	ActionTypeUseInitiative = "use_initiative"
 	ActionTypeSetReactive = "set_reactive"
 	ActionTypeEndPhase = "end_phase"
 	ActionTypeForfeit = "forfeit"
@@ -55,6 +56,7 @@ const (
 	EventTypeMonetize = "monetize"
 	EventTypeDiscardHand = "discard_hand"
 	EventTypeUseEffect = "use_effect"
+	EventTypeUseInitiative = "use_initiative"
 	EventTypeReactiveRevealed = "reactive_revealed"
 	EventTypePhaseChange = "phase_change"
 	EventTypePhaseEnd = "phase_end"
@@ -114,6 +116,7 @@ const (
 	EffectOpReduceDeployTurns = "reduce_deploy_turns"
 	EffectOpAbsorbInsight = "absorb_insight"
 	EffectOpGainInsight = "gain_insight"
+	EffectOpConvertAllInsight = "convert_all_insight"
 )
 
 // Buff types.
@@ -122,6 +125,7 @@ const (
 	BuffTypeYield = "yield"
 	BuffTypeAv = "av"
 	BuffTypeCannotAttack = "cannot_attack"
+	BuffTypeDormant = "dormant"
 	BuffTypeIncidentImmune = "incident_immune"
 	BuffTypeIncidentBlock = "incident_block"
 	BuffTypeIncidentReduction = "incident_reduction"

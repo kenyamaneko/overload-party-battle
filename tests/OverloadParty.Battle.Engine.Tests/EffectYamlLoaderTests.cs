@@ -39,7 +39,7 @@ public class EffectYamlLoaderTests
 
         var registry = new EffectRegistry();
         var custom = new CustomEffectRegistry();
-        EffectYamlLoader.LoadFromCards([card], registry, custom);
+        EffectYamlLoader.LoadEffectSources([card], registry, custom);
 
         return registry.Get(cardId, trigger)
             ?? throw new InvalidOperationException("handler not registered");

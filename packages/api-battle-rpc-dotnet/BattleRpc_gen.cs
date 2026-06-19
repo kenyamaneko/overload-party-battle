@@ -241,6 +241,18 @@ namespace OverloadParty.ApiBattleRpc
         [System.Text.Json.Serialization.JsonPropertyName("deck_cards")]
         public System.Collections.Generic.List<BattleDeckCard> DeckCards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
 
+        /// <summary>
+        /// デッキに設定されたルーチン施策の ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("routine_id")]
+        public string RoutineId { get; set; } = default!;
+
+        /// <summary>
+        /// デッキに設定されたスペシャル施策の ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("special_id")]
+        public string SpecialId { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("npc_model")]
         public string NpcModel { get; set; } = default!;
 
@@ -271,8 +283,32 @@ namespace OverloadParty.ApiBattleRpc
         [System.Text.Json.Serialization.JsonPropertyName("deck1_cards")]
         public System.Collections.Generic.List<BattleDeckCard> Deck1Cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
 
+        /// <summary>
+        /// デッキ 1 に設定されたルーチン施策の ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("deck1_routine_id")]
+        public string Deck1RoutineId { get; set; } = default!;
+
+        /// <summary>
+        /// デッキ 1 に設定されたスペシャル施策の ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("deck1_special_id")]
+        public string Deck1SpecialId { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("deck2_cards")]
         public System.Collections.Generic.List<BattleDeckCard> Deck2Cards { get; set; } = new System.Collections.Generic.List<BattleDeckCard>();
+
+        /// <summary>
+        /// デッキ 2 に設定されたルーチン施策の ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("deck2_routine_id")]
+        public string Deck2RoutineId { get; set; } = default!;
+
+        /// <summary>
+        /// デッキ 2 に設定されたスペシャル施策の ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("deck2_special_id")]
+        public string Deck2SpecialId { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("player1_summary")]
         public PlayerSummaryRequest Player1Summary { get; set; } = new PlayerSummaryRequest();

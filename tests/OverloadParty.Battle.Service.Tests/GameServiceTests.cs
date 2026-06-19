@@ -20,13 +20,13 @@ public class GameServiceTests
         _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
         _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
         _cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
-        _engine = new GameEngine(_repo, _cc, new EffectRegistry());
+        _engine = new GameEngine(_repo, _cc, new EffectRegistry(), new InitiativeCatalog(TestFactory.StandardInitiatives()));
         var npcDeck = Enumerable.Range(0, InitialValues.DeckSize)
             .Select(_ => new DeckEntry { CardId = "TST-0001", Copies = 1 })
             .ToList();
         var aiConfigs = new Dictionary<string, AiConfig>
         {
-            [Factions.SHE] = new AiConfig { Model = Factions.SHE, Faction = Factions.SHE, Deck = npcDeck },
+            [Factions.SHE] = new AiConfig { Model = Factions.SHE, Faction = Factions.SHE, Deck = npcDeck, RoutineId = "IN-0001", SpecialId = "IN-0002" },
         };
         var npcRunner = new NpcRunner(_engine, _repo, _cc, aiConfigs, NullNpcLogger.Instance);
         _svc = new GameService(_engine, _repo, _cc, npcRunner, aiConfigs);
@@ -57,7 +57,7 @@ public class GameServiceTests
     public async Task CreateGameFromMatch_CreatesGame_WithCorrectStatus()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         game.Should().NotBeNull();
         game.Status.Should().Be(GameStatus.Playing);
@@ -74,7 +74,7 @@ public class GameServiceTests
             new() { PlayerNum = 2, Name = "bob", Level = 12 },
         };
 
-        var game = await _svc.CreateGameFromMatch(cards, cards, summaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", summaries);
 
         var persisted = await _repo.GetPlayerSummaries(game.GameID);
         persisted.Should().HaveCount(2);
@@ -86,7 +86,7 @@ public class GameServiceTests
     public async Task CreateGameFromMatch_InitializesState_InMainPhase()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         state.Should().NotBeNull();
@@ -99,7 +99,7 @@ public class GameServiceTests
     public async Task CreateGameFromMatch_PlayersHaveInitialBudget()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         state!.Player1Budget.Should().Be(BattleConstants.InitialBudget);
@@ -112,7 +112,7 @@ public class GameServiceTests
     public async Task StartNPCBattle_CreatesGame_WithNpcPlayer()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.StartNPCBattle(cards, Factions.SHE, NpcPlayerSummaries);
+        var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", Factions.SHE, NpcPlayerSummaries);
 
         game.Should().NotBeNull();
         game.Npc2Model.Should().NotBeNull();
@@ -122,7 +122,7 @@ public class GameServiceTests
     [Fact]
     public async Task StartNPCBattle_EmptyDeck_Throws()
     {
-        var act = () => _svc.StartNPCBattle([], "SHE-easy", NpcPlayerSummaries);
+        var act = () => _svc.StartNPCBattle([], "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
 
         await act.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*empty*");
@@ -132,7 +132,7 @@ public class GameServiceTests
     public async Task StartNPCBattle_UnknownFaction_Throws()
     {
         var cards = MakePlayerCards();
-        var act = () => _svc.StartNPCBattle(cards, "unknown_faction", NpcPlayerSummaries);
+        var act = () => _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", "unknown_faction", NpcPlayerSummaries);
 
         await act.Should().ThrowAsync<GameRuleException>()
             .WithMessage("*No AI config found*");
@@ -144,7 +144,7 @@ public class GameServiceTests
     public async Task ProcessAction_PlayCard_ReturnsStateWithResult()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         var cardToPlay = state!.GetHand(state.ActivePlayer).First();
@@ -167,7 +167,7 @@ public class GameServiceTests
     public async Task ProcessAction_Forfeit_ReturnsGameOver()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -182,7 +182,7 @@ public class GameServiceTests
     public async Task ProcessAction_EndPhase_ReturnsValidState()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         state!.CurrentPhase.Should().Be(Phase.Main);
@@ -198,7 +198,7 @@ public class GameServiceTests
     public async Task ProcessAction_PvpGame_NpcPendingAlwaysFalse()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -212,7 +212,7 @@ public class GameServiceTests
     public async Task ProcessAction_TurnStartEvent_ContainsIsMyTurn()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -233,7 +233,7 @@ public class GameServiceTests
     public async Task GetGameStateForPlayer_ReturnsClientState()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var clientState = await _svc.GetGameStateForPlayer(game.GameID, 1);
 
@@ -257,7 +257,7 @@ public class GameServiceTests
     public async Task GetTurnControlsForPlayer_ActivePlayer_ReturnsControls()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 
@@ -271,7 +271,7 @@ public class GameServiceTests
     public async Task GetTurnControlsForPlayer_InactivePlayer_ReturnsNull()
     {
         var cards = MakePlayerCards();
-        var game = await _svc.CreateGameFromMatch(cards, cards, DefaultPlayerSummaries);
+        var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
         long inactivePlayerNum = state!.ActivePlayer == 1 ? 2 : 1;

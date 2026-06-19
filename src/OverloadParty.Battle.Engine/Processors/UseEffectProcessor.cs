@@ -87,7 +87,7 @@ public static class UseEffectProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static ActionResult IgniteSupport(
@@ -130,7 +130,7 @@ public static class UseEffectProcessor
             },
         });
 
-        return new ActionResult { Events = events, StateUpdated = true };
+        return new ActionResult { Events = events };
     }
 
     private static CardDefinition ValidateResourceActivation(
@@ -146,9 +146,9 @@ public static class UseEffectProcessor
         {
             throw new GameRuleException("effect already used this turn");
         }
-        if (FieldHelpers.HasTemporaryEffect(source, EffectTypes.CannotOperate))
+        if (FieldHelpers.HasTemporaryEffect(source, BuffTypes.Dormant))
         {
-            throw new GameRuleException("resource cannot operate");
+            throw new GameRuleException("dormant resource cannot use effect");
         }
 
         return card;

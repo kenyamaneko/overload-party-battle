@@ -70,19 +70,22 @@ type AttackEventData struct {
 // 各 variant 固有のフィールドは optional。flat shape を維持しているのは既存 C# server / TS client
 // の実装を温存するため (oneOf による正規化は将来検討)。
 type AvailableAction struct {
-	CardID            *string   `json:"cardID,omitempty"`
-	ChoiceOptions     *[]string `json:"choiceOptions,omitempty"`
-	Cost              *int32    `json:"cost,omitempty"`
-	EffectTargetType  *string   `json:"effectTargetType,omitempty"`
-	HandInstanceID    *string   `json:"handInstanceID,omitempty"`
-	InstanceFamily    *string   `json:"instanceFamily,omitempty"`
-	NeedsFamily       *bool     `json:"needsFamily,omitempty"`
-	RemainingCapacity *int64    `json:"remainingCapacity,omitempty"`
-	RequiredCount     *int32    `json:"requiredCount,omitempty"`
-	SourceInstanceID  *string   `json:"sourceInstanceID,omitempty"`
-	TargetRank        *string   `json:"targetRank,omitempty"`
+	CardID           *string   `json:"cardID,omitempty"`
+	ChoiceOptions    *[]string `json:"choiceOptions,omitempty"`
+	Cost             *int64    `json:"cost,omitempty"`
+	EffectTargetType *string   `json:"effectTargetType,omitempty"`
+	HandInstanceID   *string   `json:"handInstanceID,omitempty"`
+	InstanceFamily   *string   `json:"instanceFamily,omitempty"`
 
-	// Type variant 種別。play_card / attack / scale_up / monetize / use_effect / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
+	// Kind 施策の区分 (routine / special)。use_initiative variant でのみ使用。
+	Kind              *string `json:"kind,omitempty"`
+	NeedsFamily       *bool   `json:"needsFamily,omitempty"`
+	RemainingCapacity *int64  `json:"remainingCapacity,omitempty"`
+	RequiredCount     *int32  `json:"requiredCount,omitempty"`
+	SourceInstanceID  *string `json:"sourceInstanceID,omitempty"`
+	TargetRank        *string `json:"targetRank,omitempty"`
+
+	// Type variant 種別。play_card / attack / scale_up / monetize / use_effect / use_initiative / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
 	Type         string    `json:"type"`
 	ValidTargets *[]string `json:"validTargets,omitempty"`
 	ValidZones   *[]string `json:"validZones,omitempty"`
@@ -283,6 +286,12 @@ type NpcBattleRequest struct {
 	// battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
 	// 永続化する。NPC のように level を持たない player では level は null となる。
 	Player2Summary PlayerSummaryRequest `json:"player2_summary"`
+
+	// RoutineId デッキに設定されたルーチン施策の ID。
+	RoutineId string `json:"routine_id"`
+
+	// SpecialId デッキに設定されたスペシャル施策の ID。
+	SpecialId string `json:"special_id"`
 }
 
 // NpcModelEntry defines model for NpcModelEntry.
@@ -415,7 +424,19 @@ type PlayerView struct {
 // PvpBattleRequest POST /api/v1/games/pvp のリクエスト body。
 type PvpBattleRequest struct {
 	Deck1Cards []BattleDeckCard `json:"deck1_cards"`
-	Deck2Cards []BattleDeckCard `json:"deck2_cards"`
+
+	// Deck1RoutineId デッキ 1 に設定されたルーチン施策の ID。
+	Deck1RoutineId string `json:"deck1_routine_id"`
+
+	// Deck1SpecialId デッキ 1 に設定されたスペシャル施策の ID。
+	Deck1SpecialId string           `json:"deck1_special_id"`
+	Deck2Cards     []BattleDeckCard `json:"deck2_cards"`
+
+	// Deck2RoutineId デッキ 2 に設定されたルーチン施策の ID。
+	Deck2RoutineId string `json:"deck2_routine_id"`
+
+	// Deck2SpecialId デッキ 2 に設定されたスペシャル施策の ID。
+	Deck2SpecialId string `json:"deck2_special_id"`
 
 	// Player1Summary CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
 	// battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに

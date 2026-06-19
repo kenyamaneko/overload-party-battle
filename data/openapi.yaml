@@ -350,12 +350,18 @@ components:
       type: object
       description: POST /api/v1/games/npc のリクエスト body。
       x-battle-csharp-package: rpc
-      required: [deck_cards, npc_model, player1_summary, player2_summary]
+      required: [deck_cards, routine_id, special_id, npc_model, player1_summary, player2_summary]
       properties:
         deck_cards:
           type: array
           items:
             $ref: "#/components/schemas/BattleDeckCard"
+        routine_id:
+          type: string
+          description: デッキに設定されたルーチン施策の ID。
+        special_id:
+          type: string
+          description: デッキに設定されたスペシャル施策の ID。
         npc_model:
           type: string
         player1_summary:
@@ -367,16 +373,28 @@ components:
       type: object
       description: POST /api/v1/games/pvp のリクエスト body。
       x-battle-csharp-package: rpc
-      required: [deck1_cards, deck2_cards, player1_summary, player2_summary]
+      required: [deck1_cards, deck1_routine_id, deck1_special_id, deck2_cards, deck2_routine_id, deck2_special_id, player1_summary, player2_summary]
       properties:
         deck1_cards:
           type: array
           items:
             $ref: "#/components/schemas/BattleDeckCard"
+        deck1_routine_id:
+          type: string
+          description: デッキ 1 に設定されたルーチン施策の ID。
+        deck1_special_id:
+          type: string
+          description: デッキ 1 に設定されたスペシャル施策の ID。
         deck2_cards:
           type: array
           items:
             $ref: "#/components/schemas/BattleDeckCard"
+        deck2_routine_id:
+          type: string
+          description: デッキ 2 に設定されたルーチン施策の ID。
+        deck2_special_id:
+          type: string
+          description: デッキ 2 に設定されたスペシャル施策の ID。
         player1_summary:
           $ref: "#/components/schemas/PlayerSummaryRequest"
         player2_summary:
@@ -938,7 +956,7 @@ components:
       properties:
         type:
           type: string
-          description: variant 種別。play_card / attack / scale_up / monetize / use_effect / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
+          description: variant 種別。play_card / attack / scale_up / monetize / use_effect / use_initiative / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
         # play_card variant
         handInstanceID:
           type: string
@@ -958,7 +976,7 @@ components:
             type: string
         cost:
           type: integer
-          format: int32
+          format: int64
         choiceOptions:
           type: array
           items:
@@ -985,6 +1003,10 @@ components:
         requiredCount:
           type: integer
           format: int32
+        # use_initiative variant
+        kind:
+          type: string
+          description: 施策の区分 (routine / special)。use_initiative variant でのみ使用。
 
     # ─── Event payloads (camelCase wire, per event_schemas.yaml) ─────────
     # 各 EventType 固有の payload。`ActionEvent.event_data` の中身として serialize される。

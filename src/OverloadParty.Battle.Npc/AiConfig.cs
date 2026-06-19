@@ -20,6 +20,14 @@ public class AiConfig
     [YamlMember(Alias = "deck")]
     public List<DeckEntry> Deck { get; set; } = [];
 
+    /// <summary>NPC デッキがセットしたルーチン施策の ID。</summary>
+    [YamlMember(Alias = "routine_id")]
+    public string RoutineId { get; set; } = "";
+
+    /// <summary>NPC デッキがセットしたスペシャル施策の ID。</summary>
+    [YamlMember(Alias = "special_id")]
+    public string SpecialId { get; set; } = "";
+
     [YamlMember(Alias = "budget")]
     public BudgetConfig Budget { get; set; } = new();
 

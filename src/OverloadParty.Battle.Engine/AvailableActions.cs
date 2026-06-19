@@ -48,6 +48,12 @@ public class AvailableAction
 
     /// <summary>Selectable options for choice-based effects.</summary>
     public List<string>? ChoiceOptions { get; set; }
+
+    /// <summary>The initiative kind for use_initiative actions (routine / special).</summary>
+    public string? Kind { get; set; }
+
+    /// <summary>The insight cost for use_initiative actions.</summary>
+    public long Cost { get; set; }
 }
 
 /// <summary>
@@ -81,12 +87,13 @@ public static class AvailableActions
     /// <param name="insightPool">The active player's insight pool.</param>
     /// <param name="cc">Card definitions cache.</param>
     /// <param name="effects">Effect registry (may be null).</param>
+    /// <param name="initiatives">Initiative catalog (may be null; use_initiative actions are omitted when null).</param>
     /// <returns>A list of all valid actions.</returns>
     public static List<AvailableAction> GetAllAvailableActions(
         BattleGameState state,
         Field myField, Field oppField, List<UndeployedCard> hand,
         long budget, long insightPool,
-        ICardCache cc, IEffectRegistry effects)
+        ICardCache cc, IEffectRegistry effects, IInitiativeCatalog? initiatives = null)
     {
         var actions = new List<AvailableAction>();
 
@@ -104,6 +111,10 @@ public static class AvailableActions
                 actions.AddRange(EnumerateScaleUpActions(myField, cc));
                 actions.AddRange(EnumerateMonetizeActions(state, myField, insightPool, cc));
                 actions.AddRange(EnumerateUseEffectActions(state, myField, oppField, budget, cc, effects));
+                if (initiatives is not null)
+                {
+                    actions.AddRange(EnumerateUseInitiativeActions(state, insightPool, cc, effects, initiatives));
+                }
                 break;
 
             case Phase.Battle:
@@ -281,7 +292,7 @@ public static class AvailableActions
             var attackerCard = cc.MustGet(attacker.CardID);
             if (!attackerCard.IsComputeType) { continue; }
             if (attacker.HasAttacked) { continue; }
-            if (FieldHelpers.HasTemporaryEffect(attacker, EffectTypes.CannotOperate)) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(attacker, BuffTypes.Dormant)) { continue; }
 
             yield return new AvailableAction
             {
@@ -300,6 +311,7 @@ public static class AvailableActions
         {
             var card = cc.MustGet(resource.CardID);
             if (!card.Resizable) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(resource, BuffTypes.Dormant)) { continue; }
 
             if (resource.Rank is not { } currentRank || currentRank == Rank.Large) { continue; }
 
@@ -349,6 +361,7 @@ public static class AvailableActions
         {
             var card = cc.MustGet(res.CardID);
             if (!card.IsComputeType) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(res, BuffTypes.Dormant)) { continue; }
 
             long effectiveTP = StatCalculator.CalculateEffectiveTP(res, field, cc);
             long remaining = effectiveTP - res.MonetizedAmount;
@@ -372,7 +385,7 @@ public static class AvailableActions
         foreach (var resource in FieldHelpers.AllFaceUpResources(myField))
         {
             if (resource.EffectUsedThisTurn) { continue; }
-            if (FieldHelpers.HasTemporaryEffect(resource, EffectTypes.CannotOperate)) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(resource, BuffTypes.Dormant)) { continue; }
 
             var card = cc.MustGet(resource.CardID);
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
@@ -407,6 +420,52 @@ public static class AvailableActions
                 CardID = card.CardId,
             };
             if (!TryPopulateTrashChoice(action, state, card.CardId, cc, effects)) { continue; }
+            yield return action;
+        }
+    }
+
+    /// <summary>
+    /// メインフェーズに使用可能な施策 (ルーチン / スペシャル) を列挙します。
+    /// 先攻 T1 制限・使用回数・insight コストを満たすものだけを返します。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="insightPool">手番プレイヤーの insight プール。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果レジストリ。</param>
+    /// <param name="initiatives">施策カタログ。</param>
+    /// <returns>使用可能な施策アクションの列挙。</returns>
+    private static IEnumerable<AvailableAction> EnumerateUseInitiativeActions(
+        BattleGameState state, long insightPool, ICardCache cc, IEffectRegistry effects, IInitiativeCatalog initiatives)
+    {
+        if (TurnManager.IsFirstTurn(state.CurrentTurn)) { yield break; }
+
+        long activePlayer = state.ActivePlayer;
+        (string Kind, bool IsUsed)[] kinds =
+        [
+            (InitiativeKinds.Routine, state.GetRoutineUsedThisTurn(activePlayer)),
+            (InitiativeKinds.Special, state.GetSpecialUsedThisGame(activePlayer)),
+        ];
+
+        foreach (var (kind, isUsed) in kinds)
+        {
+            if (isUsed) { continue; }
+
+            string initiativeId = InitiativeSelection.ResolveId(state, activePlayer, kind);
+            var initiative = initiatives.GetById(initiativeId)
+                ?? throw new GameRuleException($"initiative '{initiativeId}' not found");
+            if (insightPool < initiative.InsightCost) { continue; }
+
+            var action = new AvailableAction
+            {
+                Type = ActionTypes.UseInitiative,
+                Kind = kind,
+                CardID = initiativeId,
+                Cost = initiative.InsightCost,
+            };
+
+            // 施策効果は EffectSourceId をキーに登録されるため、trash choice も同キーで引く。
+            if (!TryPopulateTrashChoice(action, state, initiative.EffectSourceId, cc, effects)) { continue; }
+
             yield return action;
         }
     }

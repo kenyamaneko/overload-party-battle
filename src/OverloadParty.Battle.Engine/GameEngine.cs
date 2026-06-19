@@ -13,20 +13,26 @@ public class GameEngine
     private readonly IGameRepository _repo;
     private readonly ICardCache _cardCache;
     private readonly IEffectRegistry _effects;
+    private readonly IInitiativeCatalog _initiatives;
 
     /// <summary>Initializes a new instance of <see cref="GameEngine"/>.</summary>
     /// <param name="repo">The game persistence layer.</param>
     /// <param name="cardCache">Read-only card definitions.</param>
     /// <param name="effects">The effect registry (card effect handlers).</param>
-    public GameEngine(IGameRepository repo, ICardCache cardCache, IEffectRegistry effects)
+    /// <param name="initiatives">ID から施策を解決するカタログ。</param>
+    public GameEngine(IGameRepository repo, ICardCache cardCache, IEffectRegistry effects, IInitiativeCatalog initiatives)
     {
         _repo = repo;
         _cardCache = cardCache;
         _effects = effects;
+        _initiatives = initiatives;
     }
 
     /// <summary>Gets the configured effect registry.</summary>
     public IEffectRegistry EffectRegistry => _effects;
+
+    /// <summary>Gets the configured initiative catalog.</summary>
+    public IInitiativeCatalog InitiativeCatalog => _initiatives;
 
     /// <summary>
     /// CreateNewGame はシャッフルしたデッキと初期手札で新しいゲームを作成します
@@ -201,6 +207,8 @@ public class GameEngine
                         state, game, playerNum, (DiscardHandRequest)actionData, _cardCache, _effects),
                     ActionType.UseEffect => UseEffectProcessor.Process(
                         state, game, playerNum, (UseEffectRequest)actionData, _cardCache, _effects),
+                    ActionType.UseInitiative => UseInitiativeProcessor.Process(
+                        state, game, playerNum, (UseInitiativeRequest)actionData, _cardCache, _effects, _initiatives),
                     _ => throw new GameRuleException($"unknown action type: {actionType}")
                 };
             }
@@ -262,7 +270,7 @@ public class GameEngine
         long insightPool = state.GetInsightPool(playerNum);
 
         return AvailableActions.GetAllAvailableActions(
-            state, myField, oppField, hand, budget, insightPool, _cardCache, _effects);
+            state, myField, oppField, hand, budget, insightPool, _cardCache, _effects, _initiatives);
     }
 
     /// <summary>

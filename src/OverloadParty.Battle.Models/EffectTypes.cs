@@ -19,7 +19,7 @@ public static class EffectTypes
     public const string DebuffYield = "debuff_yield";
 
     // ─── 状態異常 ───────────────────────────────────────────
-    public const string CannotOperate = "cannot_operate";
+    // 休止 (Dormant) は BuffTypes.Dormant を参照する。攻撃・収益化・Yield 生成をスキップする。
     public const string TPSuppressed = "tp_suppressed";
 }
 
