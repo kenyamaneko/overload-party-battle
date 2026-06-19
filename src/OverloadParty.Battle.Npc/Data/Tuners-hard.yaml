@@ -1,5 +1,7 @@
 model: Tuners-hard
 faction: Tuners
+routine_id: IN-0007
+special_id: IN-0008
 display_name: 熟練チューナー
 
 deck:

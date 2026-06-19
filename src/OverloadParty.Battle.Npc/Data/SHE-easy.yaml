@@ -1,5 +1,7 @@
 model: SHE-easy
 faction: SHE
+routine_id: IN-0001
+special_id: IN-0002
 display_name: 研修中配達員
 
 deck:

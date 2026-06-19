@@ -31,6 +31,9 @@ public class GameEngine
     /// <summary>Gets the configured effect registry.</summary>
     public IEffectRegistry EffectRegistry => _effects;
 
+    /// <summary>Gets the configured initiative catalog.</summary>
+    public IInitiativeCatalog InitiativeCatalog => _initiatives;
+
     /// <summary>
     /// CreateNewGame はシャッフルしたデッキと初期手札で新しいゲームを作成します
     /// </summary>
@@ -267,7 +270,7 @@ public class GameEngine
         long insightPool = state.GetInsightPool(playerNum);
 
         return AvailableActions.GetAllAvailableActions(
-            state, myField, oppField, hand, budget, insightPool, _cardCache, _effects);
+            state, myField, oppField, hand, budget, insightPool, _cardCache, _effects, _initiatives);
     }
 
     /// <summary>

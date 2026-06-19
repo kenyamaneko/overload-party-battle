@@ -254,7 +254,7 @@ api.MapPost("/games/npc", async (GameService gameSvc, NpcBattleRequest req) =>
         new() { PlayerNum = 1, Name = req.Player1Summary.Name, Level = req.Player1Summary.Level },
         new() { PlayerNum = 2, Name = req.Player2Summary.Name, Level = req.Player2Summary.Level },
     };
-    var game = await gameSvc.StartNPCBattle(cards, req.NpcModel, summaries);
+    var game = await gameSvc.StartNPCBattle(cards, req.RoutineId, req.SpecialId, req.NpcModel, summaries);
     return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 
@@ -268,7 +268,9 @@ api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
         new() { PlayerNum = 1, Name = req.Player1Summary.Name, Level = req.Player1Summary.Level },
         new() { PlayerNum = 2, Name = req.Player2Summary.Name, Level = req.Player2Summary.Level },
     };
-    var game = await gameSvc.CreateGameFromMatch(p1Cards, p2Cards, summaries);
+    var game = await gameSvc.CreateGameFromMatch(
+        p1Cards, req.Deck1RoutineId, req.Deck1SpecialId,
+        p2Cards, req.Deck2RoutineId, req.Deck2SpecialId, summaries);
     return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 

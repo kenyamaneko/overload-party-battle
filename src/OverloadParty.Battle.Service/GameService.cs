@@ -72,18 +72,22 @@ public class GameService
     /// に同期依存せず、引数として渡された snapshot をそのまま信頼して保存する。
     /// </summary>
     /// <param name="player1Cards">プレイヤー 1 のデッキ snapshot。</param>
+    /// <param name="player1Routine">プレイヤー 1 がセットしたルーチン施策の ID。</param>
+    /// <param name="player1Special">プレイヤー 1 がセットしたスペシャル施策の ID。</param>
     /// <param name="player2Cards">プレイヤー 2 のデッキ snapshot。</param>
+    /// <param name="player2Routine">プレイヤー 2 がセットしたルーチン施策の ID。</param>
+    /// <param name="player2Special">プレイヤー 2 がセットしたスペシャル施策の ID。</param>
     /// <param name="playerSummaries">両プレイヤーの表示用 summary。</param>
     /// <param name="ct">キャンセル用トークン。</param>
     /// <returns>初期化済みの Game。</returns>
     public async Task<Game> CreateGameFromMatch(
-        List<DeckSnapshotCard> player1Cards,
-        List<DeckSnapshotCard> player2Cards,
+        List<DeckSnapshotCard> player1Cards, string player1Routine, string player1Special,
+        List<DeckSnapshotCard> player2Cards, string player2Routine, string player2Special,
         IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
         CancellationToken ct = default)
     {
-        var deck1 = new DeckSnapshot { Cards = player1Cards };
-        var deck2 = new DeckSnapshot { Cards = player2Cards };
+        var deck1 = new DeckSnapshot { Cards = player1Cards, RoutineId = player1Routine, SpecialId = player1Special };
+        var deck2 = new DeckSnapshot { Cards = player2Cards, RoutineId = player2Routine, SpecialId = player2Special };
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
@@ -106,12 +110,14 @@ public class GameService
     /// NPC summary は caller (gateway) が npc_model の display_name から組み立てて渡す。
     /// </summary>
     /// <param name="playerCards">人間プレイヤーのデッキ snapshot。</param>
+    /// <param name="playerRoutine">人間プレイヤーがセットしたルーチン施策の ID。</param>
+    /// <param name="playerSpecial">人間プレイヤーがセットしたスペシャル施策の ID。</param>
     /// <param name="npcModel">対戦相手となる NPC モデル ID。</param>
     /// <param name="playerSummaries">両プレイヤー (人間と NPC) の表示用 summary。</param>
     /// <param name="ct">キャンセル用トークン。</param>
     /// <returns>初期化済みの Game。</returns>
     public async Task<Game> StartNPCBattle(
-        List<DeckSnapshotCard> playerCards, string npcModel,
+        List<DeckSnapshotCard> playerCards, string playerRoutine, string playerSpecial, string npcModel,
         IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
         CancellationToken ct = default)
     {
@@ -130,8 +136,8 @@ public class GameService
             .SelectMany(e => Enumerable.Repeat(new DeckSnapshotCard { CardId = e.CardId }, e.Copies))
             .ToList();
 
-        var deck1 = new DeckSnapshot { Cards = playerCards };
-        var deck2 = new DeckSnapshot { DeckID = $"npc-{npcModel}", Cards = npcCards };
+        var deck1 = new DeckSnapshot { Cards = playerCards, RoutineId = playerRoutine, SpecialId = playerSpecial };
+        var deck2 = new DeckSnapshot { DeckID = $"npc-{npcModel}", Cards = npcCards, RoutineId = npcConfig.RoutineId, SpecialId = npcConfig.SpecialId };
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
@@ -335,7 +341,7 @@ public class GameService
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found");
 
-        var clientState = GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
+        var clientState = GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry, _engine.InitiativeCatalog);
         var summaries = await _gameRepo.GetPlayerSummaries(gameID, ct);
         clientState.Player1Summary = BuildClientPlayerSummary(summaries, playerNum: 1);
         clientState.Player2Summary = BuildClientPlayerSummary(summaries, playerNum: 2);

@@ -22,7 +22,7 @@ public class NpcEventStateTests
     {
         var (effects, cc) = TestEffectSetup.Get();
         _cc = cc;
-        var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog([]));
+        var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog(TestFactory.StandardInitiatives()));
 
         var npcDataDir = FindNpcDataDir()
             ?? throw new FileNotFoundException("NPC data directory not found");
@@ -190,7 +190,7 @@ public class NpcEventStateTests
         for (int i = 0; i < 20; i++)
         {
             var cards = MakePlayerCards("SH-0001");
-            var game = await _svc.StartNPCBattle(cards, "SHE-easy", NpcPlayerSummaries);
+            var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
             var state = await _repo.GetGameState(game.GameID);
             if (state!.ActivePlayer == 1)
             {
@@ -233,7 +233,7 @@ public class NpcEventStateTests
     private async Task<GameActionResult> RunNpcTurn()
     {
         var cards = MakePlayerCards("SH-0001");
-        var game = await _svc.StartNPCBattle(cards, "SHE-easy", NpcPlayerSummaries);
+        var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
 
         var state = await _repo.GetGameState(game.GameID);
 

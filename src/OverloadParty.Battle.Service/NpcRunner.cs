@@ -139,7 +139,7 @@ public class NpcRunner
         {
             throw new InvalidOperationException("EffectRegistry is not configured");
         }
-        return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry);
+        return GameStateView.Build(state, game, playerNum, _cardCache, _engine.EffectRegistry, _engine.InitiativeCatalog);
     }
 
     private INpcStrategy ResolveAI(string npcModel)

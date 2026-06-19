@@ -61,6 +61,107 @@ public class AvailableActionsTests
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //  UseInitiative — 列挙ルール
+    // ═══════════════════════════════════════════════════════════════
+
+    private const string TestRoutineId = "IN-TST-R";
+    private const string TestSpecialId = "IN-TST-S";
+
+    private static InitiativeCatalog InitiativeCatalogWith(long routineCost, long specialCost) =>
+        new(
+        [
+            new Initiative { InitiativeId = TestRoutineId, Kind = InitiativeKinds.Routine, Name = "R", InsightCost = routineCost },
+            new Initiative { InitiativeId = TestSpecialId, Kind = InitiativeKinds.Special, Name = "S", InsightCost = specialCost },
+        ]);
+
+    private static BattleGameState MakeInitiativeState(long turn = 3)
+    {
+        var state = TestFactory.MakeGameState(turn: turn, phase: Phase.Main);
+        state.Player1RoutineId = TestRoutineId;
+        state.Player1SpecialId = TestSpecialId;
+        return state;
+    }
+
+    [Fact]
+    public void UseInitiative_EnumeratesRoutineAndSpecial_WhenAffordableAndUnused()
+    {
+        var state = MakeInitiativeState();
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        var inits = actions.Where(a => a.Type == ActionTypes.UseInitiative).ToList();
+        inits.Should().Contain(a => a.Kind == InitiativeKinds.Routine && a.CardID == TestRoutineId && a.Cost == 100);
+        inits.Should().Contain(a => a.Kind == InitiativeKinds.Special && a.CardID == TestSpecialId && a.Cost == 300);
+    }
+
+    [Fact]
+    public void UseInitiative_ExcludesUnaffordableKind()
+    {
+        var state = MakeInitiativeState();
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 150,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        var inits = actions.Where(a => a.Type == ActionTypes.UseInitiative).ToList();
+        inits.Should().Contain(a => a.Kind == InitiativeKinds.Routine);    // 100 <= 150
+        inits.Should().NotContain(a => a.Kind == InitiativeKinds.Special); // 300 > 150
+    }
+
+    [Fact]
+    public void UseInitiative_ExcludesAlreadyUsed()
+    {
+        var state = MakeInitiativeState();
+        state.SetRoutineUsedThisTurn(1, true);
+        state.SetSpecialUsedThisGame(1, true);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void UseInitiative_NotEnumeratedOnFirstTurn()
+    {
+        var state = MakeInitiativeState(turn: 1);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void UseInitiative_NotEnumeratedWhenCatalogOmitted()
+    {
+        var state = MakeInitiativeState();
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry());
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void UseInitiative_Throws_WhenSlotInitiativeNotInCatalog()
+    {
+        var state = MakeInitiativeState();
+        state.Player1RoutineId = "IN-NOPE"; // カタログに無い ID = データ整合性エラー
+
+        var act = () => AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+            new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
+
+        act.Should().Throw<GameRuleException>().WithMessage("*not found*");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //  PlayCard — ゾーン配置ルール
     // ═══════════════════════════════════════════════════════════════
 

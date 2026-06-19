@@ -1,5 +1,7 @@
 model: Tenki-hard
 faction: Tenki
+routine_id: IN-0003
+special_id: IN-0004
 display_name: ベテラン天候士
 
 deck:

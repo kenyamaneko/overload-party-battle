@@ -1,5 +1,7 @@
 model: SHE-hard
 faction: SHE
+routine_id: IN-0001
+special_id: IN-0002
 display_name: エース配達員
 
 deck:

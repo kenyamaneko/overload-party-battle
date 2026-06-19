@@ -34,7 +34,7 @@ public static class UseInitiativeProcessor
 
         CheckUsageLimit(state, playerNum, req.Kind);
 
-        string initiativeId = ResolveInitiativeId(state, playerNum, req.Kind);
+        string initiativeId = InitiativeSelection.ResolveId(state, playerNum, req.Kind);
         var initiative = initiatives.GetById(initiativeId)
             ?? throw new GameRuleException($"initiative '{initiativeId}' not found");
         if (initiative.Kind != req.Kind)
@@ -122,17 +122,4 @@ public static class UseInitiativeProcessor
                 throw new GameRuleException($"unknown initiative kind '{kind}'");
         }
     }
-
-    /// <summary>
-    /// 指定したプレイヤーが該当スロット (ルーチン / スペシャル) にセットした施策の ID を解決します。
-    /// </summary>
-    private static string ResolveInitiativeId(BattleGameState state, long playerNum, string kind) => (playerNum, kind) switch
-    {
-        (1, InitiativeKinds.Routine) => state.Player1RoutineId,
-        (1, InitiativeKinds.Special) => state.Player1SpecialId,
-        (2, InitiativeKinds.Routine) => state.Player2RoutineId,
-        (2, InitiativeKinds.Special) => state.Player2SpecialId,
-        _ => throw new ArgumentOutOfRangeException(
-            nameof(playerNum), $"no initiative for (playerNum={playerNum}, kind={kind})"),
-    };
 }

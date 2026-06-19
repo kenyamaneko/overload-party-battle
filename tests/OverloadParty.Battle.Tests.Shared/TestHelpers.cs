@@ -476,6 +476,20 @@ public static class TestFactory
         }
         return new DeckSnapshot { DeckID = "deck-1", Cards = cards };
     }
+
+    /// <summary>テスト用の標準施策カタログ要素 (4 プロダクト × routine/special = 8 件)。</summary>
+    /// <returns>IN-0001〜IN-0008 の施策一覧。</returns>
+    public static List<Initiative> StandardInitiatives() =>
+    [
+        new() { InitiativeId = "IN-0001", ProductId = "PD-0001", Kind = InitiativeKinds.Routine, Name = "R1", InsightCost = 0 },
+        new() { InitiativeId = "IN-0002", ProductId = "PD-0001", Kind = InitiativeKinds.Special, Name = "S1", InsightCost = 0 },
+        new() { InitiativeId = "IN-0003", ProductId = "PD-0002", Kind = InitiativeKinds.Routine, Name = "R2", InsightCost = 0 },
+        new() { InitiativeId = "IN-0004", ProductId = "PD-0002", Kind = InitiativeKinds.Special, Name = "S2", InsightCost = 0 },
+        new() { InitiativeId = "IN-0005", ProductId = "PD-0003", Kind = InitiativeKinds.Routine, Name = "R3", InsightCost = 0 },
+        new() { InitiativeId = "IN-0006", ProductId = "PD-0003", Kind = InitiativeKinds.Special, Name = "S3", InsightCost = 0 },
+        new() { InitiativeId = "IN-0007", ProductId = "PD-0004", Kind = InitiativeKinds.Routine, Name = "R4", InsightCost = 0 },
+        new() { InitiativeId = "IN-0008", ProductId = "PD-0004", Kind = InitiativeKinds.Special, Name = "S4", InsightCost = 0 },
+    ];
 }
 
 /// <summary>

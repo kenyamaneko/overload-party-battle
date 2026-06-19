@@ -1,5 +1,7 @@
 model: Tuners-easy
 faction: Tuners
+routine_id: IN-0007
+special_id: IN-0008
 display_name: 初心者チューナー
 
 deck:

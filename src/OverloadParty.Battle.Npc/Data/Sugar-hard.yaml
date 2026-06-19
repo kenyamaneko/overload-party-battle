@@ -1,5 +1,7 @@
 model: Sugar-hard
 faction: Sugar
+routine_id: IN-0005
+special_id: IN-0006
 display_name: 主席研究員
 
 deck:

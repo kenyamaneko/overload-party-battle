@@ -1,5 +1,7 @@
 model: Sugar-easy
 faction: Sugar
+routine_id: IN-0005
+special_id: IN-0006
 display_name: 新任研究員
 
 deck:
