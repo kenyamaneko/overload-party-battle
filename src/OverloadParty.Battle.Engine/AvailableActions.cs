@@ -463,9 +463,8 @@ public static class AvailableActions
                 Cost = initiative.InsightCost,
             };
 
-            // 施策効果は EffectSourceId をハンドラキーに登録されるため、trash choice も同キーで引く。
-            string handlerCardId = initiative.EffectSourceId;
-            if (!TryPopulateTrashChoice(action, state, handlerCardId, cc, effects)) { continue; }
+            // 施策効果は EffectSourceId をキーに登録されるため、trash choice も同キーで引く。
+            if (!TryPopulateTrashChoice(action, state, initiative.EffectSourceId, cc, effects)) { continue; }
 
             yield return action;
         }
