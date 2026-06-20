@@ -144,7 +144,7 @@ public class GuardOpTests
     {
         var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
         ShouldPass(
-            new MatchGuard(MatchSelector.Target, faction: "SHE", cardTypes: ["Compute", "Data"]),
+            new MatchGuard(MatchSelector.Target, faction: "SHE", cardTypes: ["Compute", "DataResource"]),
             Ctx(target: target));
     }
 

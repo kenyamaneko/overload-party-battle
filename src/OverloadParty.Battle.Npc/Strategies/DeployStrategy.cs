@@ -110,7 +110,7 @@ internal sealed class DeployStrategy
     private static string ResolveZoneTypeKey(CardDefinition card)
     {
         // ObjectStorage は唯一フロントエンドにも置ける Data subtype なので独立キー扱い。
-        if (card.IsDataType && card.Subtype == "ObjectStorage") { return "ObjectStorage"; }
+        if (card.IsDataResource && card.Subtype == "ObjectStorage") { return "ObjectStorage"; }
         return card.CardType;
     }
 

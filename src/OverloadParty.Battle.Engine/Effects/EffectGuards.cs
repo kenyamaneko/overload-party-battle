@@ -34,6 +34,7 @@ public class MatchGuard(
     MatchSelector selector,
     string? faction = null,
     IReadOnlyList<string>? cardTypes = null,
+    IReadOnlyList<string>? subtypes = null,
     IReadOnlyList<string>? cardIds = null,
     bool? ownerIsOpponent = null) : IEffectGuard
 {
@@ -45,6 +46,9 @@ public class MatchGuard(
 
     /// <summary>許容するカードタイプ列。null の場合は条件なし。</summary>
     public IReadOnlyList<string>? CardTypes => cardTypes;
+
+    /// <summary>許容するサブタイプ列。null の場合は条件なし。</summary>
+    public IReadOnlyList<string>? Subtypes => subtypes;
 
     /// <summary>許容するカード ID 列。null の場合は条件なし。</summary>
     public IReadOnlyList<string>? CardIds => cardIds;
@@ -60,6 +64,7 @@ public class MatchGuard(
 
         if (faction is { Length: > 0 } && card.Faction != faction) { return false; }
         if (cardTypes is { Count: > 0 } && !EffectHelpers.MatchesAnyCardType(card, cardTypes)) { return false; }
+        if (subtypes is { Count: > 0 } && !EffectHelpers.MatchesAnySubtype(card, subtypes)) { return false; }
         if (cardIds is { Count: > 0 } && !cardIds.Contains(card.CardId)) { return false; }
         if (ownerIsOpponent is { } expectOpponent && !CheckOwner(ctx, expectOpponent)) { return false; }
 
@@ -189,6 +194,7 @@ public class ResourceCountGuard(
     string? zone,
     string? faction,
     List<string>? cardTypes,
+    List<string>? subtypes,
     List<string>? cardIds,
     int? min,
     int? max) : IEffectGuard
@@ -204,6 +210,9 @@ public class ResourceCountGuard(
 
     /// <summary>カードタイプフィルタ。null なら全タイプ。</summary>
     public IReadOnlyList<string>? CardTypes => cardTypes;
+
+    /// <summary>サブタイプフィルタ。null なら全サブタイプ。</summary>
+    public IReadOnlyList<string>? Subtypes => subtypes;
 
     /// <summary>カード ID フィルタ。null なら全カード ID。</summary>
     public IReadOnlyList<string>? CardIds => cardIds;
@@ -244,6 +253,7 @@ public class ResourceCountGuard(
                 && s.DeployingTurnsLeft <= 0
                 && MatchesFaction(s.CardID, cc)
                 && MatchesCardTypes(s.CardID, cc)
+                && MatchesSubtypes(s.CardID, cc)
                 && MatchesCardIds(s.CardID));
         }
 
@@ -258,6 +268,7 @@ public class ResourceCountGuard(
             .Where(r => r.FaceUp
                 && MatchesFaction(r.CardID, cc)
                 && MatchesCardTypes(r.CardID, cc)
+                && MatchesSubtypes(r.CardID, cc)
                 && MatchesCardIds(r.CardID))
             .Sum(r => (int)r.TemporaryEffects
                 .Where(e => e.EffectType == "count_multiplier")
@@ -271,6 +282,9 @@ public class ResourceCountGuard(
 
     private bool MatchesCardTypes(string cardID, ICardCache cc) =>
         cardTypes is not { Count: > 0 } || EffectHelpers.MatchesAnyCardType(cc.MustGet(cardID), cardTypes);
+
+    private bool MatchesSubtypes(string cardID, ICardCache cc) =>
+        subtypes is not { Count: > 0 } || EffectHelpers.MatchesAnySubtype(cc.MustGet(cardID), subtypes);
 
     private bool MatchesCardIds(string cardID) =>
         cardIds is not { Count: > 0 } || cardIds.Contains(cardID);

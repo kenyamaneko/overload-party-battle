@@ -191,9 +191,9 @@ public class FieldHelpersTests
     /// </summary>
     [Theory]
     [InlineData("Compute", null, true)]
-    [InlineData("Data", "ObjectStorage", true)]
-    [InlineData("Data", "Database", false)]
-    [InlineData("Data", "CacheDB", false)]
+    [InlineData("DataResource", "ObjectStorage", true)]
+    [InlineData("DataResource", "Database", false)]
+    [InlineData("DataResource", "CacheDB", false)]
     [InlineData("Platform", null, false)]
     public void IsFrontendEligible_CorrectTypes(string cardType, string? subtype, bool expected)
     {
@@ -205,7 +205,7 @@ public class FieldHelpersTests
     /// </summary>
     [Theory]
     [InlineData("Compute", true)]
-    [InlineData("Data", true)]
+    [InlineData("DataResource", true)]
     [InlineData("Platform", false)]
     [InlineData("Strategy", false)]
     public void IsBackendEligible_CorrectTypes(string cardType, bool expected)
@@ -217,7 +217,7 @@ public class FieldHelpersTests
 
     [Theory]
     [InlineData("Compute", true)]
-    [InlineData("Data", false)]
+    [InlineData("DataResource", false)]
     [InlineData("Platform", false)]
     [InlineData("Container", false)] // 旧個別 subtype は category ではないため false
     public void IsComputeType_Correct(string cardType, bool expected)
@@ -226,12 +226,12 @@ public class FieldHelpersTests
     }
 
     [Theory]
-    [InlineData("Data", true)]
+    [InlineData("DataResource", true)]
     [InlineData("Compute", false)]
     [InlineData("Database", false)] // 旧個別 subtype は category ではないため false
     public void IsDataType_Correct(string cardType, bool expected)
     {
-        FieldHelpers.IsDataType(cardType).Should().Be(expected);
+        FieldHelpers.IsDataResource(cardType).Should().Be(expected);
     }
 
     [Theory]

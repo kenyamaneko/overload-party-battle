@@ -45,7 +45,7 @@ public enum InstanceFamily
 public enum CardTypeCategory
 {
     Compute,
-    Data,
+    DataResource,
     Support
 }
 

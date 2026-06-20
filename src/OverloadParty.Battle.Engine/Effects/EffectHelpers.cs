@@ -49,23 +49,19 @@ public static class EffectHelpers
     public static Func<CardDefinition, bool> CardIdFilter(string cardId)
         => card => card.CardId == cardId;
 
-    /// <summary>
-    /// Effect DSL の card_type フィルタは category 名 (Compute/Data/Platform...) と
-    /// subtype 名 (VM/Container/Database...) を区別せず受け付けるため CardType と
-    /// Subtype の両方に対して dual-match する。
-    /// </summary>
-    /// <param name="card">判定対象のカード定義。</param>
-    /// <param name="filterValue">マッチング対象の値。</param>
-    /// <returns>CardType または Subtype が一致すれば true。</returns>
+    /// <summary>card.CardType が filterValue と一致するか判定 (category 専用、厳密一致)。</summary>
     public static bool MatchesCardType(CardDefinition card, string filterValue)
-        => card.CardType == filterValue || card.Subtype == filterValue;
+        => card.CardType == filterValue;
 
-    /// <summary>
-    /// 任意の filterValues のいずれかに dual-match するか判定。
-    /// </summary>
-    /// <param name="card">判定対象のカード定義。</param>
-    /// <param name="filterValues">マッチング対象の値の集合。</param>
-    /// <returns>いずれかと dual-match すれば true。</returns>
+    /// <summary>card.CardType が filterValues のいずれかと一致するか判定。</summary>
     public static bool MatchesAnyCardType(CardDefinition card, IEnumerable<string> filterValues)
-        => filterValues.Any(v => MatchesCardType(card, v));
+        => filterValues.Any(v => card.CardType == v);
+
+    /// <summary>card.Subtype が filterValue と一致するか判定。</summary>
+    public static bool MatchesSubtype(CardDefinition card, string filterValue)
+        => card.Subtype == filterValue;
+
+    /// <summary>card.Subtype が filterValues のいずれかと一致するか判定。</summary>
+    public static bool MatchesAnySubtype(CardDefinition card, IEnumerable<string> filterValues)
+        => filterValues.Any(v => card.Subtype == v);
 }

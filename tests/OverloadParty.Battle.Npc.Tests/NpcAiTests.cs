@@ -63,7 +63,7 @@ public class NpcAiTests
                   priority: 80
                 - card_type: Compute
                   priority: 50
-                - card_type: Data
+                - card_type: DataResource
                   priority: 40
                 - card_type: Platform
                   priority: 30
@@ -71,7 +71,7 @@ public class NpcAiTests
                 TST-0007: use
               zone_preferences:
                 Compute: [frontend, backend]
-                Data: [backend]
+                DataResource: [backend]
                 Platform: [support]
             effect_priorities:
               budget_gain:
@@ -186,7 +186,7 @@ public class NpcAiTests
                 - family: M
                   condition:
                     selector: { owner: myself, zone: backend }
-                    card_type: Data
+                    card_type: DataResource
                     min: 2
               max_maintenance_ratio: 0.6
               order_by: tp_desc

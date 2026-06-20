@@ -148,7 +148,7 @@ public static class FieldHelpers
     public static bool IsFrontendEligible(string cardType, string? subtype)
     {
         return cardType == CardTypes.Compute
-            || (cardType == CardTypes.Data && subtype == "ObjectStorage");
+            || (cardType == CardTypes.DataResource && subtype == "ObjectStorage");
     }
 
     /// <summary>
@@ -158,7 +158,7 @@ public static class FieldHelpers
     /// <returns>バックエンドに配置可能なら true。</returns>
     public static bool IsBackendEligible(string cardType)
     {
-        return cardType is CardTypes.Compute or CardTypes.Data;
+        return cardType is CardTypes.Compute or CardTypes.DataResource;
     }
 
     /// <summary>
@@ -197,9 +197,9 @@ public static class FieldHelpers
     /// </summary>
     /// <param name="cardType">判定対象のカードタイプ。</param>
     /// <returns>DB系リソースなら true。</returns>
-    public static bool IsDataType(string cardType)
+    public static bool IsDataResource(string cardType)
     {
-        return cardType == CardTypes.Data;
+        return cardType == CardTypes.DataResource;
     }
 
     /// <summary>

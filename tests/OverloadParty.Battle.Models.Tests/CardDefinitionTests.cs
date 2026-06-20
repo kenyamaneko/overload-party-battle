@@ -18,7 +18,7 @@ public class CardDefinitionTests
     }
 
     [Theory]
-    [InlineData("Data")]
+    [InlineData("DataResource")]
     [InlineData("Platform")]
     [InlineData("Attachment")]
     public void IsComputeType_NonComputeCategory_ReturnsFalse(string cardType)
@@ -27,13 +27,13 @@ public class CardDefinitionTests
         card.IsComputeType.Should().BeFalse();
     }
 
-    // ─── IsDataType ────────────────────────────────────────────
+    // ─── IsDataResource ────────────────────────────────────────────
 
     [Fact]
     public void IsDataType_DataCategory_ReturnsTrue()
     {
-        var card = new CardDefinition { CardType = "Data", Subtype = "Database" };
-        card.IsDataType.Should().BeTrue();
+        var card = new CardDefinition { CardType = "DataResource", Subtype = "Database" };
+        card.IsDataResource.Should().BeTrue();
     }
 
     [Theory]
@@ -43,7 +43,7 @@ public class CardDefinitionTests
     public void IsDataType_NonDataCategory_ReturnsFalse(string cardType)
     {
         var card = new CardDefinition { CardType = cardType };
-        card.IsDataType.Should().BeFalse();
+        card.IsDataResource.Should().BeFalse();
     }
 
     // ─── IsSupportType ─────────────────────────────────────────
@@ -62,7 +62,7 @@ public class CardDefinitionTests
 
     [Theory]
     [InlineData("Compute")]
-    [InlineData("Data")]
+    [InlineData("DataResource")]
     public void IsSupportType_NonSupportCategory_ReturnsFalse(string cardType)
     {
         var card = new CardDefinition { CardType = cardType };
@@ -177,17 +177,17 @@ public class CardDefinitionTests
     {
         var compute = TestFactory.ComputeCard();
         compute.IsComputeType.Should().BeTrue();
-        compute.IsDataType.Should().BeFalse();
+        compute.IsDataResource.Should().BeFalse();
         compute.IsSupportType.Should().BeFalse();
 
         var data = TestFactory.DataCard();
         data.IsComputeType.Should().BeFalse();
-        data.IsDataType.Should().BeTrue();
+        data.IsDataResource.Should().BeTrue();
         data.IsSupportType.Should().BeFalse();
 
         var support = TestFactory.PlatformCard();
         support.IsComputeType.Should().BeFalse();
-        support.IsDataType.Should().BeFalse();
+        support.IsDataResource.Should().BeFalse();
         support.IsSupportType.Should().BeTrue();
     }
 }

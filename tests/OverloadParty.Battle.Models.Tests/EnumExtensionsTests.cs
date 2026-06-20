@@ -355,7 +355,7 @@ public class EnumExtensionsTests
 
     [Theory]
     [InlineData("Compute", CardTypeCategory.Compute)]
-    [InlineData("Data", CardTypeCategory.Data)]
+    [InlineData("DataResource", CardTypeCategory.DataResource)]
     [InlineData("Platform", CardTypeCategory.Support)]
     [InlineData("Attachment", CardTypeCategory.Support)]
     [InlineData("Strategy", CardTypeCategory.Support)]

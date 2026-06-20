@@ -65,7 +65,7 @@ deploy:
   priorities:
     - card_type: Compute
       priority: 50
-    - card_type: Data
+    - card_type: DataResource
       priority: 40
     - card_type: Platform
       priority: 30
@@ -77,7 +77,7 @@ deploy:
 
   zone_preferences:
     Compute: [frontend, backend]
-    Data: [backend]
+    DataResource: [backend]
     ObjectStorage: [backend, frontend]
     Platform: [support]
     Attachment: [support]

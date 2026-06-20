@@ -140,7 +140,7 @@ public static class TargetSelector
         }
         var card = cc.Get(r.CardID)
             ?? throw new InvalidOperationException($"Card '{r.CardID}' not found in card cache");
-        return card.IsComputeType ? card.BaseThroughput : card.IsDataType ? card.BaseYield : 0;
+        return card.IsComputeType ? card.BaseThroughput : card.IsDataResource ? card.BaseYield : 0;
     }
 
     // ─── TargetSpec resolution ──────────────────────────────────

@@ -77,9 +77,9 @@ public static class StatCalculator
     public static long CalculateEffectiveInsight(DeployedResource instance, Field field, ICardCache cc)
     {
         var card = cc.MustGet(instance.CardID);
-        if (!card.IsDataType || card.DataStats is null) { return 0; }
+        if (!card.IsDataResource || card.DataResourceStats is null) { return 0; }
 
-        long baseYield = card.DataStats.Yield;
+        long baseYield = card.DataResourceStats.Yield;
         long rankMult = BattleConstants.RankMultiplier(instance.Rank);
 
         // インスタンスファミリー倍率 (Yield はスループットと同じ倍率系統)
@@ -161,8 +161,8 @@ public static class StatCalculator
     /// <returns>スケールアップ後の最大イールド。</returns>
     public static long RecalculateMaxYield(DeployedResource resource, CardDefinition card)
     {
-        if (card.DataStats is null) { return 0; }
-        long baseYield = card.DataStats.Yield;
+        if (card.DataResourceStats is null) { return 0; }
+        long baseYield = card.DataResourceStats.Yield;
         long rankMult = BattleConstants.RankMultiplier(resource.Rank);
 
         double yieldMult = 1.0;

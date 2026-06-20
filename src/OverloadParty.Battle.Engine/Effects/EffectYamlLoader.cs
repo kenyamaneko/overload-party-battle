@@ -11,10 +11,10 @@ namespace OverloadParty.Battle.Engine.Effects;
 public static class EffectYamlLoader
 {
     // 旧 YAML 互換: lowercase "data"/"compute" を新 category 名にマッピング。
-    // 新 YAML は CardTypes.Data / CardTypes.Compute を直接使う。
+    // 新 YAML は CardTypes.DataResource / CardTypes.Compute を直接使う。
     private static readonly Dictionary<string, string> LowercaseCategoryAliases = new()
     {
-        ["data"] = CardTypes.Data,
+        ["data"] = CardTypes.DataResource,
         ["compute"] = CardTypes.Compute,
     };
 
@@ -413,14 +413,15 @@ public static class EffectYamlLoader
         string? faction = element.GetStringOrNull("faction");
         bool excludeSource = element.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
         var cardTypes = ParseCardTypes(element);
+        var subtypes = ParseSubtypes(element);
 
         ISelector selector = owner switch
         {
-            PlayerRefs.Myself => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
-            PlayerRefs.Opponent => new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
+            PlayerRefs.Myself => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes },
+            PlayerRefs.Opponent => new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes },
             PlayerRefs.Both => new UnionSelector(
-                new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes },
-                new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes }),
+                new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes },
+                new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes }),
             _ => throw new InvalidOperationException($"Unknown selector owner: {owner}"),
         };
 
@@ -601,6 +602,7 @@ public static class EffectYamlLoader
         string? zone = null;
         string? faction = null;
         List<string>? cardTypes = null;
+        List<string>? subtypes = null;
         List<string>? cardIds = null;
 
         if (selectorElement.ValueKind == JsonValueKind.Object)
@@ -609,11 +611,12 @@ public static class EffectYamlLoader
             zone = selectorElement.GetStringOrNull("zone");
             faction = selectorElement.GetStringOrNull("faction");
             cardTypes = ParseCardTypes(selectorElement);
+            subtypes = ParseSubtypes(selectorElement);
             cardIds = ParseCardIds(selectorElement);
         }
 
         return new ResourceCountGuard(
-            owner ?? PlayerRefs.Myself, zone, faction, cardTypes, cardIds, min, max);
+            owner ?? PlayerRefs.Myself, zone, faction, cardTypes, subtypes, cardIds, min, max);
     }
 
     private static IEffectGuard BuildMatchGuard(JsonElement element)
@@ -621,6 +624,7 @@ public static class EffectYamlLoader
         var selector = ParseMatchSelector(element.GetProperty("selector").GetString()!);
         string? faction = element.GetStringOrNull("faction");
         var cardTypes = ParseCardTypes(element);
+        var subtypes = ParseSubtypes(element);
         var cardIds = ParseCardIds(element);
         bool? ownerIsOpponent = element.TryGetProperty("owner", out var ow)
             ? ow.GetString() switch
@@ -631,7 +635,7 @@ public static class EffectYamlLoader
             }
             : null;
 
-        return new MatchGuard(selector, faction, cardTypes, cardIds, ownerIsOpponent);
+        return new MatchGuard(selector, faction, cardTypes, subtypes, cardIds, ownerIsOpponent);
     }
 
     private static MatchSelector ParseMatchSelector(string s) => s switch
@@ -650,6 +654,7 @@ public static class EffectYamlLoader
     {
         string? faction = filterElement.GetStringOrNull("faction");
         var cardTypes = ParseCardTypes(filterElement);
+        var subtypes = ParseSubtypes(filterElement);
         var cardIds = ParseCardIds(filterElement);
 
         return card =>
@@ -660,6 +665,11 @@ public static class EffectYamlLoader
             }
 
             if (cardTypes is { Count: > 0 } && !EffectHelpers.MatchesAnyCardType(card, cardTypes))
+            {
+                return false;
+            }
+
+            if (subtypes is { Count: > 0 } && !EffectHelpers.MatchesAnySubtype(card, subtypes))
             {
                 return false;
             }
@@ -721,10 +731,8 @@ public static class EffectYamlLoader
     };
 
     /// <summary>
-    /// Parses card_type from a JSON element. 各値は category 名 (Compute/Data/Platform...)
-    /// または subtype 名 (VM/Container/Database...) のいずれでもよく、後段の matcher が
-    /// dual-match (CardType OR Subtype) で判定する。lowercase "data"/"compute" は旧 YAML
-    /// 互換のため category 名にエイリアスする。
+    /// Parses card_type from a JSON element. category 名 (Compute / DataResource / Platform ...) を期待。
+    /// lowercase "data" / "compute" は旧 YAML 互換のため category 名にエイリアスする。
     /// </summary>
     private static List<string>? ParseCardTypes(JsonElement element)
     {
@@ -745,6 +753,27 @@ public static class EffectYamlLoader
                 .Select(e => e.GetString()!)
                 .Select(v => LowercaseCategoryAliases.GetValueOrDefault(v, v))
                 .ToList();
+        }
+
+        return null;
+    }
+
+    /// <summary>Parses subtype from a JSON element. 値は subtype 名 (VM / Container / Database ...) を期待。</summary>
+    private static List<string>? ParseSubtypes(JsonElement element)
+    {
+        if (!element.TryGetProperty("subtype", out var stElement))
+        {
+            return null;
+        }
+
+        if (stElement.ValueKind == JsonValueKind.String)
+        {
+            return [stElement.GetString()!];
+        }
+
+        if (stElement.ValueKind == JsonValueKind.Array)
+        {
+            return stElement.EnumerateArray().Select(e => e.GetString()!).ToList();
         }
 
         return null;

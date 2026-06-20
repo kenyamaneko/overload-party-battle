@@ -133,21 +133,20 @@ public class AllOwnSelector : ISelector
     /// <summary>Card type filter list, or null for any type.</summary>
     public List<string>? CardTypes { get; init; }
 
+    /// <summary>Subtype filter list, or null for any subtype.</summary>
+    public List<string>? Subtypes { get; init; }
+
     /// <inheritdoc />
     public List<DeployedResource> Select(OpContext ctx)
     {
         var field = ctx.MyField;
-        return FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes);
+        return FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes, Subtypes);
     }
 
-    /// <summary>ゾーン・陣営・カードタイプでフィルタした表向きリソースを返します。</summary>
-    /// <param name="field">対象フィールド。</param>
-    /// <param name="zone">ゾーンフィルタ。null なら全ゾーン。</param>
-    /// <param name="faction">陣営フィルタ。null または空文字なら全陣営。</param>
-    /// <param name="cc">カード定義キャッシュ。</param>
-    /// <param name="cardTypes">カードタイプフィルタ。null または空なら全タイプ。</param>
-    /// <returns>フィルタ後のリソース一覧。</returns>
-    internal static List<DeployedResource> FilterResources(Field field, string? zone, string? faction, ICardCache cc, List<string>? cardTypes = null)
+    /// <summary>ゾーン・陣営・カードタイプ・サブタイプでフィルタした表向きリソースを返します。</summary>
+    internal static List<DeployedResource> FilterResources(
+        Field field, string? zone, string? faction, ICardCache cc,
+        List<string>? cardTypes = null, List<string>? subtypes = null)
     {
         IEnumerable<DeployedResource> candidates = zone switch
         {
@@ -160,6 +159,7 @@ public class AllOwnSelector : ISelector
             .Where(r => r.FaceUp)
             .Where(r => faction is not { Length: > 0 } || cc.MustGet(r.CardID).Faction == faction)
             .Where(r => cardTypes is not { Count: > 0 } || EffectHelpers.MatchesAnyCardType(cc.MustGet(r.CardID), cardTypes))
+            .Where(r => subtypes is not { Count: > 0 } || EffectHelpers.MatchesAnySubtype(cc.MustGet(r.CardID), subtypes))
             .ToList();
     }
 }
@@ -178,11 +178,14 @@ public class AllOpponentSelector : ISelector
     /// <summary>Card type filter list, or null for any type.</summary>
     public List<string>? CardTypes { get; init; }
 
+    /// <summary>Subtype filter list, or null for any subtype.</summary>
+    public List<string>? Subtypes { get; init; }
+
     /// <inheritdoc />
     public List<DeployedResource> Select(OpContext ctx)
     {
         var field = ctx.OpponentField;
-        return AllOwnSelector.FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes);
+        return AllOwnSelector.FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes, Subtypes);
     }
 }
 
