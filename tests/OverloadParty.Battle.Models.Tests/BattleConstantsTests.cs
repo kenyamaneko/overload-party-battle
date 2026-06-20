@@ -17,19 +17,19 @@ public class BattleConstantsTests
     [InlineData(Rank.Large, 3)]
     public void RankMultiplier_ScalesByRank(Rank rank, long expected)
     {
-        BattleConstants.RankMultiplier(rank).Should().Be(expected);
+        BattleConstants.GetRankMultiplier(rank).Should().Be(expected);
     }
 
     [Fact]
     public void RankMultiplier_NoRank_NonResizable_ReturnsBaseMultiplier()
     {
-        BattleConstants.RankMultiplier(null).Should().Be(1);
+        BattleConstants.GetRankMultiplier(null).Should().Be(1);
     }
 
     [Fact]
     public void RankMultiplier_UnknownRank_Throws()
     {
-        var act = () => BattleConstants.RankMultiplier((Rank)99);
+        var act = () => BattleConstants.GetRankMultiplier((Rank)99);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 
@@ -41,13 +41,13 @@ public class BattleConstantsTests
     [InlineData(InstanceFamily.R, 0.7, 1.3)]
     public void FamilyMultiplier_ReturnsRulebookMultipliers(InstanceFamily family, double tpMult, double avMult)
     {
-        BattleConstants.FamilyMultiplier(family).Should().Be((tpMult, avMult));
+        BattleConstants.GetFamilyMultiplier(family).Should().Be((tpMult, avMult));
     }
 
     [Fact]
     public void FamilyMultiplier_UnknownFamily_Throws()
     {
-        var act = () => BattleConstants.FamilyMultiplier((InstanceFamily)99);
+        var act = () => BattleConstants.GetFamilyMultiplier((InstanceFamily)99);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
 }

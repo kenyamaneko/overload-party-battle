@@ -212,7 +212,7 @@ public class EffectRegistrationTests
 
         var result = ExecuteEffect(state, "NT-0026", TriggerType.Ignition, playerNum: 1);
 
-        result.GuardFailed.Should().BeTrue("NT-0026 requires budget <= 1000");
+        result.HasGuardFailed.Should().BeTrue("NT-0026 requires budget <= 1000");
         state.Player1Budget.Should().Be(2000, "budget should not change when guard fails");
     }
 
@@ -226,7 +226,7 @@ public class EffectRegistrationTests
 
         var result = ExecuteEffect(state, "SH-0019", TriggerType.Ignition, playerNum: 1);
 
-        result.GuardFailed.Should().BeTrue("SH-0019 requires 3+ SHE cards on field");
+        result.HasGuardFailed.Should().BeTrue("SH-0019 requires 3+ SHE cards on field");
         state.Player1Budget.Should().Be(1000, "budget should not change when guard fails");
     }
 

@@ -445,7 +445,7 @@ public class GameEngineTests
             game!, 1, ActionType.SelectSlot,
             new SelectSlotRequest { Zone = Zones.Frontend, Index = 0 });
 
-        result.NeedsSlotSelect.Should().BeTrue();
+        result.ShouldSelectSlot.Should().BeTrue();
         state.Player1Field.Frontend[0]!.InstanceID.Should().Be("pending_1");
         state.PendingSlotSelects.Should().ContainSingle();
 
@@ -455,7 +455,7 @@ public class GameEngineTests
             game!, 1, ActionType.SelectSlot,
             new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
 
-        result2.NeedsSlotSelect.Should().BeFalse();
+        result2.ShouldSelectSlot.Should().BeFalse();
         state.Player1Field.Frontend[1]!.InstanceID.Should().Be("pending_2");
         state.PendingSlotSelects.Should().BeEmpty();
     }

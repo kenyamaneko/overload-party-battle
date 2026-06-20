@@ -62,7 +62,7 @@ public class PendingEffectChoiceTests
         var handler = EffectComposer.Compose(new RequestSlotFromHandOp());
         var result = handler(MakeCtx(state, target: destroyed, supSource: supSource));
 
-        result.GuardFailed.Should().BeTrue();
+        result.HasGuardFailed.Should().BeTrue();
         result.PendingChoice.Should().BeNull();
     }
 

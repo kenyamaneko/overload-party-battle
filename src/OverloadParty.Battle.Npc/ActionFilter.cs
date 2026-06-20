@@ -35,9 +35,9 @@ public static class ActionFilter
 
         if (cardDef.IsComputeType)
         {
-            var frontend = FirstWithPrefix(available, "frontend_");
+            var frontend = FindFirstWithPrefix(available, "frontend_");
             if (frontend is not null) { return frontend; }
-            var backend = FirstWithPrefix(available, "backend_");
+            var backend = FindFirstWithPrefix(available, "backend_");
             if (backend is not null) { return backend; }
             throw new InvalidOperationException(
                 $"PickBestZone: Compute card '{cardDef.CardId}' received validZones with no frontend/backend: [{string.Join(", ", available)}]");
@@ -45,9 +45,9 @@ public static class ActionFilter
 
         if (cardDef.IsDataResource && cardDef.Subtype == "ObjectStorage")
         {
-            var backend = FirstWithPrefix(available, "backend_");
+            var backend = FindFirstWithPrefix(available, "backend_");
             if (backend is not null) { return backend; }
-            var frontend = FirstWithPrefix(available, "frontend_");
+            var frontend = FindFirstWithPrefix(available, "frontend_");
             if (frontend is not null) { return frontend; }
             throw new InvalidOperationException(
                 $"PickBestZone: ObjectStorage card '{cardDef.CardId}' received validZones with no frontend/backend: [{string.Join(", ", available)}]");
@@ -115,7 +115,7 @@ public static class ActionFilter
         return validZones.Where(z => !usedZones.Contains(z)).ToList();
     }
 
-    private static string? FirstWithPrefix(List<string> zones, string prefix)
+    private static string? FindFirstWithPrefix(List<string> zones, string prefix)
     {
         return zones.FirstOrDefault(z => z.StartsWith(prefix));
     }

@@ -27,14 +27,14 @@ public class RequestSlotFromRepoOp : IEffectOp
 
         if (match is null) { return; }
 
-        // 配置先がないなら repo から取り除く前に GuardFailed で抜ける。
+        // 配置先がないなら repo から取り除く前に HasGuardFailed で抜ける。
         // 取り除いてから判定すると、解決失敗時に repo からカードが消えたまま戻せなくなる。
         var card = ctx.CardCache.MustGet(match.CardID);
         var field = ctx.GetField(ctx.PlayerNum);
         var validZones = ResourceHelpers.BuildValidZones(field, card);
         if (validZones.Count == 0)
         {
-            ctx.Result.GuardFailed = true;
+            ctx.Result.HasGuardFailed = true;
             return;
         }
 
@@ -82,8 +82,8 @@ public class RequestSlotFromHandOp : IEffectOp
             var candidates = EnumerateDeployableHandCards(ctx);
             if (candidates.Count == 0)
             {
-                // passive trigger 経路で発火条件不成立。GuardFailed として正常な不発に扱う。
-                ctx.Result.GuardFailed = true;
+                // passive trigger 経路で発火条件不成立。HasGuardFailed として正常な不発に扱う。
+                ctx.Result.HasGuardFailed = true;
                 return;
             }
             ctx.SuspendForChoice("cardId", ChoiceKinds.HandCard, candidates, ctx.PlayerNum);

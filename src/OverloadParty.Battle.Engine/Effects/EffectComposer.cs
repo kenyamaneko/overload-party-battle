@@ -51,12 +51,12 @@ public static class EffectComposer
             {
                 // Ignition は AvailableActions が事前 gate しているはずで、ここに来るのは
                 // 不正リクエスト (A-1) なので例外で表面化する。それ以外のトリガー
-                // (passive / 従属サブブロック) は guard 不成立が正常な不発のため GuardFailed=true。
+                // (passive / 従属サブブロック) は guard 不成立が正常な不発のため HasGuardFailed=true。
                 if (ctx.Trigger == TriggerType.Ignition)
                 {
                     throw new GameRuleException("Ignition effect guard failed");
                 }
-                octx.Result.GuardFailed = true;
+                octx.Result.HasGuardFailed = true;
                 return octx.Result;
             }
         }

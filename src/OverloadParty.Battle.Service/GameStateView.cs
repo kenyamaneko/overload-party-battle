@@ -215,7 +215,7 @@ public static class GameStateView
             SourceInstanceID = a.SourceInstanceID,
             TargetRank = a.TargetRank,
             InstanceFamily = a.InstanceFamily,
-            NeedsFamily = a.NeedsFamily,
+            NeedsFamily = a.IsFamilyRequired,
             RemainingCapacity = a.RemainingCapacity,
             EffectTargetType = a.EffectTargetType,
             RequiredCount = a.RequiredCount,

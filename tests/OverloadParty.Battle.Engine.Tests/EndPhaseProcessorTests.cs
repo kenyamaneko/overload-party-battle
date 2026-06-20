@@ -160,7 +160,7 @@ public class EndPhaseProcessorTests
 
         var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
 
-        result.NeedsDiscard.Should().BeTrue();
+        result.ShouldDiscard.Should().BeTrue();
         // Phase stays at End, no turn switch yet
         state.CurrentPhase.Should().Be(Phase.End);
         state.ActivePlayer.Should().Be(1);
@@ -184,7 +184,7 @@ public class EndPhaseProcessorTests
 
         var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
 
-        result.NeedsDiscard.Should().BeFalse();
+        result.ShouldDiscard.Should().BeFalse();
         // Turn switches normally
         state.ActivePlayer.Should().Be(2);
     }

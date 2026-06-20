@@ -101,7 +101,7 @@ public class Zone<T> : IEnumerable<T> where T : class
     /// Enumerates indices of empty (null) slots.
     /// </summary>
     /// <returns>空きスロットのインデックスの列</returns>
-    public IEnumerable<int> EmptySlotIndices()
+    public IEnumerable<int> GetEmptySlotIndices()
     {
         for (int i = 0; i < _slots.Length; i++)
         {

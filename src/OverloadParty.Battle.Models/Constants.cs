@@ -20,7 +20,7 @@ public static class BattleConstants
     /// </summary>
     /// <param name="rank">対象のランク。非 Resizable カードは Rank を持たないため null。</param>
     /// <returns>ランクに応じた倍率</returns>
-    public static long RankMultiplier(Rank? rank) => rank switch
+    public static long GetRankMultiplier(Rank? rank) => rank switch
     {
         null => 1, // 非 Resizable カードは Rank を持たない固定スペックなので基準値 ×1
         Rank.Small => 1,
@@ -34,7 +34,7 @@ public static class BattleConstants
     /// </summary>
     /// <param name="family">対象のインスタンスファミリー</param>
     /// <returns>スループット/Yield 倍率と可用性倍率の組</returns>
-    public static (double TpMult, double AvMult) FamilyMultiplier(InstanceFamily family) => family switch
+    public static (double TpMult, double AvMult) GetFamilyMultiplier(InstanceFamily family) => family switch
     {
         InstanceFamily.M => (1.0, 1.0),
         InstanceFamily.C => (1.3, 0.7),

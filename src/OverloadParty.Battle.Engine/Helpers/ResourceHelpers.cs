@@ -200,12 +200,12 @@ public static class ResourceHelpers
 
         if (ZoneValidator.IsZoneEligible(card, Zones.Frontend))
         {
-            validZones.AddRange(field.Frontend.EmptySlotIndices().Select(i => $"{Zones.Frontend}_{i}"));
+            validZones.AddRange(field.Frontend.GetEmptySlotIndices().Select(i => $"{Zones.Frontend}_{i}"));
         }
 
         if (ZoneValidator.IsZoneEligible(card, Zones.Backend))
         {
-            validZones.AddRange(field.Backend.EmptySlotIndices().Select(i => $"{Zones.Backend}_{i}"));
+            validZones.AddRange(field.Backend.GetEmptySlotIndices().Select(i => $"{Zones.Backend}_{i}"));
         }
 
         return validZones;

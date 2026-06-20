@@ -78,7 +78,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             VALUES ($1, $2, $3)", conn, tx);
         cmd.Parameters.AddWithValue(gameID);
         cmd.Parameters.AddWithValue((short)playerNum);
-        cmd.Parameters.Add(JsonbParam(snapshot));
+        cmd.Parameters.Add(BuildJsonbParam(snapshot));
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
@@ -206,7 +206,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             cmd.Parameters.AddWithValue(gameID);
             cmd.Parameters.AddWithValue((short)pendingAction.PlayerNum);
             cmd.Parameters.AddWithValue(pendingAction.ActionType);
-            cmd.Parameters.Add(JsonbParam(pendingAction.ActionData));
+            cmd.Parameters.Add(BuildJsonbParam(pendingAction.ActionData));
             cmd.Parameters.AddWithValue(DateTime.UtcNow);
             await cmd.ExecuteNonQueryAsync(ct);
         }
@@ -231,7 +231,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(gameID);
         cmd.Parameters.AddWithValue(evt.EventType);
         cmd.Parameters.AddWithValue(evt.PlayerNum.HasValue ? (object)(short)evt.PlayerNum.Value : DBNull.Value);
-        cmd.Parameters.Add(EventDataJsonbParam(evt.EventData));
+        cmd.Parameters.Add(BuildEventDataJsonbParam(evt.EventData));
         cmd.Parameters.AddWithValue(evt.CreatedAt);
         evt.SequenceNumber = (long)(await cmd.ExecuteScalarAsync(ct))!;
     }
@@ -430,20 +430,20 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
 
         cmd.Parameters.AddWithValue(state.Player1Budget);
         cmd.Parameters.AddWithValue(state.Player1InsightPool);
-        cmd.Parameters.Add(JsonbParam(state.Player1Field));
-        cmd.Parameters.Add(JsonbParam(state.Player1Hand));
-        cmd.Parameters.Add(JsonbParam(state.Player1Repository));
-        cmd.Parameters.Add(JsonbParam(state.Player1Trash));
+        cmd.Parameters.Add(BuildJsonbParam(state.Player1Field));
+        cmd.Parameters.Add(BuildJsonbParam(state.Player1Hand));
+        cmd.Parameters.Add(BuildJsonbParam(state.Player1Repository));
+        cmd.Parameters.Add(BuildJsonbParam(state.Player1Trash));
         cmd.Parameters.AddWithValue(state.Player1TimeBank);
         cmd.Parameters.AddWithValue(state.Player1IncidentPlayedThisTurn);
         cmd.Parameters.AddWithValue(state.Player1HasOperated);
 
         cmd.Parameters.AddWithValue(state.Player2Budget);
         cmd.Parameters.AddWithValue(state.Player2InsightPool);
-        cmd.Parameters.Add(JsonbParam(state.Player2Field));
-        cmd.Parameters.Add(JsonbParam(state.Player2Hand));
-        cmd.Parameters.Add(JsonbParam(state.Player2Repository));
-        cmd.Parameters.Add(JsonbParam(state.Player2Trash));
+        cmd.Parameters.Add(BuildJsonbParam(state.Player2Field));
+        cmd.Parameters.Add(BuildJsonbParam(state.Player2Hand));
+        cmd.Parameters.Add(BuildJsonbParam(state.Player2Repository));
+        cmd.Parameters.Add(BuildJsonbParam(state.Player2Trash));
         cmd.Parameters.AddWithValue(state.Player2TimeBank);
         cmd.Parameters.AddWithValue(state.Player2IncidentPlayedThisTurn);
         cmd.Parameters.AddWithValue(state.Player2HasOperated);
@@ -452,12 +452,12 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(state.NextInstanceSeq);
         cmd.Parameters.AddWithValue(state.TurnStartedAt);
         cmd.Parameters.AddWithValue(state.NextDeployOrderSeq);
-        cmd.Parameters.Add(JsonbParam(state.PendingSlotSelects));
-        cmd.Parameters.Add(JsonbParam(state.PendingEffectChoice));
+        cmd.Parameters.Add(BuildJsonbParam(state.PendingSlotSelects));
+        cmd.Parameters.Add(BuildJsonbParam(state.PendingEffectChoice));
         cmd.Parameters.AddWithValue(state.UpdatedAt);
     }
 
-    private static NpgsqlParameter JsonbParam<T>(T? value)
+    private static NpgsqlParameter BuildJsonbParam<T>(T? value)
     {
         var json = value is null ? (object)DBNull.Value : JsonSerializer.Serialize(value, DbJsonOptions.Default);
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };
@@ -467,7 +467,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     /// EventData の JSONB パラメータは EventDataSerializer を通す。BattleGameState など他の JSONB 列の
     /// snake_case 設定 (DbJsonOptions) とは別経路で camelCase 統一されている点に注意。
     /// </summary>
-    private static NpgsqlParameter EventDataJsonbParam(OverloadParty.GameState.IEventData? value)
+    private static NpgsqlParameter BuildEventDataJsonbParam(OverloadParty.GameState.IEventData? value)
     {
         var json = value is null ? (object)DBNull.Value : EventDataSerializer.Serialize(value);
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };

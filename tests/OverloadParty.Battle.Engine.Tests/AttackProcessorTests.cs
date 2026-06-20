@@ -385,7 +385,7 @@ public class AttackProcessorTests
         var effects = new TestEffectRegistry();
         effects.Register("TEST-0400", TriggerType.OnAttackDeclared, ctx => new EffectResult
         {
-            CancelAction = true,
+            ShouldCancelAction = true,
             Events = [new GameEvent { EventType = "reactive_fired", GameID = ctx.Game.GameID }]
         });
 

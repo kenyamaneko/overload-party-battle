@@ -102,7 +102,7 @@ public static class EventTriggerFiring
             var result = handler(effectCtx);
 
             // 発動条件を満たさなかったリアクティブは発動扱いにせず（消費しない）、次の候補へ。
-            if (result.GuardFailed) { continue; }
+            if (result.HasGuardFailed) { continue; }
 
             events.AddRange(result.Events);
 
@@ -122,7 +122,7 @@ public static class EventTriggerFiring
 
             // アクションがキャンセルされたら、同じイベントを契機とする後続の効果は発火しない。
             // キャンセルでアクションが「発生しなかった」扱いになり、後続効果は発動契機を失う。
-            if (result.CancelAction)
+            if (result.ShouldCancelAction)
             {
                 cancelled = true;
                 break;

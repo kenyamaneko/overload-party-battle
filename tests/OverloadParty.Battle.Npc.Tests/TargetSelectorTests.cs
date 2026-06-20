@@ -294,7 +294,7 @@ public class TargetSelectorTests
         var field = TestFactory.MakeWireOpponentField();
         field.Support[0] = TestFactory.MakeHiddenSupport("plat_1", cardId: "TEST-0200", faceDown: false);
 
-        var result = TargetSelector.FirstPlatformId(field, _cc);
+        var result = TargetSelector.FindFirstPlatformId(field, _cc);
 
         result.Should().Be("plat_1");
     }
@@ -304,7 +304,7 @@ public class TargetSelectorTests
     {
         var field = TestFactory.MakeWireOpponentField();
 
-        TargetSelector.FirstPlatformId(field, _cc).Should().BeNull();
+        TargetSelector.FindFirstPlatformId(field, _cc).Should().BeNull();
     }
 
     // ─── ResourceValue ─────────────────────────────────────────
@@ -314,7 +314,7 @@ public class TargetSelectorTests
     {
         var res = TestFactory.MakeWireResource(cardId: "TST-0001", currentTP: 700);
 
-        var value = TargetSelector.ResourceValue(res, _cc);
+        var value = TargetSelector.CalculateResourceValue(res, _cc);
 
         value.Should().Be(700);
     }
@@ -324,7 +324,7 @@ public class TargetSelectorTests
     {
         var res = TestFactory.MakeWireResource(cardId: "TST-0002", currentTP: null, currentYield: 500, maxYield: 500);
 
-        var value = TargetSelector.ResourceValue(res, _cc);
+        var value = TargetSelector.CalculateResourceValue(res, _cc);
 
         value.Should().Be(500);
     }
@@ -334,7 +334,7 @@ public class TargetSelectorTests
     {
         var res = TestFactory.MakeWireResource(cardId: "TST-0001", currentTP: null, currentYield: null);
 
-        var value = TargetSelector.ResourceValue(res, _cc);
+        var value = TargetSelector.CalculateResourceValue(res, _cc);
 
         // Card 1 is Compute with BaseThroughput = 600
         value.Should().Be(600);

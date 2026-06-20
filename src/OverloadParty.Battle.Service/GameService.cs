@@ -31,7 +31,7 @@ public class GameActionResult
     /// repeatedly until this becomes false so each NPC action is delivered
     /// individually (system events remain attached to the correct snapshot).
     /// </summary>
-    public bool NpcPending { get; init; }
+    public bool IsNpcPending { get; init; }
 }
 
 /// <summary>
@@ -159,7 +159,7 @@ public class GameService
 
     /// <summary>
     /// Processes a single player action. If the resulting active player is an NPC,
-    /// returns NpcPending=true so the gateway can loop AdvanceNpcTurn.
+    /// returns IsNpcPending=true so the gateway can loop AdvanceNpcTurn.
     /// </summary>
     /// <param name="gameID">対象 Game の ID。</param>
     /// <param name="playerNum">アクションを実行するプレイヤー番号。</param>
@@ -203,7 +203,7 @@ public class GameService
                 GameOver = result.GameOver,
                 State = clientState,
                 Events = allEvents,
-                NpcPending = false,
+                IsNpcPending = false,
             };
         }
 
@@ -212,7 +212,7 @@ public class GameService
         {
             State = clientState,
             Events = allEvents,
-            NpcPending = npcPending,
+            IsNpcPending = npcPending,
         };
     }
 
@@ -248,7 +248,7 @@ public class GameService
     }
 
     /// <summary>
-    /// Processes exactly one NPC action and returns. The gateway loops on NpcPending
+    /// Processes exactly one NPC action and returns. The gateway loops on IsNpcPending
     /// so every NPC action is delivered with its own post-action state snapshot.
     /// </summary>
     /// <param name="gameID">対象 Game の ID。</param>
@@ -288,7 +288,7 @@ public class GameService
             GameOver = npcResult.GameOver,
             State = clientState,
             Events = events,
-            NpcPending = npcResult.NpcPending,
+            IsNpcPending = npcResult.NpcPending,
         };
     }
 

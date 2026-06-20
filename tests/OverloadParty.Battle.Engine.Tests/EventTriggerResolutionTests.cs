@@ -71,7 +71,7 @@ public class EventTriggerResolutionTests
 
         int lateFires = 0;
         var effects = new TestEffectRegistry();
-        effects.Register("REACT-A", TriggerType.OnAttackDeclared, _ => new EffectResult { GuardFailed = true });
+        effects.Register("REACT-A", TriggerType.OnAttackDeclared, _ => new EffectResult { HasGuardFailed = true });
         effects.Register("REACT-B", TriggerType.OnAttackDeclared, _ => { lateFires++; return new EffectResult(); });
 
         AttackProcessor.Process(state, _game, 1, AttackReq("atk", "def"), _cc, effects);
@@ -148,7 +148,7 @@ public class EventTriggerResolutionTests
 
         bool deployEffectFired = false;
         var effects = new TestEffectRegistry();
-        effects.Register("REACT-A", TriggerType.OnDeploy, _ => new EffectResult { CancelAction = true });
+        effects.Register("REACT-A", TriggerType.OnDeploy, _ => new EffectResult { ShouldCancelAction = true });
         effects.Register("DEPLOYED", TriggerType.OnDeploy, _ => { deployEffectFired = true; return new EffectResult(); });
 
         PlayCardProcessor.Process(state, _game, 1, PlayReq("h", Zones.Frontend, 0), _cc, effects);
@@ -192,7 +192,7 @@ public class EventTriggerResolutionTests
 
         bool incidentBodyFired = false;
         var effects = new TestEffectRegistry();
-        effects.Register("REACT-A", TriggerType.OnIncident, _ => new EffectResult { CancelAction = true });
+        effects.Register("REACT-A", TriggerType.OnIncident, _ => new EffectResult { ShouldCancelAction = true });
         effects.Register("INCIDENT", TriggerType.Ignition, _ =>
         {
             incidentBodyFired = true;

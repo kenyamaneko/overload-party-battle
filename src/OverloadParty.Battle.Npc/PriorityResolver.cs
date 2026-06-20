@@ -36,7 +36,7 @@ public static class PriorityResolver
     /// </summary>
     /// <param name="cat">変換対象のカテゴリ。</param>
     /// <returns>対応するキー文字列。未登録なら null。</returns>
-    public static string? CategoryToKey(EffectCategory cat)
+    public static string? MapCategoryToKey(EffectCategory cat)
     {
         return CategoryKeys.GetValueOrDefault(cat);
     }
@@ -258,7 +258,7 @@ public static class PriorityResolver
 
         if (info.HasCategory(EffectCategory.DestroyPlatform))
         {
-            return TargetSelector.FirstPlatformId(ctx.OppField, cc);
+            return TargetSelector.FindFirstPlatformId(ctx.OppField, cc);
         }
 
         throw new InvalidOperationException(

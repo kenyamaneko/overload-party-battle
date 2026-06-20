@@ -156,7 +156,7 @@ public class SelectSlotProcessorTests
         state.Player1Field.Frontend[0]!.InstanceID.Should().Be("pending_1");
         state.PendingSlotSelects.Should().ContainSingle();
         state.PendingSlotSelects[0].Resource.InstanceID.Should().Be("pending_2");
-        result.NeedsSlotSelect.Should().BeTrue();
+        result.ShouldSelectSlot.Should().BeTrue();
     }
 
     [Fact]
@@ -167,6 +167,6 @@ public class SelectSlotProcessorTests
 
         var result = SelectSlotProcessor.Process(state, _game, 1, req, _cc);
 
-        result.NeedsSlotSelect.Should().BeFalse();
+        result.ShouldSelectSlot.Should().BeFalse();
     }
 }

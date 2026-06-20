@@ -19,7 +19,7 @@ public static class TargetSelector
     public static string? WeakestInZone(GD.Field field, string? zone)
     {
         return FaceUpInZone(field.Frontend, field.Backend, zone)
-            .MinBy(WireFieldHelpers.EffectiveAV)
+            .MinBy(WireFieldHelpers.CalculateEffectiveAV)
             ?.InstanceID;
     }
 
@@ -33,7 +33,7 @@ public static class TargetSelector
     public static string? StrongestInZone(GD.Field field, string? zone, ICardCache cc)
     {
         return FaceUpInZone(field.Frontend, field.Backend, zone)
-            .MaxBy(r => ResourceValue(r, cc))
+            .MaxBy(r => CalculateResourceValue(r, cc))
             ?.InstanceID;
     }
 
@@ -114,7 +114,7 @@ public static class TargetSelector
     /// <param name="field">対象の相手フィールド。</param>
     /// <param name="cc">カード定義の参照元。</param>
     /// <returns>該当プラットフォームの InstanceID。なければ null。</returns>
-    public static string? FirstPlatformId(GD.OpponentField field, ICardCache cc) =>
+    public static string? FindFirstPlatformId(GD.OpponentField field, ICardCache cc) =>
         WireFieldHelpers.AllSupports(field)
             .Where(s => s.CardID is not null)
             .FirstOrDefault(s => (cc.Get(s.CardID!)
@@ -128,7 +128,7 @@ public static class TargetSelector
     /// <param name="r">対象リソース。</param>
     /// <param name="cc">カード定義の参照元。</param>
     /// <returns>スループット or イールド値。</returns>
-    public static long ResourceValue(GD.DeployedResource r, ICardCache cc)
+    public static long CalculateResourceValue(GD.DeployedResource r, ICardCache cc)
     {
         if (r.CurrentTP is > 0)
         {
@@ -285,8 +285,8 @@ public static class TargetSelector
     {
         return stat switch
         {
-            "tp" => ResourceValue(r, cc),
-            "av" => WireFieldHelpers.EffectiveAV(r),
+            "tp" => CalculateResourceValue(r, cc),
+            "av" => WireFieldHelpers.CalculateEffectiveAV(r),
             "damage" => r.Damage,
             _ => throw new InvalidOperationException($"Unknown order_by stat: '{stat}'"),
         };

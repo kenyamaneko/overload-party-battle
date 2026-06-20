@@ -20,8 +20,8 @@ public class ActionResult
     public GameOverResult? GameOver { get; set; }
 
     /// <summary>Whether the active player must discard before the turn can end.</summary>
-    public bool NeedsDiscard { get; set; }
+    public bool ShouldDiscard { get; set; }
 
     /// <summary>Whether the player must select a deployment slot before any other action.</summary>
-    public bool NeedsSlotSelect { get; set; }
+    public bool ShouldSelectSlot { get; set; }
 }

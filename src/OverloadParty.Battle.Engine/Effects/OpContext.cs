@@ -164,7 +164,7 @@ public class OpContext
     /// <summary>
     /// Mark this action as cancelled (for reactive effects).
     /// </summary>
-    public void CancelAction() => Result.CancelAction = true;
+    public void CancelAction() => Result.ShouldCancelAction = true;
 
     /// <summary>
     /// Tracks success/failure of named effect groups within this pipeline execution.

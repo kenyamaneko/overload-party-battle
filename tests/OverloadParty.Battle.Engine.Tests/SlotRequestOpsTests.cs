@@ -135,8 +135,8 @@ public class SlotRequestOpsTests
         var handler = EffectComposer.Compose(op);
         var result = handler(MakeContext(state));
 
-        // 発動条件判定失敗 — EffectComposer は GameRuleException を捕捉し GuardFailed をセットする
-        result.GuardFailed.Should().BeTrue();
+        // 発動条件判定失敗 — EffectComposer は GameRuleException を捕捉し HasGuardFailed をセットする
+        result.HasGuardFailed.Should().BeTrue();
     }
 
     // ─── RequestSlotFromHandOp ─────────────────────────────

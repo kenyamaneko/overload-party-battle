@@ -120,7 +120,7 @@ public static class ScaleUpProcessor
                 CardCache = cc,
                 Effects = effects,
             });
-            if (!result.GuardFailed) { events.AddRange(result.Events); }
+            if (!result.HasGuardFailed) { events.AddRange(result.Events); }
         }
     }
 }

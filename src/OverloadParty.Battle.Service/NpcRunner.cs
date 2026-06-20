@@ -248,7 +248,7 @@ public class NpcRunner
             return false;
         }
 
-        if (result.NeedsSlotSelect)
+        if (result.ShouldSelectSlot)
         {
             return true;
         }

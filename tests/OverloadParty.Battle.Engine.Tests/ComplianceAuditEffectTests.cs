@@ -53,7 +53,7 @@ public class ComplianceAuditEffectTests
 
         var result = ExecuteEffect(state, playerNum: 1);
 
-        result.GuardFailed.Should().BeTrue();
+        result.HasGuardFailed.Should().BeTrue();
         state.Player1Budget.Should().Be(100, "budget should not change when guard fails");
     }
 
