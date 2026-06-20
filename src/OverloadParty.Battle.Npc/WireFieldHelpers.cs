@@ -37,7 +37,7 @@ internal static class WireFieldHelpers
         field.Frontend.Any(r => r is not null && r.FaceUp);
 
     /// <summary>リソースの実効 AV (= MaxAV - Damage)。</summary>
-    public static long EffectiveAV(GD.DeployedResource r) => r.MaxAV - r.Damage;
+    public static long CalculateEffectiveAV(GD.DeployedResource r) => r.MaxAV - r.Damage;
 
     private static IEnumerable<GD.DeployedResource> Concat(
         List<GD.DeployedResource?> a, List<GD.DeployedResource?> b)

@@ -35,7 +35,7 @@ public class AvailableAction
     public string? InstanceFamily { get; set; }
 
     /// <summary>Whether a family selection is required (scale-up to Medium/Large).</summary>
-    public bool NeedsFamily { get; set; }
+    public bool IsFamilyRequired { get; set; }
 
     /// <summary>Remaining monetize capacity for the resource (monetize only).</summary>
     public long RemainingCapacity { get; set; }
@@ -333,7 +333,7 @@ public static class AvailableActions
                             SourceInstanceID = resource.InstanceID,
                             TargetRank = targetRank.ToWireString(),
                             InstanceFamily = family.ToWireString(),
-                            NeedsFamily = true,
+                            IsFamilyRequired = true,
                         };
                     }
                 }

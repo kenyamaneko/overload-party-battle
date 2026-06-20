@@ -205,7 +205,7 @@ public class GameServiceTests
         var result = await _svc.ProcessAction(
             game.GameID, state!.ActivePlayer, ActionType.EndPhase, new object());
 
-        result.NpcPending.Should().BeFalse("PvP games never have NPC pending");
+        result.IsNpcPending.Should().BeFalse("PvP games never have NPC pending");
     }
 
     [Fact]

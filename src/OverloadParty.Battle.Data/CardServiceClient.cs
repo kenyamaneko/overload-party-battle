@@ -18,7 +18,7 @@ public sealed class CardServiceClient : IDisposable
     };
 
     private readonly HttpClient _http;
-    private readonly bool _ownsHttpClient;
+    private readonly bool _canDisposeHttpClient;
 
     public CardServiceClient(string baseUrl)
         : this(baseUrl, new HttpClient(), ownsHttpClient: true)
@@ -38,7 +38,7 @@ public sealed class CardServiceClient : IDisposable
         }
 
         _http = httpClient;
-        _ownsHttpClient = ownsHttpClient;
+        _canDisposeHttpClient = ownsHttpClient;
         _http.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
     }
 
@@ -78,7 +78,7 @@ public sealed class CardServiceClient : IDisposable
 
     public void Dispose()
     {
-        if (_ownsHttpClient)
+        if (_canDisposeHttpClient)
         {
             _http.Dispose();
         }

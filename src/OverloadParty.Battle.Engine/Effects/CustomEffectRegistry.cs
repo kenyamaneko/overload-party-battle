@@ -389,7 +389,7 @@ public class CustomEffectRegistry
         // Elastic カードの維持コストを算出して同額の reduction を付与
         var card = octx.CardCache.MustGet(octx.Source.CardID);
         long intrinsic = card.IsComputeType ? card.BaseThroughput : card.BaseYield;
-        long scaledStat = intrinsic * BattleConstants.RankMultiplier(octx.Source.Rank) + octx.Source.ElasticBonus;
+        long scaledStat = intrinsic * BattleConstants.GetRankMultiplier(octx.Source.Rank) + octx.Source.ElasticBonus;
         long maintenanceCost = Math.Max(0, scaledStat - card.FreeTier) * card.CostPerRequest / 100;
 
         if (maintenanceCost <= 0) { return; }

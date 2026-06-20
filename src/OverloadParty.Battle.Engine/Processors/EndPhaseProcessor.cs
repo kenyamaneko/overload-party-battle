@@ -52,7 +52,7 @@ public static class EndPhaseProcessor
 
         if (needsDiscard)
         {
-            result.NeedsDiscard = true;
+            result.ShouldDiscard = true;
             events.Add(new GameEvent
             {
                 GameID = game.GameID,
@@ -112,12 +112,12 @@ public static class EndPhaseProcessor
         if (card.Elastic)
         {
             long intrinsic = card.IsComputeType ? card.BaseThroughput : card.BaseYield;
-            long scaledStat = intrinsic * BattleConstants.RankMultiplier(resource.Rank) + resource.ElasticBonus;
+            long scaledStat = intrinsic * BattleConstants.GetRankMultiplier(resource.Rank) + resource.ElasticBonus;
             baseCost = Math.Max(0, scaledStat - card.FreeTier) * card.CostPerRequest / 100;
         }
         else
         {
-            baseCost = card.MaintenanceCost * BattleConstants.RankMultiplier(resource.Rank);
+            baseCost = card.MaintenanceCost * BattleConstants.GetRankMultiplier(resource.Rank);
         }
 
         return FieldHelpers.ApplyReduction(

@@ -143,11 +143,11 @@ public class EffectRegistryTests
     public void Register_SameKey_Overwrites()
     {
         var registry = new EffectRegistry();
-        registry.Register("TST-0001", TriggerType.OnDeploy, _ => new EffectResult { CancelAction = false });
-        registry.Register("TST-0001", TriggerType.OnDeploy, _ => new EffectResult { CancelAction = true });
+        registry.Register("TST-0001", TriggerType.OnDeploy, _ => new EffectResult { ShouldCancelAction = false });
+        registry.Register("TST-0001", TriggerType.OnDeploy, _ => new EffectResult { ShouldCancelAction = true });
 
         var handler = registry.Get("TST-0001", TriggerType.OnDeploy)!;
         var result = handler(null!);
-        result.CancelAction.Should().BeTrue();
+        result.ShouldCancelAction.Should().BeTrue();
     }
 }

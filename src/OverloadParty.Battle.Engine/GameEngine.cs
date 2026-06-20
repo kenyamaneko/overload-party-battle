@@ -215,7 +215,7 @@ public class GameEngine
 
             if (actionType != ActionType.SelectSlot && state.PendingSlotSelects.Count > 0)
             {
-                actionResult.NeedsSlotSelect = true;
+                actionResult.ShouldSelectSlot = true;
             }
 
             actionResult.GameOver ??= WinConditionChecker.Check(state, game);

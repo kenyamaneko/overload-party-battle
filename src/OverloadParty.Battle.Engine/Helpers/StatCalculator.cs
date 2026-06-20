@@ -17,7 +17,7 @@ public static class StatCalculator
     /// <param name="rawBonus">逓減前のエラスティックボーナス値。</param>
     /// <param name="scale">逓減関数のスケール係数。</param>
     /// <returns>対数逓減後の実効エラスティックボーナス。</returns>
-    public static long EffectiveElasticBonus(long rawBonus, long scale)
+    public static long CalculateEffectiveElasticBonus(long rawBonus, long scale)
     {
         if (rawBonus <= 0 || scale <= 0) { return rawBonus; }
         double result = scale * Math.Log(1.0 + (double)rawBonus / scale);
@@ -39,13 +39,13 @@ public static class StatCalculator
         if (!card.IsComputeType || card.ComputeStats is null) { return 0; }
 
         long baseTP = card.ComputeStats.Throughput;
-        long rankMult = BattleConstants.RankMultiplier(instance.Rank);
+        long rankMult = BattleConstants.GetRankMultiplier(instance.Rank);
 
         // インスタンスファミリー倍率
         double tpMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {
-            var (tp, _) = BattleConstants.FamilyMultiplier(family);
+            var (tp, _) = BattleConstants.GetFamilyMultiplier(family);
             tpMult = tp;
         }
 
@@ -55,7 +55,7 @@ public static class StatCalculator
         long elasticBonus = 0;
         if (card.Elastic && card.FreeTier > 0)
         {
-            elasticBonus = EffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
+            elasticBonus = CalculateEffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
         }
 
         long tempBonus = instance.TemporaryEffects
@@ -80,13 +80,13 @@ public static class StatCalculator
         if (!card.IsDataResource || card.DataResourceStats is null) { return 0; }
 
         long baseYield = card.DataResourceStats.Yield;
-        long rankMult = BattleConstants.RankMultiplier(instance.Rank);
+        long rankMult = BattleConstants.GetRankMultiplier(instance.Rank);
 
         // インスタンスファミリー倍率 (Yield はスループットと同じ倍率系統)
         double yieldMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {
-            var (tp, _) = BattleConstants.FamilyMultiplier(family);
+            var (tp, _) = BattleConstants.GetFamilyMultiplier(family);
             yieldMult = tp;
         }
 
@@ -95,7 +95,7 @@ public static class StatCalculator
         long elasticBonus = 0;
         if (card.Elastic && card.FreeTier > 0)
         {
-            elasticBonus = EffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
+            elasticBonus = CalculateEffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
         }
 
         long tempBonus = instance.TemporaryEffects
@@ -118,12 +118,12 @@ public static class StatCalculator
     {
         var card = cc.MustGet(instance.CardID);
         long baseAV = card.BaseAvailability;
-        long rankMult = BattleConstants.RankMultiplier(instance.Rank);
+        long rankMult = BattleConstants.GetRankMultiplier(instance.Rank);
 
         double avMult = 1.0;
         if (instance.InstanceFamily is { } family)
         {
-            var (_, av) = BattleConstants.FamilyMultiplier(family);
+            var (_, av) = BattleConstants.GetFamilyMultiplier(family);
             avMult = av;
         }
 
@@ -141,12 +141,12 @@ public static class StatCalculator
     {
         if (card.ComputeStats is null) { return 0; }
         long baseTP = card.ComputeStats.Throughput;
-        long rankMult = BattleConstants.RankMultiplier(resource.Rank);
+        long rankMult = BattleConstants.GetRankMultiplier(resource.Rank);
 
         double tpMult = 1.0;
         if (resource.InstanceFamily is { } family)
         {
-            var (tp, _) = BattleConstants.FamilyMultiplier(family);
+            var (tp, _) = BattleConstants.GetFamilyMultiplier(family);
             tpMult = tp;
         }
 
@@ -163,12 +163,12 @@ public static class StatCalculator
     {
         if (card.DataResourceStats is null) { return 0; }
         long baseYield = card.DataResourceStats.Yield;
-        long rankMult = BattleConstants.RankMultiplier(resource.Rank);
+        long rankMult = BattleConstants.GetRankMultiplier(resource.Rank);
 
         double yieldMult = 1.0;
         if (resource.InstanceFamily is { } family)
         {
-            var (tp, _) = BattleConstants.FamilyMultiplier(family);
+            var (tp, _) = BattleConstants.GetFamilyMultiplier(family);
             yieldMult = tp;
         }
 

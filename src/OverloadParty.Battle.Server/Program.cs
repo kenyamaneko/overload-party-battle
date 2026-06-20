@@ -349,7 +349,7 @@ ActionResult ProjectActionResult(GameActionResult result) => new()
     GameOver = result.GameOver is not null,
     WinningPlayerNum = result.GameOver?.WinnerNum ?? 0,
     WinReason = result.GameOver?.Reason ?? "",
-    NpcPending = result.NpcPending,
+    NpcPending = result.IsNpcPending,
     Events = result.Events.Select(e => new ActionEvent
     {
         Sequence = e.Event.SequenceNumber,

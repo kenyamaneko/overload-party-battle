@@ -75,7 +75,7 @@ public class EffectYamlLoaderTests
             Effects = new EffectRegistry(),
         });
 
-        result.GuardFailed.Should().BeFalse("max-only count guard should accept 0 resources");
+        result.HasGuardFailed.Should().BeFalse("max-only count guard should accept 0 resources");
         state.Player1Budget.Should().Be(1100);
     }
 
@@ -112,7 +112,7 @@ public class EffectYamlLoaderTests
             Effects = new EffectRegistry(),
         });
 
-        result.GuardFailed.Should().BeTrue("max-only count guard should reject when count exceeds max");
+        result.HasGuardFailed.Should().BeTrue("max-only count guard should reject when count exceeds max");
         state.Player1Budget.Should().Be(1000);
     }
 
@@ -146,7 +146,7 @@ public class EffectYamlLoaderTests
             Effects = new EffectRegistry(),
         });
 
-        result.GuardFailed.Should().BeTrue("min=2 should reject when count is 0");
+        result.HasGuardFailed.Should().BeTrue("min=2 should reject when count is 0");
         state.Player1Budget.Should().Be(1000);
     }
 }

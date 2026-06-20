@@ -61,7 +61,7 @@ public class NpcEventStateTests
         result.Events.Should().NotContain(
             e => e.Event.EventType == ActionTypes.PlayCard,
             "NPC play_card events must not be bundled into the player's ProcessAction response");
-        result.NpcPending.Should().BeTrue(
+        result.IsNpcPending.Should().BeTrue(
             "after the player's end_phase the NPC is active, so the gateway needs to loop");
     }
 
@@ -83,9 +83,9 @@ public class NpcEventStateTests
                     "one advance call must yield at most one play_card event");
             steps++;
             steps.Should().BeLessThan(100, "guard against infinite yield loops");
-        } while (current.NpcPending && current.GameOver is null);
+        } while (current.IsNpcPending && current.GameOver is null);
 
-        current.NpcPending.Should().BeFalse("NPC turn ended, control returns to the player");
+        current.IsNpcPending.Should().BeFalse("NPC turn ended, control returns to the player");
         steps.Should().BeGreaterThan(1,
             "the NPC should take multiple steps (actions + end_phase) before yielding back");
 
@@ -102,7 +102,7 @@ public class NpcEventStateTests
         var (game, playerNum) = await StartGameWithPlayerActive();
 
         // player plays a card; since player is still active for remaining actions
-        // in Main (or until end_phase), NpcPending should be false.
+        // in Main (or until end_phase), IsNpcPending should be false.
         var hand = (await _repo.GetGameState(game.GameID))!.GetHand(playerNum);
         var first = hand[0];
 
@@ -116,7 +116,7 @@ public class NpcEventStateTests
                 Index = 0,
             });
 
-        result.NpcPending.Should().BeFalse(
+        result.IsNpcPending.Should().BeFalse(
             "player is still the active player after playing a card in main phase");
     }
 
@@ -228,7 +228,7 @@ public class NpcEventStateTests
 
     /// <summary>
     /// Simulates the gateway's yield loop: kicks off the NPC turn, then calls
-    /// AdvanceNpcTurn repeatedly while NpcPending is true, aggregating events.
+    /// AdvanceNpcTurn repeatedly while IsNpcPending is true, aggregating events.
     /// </summary>
     private async Task<GameActionResult> RunNpcTurn()
     {
@@ -243,7 +243,7 @@ public class NpcEventStateTests
 
         var events = new List<ActionEventWithState>(initial.Events);
         var current = initial;
-        while (current.NpcPending && current.GameOver is null)
+        while (current.IsNpcPending && current.GameOver is null)
         {
             current = await _svc.AdvanceNpcTurn(game.GameID);
             events.AddRange(current.Events);
@@ -254,7 +254,7 @@ public class NpcEventStateTests
             GameOver = current.GameOver,
             State = current.State,
             Events = events,
-            NpcPending = current.NpcPending,
+            IsNpcPending = current.IsNpcPending,
         };
     }
 

@@ -285,7 +285,7 @@ public static class AttackProcessor
                 CardCache = cc,
                 Effects = effects,
             });
-            if (!result.GuardFailed) { allEvents.AddRange(result.Events); }
+            if (!result.HasGuardFailed) { allEvents.AddRange(result.Events); }
         }
 
         // Fire OnHit for the defender's attachments
@@ -305,7 +305,7 @@ public static class AttackProcessor
                     CardCache = cc,
                     Effects = effects,
                 });
-                if (!result.GuardFailed) { allEvents.AddRange(result.Events); }
+                if (!result.HasGuardFailed) { allEvents.AddRange(result.Events); }
             }
         }
 

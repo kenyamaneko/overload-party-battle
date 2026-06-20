@@ -110,7 +110,7 @@ internal sealed class ImmediateActionStrategy
         }
 
         return info.Categories
-            .Select(PriorityResolver.CategoryToKey)
+            .Select(PriorityResolver.MapCategoryToKey)
             .Where(catKey => catKey is not null
                              && config.ImmediateCards.UseConditions.ContainsKey(catKey))
             .All(catKey => GuardChecker.CheckAll(

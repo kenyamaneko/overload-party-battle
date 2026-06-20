@@ -155,7 +155,7 @@ public class GameLogService
 
     private string EventToDescription(GameEvent evt, Game game)
     {
-        var playerTag = PlayerTag(evt);
+        var playerTag = FormatPlayerTag(evt);
 
         return evt.EventData switch
         {
@@ -275,7 +275,7 @@ public class GameLogService
 
     // ─── Helpers ─────────────────────────────────────────────────
 
-    private static string PlayerTag(GameEvent evt) => evt.PlayerNum switch
+    private static string FormatPlayerTag(GameEvent evt) => evt.PlayerNum switch
     {
         null => "System",
         1 => "P1",

@@ -18,19 +18,19 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_ZeroRaw_ReturnsZero()
     {
-        StatCalculator.EffectiveElasticBonus(0, 500).Should().Be(0);
+        StatCalculator.CalculateEffectiveElasticBonus(0, 500).Should().Be(0);
     }
 
     [Fact]
     public void EffectiveElasticBonus_ZeroScale_ReturnsRaw()
     {
-        StatCalculator.EffectiveElasticBonus(100, 0).Should().Be(100);
+        StatCalculator.CalculateEffectiveElasticBonus(100, 0).Should().Be(100);
     }
 
     [Fact]
     public void EffectiveElasticBonus_NegativeRaw_ReturnsNegative()
     {
-        StatCalculator.EffectiveElasticBonus(-100, 500).Should().Be(-100);
+        StatCalculator.CalculateEffectiveElasticBonus(-100, 500).Should().Be(-100);
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_RulebookExample_1Trigger()
     {
-        StatCalculator.EffectiveElasticBonus(100, 500).Should().Be(91);
+        StatCalculator.CalculateEffectiveElasticBonus(100, 500).Should().Be(91);
     }
 
     /// <summary>
@@ -49,7 +49,7 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_RulebookExample_5Triggers()
     {
-        StatCalculator.EffectiveElasticBonus(500, 500).Should().Be(346);
+        StatCalculator.CalculateEffectiveElasticBonus(500, 500).Should().Be(346);
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_RulebookExample_10Triggers()
     {
-        StatCalculator.EffectiveElasticBonus(1000, 500).Should().Be(549);
+        StatCalculator.CalculateEffectiveElasticBonus(1000, 500).Should().Be(549);
     }
 
     /// <summary>
@@ -67,7 +67,7 @@ public class StatCalculatorTests
     [Fact]
     public void EffectiveElasticBonus_RulebookExample_20Triggers()
     {
-        StatCalculator.EffectiveElasticBonus(2000, 500).Should().Be(804);
+        StatCalculator.CalculateEffectiveElasticBonus(2000, 500).Should().Be(804);
     }
 
     // ─── CalculateEffectiveTP ─────────────────────────────────
