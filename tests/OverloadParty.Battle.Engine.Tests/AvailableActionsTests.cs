@@ -750,6 +750,27 @@ public class AvailableActionsTests
     }
 
     [Fact]
+    public void Attack_CannotAttackExcluded()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+
+        var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+        var myField = TestFactory.MakeField();
+        var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
+        attacker.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.CannotAttack });
+        myField.Frontend[0] = attacker;
+
+        var oppField = TestFactory.MakeField();
+        oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
+    }
+
+    [Fact]
     public void Attack_FaceDownTargetsExcluded()
     {
         // 裏向きカードは攻撃対象にできない

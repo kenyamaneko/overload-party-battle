@@ -293,6 +293,7 @@ public static class AvailableActions
             if (!attackerCard.IsComputeType) { continue; }
             if (attacker.HasAttacked) { continue; }
             if (FieldHelpers.HasTemporaryEffect(attacker, BuffTypes.Dormant)) { continue; }
+            if (FieldHelpers.HasTemporaryEffect(attacker, BuffTypes.CannotAttack)) { continue; }
 
             yield return new AvailableAction
             {

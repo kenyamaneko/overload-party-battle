@@ -160,6 +160,10 @@ public static class AttackProcessor
         {
             throw new GameRuleException("dormant resource cannot attack");
         }
+        if (FieldHelpers.HasTemporaryEffect(attacker, BuffTypes.CannotAttack))
+        {
+            throw new GameRuleException("resource cannot attack (cannot_attack effect active)");
+        }
 
         return (attacker, card);
     }
