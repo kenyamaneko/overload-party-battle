@@ -172,6 +172,16 @@ monetize:
   order_by: tp_desc
   reserve_ratio: 0.2
 
+initiative:
+  routine:
+    priority: 50
+    condition:
+      selector: { owner: opponent }
+      min: 1
+  special:
+    priority: 60
+    min_insight: 1200
+
 attachments:
   SH-0016:
     priority: 80

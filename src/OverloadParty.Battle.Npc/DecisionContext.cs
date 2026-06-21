@@ -20,4 +20,5 @@ public class DecisionContext(
     public long Budget { get; } = budget;
     public ICardCache CardCache { get; } = cardCache;
     public long CurrentTurn { get; init; }
+    public long InsightPool { get; init; }
 }

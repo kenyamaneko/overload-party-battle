@@ -1311,6 +1311,234 @@ public class NpcAiTests
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //  施策 (UseInitiative)
+    // ═══════════════════════════════════════════════════════════════
+
+    private const string RoutineInitiativeId = "TST-IN-R";
+    private const string SpecialInitiativeId = "TST-IN-S";
+
+    private static InitiativeCatalog MakeInitiativeCatalog()
+    {
+        return new InitiativeCatalog(new List<Initiative>
+        {
+            new() { InitiativeId = RoutineInitiativeId, Kind = InitiativeKinds.Routine },
+            new() { InitiativeId = SpecialInitiativeId, Kind = InitiativeKinds.Special },
+        });
+    }
+
+    private static AiConfig MakeRoutineSpecialConfig()
+    {
+        return AiConfigLoader.LoadFromString("""
+            model: test
+            faction: SHE
+            budget:
+              low_threshold: 1500
+              maintenance_limit_ratio: 0.8
+            deploy:
+              priorities:
+                - card_type: Compute
+                  priority: 50
+            effect_priorities: {}
+            target_selection:
+              heal:
+                selector: { owner: myself }
+                order_by: damage_desc
+            scale_up:
+              instance_family: M
+              max_maintenance_ratio: 0.6
+              order_by: tp_desc
+            monetize:
+              order_by: tp_desc
+              reserve_ratio: 0.0
+            initiative:
+              routine:
+                priority: 50
+                condition:
+                  selector: { owner: opponent }
+                  min: 1
+              special:
+                priority: 60
+                min_insight: 500
+            """);
+    }
+
+    private static AiConfig MakeChoiceRoutineConfig()
+    {
+        return AiConfigLoader.LoadFromString("""
+            model: test
+            faction: Sugar
+            budget:
+              low_threshold: 1500
+              maintenance_limit_ratio: 0.8
+            deploy:
+              priorities:
+                - card_type: Compute
+                  priority: 50
+            effect_priorities: {}
+            target_selection:
+              heal:
+                selector: { owner: myself }
+                order_by: damage_desc
+            scale_up:
+              instance_family: M
+              max_maintenance_ratio: 0.6
+              order_by: tp_desc
+            monetize:
+              order_by: tp_desc
+              reserve_ratio: 0.0
+            initiative:
+              routine:
+                priority: 50
+            """);
+    }
+
+    [Fact]
+    public void Initiative_RoutineConditionMet_Emitted()
+    {
+        var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+        };
+        var state = BuildState(
+            configureOppField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "o1"),
+            available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+
+        actions.Should().Contain(a =>
+            a.ActionType == ActionTypes.UseInitiative
+            && ((UseInitiativeRequest)a.Data).Kind == InitiativeKinds.Routine);
+    }
+
+    [Fact]
+    public void Initiative_RoutineConditionUnmet_NotEmitted()
+    {
+        var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+        };
+        var state = BuildState(available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+
+        actions.Should().NotContain(a => a.ActionType == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void Initiative_NoInitiativeConfig_NotEmitted()
+    {
+        var ai = new NpcAi(MakeConfig(), _cc, _effects, MakeInitiativeCatalog());
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+        };
+        var state = BuildState(
+            configureOppField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "o1"),
+            available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+
+        actions.Should().NotContain(a => a.ActionType == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void Initiative_NoCatalog_NotEmitted()
+    {
+        var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects);
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+        };
+        var state = BuildState(
+            configureOppField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "o1"),
+            available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+
+        actions.Should().NotContain(a => a.ActionType == ActionTypes.UseInitiative);
+    }
+
+    [Theory]
+    [InlineData(400, false)]
+    [InlineData(600, true)]
+    public void Initiative_SpecialMinInsight_GatesUsage(long insightPool, bool expectedUsed)
+    {
+        var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Special, CardID = SpecialInitiativeId },
+        };
+        var state = BuildState(insightPool: insightPool, available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+
+        actions.Any(a => a.ActionType == ActionTypes.UseInitiative).Should().Be(expectedUsed);
+    }
+
+    [Fact]
+    public void Initiative_ChoiceEffect_ResolvesTarget()
+    {
+        _effects.SetEffectInfo(
+            "initiative:" + RoutineInitiativeId, TriggerType.Ignition,
+            new EffectInfo { TargetType = EffectTargetType.Choice }.WithCategory(EffectCategory.Heal));
+        var ai = new NpcAi(MakeChoiceRoutineConfig(), _cc, _effects, MakeInitiativeCatalog());
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+        };
+        var state = BuildState(
+            configureMyField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "dmg1", damage: 300),
+            available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+        var initiative = actions.First(a => a.ActionType == ActionTypes.UseInitiative);
+
+        ((UseInitiativeRequest)initiative.Data).ChoiceData!["instanceId"].Should().Be("dmg1");
+    }
+
+    [Fact]
+    public void Initiative_ChoiceEffect_NoTarget_NotEmitted()
+    {
+        _effects.SetEffectInfo(
+            "initiative:" + RoutineInitiativeId, TriggerType.Ignition,
+            new EffectInfo { TargetType = EffectTargetType.Choice }.WithCategory(EffectCategory.Heal));
+        var ai = new NpcAi(MakeChoiceRoutineConfig(), _cc, _effects, MakeInitiativeCatalog());
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+        };
+        var state = BuildState(available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+
+        actions.Should().NotContain(a => a.ActionType == ActionTypes.UseInitiative);
+    }
+
+    [Fact]
+    public void Initiative_BothKinds_SpecialOrderedFirstByPriority()
+    {
+        var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
+        var available = new List<GD.AvailableAction>
+        {
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Special, CardID = SpecialInitiativeId },
+        };
+        var state = BuildState(
+            insightPool: 600,
+            configureOppField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "o1"),
+            available: available);
+
+        var actions = ai.DecideMainPhaseActions(state)
+            .Where(a => a.ActionType == ActionTypes.UseInitiative)
+            .Select(a => ((UseInitiativeRequest)a.Data).Kind)
+            .ToList();
+
+        actions.Should().Equal(InitiativeKinds.Special, InitiativeKinds.Routine);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //  テストダブル
     // ═══════════════════════════════════════════════════════════════
 

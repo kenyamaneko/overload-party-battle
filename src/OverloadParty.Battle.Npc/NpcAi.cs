@@ -21,10 +21,11 @@ public class NpcAi : INpcStrategy
     private readonly AttachmentDeployStrategy _attachmentDeploy;
     private readonly ReactiveDeployStrategy _reactiveDeploy;
     private readonly IgnitionStrategy _ignition;
+    private readonly InitiativeStrategy? _initiative;
     private readonly ScaleUpStrategy _scaleUp;
     private readonly MonetizeStrategy _monetize;
 
-    public NpcAi(AiConfig config, ICardCache cc, IEffectRegistry effects)
+    public NpcAi(AiConfig config, ICardCache cc, IEffectRegistry effects, IInitiativeCatalog? initiatives = null)
     {
         _config = config;
         _cc = cc;
@@ -34,6 +35,7 @@ public class NpcAi : INpcStrategy
         _attachmentDeploy = new AttachmentDeployStrategy(config, cc);
         _reactiveDeploy = new ReactiveDeployStrategy(config, cc);
         _ignition = new IgnitionStrategy(cc, effects);
+        _initiative = initiatives is null ? null : new InitiativeStrategy(initiatives, effects, cc);
         _scaleUp = new ScaleUpStrategy(config, cc);
         _monetize = new MonetizeStrategy(config, cc);
     }
@@ -65,6 +67,10 @@ public class NpcAi : INpcStrategy
             actions.AddRange(_reactiveDeploy.Decide(playActions, usedZones));
         }
         actions.AddRange(_ignition.Decide(ctx, available, activeConfig));
+        if (_initiative is not null)
+        {
+            actions.AddRange(_initiative.Decide(ctx, available, activeConfig));
+        }
         actions.AddRange(_scaleUp.Decide(ctx, available));
 
         var insightPool = clientState.MyView.InsightPool;
@@ -339,6 +345,7 @@ public class NpcAi : INpcStrategy
             _cc)
         {
             CurrentTurn = clientState.CurrentTurn,
+            InsightPool = clientState.MyView.InsightPool,
         };
     }
 
