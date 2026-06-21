@@ -10,306 +10,326 @@ namespace OverloadParty.Battle.Tests.Effects;
 /// </summary>
 public class EffectClassifierTests
 {
-    // ─── Budget Ops ───────────────────────────────────────────
-
-    [Fact]
-    public void Classify_GainBudget()
+    /// <summary>Tests classification of budget ops.</summary>
+    public class BudgetOps
     {
-        var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
-        info.Categories.Should().ContainSingle();
-    }
-
-    [Fact]
-    public void Classify_LoseBudget()
-    {
-        var ops = new IEffectOp[] { new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.BudgetPenalty).Should().BeTrue();
-    }
-
-    // ─── Insight Ops ──────────────────────────────────────────
-
-    [Fact]
-    public void Classify_GainInsight()
-    {
-        var ops = new IEffectOp[] { new GainInsightOp(new StaticAmount(200)) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.InsightGain).Should().BeTrue();
-    }
-
-    [Fact]
-    public void Classify_AbsorbInsight()
-    {
-        var ops = new IEffectOp[] { new AbsorbInsightOp(new StaticAmount(150)) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.InsightAbsorb).Should().BeTrue();
-    }
-
-    // ─── Damage Ops ───────────────────────────────────────────
-
-    [Fact]
-    public void Classify_DealDamage_ByChoice_SingleDamage()
-    {
-        var sel = new ByChoiceSelector { Zone = Zones.Frontend, Owner = "opponent" };
-        var ops = new IEffectOp[] { new DealDamageOp(sel, new StaticAmount(400)) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.SingleDamage).Should().BeTrue();
-        info.TargetType.Should().Be(EffectTargetType.Choice);
-        info.TargetZone.Should().Be(Zones.Frontend);
-    }
-
-    [Fact]
-    public void Classify_DealDamage_AllOpponent_AoE()
-    {
-        var sel = new AllOpponentSelector();
-        var ops = new IEffectOp[] { new DealDamageOp(sel, new StaticAmount(200)) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.AoEDamage).Should().BeTrue();
-        info.TargetType.Should().Be(EffectTargetType.AllOpp);
-    }
-
-    [Fact]
-    public void Classify_DealDamage_SourceSelector_Self()
-    {
-        var ops = new IEffectOp[] { new DealDamageOp(SourceSelector.Instance, new StaticAmount(100)) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.TargetType.Should().Be(EffectTargetType.Myself);
-    }
-
-    // ─── Buff / Debuff ────────────────────────────────────────
-
-    [Fact]
-    public void Classify_Buff_SourceSelector()
-    {
-        var ops = new IEffectOp[] { new ApplyBuffOp(SourceSelector.Instance, "buff_tp", new StaticAmount(200), "this_turn") };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.Buff).Should().BeTrue();
-        info.TargetType.Should().Be(EffectTargetType.Myself);
-    }
-
-    [Fact]
-    public void Classify_Debuff_OpponentChoice()
-    {
-        var sel = new ByChoiceSelector { Owner = "opponent" };
-        var ops = new IEffectOp[] { new ApplyBuffOp(sel, "debuff_tp", new StaticAmount(100), "this_turn") };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.Debuff).Should().BeTrue();
-        info.TargetType.Should().Be(EffectTargetType.Choice);
-    }
-
-    [Fact]
-    public void Classify_Debuff_AllOpponent()
-    {
-        var ops = new IEffectOp[] { new ApplyBuffOp(new AllOpponentSelector(), "debuff_tp", new StaticAmount(50), "this_turn") };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.Debuff).Should().BeTrue();
-        info.TargetType.Should().Be(EffectTargetType.AllOpp);
-    }
-
-    // ─── Heal ─────────────────────────────────────────────────
-
-    [Fact]
-    public void Classify_HealDamage()
-    {
-        var ops = new IEffectOp[] { new HealDamageOp(SourceSelector.Instance, new StaticAmount(500)) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.Heal).Should().BeTrue();
-    }
-
-    // ─── Card Movement / Field Ops / Reactive Control ─────────
-
-    [Theory]
-    [InlineData("draw", EffectCategory.Draw)]
-    [InlineData("search", EffectCategory.Search)]
-    [InlineData("deployrepo", EffectCategory.DeployFree)]
-    [InlineData("trashtohand", EffectCategory.RecoverCard)]
-    [InlineData("reveal", EffectCategory.RevealReactive)]
-    [InlineData("destroyplat", EffectCategory.DestroyPlatform)]
-    [InlineData("cancel", EffectCategory.CancelAction)]
-    [InlineData("survive", EffectCategory.Survive)]
-    public void Classify_SingleOp_HasExpectedCategory(string opKey, EffectCategory expected)
-    {
-        IEffectOp op = opKey switch
+        [Fact]
+        public void GainBudget()
         {
-            "draw" => new DrawCardsOp(1),
-            "search" => new SearchRepoOp(),
-            "deployrepo" => new DeployFromRepoOp(),
-            "trashtohand" => new TrashToHandOp(),
-            "reveal" => new RevealReactiveOp(),
-            "destroyplat" => new DestroyPlatformOp(),
-            "cancel" => SetCancelActionOp.Instance,
-            _ => new SurviveDestructionOp(1),
-        };
-        var info = EffectClassifier.ClassifyOps([op]);
+            var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
+            var info = EffectClassifier.ClassifyOps(ops);
 
-        info.HasCategory(expected).Should().BeTrue();
-    }
+            info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
+            info.Categories.Should().ContainSingle();
+        }
 
-    // ─── Conditions ───────────────────────────────────────────
-
-    [Fact]
-    public void Classify_RequireBudget_AddsCondition()
-    {
-        var block = new BuiltBlock
+        [Fact]
+        public void LoseBudget()
         {
-            Guards = [new MinBudgetGuard(1000)],
-            Ops = [new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500))],
-        };
-        var info = EffectClassifier.ClassifyBlock(block);
+            var ops = new IEffectOp[] { new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)) };
+            var info = EffectClassifier.ClassifyOps(ops);
 
-        info.Conditions.Should().ContainSingle();
-        info.Conditions[0].Type.Should().Be("min_budget");
-        info.Conditions[0].Value.Should().Be(1000);
-        info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
+            info.HasCategory(EffectCategory.BudgetPenalty).Should().BeTrue();
+        }
     }
 
-    [Fact]
-    public void Classify_RequireMaxBudget_AddsCondition()
+    /// <summary>Tests classification of insight ops.</summary>
+    public class InsightOps
     {
-        var block = new BuiltBlock { Guards = [new MaxBudgetGuard(2000)] };
-        var info = EffectClassifier.ClassifyBlock(block);
-
-        info.Conditions.Should().ContainSingle();
-        info.Conditions[0].Type.Should().Be("max_budget");
-        info.Conditions[0].Value.Should().Be(2000);
-    }
-
-    [Fact]
-    public void Classify_ResourceCountGuard_AddsCondition()
-    {
-        var block = new BuiltBlock
+        [Fact]
+        public void GainInsight()
         {
-            Guards =
-            [
-                new ResourceCountGuard(
-                    owner: "myself", zone: null, faction: "SHE",
-                    cardTypes: null, subtypes: null, cardIds: null, min: 3, max: null),
-            ],
-        };
-        var info = EffectClassifier.ClassifyBlock(block);
+            var ops = new IEffectOp[] { new GainInsightOp(new StaticAmount(200)) };
+            var info = EffectClassifier.ClassifyOps(ops);
 
-        info.Conditions.Should().ContainSingle();
-        info.Conditions[0].Type.Should().Be("resource_count");
-        info.Conditions[0].Owner.Should().Be("myself");
-        info.Conditions[0].Faction.Should().Be("SHE");
-        info.Conditions[0].Min.Should().Be(3);
-        info.Conditions[0].Max.Should().BeNull();
-    }
+            info.HasCategory(EffectCategory.InsightGain).Should().BeTrue();
+        }
 
-    [Fact]
-    public void Classify_ResourceCountGuard_MaxOnly_PreservesShape()
-    {
-        var block = new BuiltBlock
+        [Fact]
+        public void AbsorbInsight()
         {
-            Guards =
-            [
-                new ResourceCountGuard(
-                    owner: "myself", zone: null, faction: "Tuners",
-                    cardTypes: null, subtypes: null, cardIds: null, min: null, max: 3),
-            ],
-        };
-        var info = EffectClassifier.ClassifyBlock(block);
+            var ops = new IEffectOp[] { new AbsorbInsightOp(new StaticAmount(150)) };
+            var info = EffectClassifier.ClassifyOps(ops);
 
-        info.Conditions.Should().ContainSingle();
-        info.Conditions[0].Type.Should().Be("resource_count");
-        info.Conditions[0].Min.Should().BeNull();
-        info.Conditions[0].Max.Should().Be(3);
+            info.HasCategory(EffectCategory.InsightAbsorb).Should().BeTrue();
+        }
     }
 
-    // ─── Branching ────────────────────────────────────────────
-
-    [Fact]
-    public void Classify_BranchOnChoice_MergesCategories()
+    /// <summary>Tests classification of damage ops.</summary>
+    public class DamageOps
     {
-        var branches = new Dictionary<string, List<IEffectOp>>
+        [Fact]
+        public void ByChoice_SingleDamage()
         {
-            ["attack"] = [new DealDamageOp(SourceSelector.Instance, new StaticAmount(200))],
-            ["heal"] = [new HealDamageOp(SourceSelector.Instance, new StaticAmount(300))],
-        };
-        var ops = new IEffectOp[] { new BranchOnChoiceOp(branches) };
-        var info = EffectClassifier.ClassifyOps(ops);
+            var sel = new ByChoiceSelector { Zone = Zones.Frontend, Owner = "opponent" };
+            var ops = new IEffectOp[] { new DealDamageOp(sel, new StaticAmount(400)) };
+            var info = EffectClassifier.ClassifyOps(ops);
 
-        info.HasBranch.Should().BeTrue();
-        info.HasCategory(EffectCategory.Heal).Should().BeTrue();
-    }
+            info.HasCategory(EffectCategory.SingleDamage).Should().BeTrue();
+            info.TargetType.Should().Be(EffectTargetType.Choice);
+            info.TargetZone.Should().Be(Zones.Frontend);
+        }
 
-    [Fact]
-    public void Classify_IfCondition_MergesThenBranch()
-    {
-        var then = new List<IEffectOp> { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
-        var ops = new IEffectOp[] { new IfConditionOp(_ => true, then) };
-        var info = EffectClassifier.ClassifyOps(ops);
-
-        info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
-    }
-
-    // ─── CustomFnTagged ───────────────────────────────────────
-
-    [Fact]
-    public void Classify_CustomFnTagged_UsesMetadata()
-    {
-        var ops = new IEffectOp[]
+        [Fact]
+        public void AllOpponent_AoE()
         {
-            new CustomFnTaggedOp(_ => { })
+            var sel = new AllOpponentSelector();
+            var ops = new IEffectOp[] { new DealDamageOp(sel, new StaticAmount(200)) };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.HasCategory(EffectCategory.AoEDamage).Should().BeTrue();
+            info.TargetType.Should().Be(EffectTargetType.AllOpp);
+        }
+
+        [Fact]
+        public void SourceSelector_Self()
+        {
+            var ops = new IEffectOp[] { new DealDamageOp(SourceSelector.Instance, new StaticAmount(100)) };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.TargetType.Should().Be(EffectTargetType.Myself);
+        }
+    }
+
+    /// <summary>Tests classification of buff and debuff ops.</summary>
+    public class BuffDebuffOps
+    {
+        [Fact]
+        public void Buff_SourceSelector()
+        {
+            var ops = new IEffectOp[] { new ApplyBuffOp(SourceSelector.Instance, "buff_tp", new StaticAmount(200), "this_turn") };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.HasCategory(EffectCategory.Buff).Should().BeTrue();
+            info.TargetType.Should().Be(EffectTargetType.Myself);
+        }
+
+        [Fact]
+        public void Debuff_OpponentChoice()
+        {
+            var sel = new ByChoiceSelector { Owner = "opponent" };
+            var ops = new IEffectOp[] { new ApplyBuffOp(sel, "debuff_tp", new StaticAmount(100), "this_turn") };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.HasCategory(EffectCategory.Debuff).Should().BeTrue();
+            info.TargetType.Should().Be(EffectTargetType.Choice);
+        }
+
+        [Fact]
+        public void Debuff_AllOpponent()
+        {
+            var ops = new IEffectOp[] { new ApplyBuffOp(new AllOpponentSelector(), "debuff_tp", new StaticAmount(50), "this_turn") };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.HasCategory(EffectCategory.Debuff).Should().BeTrue();
+            info.TargetType.Should().Be(EffectTargetType.AllOpp);
+        }
+    }
+
+    /// <summary>Tests classification of heal ops.</summary>
+    public class HealOps
+    {
+        [Fact]
+        public void HealDamage()
+        {
+            var ops = new IEffectOp[] { new HealDamageOp(SourceSelector.Instance, new StaticAmount(500)) };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.HasCategory(EffectCategory.Heal).Should().BeTrue();
+        }
+    }
+
+    /// <summary>Tests classification of single card-movement, field, and reactive-control ops.</summary>
+    public class SingleOps
+    {
+        [Theory]
+        [InlineData("draw", EffectCategory.Draw)]
+        [InlineData("search", EffectCategory.Search)]
+        [InlineData("deployrepo", EffectCategory.DeployFree)]
+        [InlineData("trashtohand", EffectCategory.RecoverCard)]
+        [InlineData("reveal", EffectCategory.RevealReactive)]
+        [InlineData("destroyplat", EffectCategory.DestroyPlatform)]
+        [InlineData("cancel", EffectCategory.CancelAction)]
+        [InlineData("survive", EffectCategory.Survive)]
+        public void HasExpectedCategory(string opKey, EffectCategory expected)
+        {
+            IEffectOp op = opKey switch
             {
-                Categories = [EffectCategory.Draw, EffectCategory.Search],
-                Target = EffectTargetType.Myself,
-                Zone = Zones.Backend,
-            }
-        };
-        var info = EffectClassifier.ClassifyOps(ops);
+                "draw" => new DrawCardsOp(1),
+                "search" => new SearchRepoOp(),
+                "deployrepo" => new DeployFromRepoOp(),
+                "trashtohand" => new TrashToHandOp(),
+                "reveal" => new RevealReactiveOp(),
+                "destroyplat" => new DestroyPlatformOp(),
+                "cancel" => SetCancelActionOp.Instance,
+                _ => new SurviveDestructionOp(1),
+            };
+            var info = EffectClassifier.ClassifyOps([op]);
 
-        info.HasCategory(EffectCategory.Draw).Should().BeTrue();
-        info.HasCategory(EffectCategory.Search).Should().BeTrue();
-        info.TargetType.Should().Be(EffectTargetType.Myself);
-        info.TargetZone.Should().Be(Zones.Backend);
+            info.HasCategory(expected).Should().BeTrue();
+        }
     }
 
-    // ─── Multiple Ops ─────────────────────────────────────────
-
-    [Fact]
-    public void Classify_MultipleOps_CombinesCategories()
+    /// <summary>Tests classification of guard conditions on a BuiltBlock.</summary>
+    public class Conditions
     {
-        var ops = new IEffectOp[]
+        [Fact]
+        public void RequireBudget_AddsCondition()
         {
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)),
-            new DrawCardsOp(1),
-            new HealDamageOp(SourceSelector.Instance, new StaticAmount(200)),
-        };
-        var info = EffectClassifier.ClassifyOps(ops);
+            var block = new BuiltBlock
+            {
+                Guards = [new MinBudgetGuard(1000)],
+                Ops = [new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500))],
+            };
+            var info = EffectClassifier.ClassifyBlock(block);
 
-        info.Categories.Should().HaveCount(3);
-        info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
-        info.HasCategory(EffectCategory.Draw).Should().BeTrue();
-        info.HasCategory(EffectCategory.Heal).Should().BeTrue();
+            info.Conditions.Should().ContainSingle();
+            info.Conditions[0].Type.Should().Be("min_budget");
+            info.Conditions[0].Value.Should().Be(1000);
+            info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
+        }
+
+        [Fact]
+        public void RequireMaxBudget_AddsCondition()
+        {
+            var block = new BuiltBlock { Guards = [new MaxBudgetGuard(2000)] };
+            var info = EffectClassifier.ClassifyBlock(block);
+
+            info.Conditions.Should().ContainSingle();
+            info.Conditions[0].Type.Should().Be("max_budget");
+            info.Conditions[0].Value.Should().Be(2000);
+        }
+
+        [Fact]
+        public void ResourceCountGuard_AddsCondition()
+        {
+            var block = new BuiltBlock
+            {
+                Guards =
+                [
+                    new ResourceCountGuard(
+                        owner: "myself", zone: null, faction: "SHE",
+                        cardTypes: null, subtypes: null, cardIds: null, min: 3, max: null),
+                ],
+            };
+            var info = EffectClassifier.ClassifyBlock(block);
+
+            info.Conditions.Should().ContainSingle();
+            info.Conditions[0].Type.Should().Be("resource_count");
+            info.Conditions[0].Owner.Should().Be("myself");
+            info.Conditions[0].Faction.Should().Be("SHE");
+            info.Conditions[0].Min.Should().Be(3);
+            info.Conditions[0].Max.Should().BeNull();
+        }
+
+        [Fact]
+        public void ResourceCountGuard_MaxOnly_PreservesShape()
+        {
+            var block = new BuiltBlock
+            {
+                Guards =
+                [
+                    new ResourceCountGuard(
+                        owner: "myself", zone: null, faction: "Tuners",
+                        cardTypes: null, subtypes: null, cardIds: null, min: null, max: 3),
+                ],
+            };
+            var info = EffectClassifier.ClassifyBlock(block);
+
+            info.Conditions.Should().ContainSingle();
+            info.Conditions[0].Type.Should().Be("resource_count");
+            info.Conditions[0].Min.Should().BeNull();
+            info.Conditions[0].Max.Should().Be(3);
+        }
     }
 
-    /// <summary>
-    /// Same category should not be duplicated.
-    /// </summary>
-    [Fact]
-    public void Classify_NoDuplicateCategories()
+    /// <summary>Tests classification of branching ops.</summary>
+    public class Branching
     {
-        var ops = new IEffectOp[]
+        [Fact]
+        public void BranchOnChoice_MergesCategories()
         {
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100)),
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)),
-        };
-        var info = EffectClassifier.ClassifyOps(ops);
+            var branches = new Dictionary<string, List<IEffectOp>>
+            {
+                ["attack"] = [new DealDamageOp(SourceSelector.Instance, new StaticAmount(200))],
+                ["heal"] = [new HealDamageOp(SourceSelector.Instance, new StaticAmount(300))],
+            };
+            var ops = new IEffectOp[] { new BranchOnChoiceOp(branches) };
+            var info = EffectClassifier.ClassifyOps(ops);
 
-        info.Categories.Should().ContainSingle();
+            info.HasBranch.Should().BeTrue();
+            info.HasCategory(EffectCategory.Heal).Should().BeTrue();
+        }
+
+        [Fact]
+        public void IfCondition_MergesThenBranch()
+        {
+            var then = new List<IEffectOp> { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
+            var ops = new IEffectOp[] { new IfConditionOp(_ => true, then) };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
+        }
+    }
+
+    /// <summary>Tests classification of CustomFnTagged ops via their metadata.</summary>
+    public class CustomFnTaggedOps
+    {
+        [Fact]
+        public void UsesMetadata()
+        {
+            var ops = new IEffectOp[]
+            {
+                new CustomFnTaggedOp(_ => { })
+                {
+                    Categories = [EffectCategory.Draw, EffectCategory.Search],
+                    Target = EffectTargetType.Myself,
+                    Zone = Zones.Backend,
+                }
+            };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.HasCategory(EffectCategory.Draw).Should().BeTrue();
+            info.HasCategory(EffectCategory.Search).Should().BeTrue();
+            info.TargetType.Should().Be(EffectTargetType.Myself);
+            info.TargetZone.Should().Be(Zones.Backend);
+        }
+    }
+
+    /// <summary>Tests classification across multiple ops in a pipeline.</summary>
+    public class MultipleOps
+    {
+        [Fact]
+        public void CombinesCategories()
+        {
+            var ops = new IEffectOp[]
+            {
+                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)),
+                new DrawCardsOp(1),
+                new HealDamageOp(SourceSelector.Instance, new StaticAmount(200)),
+            };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.Categories.Should().HaveCount(3);
+            info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
+            info.HasCategory(EffectCategory.Draw).Should().BeTrue();
+            info.HasCategory(EffectCategory.Heal).Should().BeTrue();
+        }
+
+        /// <summary>
+        /// Same category should not be duplicated.
+        /// </summary>
+        [Fact]
+        public void NoDuplicateCategories()
+        {
+            var ops = new IEffectOp[]
+            {
+                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100)),
+                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)),
+            };
+            var info = EffectClassifier.ClassifyOps(ops);
+
+            info.Categories.Should().ContainSingle();
+        }
     }
 }
