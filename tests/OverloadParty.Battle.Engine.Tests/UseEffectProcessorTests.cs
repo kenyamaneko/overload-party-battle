@@ -7,231 +7,241 @@ namespace OverloadParty.Battle.Tests.Engine;
 
 public class UseEffectProcessorTests
 {
-    private readonly TestCardCache _cc = new();
-    private readonly Game _game = TestFactory.MakeGame();
-
-    public UseEffectProcessorTests()
+    /// <summary>Shared setup for UseEffectProcessor tests (card cache with a compute and platform card, and a game).</summary>
+    public abstract class Base
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
-        _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
-    }
+        protected readonly TestCardCache _cc = new();
+        protected readonly Game _game = TestFactory.MakeGame();
 
-    // ─── Resource effect ────────────────────────────────────────
-
-    [Fact]
-    public void Process_ResourceEffect_ExecutesHandlerAndSetsFlag()
-    {
-        bool handlerCalled = false;
-        var reg = new EffectRegistry();
-        reg.Register("TST-0001", TriggerType.Ignition, ctx =>
+        protected Base()
         {
-            handlerCalled = true;
-            return new EffectResult();
-        });
-
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
-        state.Player1Field.Frontend[0] = resource;
-
-        var req = new UseEffectRequest { InstanceID = "r_1" };
-        UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
-
-        handlerCalled.Should().BeTrue();
-        resource.EffectUsedThisTurn.Should().BeTrue();
+            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
+            _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
+        }
     }
 
-    [Fact]
-    public void Process_ResourceEffect_GeneratesUseEffectEvent()
+    /// <summary>Tests for igniting a resource's effect.</summary>
+    public class ResourceEffect : Base
     {
-        var reg = new EffectRegistry();
-        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
-
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
-
-        var req = new UseEffectRequest { InstanceID = "r_1" };
-        var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
-
-        result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseEffect);
-    }
-
-    [Fact]
-    public void Process_NoUseEffect_Throws()
-    {
-        var reg = new EffectRegistry(); // nothing registered
-
-        var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
-
-        var req = new UseEffectRequest { InstanceID = "r_1" };
-        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
-    }
-
-    [Fact]
-    public void Process_DormantResource_Throws()
-    {
-        var reg = new EffectRegistry();
-        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
-
-        var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
-        resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
-        state.Player1Field.Frontend[0] = resource;
-
-        var req = new UseEffectRequest { InstanceID = "r_1" };
-        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
-    }
-
-    [Fact]
-    public void Process_EffectAlreadyUsedThisTurn_Throws()
-    {
-        var reg = new EffectRegistry();
-        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
-
-        var state = TestFactory.MakeGameState(turn: 2);
-        var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
-        resource.EffectUsedThisTurn = true;
-        state.Player1Field.Frontend[0] = resource;
-
-        var req = new UseEffectRequest { InstanceID = "r_1" };
-        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*already used*");
-    }
-
-    [Fact]
-    public void Process_ResourceNotFound_Throws()
-    {
-        var reg = new EffectRegistry();
-        reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
-
-        var state = TestFactory.MakeGameState(turn: 2);
-        // Nothing on the field
-
-        var req = new UseEffectRequest { InstanceID = "nonexistent" };
-        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
-
-        act.Should().Throw<GameRuleException>().WithMessage("*not found*");
-    }
-
-    // ─── Resource effect with target ────────────────────────────
-
-    [Fact]
-    public void Process_WithTargetOnOwnField_PassesTargetToHandler()
-    {
-        DeployedResource? capturedTarget = null;
-        var reg = new EffectRegistry();
-        reg.Register("TST-0001", TriggerType.Ignition, ctx =>
+        [Fact]
+        public void Process_ResourceEffect_ExecutesHandlerAndSetsFlag()
         {
-            capturedTarget = ctx.Target;
-            return new EffectResult();
-        });
+            bool handlerCalled = false;
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, ctx =>
+            {
+                handlerCalled = true;
+                return new EffectResult();
+            });
 
-        var state = TestFactory.MakeGameState(turn: 2);
-        var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
-        var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_2");
-        state.Player1Field.Frontend[0] = source;
-        state.Player1Field.Frontend[1] = target;
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+            state.Player1Field.Frontend[0] = resource;
 
-        var req = new UseEffectRequest { InstanceID = "r_1", TargetInstanceID = "r_2" };
-        UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseEffectRequest { InstanceID = "r_1" };
+            UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-        capturedTarget.Should().NotBeNull();
-        capturedTarget!.InstanceID.Should().Be("r_2");
+            handlerCalled.Should().BeTrue();
+            resource.EffectUsedThisTurn.Should().BeTrue();
+        }
+
+        [Fact]
+        public void Process_ResourceEffect_GeneratesUseEffectEvent()
+        {
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
+
+            var req = new UseEffectRequest { InstanceID = "r_1" };
+            var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseEffect);
+        }
+
+        [Fact]
+        public void Process_NoUseEffect_Throws()
+        {
+            var reg = new EffectRegistry(); // nothing registered
+
+            var state = TestFactory.MakeGameState(turn: 2);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
+
+            var req = new UseEffectRequest { InstanceID = "r_1" };
+            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
+        }
+
+        [Fact]
+        public void Process_DormantResource_Throws()
+        {
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
+
+            var state = TestFactory.MakeGameState(turn: 2);
+            var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+            resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+            state.Player1Field.Frontend[0] = resource;
+
+            var req = new UseEffectRequest { InstanceID = "r_1" };
+            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
+        }
+
+        [Fact]
+        public void Process_EffectAlreadyUsedThisTurn_Throws()
+        {
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
+
+            var state = TestFactory.MakeGameState(turn: 2);
+            var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
+            resource.EffectUsedThisTurn = true;
+            state.Player1Field.Frontend[0] = resource;
+
+            var req = new UseEffectRequest { InstanceID = "r_1" };
+            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already used*");
+        }
+
+        [Fact]
+        public void Process_ResourceNotFound_Throws()
+        {
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
+
+            var state = TestFactory.MakeGameState(turn: 2);
+            // Nothing on the field
+
+            var req = new UseEffectRequest { InstanceID = "nonexistent" };
+            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*not found*");
+        }
     }
 
-    [Fact]
-    public void Process_WithTargetOnOpponentField_PassesTargetToHandler()
+    /// <summary>Tests for resource effects that receive a target via the request.</summary>
+    public class ResourceEffectWithTarget : Base
     {
-        DeployedResource? capturedTarget = null;
-        var reg = new EffectRegistry();
-        reg.Register("TST-0001", TriggerType.Ignition, ctx =>
+        [Fact]
+        public void Process_WithTargetOnOwnField_PassesTargetToHandler()
         {
-            capturedTarget = ctx.Target;
-            return new EffectResult();
-        });
+            DeployedResource? capturedTarget = null;
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, ctx =>
+            {
+                capturedTarget = ctx.Target;
+                return new EffectResult();
+            });
 
-        var state = TestFactory.MakeGameState(turn: 2);
-        var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
-        var oppTarget = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_r");
-        state.Player1Field.Frontend[0] = source;
-        state.Player2Field.Frontend[0] = oppTarget;
+            var state = TestFactory.MakeGameState(turn: 2);
+            var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
+            var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_2");
+            state.Player1Field.Frontend[0] = source;
+            state.Player1Field.Frontend[1] = target;
 
-        var req = new UseEffectRequest { InstanceID = "r_1", TargetInstanceID = "opp_r" };
-        UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseEffectRequest { InstanceID = "r_1", TargetInstanceID = "r_2" };
+            UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-        capturedTarget!.InstanceID.Should().Be("opp_r");
+            capturedTarget.Should().NotBeNull();
+            capturedTarget!.InstanceID.Should().Be("r_2");
+        }
+
+        [Fact]
+        public void Process_WithTargetOnOpponentField_PassesTargetToHandler()
+        {
+            DeployedResource? capturedTarget = null;
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, ctx =>
+            {
+                capturedTarget = ctx.Target;
+                return new EffectResult();
+            });
+
+            var state = TestFactory.MakeGameState(turn: 2);
+            var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
+            var oppTarget = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_r");
+            state.Player1Field.Frontend[0] = source;
+            state.Player2Field.Frontend[0] = oppTarget;
+
+            var req = new UseEffectRequest { InstanceID = "r_1", TargetInstanceID = "opp_r" };
+            UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            capturedTarget!.InstanceID.Should().Be("opp_r");
+        }
     }
 
-    // ─── Support effect ─────────────────────────────────────────
-
-    [Fact]
-    public void Process_SupportEffect_ExecutesHandlerAndSetsFlag()
+    /// <summary>Tests for igniting a support card's effect.</summary>
+    public class SupportEffect : Base
     {
-        bool handlerCalled = false;
-        var reg = new EffectRegistry();
-        reg.Register("TEST-0200", TriggerType.Ignition, ctx =>
+        [Fact]
+        public void Process_SupportEffect_ExecutesHandlerAndSetsFlag()
         {
-            handlerCalled = true;
-            return new EffectResult();
-        });
+            bool handlerCalled = false;
+            var reg = new EffectRegistry();
+            reg.Register("TEST-0200", TriggerType.Ignition, ctx =>
+            {
+                handlerCalled = true;
+                return new EffectResult();
+            });
 
-        var state = TestFactory.MakeGameState(turn: 2);
-        var support = new DeployedSupport
+            var state = TestFactory.MakeGameState(turn: 2);
+            var support = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TEST-0200",
+                FaceUp = true,
+            };
+            state.Player1Field.Support[0] = support;
+
+            var req = new UseEffectRequest { InstanceID = "sup_1" };
+            UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            handlerCalled.Should().BeTrue();
+            support.EffectUsedThisTurn.Should().BeTrue();
+        }
+
+        [Fact]
+        public void Process_SupportNoUseEffect_Throws()
         {
-            InstanceID = "sup_1",
-            CardID = "TEST-0200",
-            FaceUp = true,
-        };
-        state.Player1Field.Support[0] = support;
+            var reg = new EffectRegistry(); // 200 not registered
 
-        var req = new UseEffectRequest { InstanceID = "sup_1" };
-        UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var state = TestFactory.MakeGameState(turn: 2);
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TEST-0200",
+                FaceUp = true,
+            };
 
-        handlerCalled.Should().BeTrue();
-        support.EffectUsedThisTurn.Should().BeTrue();
-    }
+            var req = new UseEffectRequest { InstanceID = "sup_1" };
+            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-    [Fact]
-    public void Process_SupportNoUseEffect_Throws()
-    {
-        var reg = new EffectRegistry(); // 200 not registered
+            act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
+        }
 
-        var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Support[0] = new DeployedSupport
+        [Fact]
+        public void Process_SupportEffect_GeneratesUseEffectEvent()
         {
-            InstanceID = "sup_1",
-            CardID = "TEST-0200",
-            FaceUp = true,
-        };
+            var reg = new EffectRegistry();
+            reg.Register("TEST-0200", TriggerType.Ignition, _ => new EffectResult());
 
-        var req = new UseEffectRequest { InstanceID = "sup_1" };
-        var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var state = TestFactory.MakeGameState(turn: 2);
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TEST-0200",
+                FaceUp = true,
+            };
 
-        act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
-    }
+            var req = new UseEffectRequest { InstanceID = "sup_1" };
+            var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
 
-    [Fact]
-    public void Process_SupportEffect_GeneratesUseEffectEvent()
-    {
-        var reg = new EffectRegistry();
-        reg.Register("TEST-0200", TriggerType.Ignition, _ => new EffectResult());
-
-        var state = TestFactory.MakeGameState(turn: 2);
-        state.Player1Field.Support[0] = new DeployedSupport
-        {
-            InstanceID = "sup_1",
-            CardID = "TEST-0200",
-            FaceUp = true,
-        };
-
-        var req = new UseEffectRequest { InstanceID = "sup_1" };
-        var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
-
-        result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseEffect);
+            result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseEffect);
+        }
     }
 }
