@@ -916,6 +916,36 @@ namespace OverloadParty.GameState
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UseInitiativeEventData
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("productId")]
+        public string ProductId { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("initiativeId")]
+        public string InitiativeId { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("kind")]
+        public string Kind { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("initiativeName")]
+        public string InitiativeName { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("insightCost")]
+        public long InsightCost { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class PhaseChangeEventData
     {
 

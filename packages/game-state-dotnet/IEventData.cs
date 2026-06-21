@@ -10,6 +10,10 @@ public partial class ScaleUpEventData : IEventData { }
 public partial class MonetizeEventData : IEventData { }
 public partial class DiscardHandEventData : IEventData { }
 public partial class UseEffectEventData : IEventData { }
+
+/// <summary>施策使用イベントのペイロード。</summary>
+public partial class UseInitiativeEventData : IEventData { }
+
 public partial class PhaseChangeEventData : IEventData { }
 public partial class PhaseEndEventData : IEventData { }
 public partial class TurnEndEventData : IEventData { }
