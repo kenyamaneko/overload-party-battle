@@ -7,108 +7,118 @@ namespace OverloadParty.Battle.Tests.Effects;
 
 public class FieldOpTests
 {
-    private readonly TestCardCache _cc = new();
-    private readonly Game _game = TestFactory.MakeGame();
-
-    private OpContext MakeOpContext(BattleGameState state, long playerNum)
+    /// <summary>Shared setup for field-op tests (card cache, game, and op-context builder).</summary>
+    public abstract class Base
     {
-        var ctx = new EffectContext
+        protected readonly TestCardCache _cc = new();
+        protected readonly Game _game = TestFactory.MakeGame();
+
+        /// <summary>Builds an op context wired with the shared game and card cache.</summary>
+        /// <param name="state">The game state to operate on.</param>
+        /// <param name="playerNum">The acting player number.</param>
+        /// <returns>An op context for the supplied state and player.</returns>
+        protected OpContext MakeOpContext(BattleGameState state, long playerNum)
         {
-            State = state,
-            Game = _game,
-            PlayerNum = playerNum,
-            CardCache = _cc,
-            Effects = new EffectRegistry(),
-        };
-        return new OpContext(ctx);
+            var ctx = new EffectContext
+            {
+                State = state,
+                Game = _game,
+                PlayerNum = playerNum,
+                CardCache = _cc,
+                Effects = new EffectRegistry(),
+            };
+            return new OpContext(ctx);
+        }
     }
 
-    // ─── PeekReactiveOp ─────────────────────────────────────────
-
-    [Fact]
-    public void PeekReactiveOp_AddsPeekedBy_WhenHiddenSupportExists()
+    /// <summary>Tests for the reactive-support peek op.</summary>
+    public class PeekReactive : Base
     {
-        var state = TestFactory.MakeGameState();
-        state.Player2Field.Support[0] = new DeployedSupport
+        [Fact]
+        public void PeekReactiveOp_AddsPeekedBy_WhenHiddenSupportExists()
         {
-            InstanceID = "sup_1",
-            CardID = "TST-REACT",
-            FaceUp = false,
-        };
+            var state = TestFactory.MakeGameState();
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TST-REACT",
+                FaceUp = false,
+            };
 
-        var op = new PeekReactiveOp();
-        var opCtx = MakeOpContext(state, playerNum: 1);
+            var op = new PeekReactiveOp();
+            var opCtx = MakeOpContext(state, playerNum: 1);
 
-        op.Execute(opCtx);
+            op.Execute(opCtx);
 
-        var support = state.Player2Field.Support[0]!;
-        support.FaceUp.Should().BeFalse("peek should not flip the card face-up");
-        support.PeekedBy.Should().Contain(1, "player 1 should be in PeekedBy");
-    }
+            var support = state.Player2Field.Support[0]!;
+            support.FaceUp.Should().BeFalse("peek should not flip the card face-up");
+            support.PeekedBy.Should().Contain(1, "player 1 should be in PeekedBy");
+        }
 
-    [Fact]
-    public void PeekReactiveOp_DoesNothing_WhenNoHiddenSupport()
-    {
-        var state = TestFactory.MakeGameState();
-        state.Player2Field.Support[0] = new DeployedSupport
+        [Fact]
+        public void PeekReactiveOp_DoesNothing_WhenNoHiddenSupport()
         {
-            InstanceID = "sup_1",
-            CardID = "TST-REACT",
-            FaceUp = true,
-        };
+            var state = TestFactory.MakeGameState();
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TST-REACT",
+                FaceUp = true,
+            };
 
-        var op = new PeekReactiveOp();
-        var opCtx = MakeOpContext(state, playerNum: 1);
+            var op = new PeekReactiveOp();
+            var opCtx = MakeOpContext(state, playerNum: 1);
 
-        op.Execute(opCtx);
+            op.Execute(opCtx);
 
-        state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty();
-    }
+            state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty();
+        }
 
-    [Fact]
-    public void PeekReactiveOp_DoesNotDuplicate_WhenAlreadyPeeked()
-    {
-        var state = TestFactory.MakeGameState();
-        state.Player2Field.Support[0] = new DeployedSupport
+        [Fact]
+        public void PeekReactiveOp_DoesNotDuplicate_WhenAlreadyPeeked()
         {
-            InstanceID = "sup_1",
-            CardID = "TST-REACT",
-            FaceUp = false,
-            PeekedBy = [1],
-        };
+            var state = TestFactory.MakeGameState();
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TST-REACT",
+                FaceUp = false,
+                PeekedBy = [1],
+            };
 
-        var op = new PeekReactiveOp();
-        var opCtx = MakeOpContext(state, playerNum: 1);
+            var op = new PeekReactiveOp();
+            var opCtx = MakeOpContext(state, playerNum: 1);
 
-        op.Execute(opCtx);
+            op.Execute(opCtx);
 
-        state.Player2Field.Support[0]!.PeekedBy.Should().HaveCount(1,
-            "should not add duplicate player number");
-    }
+            state.Player2Field.Support[0]!.PeekedBy.Should().HaveCount(1,
+                "should not add duplicate player number");
+        }
 
-    [Fact]
-    public void PeekReactiveOp_PeeksFirstHidden_SkippingFaceUp()
-    {
-        var state = TestFactory.MakeGameState();
-        state.Player2Field.Support[0] = new DeployedSupport
+        [Fact]
+        public void PeekReactiveOp_PeeksFirstHidden_SkippingFaceUp()
         {
-            InstanceID = "sup_visible",
-            CardID = "TST-REACT-A",
-            FaceUp = true,
-        };
-        state.Player2Field.Support[1] = new DeployedSupport
-        {
-            InstanceID = "sup_hidden",
-            CardID = "TST-REACT-B",
-            FaceUp = false,
-        };
+            var state = TestFactory.MakeGameState();
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_visible",
+                CardID = "TST-REACT-A",
+                FaceUp = true,
+            };
+            state.Player2Field.Support[1] = new DeployedSupport
+            {
+                InstanceID = "sup_hidden",
+                CardID = "TST-REACT-B",
+                FaceUp = false,
+            };
 
-        var op = new PeekReactiveOp();
-        var opCtx = MakeOpContext(state, playerNum: 1);
+            var op = new PeekReactiveOp();
+            var opCtx = MakeOpContext(state, playerNum: 1);
 
-        op.Execute(opCtx);
+            op.Execute(opCtx);
 
-        state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty("face-up card should not be peeked");
-        state.Player2Field.Support[1]!.PeekedBy.Should().Contain(1);
+            state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty("face-up card should not be peeked");
+            state.Player2Field.Support[1]!.PeekedBy.Should().Contain(1);
+        }
     }
 }
