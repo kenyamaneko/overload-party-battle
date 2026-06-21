@@ -161,6 +161,32 @@ public class AttackProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
     }
 
+    // ─── 6b. cannot_attack attacker → throws ─────
+
+    [Fact]
+    public void Process_AttackerCannotAttack_Throws()
+    {
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+
+        var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+        attacker.TemporaryEffects.Add(new TemporaryEffect
+        {
+            EffectType = BuffTypes.CannotAttack,
+            Value = 1,
+            Duration = "this_turn",
+            SourceID = "test",
+        });
+        state.Player1Field.Frontend[0] = attacker;
+
+        var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+        state.Player2Field.Frontend[0] = defender;
+
+        var act = () => AttackProcessor.Process(
+            state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
+
+        act.Should().Throw<GameRuleException>().WithMessage("*cannot_attack*");
+    }
+
     // ─── 7-8. Attacker or defender face-down → throws ──────
 
     [Theory]
