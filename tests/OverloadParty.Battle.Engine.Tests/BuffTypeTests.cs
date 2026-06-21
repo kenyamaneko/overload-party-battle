@@ -8,255 +8,264 @@ namespace OverloadParty.Battle.Tests.Effects;
 
 public class BuffTypeTests
 {
-    private readonly TestCardCache _cc = new();
-    private readonly Game _game = TestFactory.MakeGame();
-
-    public BuffTypeTests()
+    /// <summary>Shared setup for buff-type effect tests (card cache, game, and an OpContext factory).</summary>
+    public abstract class Base
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400));
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-ATK", tp: 600, av: 1400, slaPenalty: 400, name: "Attacker"));
+        protected readonly TestCardCache _cc = new();
+        protected readonly Game _game = TestFactory.MakeGame();
+
+        protected Base()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400));
+            _cc.Add(TestFactory.ComputeCard(cardId: "TST-ATK", tp: 600, av: 1400, slaPenalty: 400, name: "Attacker"));
+        }
+
+        /// <summary>Builds an OpContext over the given state with the shared card cache and game.</summary>
+        protected OpContext MakeOpContext(BattleGameState state, long playerNum, DeployedResource? source = null, DeployedResource? target = null)
+        {
+            var ctx = new EffectContext
+            {
+                State = state,
+                Game = _game,
+                PlayerNum = playerNum,
+                Source = source,
+                Target = target,
+                CardCache = _cc,
+                Effects = new EffectRegistry(),
+            };
+            return new OpContext(ctx);
+        }
+
+        /// <summary>
+        /// Simple ISelector that returns a fixed list of resources.
+        /// </summary>
+        protected class FixedSelector(List<DeployedResource> targets) : ISelector
+        {
+            public List<DeployedResource> Select(OpContext ctx) => targets;
+        }
     }
 
-    // ─── Helper: build OpContext with a fixed target list ─────────────
-
-    private OpContext MakeOpContext(BattleGameState state, long playerNum, DeployedResource? source = null, DeployedResource? target = null)
+    /// <summary>Tests for the incident_immune buff skipping incident damage entirely.</summary>
+    public class IncidentImmune : Base
     {
-        var ctx = new EffectContext
+        [Fact]
+        public void IncidentDamageOp_SkipsResource_WithIncidentImmune()
         {
-            State = state,
-            Game = _game,
-            PlayerNum = playerNum,
-            Source = source,
-            Target = target,
-            CardCache = _cc,
-            Effects = new EffectRegistry(),
-        };
-        return new OpContext(ctx);
+            var state = TestFactory.MakeGameState();
+            var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
+            resource.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "incident_immune",
+                Duration = "until_end_of_turn",
+            });
+            state.Player1Field.Frontend[0] = resource;
+
+            var selector = new FixedSelector([resource]);
+            var op = new IncidentDamageOp(selector, new StaticAmount(500));
+            var opCtx = MakeOpContext(state, playerNum: 1);
+
+            op.Execute(opCtx);
+
+            resource.Damage.Should().Be(0, "incident_immune should skip the resource entirely");
+        }
     }
 
-    // ─── incident_immune ─────────────────────────────────────────────
-
-    [Fact]
-    public void IncidentDamageOp_SkipsResource_WithIncidentImmune()
+    /// <summary>Tests for the incident_reduction buff reducing incident damage (flat and percent modes).</summary>
+    public class IncidentReduction : Base
     {
-        var state = TestFactory.MakeGameState();
-        var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
-        resource.TemporaryEffects.Add(new TemporaryEffect
+        [Fact]
+        public void IncidentDamageOp_ReducesDamage_ByIncidentReduction()
         {
-            EffectType = "incident_immune",
-            Duration = "until_end_of_turn",
-        });
-        state.Player1Field.Frontend[0] = resource;
+            var state = TestFactory.MakeGameState();
+            var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
+            resource.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "incident_reduction",
+                Value = 200,
+                Duration = "until_end_of_turn",
+            });
+            state.Player1Field.Frontend[0] = resource;
 
-        var selector = new FixedSelector([resource]);
-        var op = new IncidentDamageOp(selector, new StaticAmount(500));
-        var opCtx = MakeOpContext(state, playerNum: 1);
+            var selector = new FixedSelector([resource]);
+            var op = new IncidentDamageOp(selector, new StaticAmount(500));
+            var opCtx = MakeOpContext(state, playerNum: 1);
 
-        op.Execute(opCtx);
+            op.Execute(opCtx);
 
-        resource.Damage.Should().Be(0, "incident_immune should skip the resource entirely");
+            resource.Damage.Should().Be(300, "500 - 200 reduction = 300");
+        }
+
+        [Fact]
+        public void IncidentDamageOp_ReducesToZero_WhenReductionExceedsDamage()
+        {
+            var state = TestFactory.MakeGameState();
+            var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
+            resource.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "incident_reduction",
+                Value = 800,
+                Duration = "until_end_of_turn",
+            });
+            state.Player1Field.Frontend[0] = resource;
+
+            var selector = new FixedSelector([resource]);
+            var op = new IncidentDamageOp(selector, new StaticAmount(500));
+            var opCtx = MakeOpContext(state, playerNum: 1);
+
+            op.Execute(opCtx);
+
+            resource.Damage.Should().Be(0, "reduction exceeds damage so effective damage is clamped to 0");
+        }
+
+        [Fact]
+        public void IncidentDamageOp_HalvesDamage_WithPercentReduction()
+        {
+            var state = TestFactory.MakeGameState();
+            var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
+            resource.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "incident_reduction",
+                Value = 50,
+                Mode = "percent",
+                Duration = "until_end_of_turn",
+            });
+            state.Player1Field.Frontend[0] = resource;
+
+            var selector = new FixedSelector([resource]);
+            var op = new IncidentDamageOp(selector, new StaticAmount(500));
+            var opCtx = MakeOpContext(state, playerNum: 1);
+
+            op.Execute(opCtx);
+
+            resource.Damage.Should().Be(250, "500 * (100 - 50) / 100 = 250");
+        }
+
+        [Fact]
+        public void IncidentDamageOp_FlatThenPercent_AppliedInOrder()
+        {
+            var state = TestFactory.MakeGameState();
+            var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
+            resource.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "incident_reduction",
+                Value = 100,
+                Duration = "until_end_of_turn",
+            });
+            resource.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "incident_reduction",
+                Value = 50,
+                Mode = "percent",
+                Duration = "until_end_of_turn",
+            });
+            state.Player1Field.Frontend[0] = resource;
+
+            var selector = new FixedSelector([resource]);
+            var op = new IncidentDamageOp(selector, new StaticAmount(500));
+            var opCtx = MakeOpContext(state, playerNum: 1);
+
+            op.Execute(opCtx);
+
+            resource.Damage.Should().Be(200, "(500 - 100) * (100 - 50) / 100 = 200");
+        }
     }
 
-    // ─── incident_reduction ──────────────────────────────────────────
-
-    [Fact]
-    public void IncidentDamageOp_ReducesDamage_ByIncidentReduction()
+    /// <summary>Tests for the attack_damage_reduction buff reducing combat damage.</summary>
+    public class AttackDamageReduction : Base
     {
-        var state = TestFactory.MakeGameState();
-        var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
-        resource.TemporaryEffects.Add(new TemporaryEffect
+        [Fact]
+        public void AttackDamage_ReducedByAttackDamageReduction()
         {
-            EffectType = "incident_reduction",
-            Value = 200,
-            Duration = "until_end_of_turn",
-        });
-        state.Player1Field.Frontend[0] = resource;
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
-        var selector = new FixedSelector([resource]);
-        var op = new IncidentDamageOp(selector, new StaticAmount(500));
-        var opCtx = MakeOpContext(state, playerNum: 1);
+            var attacker = TestFactory.MakeResource(
+                cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxTP: 600, currentTP: 600);
+            state.Player1Field.Frontend[0] = attacker;
 
-        op.Execute(opCtx);
+            var defender = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+            defender.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "attack_damage_reduction",
+                Value = 200,
+                Duration = "until_end_of_turn",
+            });
+            state.Player2Field.Frontend[0] = defender;
 
-        resource.Damage.Should().Be(300, "500 - 200 reduction = 300");
+            var req = new AttackRequest { AttackerInstanceID = "atk_1", TargetInstanceID = "def_1" };
+            AttackProcessor.Process(state, _game, 1, req, _cc, new EffectRegistry());
+
+            defender.Damage.Should().Be(400, "600 TP - 200 reduction = 400 damage");
+        }
+
+        [Fact]
+        public void AttackDamage_ClampedToZero_WhenReductionExceedsTP()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+
+            var attacker = TestFactory.MakeResource(
+                cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxTP: 600, currentTP: 600);
+            state.Player1Field.Frontend[0] = attacker;
+
+            var defender = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+            defender.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "attack_damage_reduction",
+                Value = 1000,
+                Duration = "until_end_of_turn",
+            });
+            state.Player2Field.Frontend[0] = defender;
+
+            var req = new AttackRequest { AttackerInstanceID = "atk_1", TargetInstanceID = "def_1" };
+            AttackProcessor.Process(state, _game, 1, req, _cc, new EffectRegistry());
+
+            defender.Damage.Should().Be(0, "reduction exceeds TP so damage is clamped to 0");
+        }
     }
 
-    [Fact]
-    public void IncidentDamageOp_ReducesToZero_WhenReductionExceedsDamage()
+    /// <summary>Tests for the sla_penalty_reduction buff reducing budget loss on destroy.</summary>
+    public class SLAPenaltyReduction : Base
     {
-        var state = TestFactory.MakeGameState();
-        var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
-        resource.TemporaryEffects.Add(new TemporaryEffect
+        [Fact]
+        public void SLAPenalty_ReducedBySLAPenaltyReduction()
         {
-            EffectType = "incident_reduction",
-            Value = 800,
-            Duration = "until_end_of_turn",
-        });
-        state.Player1Field.Frontend[0] = resource;
+            var state = TestFactory.MakeGameState(p1Budget: 5000);
 
-        var selector = new FixedSelector([resource]);
-        var op = new IncidentDamageOp(selector, new StaticAmount(500));
-        var opCtx = MakeOpContext(state, playerNum: 1);
+            var resource = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "r1", faceUp: true);
+            resource.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "sla_penalty_reduction",
+                Value = 100,
+                Duration = "until_end_of_turn",
+            });
+            state.Player1Field.Frontend[0] = resource;
 
-        op.Execute(opCtx);
+            ResourceHelpers.DestroyResource(state, 1, state.Player1Field, resource, _cc);
 
-        resource.Damage.Should().Be(0, "reduction exceeds damage so effective damage is clamped to 0");
-    }
+            // Card SLAPenalty=400, reduction=100 → effective penalty=300
+            state.Player1Budget.Should().Be(4700, "5000 - (400 - 100) = 4700");
+        }
 
-    // ─── incident_reduction (percent mode) ─────────────────────────────
-
-    [Fact]
-    public void IncidentDamageOp_HalvesDamage_WithPercentReduction()
-    {
-        var state = TestFactory.MakeGameState();
-        var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
-        resource.TemporaryEffects.Add(new TemporaryEffect
+        [Fact]
+        public void SLAPenalty_ClampedToZero_WhenReductionExceedsPenalty()
         {
-            EffectType = "incident_reduction",
-            Value = 50,
-            Mode = "percent",
-            Duration = "until_end_of_turn",
-        });
-        state.Player1Field.Frontend[0] = resource;
+            var state = TestFactory.MakeGameState(p1Budget: 5000);
 
-        var selector = new FixedSelector([resource]);
-        var op = new IncidentDamageOp(selector, new StaticAmount(500));
-        var opCtx = MakeOpContext(state, playerNum: 1);
+            var resource = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "r1", faceUp: true);
+            resource.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = "sla_penalty_reduction",
+                Value = 500,
+                Duration = "until_end_of_turn",
+            });
+            state.Player1Field.Frontend[0] = resource;
 
-        op.Execute(opCtx);
+            ResourceHelpers.DestroyResource(state, 1, state.Player1Field, resource, _cc);
 
-        resource.Damage.Should().Be(250, "500 * (100 - 50) / 100 = 250");
-    }
-
-    [Fact]
-    public void IncidentDamageOp_FlatThenPercent_AppliedInOrder()
-    {
-        var state = TestFactory.MakeGameState();
-        var resource = TestFactory.MakeResource(instanceId: "r1", damage: 0);
-        resource.TemporaryEffects.Add(new TemporaryEffect
-        {
-            EffectType = "incident_reduction",
-            Value = 100,
-            Duration = "until_end_of_turn",
-        });
-        resource.TemporaryEffects.Add(new TemporaryEffect
-        {
-            EffectType = "incident_reduction",
-            Value = 50,
-            Mode = "percent",
-            Duration = "until_end_of_turn",
-        });
-        state.Player1Field.Frontend[0] = resource;
-
-        var selector = new FixedSelector([resource]);
-        var op = new IncidentDamageOp(selector, new StaticAmount(500));
-        var opCtx = MakeOpContext(state, playerNum: 1);
-
-        op.Execute(opCtx);
-
-        resource.Damage.Should().Be(200, "(500 - 100) * (100 - 50) / 100 = 200");
-    }
-
-    // ─── attack_damage_reduction ─────────────────────────────────────
-
-    [Fact]
-    public void AttackDamage_ReducedByAttackDamageReduction()
-    {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
-
-        var attacker = TestFactory.MakeResource(
-            cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxTP: 600, currentTP: 600);
-        state.Player1Field.Frontend[0] = attacker;
-
-        var defender = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "def_1", faceUp: true);
-        defender.TemporaryEffects.Add(new TemporaryEffect
-        {
-            EffectType = "attack_damage_reduction",
-            Value = 200,
-            Duration = "until_end_of_turn",
-        });
-        state.Player2Field.Frontend[0] = defender;
-
-        var req = new AttackRequest { AttackerInstanceID = "atk_1", TargetInstanceID = "def_1" };
-        AttackProcessor.Process(state, _game, 1, req, _cc, new EffectRegistry());
-
-        defender.Damage.Should().Be(400, "600 TP - 200 reduction = 400 damage");
-    }
-
-    [Fact]
-    public void AttackDamage_ClampedToZero_WhenReductionExceedsTP()
-    {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
-
-        var attacker = TestFactory.MakeResource(
-            cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxTP: 600, currentTP: 600);
-        state.Player1Field.Frontend[0] = attacker;
-
-        var defender = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "def_1", faceUp: true);
-        defender.TemporaryEffects.Add(new TemporaryEffect
-        {
-            EffectType = "attack_damage_reduction",
-            Value = 1000,
-            Duration = "until_end_of_turn",
-        });
-        state.Player2Field.Frontend[0] = defender;
-
-        var req = new AttackRequest { AttackerInstanceID = "atk_1", TargetInstanceID = "def_1" };
-        AttackProcessor.Process(state, _game, 1, req, _cc, new EffectRegistry());
-
-        defender.Damage.Should().Be(0, "reduction exceeds TP so damage is clamped to 0");
-    }
-
-    // ─── sla_penalty_reduction ───────────────────────────────────────
-
-    [Fact]
-    public void SLAPenalty_ReducedBySLAPenaltyReduction()
-    {
-        var state = TestFactory.MakeGameState(p1Budget: 5000);
-
-        var resource = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "r1", faceUp: true);
-        resource.TemporaryEffects.Add(new TemporaryEffect
-        {
-            EffectType = "sla_penalty_reduction",
-            Value = 100,
-            Duration = "until_end_of_turn",
-        });
-        state.Player1Field.Frontend[0] = resource;
-
-        ResourceHelpers.DestroyResource(state, 1, state.Player1Field, resource, _cc);
-
-        // Card SLAPenalty=400, reduction=100 → effective penalty=300
-        state.Player1Budget.Should().Be(4700, "5000 - (400 - 100) = 4700");
-    }
-
-    [Fact]
-    public void SLAPenalty_ClampedToZero_WhenReductionExceedsPenalty()
-    {
-        var state = TestFactory.MakeGameState(p1Budget: 5000);
-
-        var resource = TestFactory.MakeResource(
-            cardId: "TST-0001", instanceId: "r1", faceUp: true);
-        resource.TemporaryEffects.Add(new TemporaryEffect
-        {
-            EffectType = "sla_penalty_reduction",
-            Value = 500,
-            Duration = "until_end_of_turn",
-        });
-        state.Player1Field.Frontend[0] = resource;
-
-        ResourceHelpers.DestroyResource(state, 1, state.Player1Field, resource, _cc);
-
-        state.Player1Budget.Should().Be(5000, "reduction exceeds penalty so no budget loss");
-    }
-
-    /// <summary>
-    /// Simple ISelector that returns a fixed list of resources.
-    /// </summary>
-    private class FixedSelector(List<DeployedResource> targets) : ISelector
-    {
-        public List<DeployedResource> Select(OpContext ctx) => targets;
+            state.Player1Budget.Should().Be(5000, "reduction exceeds penalty so no budget loss");
+        }
     }
 }
