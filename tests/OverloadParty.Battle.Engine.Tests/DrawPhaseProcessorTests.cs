@@ -6,88 +6,100 @@ namespace OverloadParty.Battle.Tests.Engine;
 
 public class DrawPhaseProcessorTests
 {
-    private readonly TestCardCache _cc = new();
-    private readonly Game _game = TestFactory.MakeGame();
-
-    public DrawPhaseProcessorTests()
+    /// <summary>DrawPhaseProcessor.Process テストの共有 setup (カードキャッシュ・ゲーム)。</summary>
+    public abstract class Base
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        protected readonly TestCardCache _cc = new();
+        protected readonly Game _game = TestFactory.MakeGame();
+
+        protected Base()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        }
     }
 
-    // ─── Normal draw ─────────────────────────────────────────
-
-    [Fact]
-    public void Process_DrawPhase_DrawsCardAndAdvancesToMain()
+    /// <summary>Tests for DrawPhaseProcessor.Process — normal draw advances to Main.</summary>
+    public class NormalDraw : Base
     {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001", ArtNo = 0 });
+        [Fact]
+        public void DrawsCardAndAdvancesToMain()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001", ArtNo = 0 });
 
-        var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
+            var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
-        result.Should().BeNull();
-        state.CurrentPhase.Should().Be(Phase.Main);
-        state.Player1Hand.Should().HaveCount(1);
-        state.Player1Repository.Should().BeEmpty();
+            result.Should().BeNull();
+            state.CurrentPhase.Should().Be(Phase.Main);
+            state.Player1Hand.Should().HaveCount(1);
+            state.Player1Repository.Should().BeEmpty();
+        }
     }
 
-    // ─── Not draw phase → no-op ──────────────────────────────
-
-    [Fact]
-    public void Process_NotDrawPhase_ReturnsNull_NoStateChange()
+    /// <summary>Tests for DrawPhaseProcessor.Process — no-op when not in the draw phase.</summary>
+    public class NotDrawPhase : Base
     {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+        [Fact]
+        public void ReturnsNull_NoStateChange()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
 
-        var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
+            var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
-        result.Should().BeNull();
-        state.CurrentPhase.Should().Be(Phase.Main);
-        state.Player1Hand.Should().BeEmpty();
+            result.Should().BeNull();
+            state.CurrentPhase.Should().Be(Phase.Main);
+            state.Player1Hand.Should().BeEmpty();
+        }
     }
 
-    // ─── Repository out ──────────────────────────────────────
-
-    [Fact]
-    public void Process_EmptyRepository_ReturnsGameOver()
+    /// <summary>Tests for DrawPhaseProcessor.Process — empty repository ends the game.</summary>
+    public class EmptyRepository : Base
     {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
-        // No cards in repository
+        [Fact]
+        public void ReturnsGameOver()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            // No cards in repository
 
-        var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
+            var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
-        result.Should().NotBeNull();
-        result!.WinnerNum.Should().Be(2);
-        result.Reason.Should().Be("repository_out");
+            result.Should().NotBeNull();
+            result!.WinnerNum.Should().Be(2);
+            result.Reason.Should().Be("repository_out");
+        }
     }
 
-    // ─── Deploy countdown ────────────────────────────────────
-
-    [Fact]
-    public void Process_DecrementsDeployCountdown()
+    /// <summary>Tests for DrawPhaseProcessor.Process — deploy countdown decrements and flips on completion.</summary>
+    public class DeployCountdown : Base
     {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
-        var resource = TestFactory.MakeResource(faceUp: false, deployLeft: 2);
-        state.Player1Field.Frontend[0] = resource;
+        [Fact]
+        public void Decrements()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            var resource = TestFactory.MakeResource(faceUp: false, deployLeft: 2);
+            state.Player1Field.Frontend[0] = resource;
 
-        DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
+            DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
-        resource.DeployingTurnsLeft.Should().Be(1);
-        resource.FaceUp.Should().BeFalse();
-    }
+            resource.DeployingTurnsLeft.Should().Be(1);
+            resource.FaceUp.Should().BeFalse();
+        }
 
-    [Fact]
-    public void Process_DeployCountdownReachesZero_FlipsFaceUp()
-    {
-        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
-        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
-        var resource = TestFactory.MakeResource(faceUp: false, deployLeft: 1);
-        state.Player1Field.Frontend[0] = resource;
+        [Fact]
+        public void ReachesZero_FlipsFaceUp()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            var resource = TestFactory.MakeResource(faceUp: false, deployLeft: 1);
+            state.Player1Field.Frontend[0] = resource;
 
-        DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
+            DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
 
-        resource.DeployingTurnsLeft.Should().Be(0);
-        resource.FaceUp.Should().BeTrue();
-        state.Player1HasOperated.Should().BeTrue();
+            resource.DeployingTurnsLeft.Should().Be(0);
+            resource.FaceUp.Should().BeTrue();
+            state.Player1HasOperated.Should().BeTrue();
+        }
     }
 }
