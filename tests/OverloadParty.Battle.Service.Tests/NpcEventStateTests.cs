@@ -14,283 +14,290 @@ namespace OverloadParty.Battle.Tests.Service;
 /// </summary>
 public class NpcEventStateTests
 {
-    private readonly FakeGameRepository _repo = new();
-    private readonly GameService _svc;
-    private readonly ICardCache _cc;
-
-    public NpcEventStateTests()
+    /// <summary>Shared setup for NPC event-state tests (repository, NPC-capable service, and turn-driving helpers).</summary>
+    public abstract class Base
     {
-        var (effects, cc) = TestEffectSetup.Get();
-        _cc = cc;
-        var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog(TestFactory.StandardInitiatives()));
+        protected readonly FakeGameRepository _repo = new();
+        protected readonly GameService _svc;
+        protected readonly ICardCache _cc;
 
-        var npcDataDir = FindNpcDataDir()
-            ?? throw new FileNotFoundException("NPC data directory not found");
-        var aiConfigs = AiConfigLoader.LoadAll(npcDataDir);
-
-        var npcRunner = new NpcRunner(engine, _repo, cc, aiConfigs, NullNpcLogger.Instance);
-        _svc = new GameService(engine, _repo, cc, npcRunner, aiConfigs);
-    }
-
-    [Fact]
-    public async Task NpcEndPhaseEvent_StateReflectsTurnSwitch()
-    {
-        var result = await RunNpcTurn();
-
-        // NPC のターン中、end_phase でターンが切り替わる
-        var endPhaseEvents = result.Events
-            .Where(e => e.Event.EventType == ActionTypes.EndPhase && e.State is not null)
-            .ToList();
-
-        foreach (var evt in endPhaseEvents)
+        protected Base()
         {
-            evt.State!.IsMyTurn.Should().BeTrue(
-                "after NPC's end_phase, it should be the human player's turn");
+            var (effects, cc) = TestEffectSetup.Get();
+            _cc = cc;
+            var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog(TestFactory.StandardInitiatives()));
+
+            var npcDataDir = FindNpcDataDir()
+                ?? throw new FileNotFoundException("NPC data directory not found");
+            var aiConfigs = AiConfigLoader.LoadAll(npcDataDir);
+
+            var npcRunner = new NpcRunner(engine, _repo, cc, aiConfigs, NullNpcLogger.Instance);
+            _svc = new GameService(engine, _repo, cc, npcRunner, aiConfigs);
         }
-    }
 
-    // ─── Yield mode (one-action-per-call) ──────────────────────
-
-    [Fact]
-    public async Task ProcessAction_PlayerEndPhase_DoesNotBatchNpcEvents()
-    {
-        var (game, playerNum) = await StartGameWithNpcNext();
-
-        var result = await EndPlayerTurn(game.GameID, playerNum);
-
-        result.Events.Should().NotContain(
-            e => e.Event.EventType == ActionTypes.PlayCard,
-            "NPC play_card events must not be bundled into the player's ProcessAction response");
-        result.IsNpcPending.Should().BeTrue(
-            "after the player's end_phase the NPC is active, so the gateway needs to loop");
-    }
-
-    [Fact]
-    public async Task AdvanceNpcTurn_ReturnsOneActionAtATime_ThenPlayerRegainsTurn()
-    {
-        var (game, playerNum) = await StartGameWithNpcNext();
-        await EndPlayerTurn(game.GameID, playerNum);
-
-        int steps = 0;
-        GameActionResult current;
-        do
+        /// <summary>
+        /// Repeatedly creates NPC battles until one where the player is the first
+        /// active player. This guarantees the NPC has not yet taken its first turn.
+        /// </summary>
+        protected async Task<(Game Game, long PlayerNum)> StartGameWithPlayerFirst()
         {
-            current = await _svc.AdvanceNpcTurn(game.GameID);
-            // Each AdvanceNpcTurn call corresponds to one engine action,
-            // which can emit at most one play_card event.
-            current.Events.Count(e => e.Event.EventType == ActionTypes.PlayCard)
-                .Should().BeLessThanOrEqualTo(1,
-                    "one advance call must yield at most one play_card event");
-            steps++;
-            steps.Should().BeLessThan(100, "guard against infinite yield loops");
-        } while (current.IsNpcPending && current.GameOver is null);
-
-        current.IsNpcPending.Should().BeFalse("NPC turn ended, control returns to the player");
-        steps.Should().BeGreaterThan(1,
-            "the NPC should take multiple steps (actions + end_phase) before yielding back");
-
-        if (current.GameOver is null)
-        {
-            var postState = await _repo.GetGameState(game.GameID);
-            postState!.ActivePlayer.Should().Be(playerNum, "control must return to the player");
-        }
-    }
-
-    [Fact]
-    public async Task ProcessAction_WhenNextActorIsPlayer_NpcPendingIsFalse()
-    {
-        var (game, playerNum) = await StartGameWithPlayerActive();
-
-        // player plays a card; since player is still active for remaining actions
-        // in Main (or until end_phase), IsNpcPending should be false.
-        var hand = (await _repo.GetGameState(game.GameID))!.GetHand(playerNum);
-        var first = hand[0];
-
-        var result = await _svc.ProcessAction(
-            game.GameID, playerNum,
-            ActionType.PlayCard,
-            new PlayCardRequest
+            for (int i = 0; i < 20; i++)
             {
-                CardInstanceID = first.InstanceID,
-                Zone = Zones.Frontend,
-                Index = 0,
-            });
-
-        result.IsNpcPending.Should().BeFalse(
-            "player is still the active player after playing a card in main phase");
-    }
-
-    [Fact]
-    public async Task AdvanceNpcTurn_PlayCardEvent_RedactsFaceDownCardId()
-    {
-        // From the player's viewpoint, opponent play_card events must redact
-        // the cardId whenever the card is face-down (DeployTurns>0 or Reactive);
-        // face-up cards (Strategy/Attachment/deploy_turns=0 resource) keep cardId.
-        var result = await RunNpcTurn();
-
-        var playCards = result.Events
-            .Where(e => e.Event.EventType == ActionTypes.PlayCard)
-            .Select(e => e.Event)
-            .ToList();
-
-        playCards.Should().NotBeEmpty("NPC should play at least one card during main phase");
-
-        bool sawRedacted = false;
-        foreach (var evt in playCards)
-        {
-            var data = evt.EventData.Should().BeOfType<PlayCardEventData>().Subject;
-            var cardId = data.CardId;
-            if (cardId == "")
-            {
-                sawRedacted = true;
-                continue;
+                var cards = MakePlayerCards("SH-0001");
+                var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
+                var state = await _repo.GetGameState(game.GameID);
+                if (state!.ActivePlayer == 1)
+                {
+                    return (game, 1);
+                }
             }
-            var def = _cc.Get(cardId);
-            def.Should().NotBeNull();
-            (def!.CardType == CardTypes.Reactive || def.DeployTurns > 0).Should().BeFalse(
-                $"face-down card {cardId} should have been redacted (type={def.CardType}, deploy_turns={def.DeployTurns})");
+            throw new InvalidOperationException(
+                "unable to land on player-first after 20 attempts (random first player)");
         }
 
-        sawRedacted.Should().BeTrue(
-            "SHE-easy deck contains cards with DeployTurns>0; at least one should have been redacted");
-    }
+        /// <summary>Alias for readability at call sites.</summary>
+        protected Task<(Game Game, long PlayerNum)> StartGameWithNpcNext() => StartGameWithPlayerFirst();
+        protected Task<(Game Game, long PlayerNum)> StartGameWithPlayerActive() => StartGameWithPlayerFirst();
 
-    [Fact]
-    public async Task ProcessAction_PlayerOwnPlayCard_DoesNotRedact()
-    {
-        var (game, playerNum) = await StartGameWithPlayerActive();
-
-        var hand = (await _repo.GetGameState(game.GameID))!.GetHand(playerNum);
-        var first = hand[0];
-
-        var result = await _svc.ProcessAction(
-            game.GameID, playerNum,
-            ActionType.PlayCard,
-            new PlayCardRequest
+        /// <summary>
+        /// Issues end_phase calls until the active player changes. On turn 2+ the
+        /// player goes Main→Battle→End before the turn switches.
+        /// </summary>
+        protected async Task<GameActionResult> EndPlayerTurn(string gameID, long playerNum)
+        {
+            GameActionResult result = new();
+            for (int i = 0; i < 5; i++)
             {
-                CardInstanceID = first.InstanceID,
-                Zone = Zones.Frontend,
-                Index = 0,
-            });
+                result = await _svc.ProcessAction(gameID, playerNum, ActionType.EndPhase, new object());
+                var state = await _repo.GetGameState(gameID);
+                if (state!.ActivePlayer != playerNum || result.GameOver is not null)
+                {
+                    return result;
+                }
+            }
+            throw new InvalidOperationException("player turn never ended");
+        }
 
-        var playCard = result.Events.First(e => e.Event.EventType == ActionTypes.PlayCard);
-        var data = playCard.Event.EventData.Should().BeOfType<PlayCardEventData>().Subject;
-        data.CardId.Should().Be(first.CardID,
-            "player's own play_card must keep the real cardId (actor == viewer)");
-    }
-
-    // ─── Start helpers ─────────────────────────────────────────
-
-    /// <summary>
-    /// Repeatedly creates NPC battles until one where the player is the first
-    /// active player. This guarantees the NPC has not yet taken its first turn.
-    /// </summary>
-    private async Task<(Game Game, long PlayerNum)> StartGameWithPlayerFirst()
-    {
-        for (int i = 0; i < 20; i++)
+        /// <summary>
+        /// Simulates the gateway's yield loop: kicks off the NPC turn, then calls
+        /// AdvanceNpcTurn repeatedly while IsNpcPending is true, aggregating events.
+        /// </summary>
+        protected async Task<GameActionResult> RunNpcTurn()
         {
             var cards = MakePlayerCards("SH-0001");
             var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
+
             var state = await _repo.GetGameState(game.GameID);
-            if (state!.ActivePlayer == 1)
+
+            var initial = state!.ActivePlayer == 1
+                ? await _svc.ProcessAction(game.GameID, 1, ActionType.EndPhase, new object())
+                : await _svc.AdvanceNpcTurn(game.GameID);
+
+            var events = new List<ActionEventWithState>(initial.Events);
+            var current = initial;
+            while (current.IsNpcPending && current.GameOver is null)
             {
-                return (game, 1);
+                current = await _svc.AdvanceNpcTurn(game.GameID);
+                events.AddRange(current.Events);
+            }
+
+            return new GameActionResult
+            {
+                GameOver = current.GameOver,
+                State = current.State,
+                Events = events,
+                IsNpcPending = current.IsNpcPending,
+            };
+        }
+
+        protected static List<DeckSnapshotCard> MakePlayerCards(string cardId)
+        {
+            return Enumerable.Range(0, InitialValues.DeckSize)
+                .Select(_ => new DeckSnapshotCard { CardId = cardId })
+                .ToList();
+        }
+
+        protected static readonly List<PlayerSummarySnapshot> NpcPlayerSummaries =
+        [
+            new() { PlayerNum = 1, Name = "p1", Level = 1 },
+            new() { PlayerNum = 2, Name = "SHE 配達員", Level = null },
+        ];
+
+        protected static string? FindNpcDataDir()
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir is not null)
+            {
+                var candidate = Path.Combine(dir.FullName, "src", "OverloadParty.Battle.Npc", "Data");
+                if (Directory.Exists(candidate))
+                {
+                    return candidate;
+                }
+                dir = dir.Parent;
+            }
+            return null;
+        }
+
+        /// <summary>No-op logger for NpcRunner so tests run without log noise.</summary>
+        protected class NullNpcLogger : ILogger<NpcRunner>
+        {
+            public static readonly NullNpcLogger Instance = new();
+            public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+            public bool IsEnabled(LogLevel logLevel) => false;
+            public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
+        }
+    }
+
+    /// <summary>Tests for the state carried by the NPC's end_phase event.</summary>
+    public class EndPhaseEvent : Base
+    {
+        [Fact]
+        public async Task StateReflectsTurnSwitch()
+        {
+            var result = await RunNpcTurn();
+
+            // NPC のターン中、end_phase でターンが切り替わる
+            var endPhaseEvents = result.Events
+                .Where(e => e.Event.EventType == ActionTypes.EndPhase && e.State is not null)
+                .ToList();
+
+            foreach (var evt in endPhaseEvents)
+            {
+                evt.State!.IsMyTurn.Should().BeTrue(
+                    "after NPC's end_phase, it should be the human player's turn");
             }
         }
-        throw new InvalidOperationException(
-            "unable to land on player-first after 20 attempts (random first player)");
     }
 
-    /// <summary>Alias for readability at call sites.</summary>
-    private Task<(Game Game, long PlayerNum)> StartGameWithNpcNext() => StartGameWithPlayerFirst();
-    private Task<(Game Game, long PlayerNum)> StartGameWithPlayerActive() => StartGameWithPlayerFirst();
-
-    /// <summary>
-    /// Issues end_phase calls until the active player changes. On turn 2+ the
-    /// player goes Main→Battle→End before the turn switches.
-    /// </summary>
-    private async Task<GameActionResult> EndPlayerTurn(string gameID, long playerNum)
+    /// <summary>Tests for one-action-per-call NPC yielding and event redaction.</summary>
+    public class YieldMode : Base
     {
-        GameActionResult result = new();
-        for (int i = 0; i < 5; i++)
+        [Fact]
+        public async Task ProcessAction_PlayerEndPhase_DoesNotBatchNpcEvents()
         {
-            result = await _svc.ProcessAction(gameID, playerNum, ActionType.EndPhase, new object());
-            var state = await _repo.GetGameState(gameID);
-            if (state!.ActivePlayer != playerNum || result.GameOver is not null)
+            var (game, playerNum) = await StartGameWithNpcNext();
+
+            var result = await EndPlayerTurn(game.GameID, playerNum);
+
+            result.Events.Should().NotContain(
+                e => e.Event.EventType == ActionTypes.PlayCard,
+                "NPC play_card events must not be bundled into the player's ProcessAction response");
+            result.IsNpcPending.Should().BeTrue(
+                "after the player's end_phase the NPC is active, so the gateway needs to loop");
+        }
+
+        [Fact]
+        public async Task AdvanceNpcTurn_ReturnsOneActionAtATime_ThenPlayerRegainsTurn()
+        {
+            var (game, playerNum) = await StartGameWithNpcNext();
+            await EndPlayerTurn(game.GameID, playerNum);
+
+            int steps = 0;
+            GameActionResult current;
+            do
             {
-                return result;
+                current = await _svc.AdvanceNpcTurn(game.GameID);
+                // Each AdvanceNpcTurn call corresponds to one engine action,
+                // which can emit at most one play_card event.
+                current.Events.Count(e => e.Event.EventType == ActionTypes.PlayCard)
+                    .Should().BeLessThanOrEqualTo(1,
+                        "one advance call must yield at most one play_card event");
+                steps++;
+                steps.Should().BeLessThan(100, "guard against infinite yield loops");
+            } while (current.IsNpcPending && current.GameOver is null);
+
+            current.IsNpcPending.Should().BeFalse("NPC turn ended, control returns to the player");
+            steps.Should().BeGreaterThan(1,
+                "the NPC should take multiple steps (actions + end_phase) before yielding back");
+
+            if (current.GameOver is null)
+            {
+                var postState = await _repo.GetGameState(game.GameID);
+                postState!.ActivePlayer.Should().Be(playerNum, "control must return to the player");
             }
         }
-        throw new InvalidOperationException("player turn never ended");
-    }
 
-    // ─── Helpers ────────────────────────────────────────────────
-
-    /// <summary>
-    /// Simulates the gateway's yield loop: kicks off the NPC turn, then calls
-    /// AdvanceNpcTurn repeatedly while IsNpcPending is true, aggregating events.
-    /// </summary>
-    private async Task<GameActionResult> RunNpcTurn()
-    {
-        var cards = MakePlayerCards("SH-0001");
-        var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
-
-        var state = await _repo.GetGameState(game.GameID);
-
-        var initial = state!.ActivePlayer == 1
-            ? await _svc.ProcessAction(game.GameID, 1, ActionType.EndPhase, new object())
-            : await _svc.AdvanceNpcTurn(game.GameID);
-
-        var events = new List<ActionEventWithState>(initial.Events);
-        var current = initial;
-        while (current.IsNpcPending && current.GameOver is null)
+        [Fact]
+        public async Task ProcessAction_WhenNextActorIsPlayer_NpcPendingIsFalse()
         {
-            current = await _svc.AdvanceNpcTurn(game.GameID);
-            events.AddRange(current.Events);
+            var (game, playerNum) = await StartGameWithPlayerActive();
+
+            // player plays a card; since player is still active for remaining actions
+            // in Main (or until end_phase), IsNpcPending should be false.
+            var hand = (await _repo.GetGameState(game.GameID))!.GetHand(playerNum);
+            var first = hand[0];
+
+            var result = await _svc.ProcessAction(
+                game.GameID, playerNum,
+                ActionType.PlayCard,
+                new PlayCardRequest
+                {
+                    CardInstanceID = first.InstanceID,
+                    Zone = Zones.Frontend,
+                    Index = 0,
+                });
+
+            result.IsNpcPending.Should().BeFalse(
+                "player is still the active player after playing a card in main phase");
         }
 
-        return new GameActionResult
+        [Fact]
+        public async Task AdvanceNpcTurn_PlayCardEvent_RedactsFaceDownCardId()
         {
-            GameOver = current.GameOver,
-            State = current.State,
-            Events = events,
-            IsNpcPending = current.IsNpcPending,
-        };
-    }
+            // From the player's viewpoint, opponent play_card events must redact
+            // the cardId whenever the card is face-down (DeployTurns>0 or Reactive);
+            // face-up cards (Strategy/Attachment/deploy_turns=0 resource) keep cardId.
+            var result = await RunNpcTurn();
 
-    private static List<DeckSnapshotCard> MakePlayerCards(string cardId)
-    {
-        return Enumerable.Range(0, InitialValues.DeckSize)
-            .Select(_ => new DeckSnapshotCard { CardId = cardId })
-            .ToList();
-    }
+            var playCards = result.Events
+                .Where(e => e.Event.EventType == ActionTypes.PlayCard)
+                .Select(e => e.Event)
+                .ToList();
 
-    private static readonly List<PlayerSummarySnapshot> NpcPlayerSummaries =
-    [
-        new() { PlayerNum = 1, Name = "p1", Level = 1 },
-        new() { PlayerNum = 2, Name = "SHE 配達員", Level = null },
-    ];
+            playCards.Should().NotBeEmpty("NPC should play at least one card during main phase");
 
-    private static string? FindNpcDataDir()
-    {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            var candidate = Path.Combine(dir.FullName, "src", "OverloadParty.Battle.Npc", "Data");
-            if (Directory.Exists(candidate))
+            bool sawRedacted = false;
+            foreach (var evt in playCards)
             {
-                return candidate;
+                var data = evt.EventData.Should().BeOfType<PlayCardEventData>().Subject;
+                var cardId = data.CardId;
+                if (cardId == "")
+                {
+                    sawRedacted = true;
+                    continue;
+                }
+                var def = _cc.Get(cardId);
+                def.Should().NotBeNull();
+                (def!.CardType == CardTypes.Reactive || def.DeployTurns > 0).Should().BeFalse(
+                    $"face-down card {cardId} should have been redacted (type={def.CardType}, deploy_turns={def.DeployTurns})");
             }
-            dir = dir.Parent;
-        }
-        return null;
-    }
 
-    private class NullNpcLogger : ILogger<NpcRunner>
-    {
-        public static readonly NullNpcLogger Instance = new();
-        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
-        public bool IsEnabled(LogLevel logLevel) => false;
-        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
+            sawRedacted.Should().BeTrue(
+                "SHE-easy deck contains cards with DeployTurns>0; at least one should have been redacted");
+        }
+
+        [Fact]
+        public async Task ProcessAction_PlayerOwnPlayCard_DoesNotRedact()
+        {
+            var (game, playerNum) = await StartGameWithPlayerActive();
+
+            var hand = (await _repo.GetGameState(game.GameID))!.GetHand(playerNum);
+            var first = hand[0];
+
+            var result = await _svc.ProcessAction(
+                game.GameID, playerNum,
+                ActionType.PlayCard,
+                new PlayCardRequest
+                {
+                    CardInstanceID = first.InstanceID,
+                    Zone = Zones.Frontend,
+                    Index = 0,
+                });
+
+            var playCard = result.Events.First(e => e.Event.EventType == ActionTypes.PlayCard);
+            var data = playCard.Event.EventData.Should().BeOfType<PlayCardEventData>().Subject;
+            data.CardId.Should().Be(first.CardID,
+                "player's own play_card must keep the real cardId (actor == viewer)");
+        }
     }
 }
