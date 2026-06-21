@@ -9,45 +9,49 @@ namespace OverloadParty.Battle.Tests.Models;
 /// </summary>
 public class BattleConstantsTests
 {
-    // ─── RankMultiplier ─────────────────────────────────────────
-
-    [Theory]
-    [InlineData(Rank.Small, 1)]
-    [InlineData(Rank.Medium, 2)]
-    [InlineData(Rank.Large, 3)]
-    public void RankMultiplier_ScalesByRank(Rank rank, long expected)
+    /// <summary>Tests for BattleConstants.GetRankMultiplier.</summary>
+    public class GetRankMultiplier
     {
-        BattleConstants.GetRankMultiplier(rank).Should().Be(expected);
+        [Theory]
+        [InlineData(Rank.Small, 1)]
+        [InlineData(Rank.Medium, 2)]
+        [InlineData(Rank.Large, 3)]
+        public void ScalesByRank(Rank rank, long expected)
+        {
+            BattleConstants.GetRankMultiplier(rank).Should().Be(expected);
+        }
+
+        [Fact]
+        public void NoRank_NonResizable_ReturnsBaseMultiplier()
+        {
+            BattleConstants.GetRankMultiplier(null).Should().Be(1);
+        }
+
+        [Fact]
+        public void UnknownRank_Throws()
+        {
+            var act = () => BattleConstants.GetRankMultiplier((Rank)99);
+            act.Should().Throw<ArgumentOutOfRangeException>();
+        }
     }
 
-    [Fact]
-    public void RankMultiplier_NoRank_NonResizable_ReturnsBaseMultiplier()
+    /// <summary>Tests for BattleConstants.GetFamilyMultiplier.</summary>
+    public class GetFamilyMultiplier
     {
-        BattleConstants.GetRankMultiplier(null).Should().Be(1);
-    }
+        [Theory]
+        [InlineData(InstanceFamily.M, 1.0, 1.0)]
+        [InlineData(InstanceFamily.C, 1.3, 0.7)]
+        [InlineData(InstanceFamily.R, 0.7, 1.3)]
+        public void ReturnsRulebookMultipliers(InstanceFamily family, double tpMult, double avMult)
+        {
+            BattleConstants.GetFamilyMultiplier(family).Should().Be((tpMult, avMult));
+        }
 
-    [Fact]
-    public void RankMultiplier_UnknownRank_Throws()
-    {
-        var act = () => BattleConstants.GetRankMultiplier((Rank)99);
-        act.Should().Throw<ArgumentOutOfRangeException>();
-    }
-
-    // ─── FamilyMultiplier ───────────────────────────────────────
-
-    [Theory]
-    [InlineData(InstanceFamily.M, 1.0, 1.0)]
-    [InlineData(InstanceFamily.C, 1.3, 0.7)]
-    [InlineData(InstanceFamily.R, 0.7, 1.3)]
-    public void FamilyMultiplier_ReturnsRulebookMultipliers(InstanceFamily family, double tpMult, double avMult)
-    {
-        BattleConstants.GetFamilyMultiplier(family).Should().Be((tpMult, avMult));
-    }
-
-    [Fact]
-    public void FamilyMultiplier_UnknownFamily_Throws()
-    {
-        var act = () => BattleConstants.GetFamilyMultiplier((InstanceFamily)99);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        [Fact]
+        public void UnknownFamily_Throws()
+        {
+            var act = () => BattleConstants.GetFamilyMultiplier((InstanceFamily)99);
+            act.Should().Throw<ArgumentOutOfRangeException>();
+        }
     }
 }
