@@ -626,6 +626,14 @@ export interface components {
             sourceId: string;
             targetId?: string;
         };
+        UseInitiativeEventData: {
+            productId: string;
+            initiativeId: string;
+            kind: string;
+            initiativeName: string;
+            /** Format: int64 */
+            insightCost: number;
+        };
         PhaseChangeEventData: {
             previousPhase: string;
             currentPhase: string;

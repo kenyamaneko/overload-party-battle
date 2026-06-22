@@ -521,6 +521,15 @@ type UseEffectEventData struct {
 	TargetId *string `json:"targetId,omitempty"`
 }
 
+// UseInitiativeEventData defines model for UseInitiativeEventData.
+type UseInitiativeEventData struct {
+	InitiativeId   string `json:"initiativeId"`
+	InitiativeName string `json:"initiativeName"`
+	InsightCost    int64  `json:"insightCost"`
+	Kind           string `json:"kind"`
+	ProductId      string `json:"productId"`
+}
+
 // GameIdPath defines model for GameIdPath.
 type GameIdPath = string
 

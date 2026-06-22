@@ -1124,6 +1124,27 @@ components:
           x-csharp-name: TargetId
           x-go-name: TargetId
 
+    UseInitiativeEventData:
+      type: object
+      x-battle-csharp-package: state
+      required: [productId, initiativeId, kind, initiativeName, insightCost]
+      properties:
+        productId:
+          type: string
+          x-csharp-name: ProductId
+          x-go-name: ProductId
+        initiativeId:
+          type: string
+          x-csharp-name: InitiativeId
+          x-go-name: InitiativeId
+        kind:
+          type: string
+        initiativeName:
+          type: string
+        insightCost:
+          type: integer
+          format: int64
+
     PhaseChangeEventData:
       type: object
       x-battle-csharp-package: state
