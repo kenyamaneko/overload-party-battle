@@ -25,13 +25,13 @@ internal sealed class MonetizeStrategy
     /// </summary>
     public List<NpcAction> Decide(DecisionContext ctx, List<GD.AvailableAction> available, long insightPool)
     {
-        var yieldActions = ActionFilter.FilterByType(available, ActionTypes.Monetize);
+        var yieldActions = ActionFilter.FilterByType<GD.MonetizeAction>(available);
         if (yieldActions.Count == 0)
         {
             return [];
         }
 
-        var sorted = TargetSelector.OrderActions(yieldActions, _config.Monetize.OrderBy, ctx.Field, _cc);
+        var sorted = TargetSelector.OrderActions(yieldActions, a => a.SourceInstanceID, _config.Monetize.OrderBy, ctx.Field, _cc);
 
         var reserve = (long)(insightPool * _config.Monetize.ReserveRatio);
         var distributable = insightPool - reserve;

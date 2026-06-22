@@ -676,20 +676,39 @@ namespace OverloadParty.GameState
     }
 
     /// <summary>
-    /// プレイヤーが現ターンに実行可能なアクション。`type` discriminator で variant を判別する。
-    /// <br/>各 variant 固有のフィールドは optional。flat shape を維持しているのは既存 C# server / TS client
-    /// <br/>の実装を温存するため (oneOf による正規化は将来検討)。
+    /// プレイヤーが現ターンに実行可能なアクション 1 件。`type` がアクション種別
+    /// <br/>(play_card / attack など) を示し、その種別に必要なフィールドだけを持つ。
     /// <br/>
     /// </summary>
+    [JsonInheritanceConverter(typeof(AvailableAction), "type")]
+    [JsonInheritanceAttribute("play_card", typeof(PlayCardAction))]
+    [JsonInheritanceAttribute("attack", typeof(AttackAction))]
+    [JsonInheritanceAttribute("scale_up", typeof(ScaleUpAction))]
+    [JsonInheritanceAttribute("monetize", typeof(MonetizeAction))]
+    [JsonInheritanceAttribute("use_effect", typeof(UseEffectAction))]
+    [JsonInheritanceAttribute("use_initiative", typeof(UseInitiativeAction))]
+    [JsonInheritanceAttribute("resolve_pending_choice", typeof(ResolvePendingChoiceAction))]
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class AvailableAction
     {
 
-        /// <summary>
-        /// variant 種別。play_card / attack / scale_up / monetize / use_effect / use_initiative / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("type")]
-        public string Type { get; set; } = default!;
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// 手札からカードをプレイする候補。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class PlayCardAction : AvailableAction
+    {
 
         [System.Text.Json.Serialization.JsonPropertyName("handInstanceID")]
         public string HandInstanceID { get; set; } = default!;
@@ -703,11 +722,35 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("validTargets")]
         public System.Collections.Generic.List<string> ValidTargets { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("cost")]
-        public long Cost { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("choiceOptions")]
         public System.Collections.Generic.List<string> ChoiceOptions { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("effectTargetType")]
+        public string EffectTargetType { get; set; } = default!;
+
+    }
+
+    /// <summary>
+    /// フロントエンドのコンピュート系リソースで攻撃する候補。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class AttackAction : AvailableAction
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("sourceInstanceID")]
+        public string SourceInstanceID { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("validTargets")]
+        public System.Collections.Generic.List<string> ValidTargets { get; set; } = default!;
+
+    }
+
+    /// <summary>
+    /// リソースをスケールアップする候補。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ScaleUpAction : AvailableAction
+    {
 
         [System.Text.Json.Serialization.JsonPropertyName("sourceInstanceID")]
         public string SourceInstanceID { get; set; } = default!;
@@ -721,8 +764,38 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("needsFamily")]
         public bool NeedsFamily { get; set; } = default!;
 
+    }
+
+    /// <summary>
+    /// リソースで収益化する候補。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class MonetizeAction : AvailableAction
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("sourceInstanceID")]
+        public string SourceInstanceID { get; set; } = default!;
+
         [System.Text.Json.Serialization.JsonPropertyName("remainingCapacity")]
         public long RemainingCapacity { get; set; } = default!;
+
+    }
+
+    /// <summary>
+    /// フィールド上のカードの起動効果を使用する候補。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UseEffectAction : AvailableAction
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("cardID")]
+        public string CardID { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("sourceInstanceID")]
+        public string SourceInstanceID { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("validTargets")]
+        public System.Collections.Generic.List<string> ValidTargets { get; set; } = default!;
 
         [System.Text.Json.Serialization.JsonPropertyName("effectTargetType")]
         public string EffectTargetType { get; set; } = default!;
@@ -730,20 +803,50 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("requiredCount")]
         public int RequiredCount { get; set; } = default!;
 
+    }
+
+    /// <summary>
+    /// 施策 (ルーチン / スペシャル) を使用する候補。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class UseInitiativeAction : AvailableAction
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("cardID")]
+        public string CardID { get; set; } = default!;
+
         /// <summary>
-        /// 施策の区分 (routine / special)。use_initiative variant でのみ使用。
+        /// 施策の区分 (routine / special)。
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("kind")]
         public string Kind { get; set; } = default!;
 
-        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+        [System.Text.Json.Serialization.JsonPropertyName("cost")]
+        public long Cost { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonExtensionData]
-        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
-        {
-            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
-            set { _additionalProperties = value; }
-        }
+        [System.Text.Json.Serialization.JsonPropertyName("validTargets")]
+        public System.Collections.Generic.List<string> ValidTargets { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("effectTargetType")]
+        public string EffectTargetType { get; set; } = default!;
+
+    }
+
+    /// <summary>
+    /// 効果処理中の選択候補 1 件。chosen_id は cardID または validTargets[0] から取る。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ResolvePendingChoiceAction : AvailableAction
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("sourceInstanceID")]
+        public string SourceInstanceID { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("cardID")]
+        public string CardID { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("validTargets")]
+        public System.Collections.Generic.List<string> ValidTargets { get; set; } = default!;
 
     }
 
@@ -1132,6 +1235,147 @@ namespace OverloadParty.GameState
             set { _additionalProperties = value; }
         }
 
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    [System.AttributeUsage(System.AttributeTargets.Class | System.AttributeTargets.Interface, AllowMultiple = true)]
+    internal class JsonInheritanceAttribute : System.Attribute
+    {
+        public JsonInheritanceAttribute(string key, System.Type type)
+        {
+            Key = key;
+            Type = type;
+        }
+
+        public string Key { get; }
+
+        public System.Type Type { get; }
+    }
+
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    internal class JsonInheritanceConverterAttribute : System.Text.Json.Serialization.JsonConverterAttribute
+    {
+        public string DiscriminatorName { get; }
+
+        public JsonInheritanceConverterAttribute(System.Type baseType, string discriminatorName = "discriminator")
+            : base(typeof(JsonInheritanceConverter<>).MakeGenericType(baseType))
+        {
+            DiscriminatorName = discriminatorName;
+        }
+    }
+
+    public class JsonInheritanceConverter<TBase> : System.Text.Json.Serialization.JsonConverter<TBase>
+    {
+        private readonly string _discriminatorName;
+
+        public JsonInheritanceConverter()
+        {
+            var attribute = System.Reflection.CustomAttributeExtensions.GetCustomAttribute<JsonInheritanceConverterAttribute>(typeof(TBase));
+            _discriminatorName = attribute?.DiscriminatorName ?? "discriminator";
+        }
+
+        public JsonInheritanceConverter(string discriminatorName)
+        {
+            _discriminatorName = discriminatorName;
+        }
+
+        public string DiscriminatorName { get { return _discriminatorName; } }
+
+        public override TBase Read(ref System.Text.Json.Utf8JsonReader reader, System.Type typeToConvert, System.Text.Json.JsonSerializerOptions options)
+        {
+            var document = System.Text.Json.JsonDocument.ParseValue(ref reader);
+            var hasDiscriminator = document.RootElement.TryGetProperty(_discriminatorName, out var discriminator);
+            var subtype = GetDiscriminatorType(document.RootElement, typeToConvert, hasDiscriminator ? discriminator.GetString() : null);
+
+            var bufferWriter = new System.IO.MemoryStream();
+            using (var writer = new System.Text.Json.Utf8JsonWriter(bufferWriter))
+            {
+                document.RootElement.WriteTo(writer);
+            }
+
+            return (TBase)System.Text.Json.JsonSerializer.Deserialize(bufferWriter.ToArray(), subtype, options);
+        }
+
+        public override void Write(System.Text.Json.Utf8JsonWriter writer, TBase value, System.Text.Json.JsonSerializerOptions options)
+        {
+            if (value != null)
+            {
+                writer.WriteStartObject();
+                writer.WriteString(_discriminatorName, GetDiscriminatorValue(value.GetType()));
+
+                var bytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes((object)value, options);
+                var document = System.Text.Json.JsonDocument.Parse(bytes);
+                foreach (var property in document.RootElement.EnumerateObject())
+                {
+                    property.WriteTo(writer);
+                }
+
+                writer.WriteEndObject();
+            }
+            else
+            {
+                writer.WriteNullValue();
+            }
+        }
+
+        public string GetDiscriminatorValue(System.Type type)
+        {
+            var jsonInheritanceAttributeDiscriminator = GetSubtypeDiscriminator(type);
+            if (jsonInheritanceAttributeDiscriminator != null)
+            {
+                return jsonInheritanceAttributeDiscriminator;
+            }
+
+            return type.Name;
+        }
+
+        protected System.Type GetDiscriminatorType(System.Text.Json.JsonElement jObject, System.Type objectType, string discriminatorValue)
+        {
+            if (discriminatorValue != null)
+            {
+                var jsonInheritanceAttributeSubtype = GetObjectSubtype(objectType, discriminatorValue);
+                if (jsonInheritanceAttributeSubtype != null)
+                {
+                    return jsonInheritanceAttributeSubtype;
+                }
+
+                if (objectType.Name == discriminatorValue)
+                {
+                    return objectType;
+                }
+
+                var typeName = objectType.Namespace + "." + discriminatorValue;
+                var subtype = System.Reflection.IntrospectionExtensions.GetTypeInfo(objectType).Assembly.GetType(typeName);
+                if (subtype != null)
+                {
+                    return subtype;
+                }
+            }
+
+            throw new System.InvalidOperationException("Could not find subtype of '" + objectType.Name + "' with discriminator '" + discriminatorValue + "'.");
+        }
+
+        private System.Type GetObjectSubtype(System.Type baseType, string discriminatorValue)
+        {
+            foreach (var attribute in System.Reflection.CustomAttributeExtensions.GetCustomAttributes<JsonInheritanceAttribute>(System.Reflection.IntrospectionExtensions.GetTypeInfo(baseType), true))
+            {
+                if (attribute.Key == discriminatorValue)
+                    return attribute.Type;
+            }
+
+            return null;
+        }
+
+        private string GetSubtypeDiscriminator(System.Type objectType)
+        {
+            foreach (var attribute in System.Reflection.CustomAttributeExtensions.GetCustomAttributes<JsonInheritanceAttribute>(System.Reflection.IntrospectionExtensions.GetTypeInfo(objectType), true))
+            {
+                if (attribute.Type == objectType)
+                    return attribute.Key;
+            }
+
+            return null;
+        }
     }
 
 

@@ -26,7 +26,7 @@ internal sealed class IgnitionStrategy
     public List<NpcAction> Decide(
         DecisionContext ctx, List<GD.AvailableAction> available, AiConfig activeConfig)
     {
-        var ignitionActions = ActionFilter.FilterByType(available, ActionTypes.UseEffect);
+        var ignitionActions = ActionFilter.FilterByType<GD.UseEffectAction>(available);
 
         var candidates = ignitionActions
             .Select(a =>
@@ -47,7 +47,7 @@ internal sealed class IgnitionStrategy
                 {
                     if (!(x.Action.ValidTargets?.Count > 0))
                     {
-                        return ((GD.AvailableAction Action, int Priority, string? TargetId)?)null;
+                        return ((GD.UseEffectAction Action, int Priority, string? TargetId)?)null;
                     }
                     targetId = SelectTargetFromValid(x.CardId, x.Action.ValidTargets, ctx, activeConfig);
                     if (targetId is null)

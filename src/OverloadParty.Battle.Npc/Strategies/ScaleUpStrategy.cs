@@ -24,9 +24,9 @@ internal sealed class ScaleUpStrategy
     /// </summary>
     public List<NpcAction> Decide(DecisionContext ctx, List<GD.AvailableAction> available)
     {
-        var scaleActions = ActionFilter.FilterByType(available, ActionTypes.ScaleUp);
+        var scaleActions = ActionFilter.FilterByType<GD.ScaleUpAction>(available);
         var family = ResolveInstanceFamily(ctx);
-        var sorted = TargetSelector.OrderActions(scaleActions, _config.ScaleUp.OrderBy, ctx.Field, _cc);
+        var sorted = TargetSelector.OrderActions(scaleActions, a => a.SourceInstanceID, _config.ScaleUp.OrderBy, ctx.Field, _cc);
 
         var actions = new List<NpcAction>();
         var addedMaintenanceCost = 0L;

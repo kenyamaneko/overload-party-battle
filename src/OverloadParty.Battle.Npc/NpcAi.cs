@@ -52,7 +52,7 @@ public class NpcAi : INpcStrategy
         var ctx = BuildContext(clientState);
         var available = clientState.MyView.AvailableActions ?? new List<GD.AvailableAction>();
         var activeConfig = ResolveActiveConfig(ctx);
-        var playActions = ActionFilter.FilterByType(available, ActionTypes.PlayCard);
+        var playActions = ActionFilter.FilterByType<GD.PlayCardAction>(available);
         var usedZones = new HashSet<string>();
         var actions = new List<NpcAction>();
 
@@ -95,7 +95,7 @@ public class NpcAi : INpcStrategy
         var available = clientState.MyView.AvailableActions ?? new List<GD.AvailableAction>();
         var myField = clientState.MyView.Field;
         var oppField = clientState.OppView.Field;
-        var attackActions = ActionFilter.FilterByType(available, ActionTypes.Attack);
+        var attackActions = ActionFilter.FilterByType<GD.AttackAction>(available);
 
         var actions = attackActions
             .Select(a => new NpcAction
@@ -223,7 +223,7 @@ public class NpcAi : INpcStrategy
         }
 
         var available = clientState.MyView.AvailableActions ?? new List<GD.AvailableAction>();
-        var first = available.FirstOrDefault(a => a.Type == ActionTypes.ResolvePendingChoice);
+        var first = available.OfType<GD.ResolvePendingChoiceAction>().FirstOrDefault();
         if (first is null)
         {
             return null;

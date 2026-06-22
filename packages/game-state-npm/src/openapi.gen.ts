@@ -560,31 +560,105 @@ export interface components {
             discardRequired: number;
         };
         /**
-         * @description プレイヤーが現ターンに実行可能なアクション。`type` discriminator で variant を判別する。
-         *     各 variant 固有のフィールドは optional。flat shape を維持しているのは既存 C# server / TS client
-         *     の実装を温存するため (oneOf による正規化は将来検討)。
+         * @description プレイヤーが現ターンに実行可能なアクション 1 件。`type` がアクション種別
+         *     (play_card / attack など) を示し、その種別に必要なフィールドだけを持つ。
          */
         AvailableAction: {
-            /** @description variant 種別。play_card / attack / scale_up / monetize / use_effect / use_initiative / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。 */
             type: string;
+        };
+        /** @description 手札からカードをプレイする候補。 */
+        PlayCardAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
             handInstanceID?: string;
             cardID?: string;
             validZones?: string[];
             validTargets?: string[];
-            /** Format: int64 */
-            cost?: number;
             choiceOptions?: string[];
+            effectTargetType?: string;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "play_card";
+        };
+        /** @description フロントエンドのコンピュート系リソースで攻撃する候補。 */
+        AttackAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
+            sourceInstanceID?: string;
+            validTargets?: string[];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "attack";
+        };
+        /** @description リソースをスケールアップする候補。 */
+        ScaleUpAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
             sourceInstanceID?: string;
             targetRank?: string;
             instanceFamily?: string;
             needsFamily?: boolean;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "scale_up";
+        };
+        /** @description リソースで収益化する候補。 */
+        MonetizeAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
+            sourceInstanceID?: string;
             /** Format: int64 */
             remainingCapacity?: number;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "monetize";
+        };
+        /** @description フィールド上のカードの起動効果を使用する候補。 */
+        UseEffectAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
+            cardID?: string;
+            sourceInstanceID?: string;
+            validTargets?: string[];
             effectTargetType?: string;
             /** Format: int32 */
             requiredCount?: number;
-            /** @description 施策の区分 (routine / special)。use_initiative variant でのみ使用。 */
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "use_effect";
+        };
+        /** @description 施策 (ルーチン / スペシャル) を使用する候補。 */
+        UseInitiativeAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
+            cardID?: string;
+            /** @description 施策の区分 (routine / special)。 */
             kind?: string;
+            /** Format: int64 */
+            cost?: number;
+            validTargets?: string[];
+            effectTargetType?: string;
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "use_initiative";
+        };
+        /** @description 効果処理中の選択候補 1 件。chosen_id は cardID または validTargets[0] から取る。 */
+        ResolvePendingChoiceAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
+            sourceInstanceID?: string;
+            cardID?: string;
+            validTargets?: string[];
+        } & {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "resolve_pending_choice";
         };
         PlayCardEventData: {
             cardId: string;

@@ -23,7 +23,7 @@ internal sealed class ReactiveDeployStrategy
     /// <summary>
     /// リアクティブのデプロイアクション列を決定します。
     /// </summary>
-    public List<NpcAction> Decide(List<GD.AvailableAction> playActions, HashSet<string> usedZones)
+    public List<NpcAction> Decide(List<GD.PlayCardAction> playActions, HashSet<string> usedZones)
     {
         var reactive = _config.Reactive!;
 

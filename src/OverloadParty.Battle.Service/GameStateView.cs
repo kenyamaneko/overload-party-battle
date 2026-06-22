@@ -202,27 +202,58 @@ public static class GameStateView
         };
     }
 
-    private static GD.AvailableAction MapAvailableAction(AvailableAction a)
+    private static GD.AvailableAction MapAvailableAction(AvailableAction a) => a.Type switch
     {
-        return new GD.AvailableAction
+        ActionTypes.PlayCard => new GD.PlayCardAction
         {
-            Type = a.Type,
             HandInstanceID = a.HandInstanceID,
             CardID = a.CardID,
             ValidZones = a.ValidZones,
             ValidTargets = a.ValidTargets,
             ChoiceOptions = a.ChoiceOptions,
+            EffectTargetType = a.EffectTargetType,
+        },
+        ActionTypes.Attack => new GD.AttackAction
+        {
+            SourceInstanceID = a.SourceInstanceID,
+            ValidTargets = a.ValidTargets,
+        },
+        ActionTypes.ScaleUp => new GD.ScaleUpAction
+        {
             SourceInstanceID = a.SourceInstanceID,
             TargetRank = a.TargetRank,
             InstanceFamily = a.InstanceFamily,
             NeedsFamily = a.IsFamilyRequired,
+        },
+        ActionTypes.Monetize => new GD.MonetizeAction
+        {
+            SourceInstanceID = a.SourceInstanceID,
             RemainingCapacity = a.RemainingCapacity,
+        },
+        ActionTypes.UseEffect => new GD.UseEffectAction
+        {
+            CardID = a.CardID,
+            SourceInstanceID = a.SourceInstanceID,
+            ValidTargets = a.ValidTargets,
             EffectTargetType = a.EffectTargetType,
             RequiredCount = a.RequiredCount,
+        },
+        ActionTypes.UseInitiative => new GD.UseInitiativeAction
+        {
+            CardID = a.CardID,
             Kind = a.Kind,
             Cost = a.Cost,
-        };
-    }
+            ValidTargets = a.ValidTargets,
+            EffectTargetType = a.EffectTargetType,
+        },
+        ActionTypes.ResolvePendingChoice => new GD.ResolvePendingChoiceAction
+        {
+            SourceInstanceID = a.SourceInstanceID,
+            CardID = a.CardID,
+            ValidTargets = a.ValidTargets,
+        },
+        _ => throw new InvalidOperationException($"unknown available action type '{a.Type}'"),
+    };
 
     // ─── Opponent field with info hiding ────────────────────
 

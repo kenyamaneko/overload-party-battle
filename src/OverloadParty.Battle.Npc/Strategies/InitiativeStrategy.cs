@@ -42,7 +42,7 @@ internal sealed class InitiativeStrategy
             return [];
         }
 
-        return ActionFilter.FilterByType(available, ActionTypes.UseInitiative)
+        return ActionFilter.FilterByType<GD.UseInitiativeAction>(available)
             .Select(a => (Action: a, Policy: config.GetValueOrDefault(a.CardID)))
             .Where(x => x.Policy is not null)
             .Select(x => BuildCandidate(x.Action, x.Policy!, ctx, activeConfig))
@@ -70,8 +70,8 @@ internal sealed class InitiativeStrategy
     /// <param name="ctx">現在の判断コンテキスト。</param>
     /// <param name="activeConfig">フェーズ overlay 適用後の AI 設定。</param>
     /// <returns>使用する施策の候補。使用しない場合は null。</returns>
-    private (GD.AvailableAction Action, int Priority, Dictionary<string, object>? ChoiceData)? BuildCandidate(
-        GD.AvailableAction action, InitiativePolicyConfig policy, DecisionContext ctx, AiConfig activeConfig)
+    private (GD.UseInitiativeAction Action, int Priority, Dictionary<string, object>? ChoiceData)? BuildCandidate(
+        GD.UseInitiativeAction action, InitiativePolicyConfig policy, DecisionContext ctx, AiConfig activeConfig)
     {
         if (policy.MinInsight is { } minInsight && ctx.InsightPool < minInsight)
         {

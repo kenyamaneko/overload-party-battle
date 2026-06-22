@@ -25,7 +25,7 @@ internal sealed class DeployStrategy
     /// リソース / プラットフォームのデプロイアクション列を決定します。
     /// </summary>
     public List<NpcAction> Decide(
-        DecisionContext ctx, List<GD.AvailableAction> playActions, HashSet<string> usedZones)
+        DecisionContext ctx, List<GD.PlayCardAction> playActions, HashSet<string> usedZones)
     {
         var candidates = CardCandidateBuilder.Build<object?>(
             playActions,

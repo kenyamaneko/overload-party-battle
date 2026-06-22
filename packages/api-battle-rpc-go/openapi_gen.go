@@ -56,6 +56,13 @@ type AttachCardEventData struct {
 	TargetId string `json:"targetId"`
 }
 
+// AttackAction defines model for AttackAction.
+type AttackAction struct {
+	SourceInstanceID *string   `json:"sourceInstanceID,omitempty"`
+	Type             string    `json:"type"`
+	ValidTargets     *[]string `json:"validTargets,omitempty"`
+}
+
 // AttackEventData defines model for AttackEventData.
 type AttackEventData struct {
 	AttackerId string `json:"attackerId"`
@@ -66,29 +73,10 @@ type AttackEventData struct {
 	TargetId   string `json:"targetId"`
 }
 
-// AvailableAction プレイヤーが現ターンに実行可能なアクション。`type` discriminator で variant を判別する。
-// 各 variant 固有のフィールドは optional。flat shape を維持しているのは既存 C# server / TS client
-// の実装を温存するため (oneOf による正規化は将来検討)。
+// AvailableAction プレイヤーが現ターンに実行可能なアクション 1 件。`type` がアクション種別
+// (play_card / attack など) を示し、その種別に必要なフィールドだけを持つ。
 type AvailableAction struct {
-	CardID           *string   `json:"cardID,omitempty"`
-	ChoiceOptions    *[]string `json:"choiceOptions,omitempty"`
-	Cost             *int64    `json:"cost,omitempty"`
-	EffectTargetType *string   `json:"effectTargetType,omitempty"`
-	HandInstanceID   *string   `json:"handInstanceID,omitempty"`
-	InstanceFamily   *string   `json:"instanceFamily,omitempty"`
-
-	// Kind 施策の区分 (routine / special)。use_initiative variant でのみ使用。
-	Kind              *string `json:"kind,omitempty"`
-	NeedsFamily       *bool   `json:"needsFamily,omitempty"`
-	RemainingCapacity *int64  `json:"remainingCapacity,omitempty"`
-	RequiredCount     *int32  `json:"requiredCount,omitempty"`
-	SourceInstanceID  *string `json:"sourceInstanceID,omitempty"`
-	TargetRank        *string `json:"targetRank,omitempty"`
-
-	// Type variant 種別。play_card / attack / scale_up / monetize / use_effect / use_initiative / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
-	Type         string    `json:"type"`
-	ValidTargets *[]string `json:"validTargets,omitempty"`
-	ValidZones   *[]string `json:"validZones,omitempty"`
+	Type string `json:"type"`
 }
 
 // BattleDeckCard デッキスナップショット内の 1 枚のカード。
@@ -267,6 +255,13 @@ type HiddenDeployedSupport struct {
 	Peeked bool `json:"peeked"`
 }
 
+// MonetizeAction defines model for MonetizeAction.
+type MonetizeAction struct {
+	RemainingCapacity *int64  `json:"remainingCapacity,omitempty"`
+	SourceInstanceID  *string `json:"sourceInstanceID,omitempty"`
+	Type              string  `json:"type"`
+}
+
 // MonetizeEventData defines model for MonetizeEventData.
 type MonetizeEventData struct {
 	TotalAmount int64 `json:"totalAmount"`
@@ -367,6 +362,17 @@ type PhaseEndEventData struct {
 	Phase        string `json:"phase"`
 }
 
+// PlayCardAction defines model for PlayCardAction.
+type PlayCardAction struct {
+	CardID           *string   `json:"cardID,omitempty"`
+	ChoiceOptions    *[]string `json:"choiceOptions,omitempty"`
+	EffectTargetType *string   `json:"effectTargetType,omitempty"`
+	HandInstanceID   *string   `json:"handInstanceID,omitempty"`
+	Type             string    `json:"type"`
+	ValidTargets     *[]string `json:"validTargets,omitempty"`
+	ValidZones       *[]string `json:"validZones,omitempty"`
+}
+
 // PlayCardEventData defines model for PlayCardEventData.
 type PlayCardEventData struct {
 	Cancelled *bool  `json:"cancelled,omitempty"`
@@ -455,6 +461,23 @@ type ReactiveRevealedEventData struct {
 	InstanceId string `json:"instanceId"`
 }
 
+// ResolvePendingChoiceAction defines model for ResolvePendingChoiceAction.
+type ResolvePendingChoiceAction struct {
+	CardID           *string   `json:"cardID,omitempty"`
+	SourceInstanceID *string   `json:"sourceInstanceID,omitempty"`
+	Type             string    `json:"type"`
+	ValidTargets     *[]string `json:"validTargets,omitempty"`
+}
+
+// ScaleUpAction defines model for ScaleUpAction.
+type ScaleUpAction struct {
+	InstanceFamily   *string `json:"instanceFamily,omitempty"`
+	NeedsFamily      *bool   `json:"needsFamily,omitempty"`
+	SourceInstanceID *string `json:"sourceInstanceID,omitempty"`
+	TargetRank       *string `json:"targetRank,omitempty"`
+	Type             string  `json:"type"`
+}
+
 // ScaleUpEventData defines model for ScaleUpEventData.
 type ScaleUpEventData struct {
 	InstanceFamily *string `json:"instanceFamily,omitempty"`
@@ -514,11 +537,33 @@ type UndeployedCard struct {
 	InstanceID string `json:"instanceID"`
 }
 
+// UseEffectAction defines model for UseEffectAction.
+type UseEffectAction struct {
+	CardID           *string   `json:"cardID,omitempty"`
+	EffectTargetType *string   `json:"effectTargetType,omitempty"`
+	RequiredCount    *int32    `json:"requiredCount,omitempty"`
+	SourceInstanceID *string   `json:"sourceInstanceID,omitempty"`
+	Type             string    `json:"type"`
+	ValidTargets     *[]string `json:"validTargets,omitempty"`
+}
+
 // UseEffectEventData defines model for UseEffectEventData.
 type UseEffectEventData struct {
 	CardId   string  `json:"cardId"`
 	SourceId string  `json:"sourceId"`
 	TargetId *string `json:"targetId,omitempty"`
+}
+
+// UseInitiativeAction defines model for UseInitiativeAction.
+type UseInitiativeAction struct {
+	CardID           *string `json:"cardID,omitempty"`
+	Cost             *int64  `json:"cost,omitempty"`
+	EffectTargetType *string `json:"effectTargetType,omitempty"`
+
+	// Kind 施策の区分 (routine / special)。
+	Kind         *string   `json:"kind,omitempty"`
+	Type         string    `json:"type"`
+	ValidTargets *[]string `json:"validTargets,omitempty"`
 }
 
 // UseInitiativeEventData defines model for UseInitiativeEventData.

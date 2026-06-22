@@ -53,13 +53,13 @@ public class ActionFilterTests
         {
             var actions = new List<GD.AvailableAction>
             {
-                new() { Type = ActionTypes.PlayCard, HandInstanceID = "h1" },
-                new() { Type = ActionTypes.Attack, SourceInstanceID = "a1" },
-                new() { Type = ActionTypes.PlayCard, HandInstanceID = "h2" },
-                new() { Type = ActionTypes.ScaleUp, SourceInstanceID = "s1" },
+                new GD.PlayCardAction { HandInstanceID = "h1" },
+                new GD.AttackAction { SourceInstanceID = "a1" },
+                new GD.PlayCardAction { HandInstanceID = "h2" },
+                new GD.ScaleUpAction { SourceInstanceID = "s1" },
             };
 
-            var result = ActionFilter.FilterByType(actions, ActionTypes.PlayCard);
+            var result = ActionFilter.FilterByType<GD.PlayCardAction>(actions);
 
             result.Should().HaveCount(2);
             result.Select(a => a.HandInstanceID).Should().Equal("h1", "h2");
@@ -70,10 +70,10 @@ public class ActionFilterTests
         {
             var actions = new List<GD.AvailableAction>
             {
-                new() { Type = ActionTypes.Attack },
+                new GD.AttackAction(),
             };
 
-            ActionFilter.FilterByType(actions, ActionTypes.PlayCard).Should().BeEmpty();
+            ActionFilter.FilterByType<GD.PlayCardAction>(actions).Should().BeEmpty();
         }
     }
 

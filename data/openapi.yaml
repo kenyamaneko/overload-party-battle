@@ -948,65 +948,171 @@ components:
     AvailableAction:
       type: object
       description: |
-        プレイヤーが現ターンに実行可能なアクション。`type` discriminator で variant を判別する。
-        各 variant 固有のフィールドは optional。flat shape を維持しているのは既存 C# server / TS client
-        の実装を温存するため (oneOf による正規化は将来検討)。
+        プレイヤーが現ターンに実行可能なアクション 1 件。`type` がアクション種別
+        (play_card / attack など) を示し、その種別に必要なフィールドだけを持つ。
       x-battle-csharp-package: state
       required: [type]
+      discriminator:
+        propertyName: type
+        mapping:
+          play_card: "#/components/schemas/PlayCardAction"
+          attack: "#/components/schemas/AttackAction"
+          scale_up: "#/components/schemas/ScaleUpAction"
+          monetize: "#/components/schemas/MonetizeAction"
+          use_effect: "#/components/schemas/UseEffectAction"
+          use_initiative: "#/components/schemas/UseInitiativeAction"
+          resolve_pending_choice: "#/components/schemas/ResolvePendingChoiceAction"
       properties:
         type:
           type: string
-          description: variant 種別。play_card / attack / scale_up / monetize / use_effect / use_initiative / resolve_pending_choice のいずれか。resolve_pending_choice は pending effect choice の候補 1 件を表し、選択時の chosen_id は handInstanceID または validTargets[0] から取る。
-        # play_card variant
-        handInstanceID:
-          type: string
-          x-go-name: HandInstanceID
-          x-csharp-name: HandInstanceID
-        cardID:
-          type: string
-          x-go-name: CardID
-          x-csharp-name: CardID
-        validZones:
-          type: array
-          items:
-            type: string
-        validTargets:
-          type: array
-          items:
-            type: string
-        cost:
-          type: integer
-          format: int64
-        choiceOptions:
-          type: array
-          items:
-            type: string
-        # attack variant
-        sourceInstanceID:
-          type: string
-          x-go-name: SourceInstanceID
-          x-csharp-name: SourceInstanceID
-        # scale_up variant
-        targetRank:
-          type: string
-        instanceFamily:
-          type: string
-        needsFamily:
-          type: boolean
-        # monetize variant
-        remainingCapacity:
-          type: integer
-          format: int64
-        # use_effect variant
-        effectTargetType:
-          type: string
-        requiredCount:
-          type: integer
-          format: int32
-        # use_initiative variant
-        kind:
-          type: string
-          description: 施策の区分 (routine / special)。use_initiative variant でのみ使用。
+
+    PlayCardAction:
+      description: 手札からカードをプレイする候補。
+      x-battle-csharp-package: state
+      allOf:
+        - $ref: "#/components/schemas/AvailableAction"
+        - type: object
+          properties:
+            handInstanceID:
+              type: string
+              x-go-name: HandInstanceID
+              x-csharp-name: HandInstanceID
+            cardID:
+              type: string
+              x-go-name: CardID
+              x-csharp-name: CardID
+            validZones:
+              type: array
+              items:
+                type: string
+            validTargets:
+              type: array
+              items:
+                type: string
+            choiceOptions:
+              type: array
+              items:
+                type: string
+            effectTargetType:
+              type: string
+
+    AttackAction:
+      description: フロントエンドのコンピュート系リソースで攻撃する候補。
+      x-battle-csharp-package: state
+      allOf:
+        - $ref: "#/components/schemas/AvailableAction"
+        - type: object
+          properties:
+            sourceInstanceID:
+              type: string
+              x-go-name: SourceInstanceID
+              x-csharp-name: SourceInstanceID
+            validTargets:
+              type: array
+              items:
+                type: string
+
+    ScaleUpAction:
+      description: リソースをスケールアップする候補。
+      x-battle-csharp-package: state
+      allOf:
+        - $ref: "#/components/schemas/AvailableAction"
+        - type: object
+          properties:
+            sourceInstanceID:
+              type: string
+              x-go-name: SourceInstanceID
+              x-csharp-name: SourceInstanceID
+            targetRank:
+              type: string
+            instanceFamily:
+              type: string
+            needsFamily:
+              type: boolean
+
+    MonetizeAction:
+      description: リソースで収益化する候補。
+      x-battle-csharp-package: state
+      allOf:
+        - $ref: "#/components/schemas/AvailableAction"
+        - type: object
+          properties:
+            sourceInstanceID:
+              type: string
+              x-go-name: SourceInstanceID
+              x-csharp-name: SourceInstanceID
+            remainingCapacity:
+              type: integer
+              format: int64
+
+    UseEffectAction:
+      description: フィールド上のカードの起動効果を使用する候補。
+      x-battle-csharp-package: state
+      allOf:
+        - $ref: "#/components/schemas/AvailableAction"
+        - type: object
+          properties:
+            cardID:
+              type: string
+              x-go-name: CardID
+              x-csharp-name: CardID
+            sourceInstanceID:
+              type: string
+              x-go-name: SourceInstanceID
+              x-csharp-name: SourceInstanceID
+            validTargets:
+              type: array
+              items:
+                type: string
+            effectTargetType:
+              type: string
+            requiredCount:
+              type: integer
+              format: int32
+
+    UseInitiativeAction:
+      description: 施策 (ルーチン / スペシャル) を使用する候補。
+      x-battle-csharp-package: state
+      allOf:
+        - $ref: "#/components/schemas/AvailableAction"
+        - type: object
+          properties:
+            cardID:
+              type: string
+              x-go-name: CardID
+              x-csharp-name: CardID
+            kind:
+              type: string
+              description: 施策の区分 (routine / special)。
+            cost:
+              type: integer
+              format: int64
+            validTargets:
+              type: array
+              items:
+                type: string
+            effectTargetType:
+              type: string
+
+    ResolvePendingChoiceAction:
+      description: 効果処理中の選択候補 1 件。chosen_id は cardID または validTargets[0] から取る。
+      x-battle-csharp-package: state
+      allOf:
+        - $ref: "#/components/schemas/AvailableAction"
+        - type: object
+          properties:
+            sourceInstanceID:
+              type: string
+              x-go-name: SourceInstanceID
+              x-csharp-name: SourceInstanceID
+            cardID:
+              type: string
+              x-go-name: CardID
+              x-csharp-name: CardID
+            validTargets:
+              type: array
+              items:
+                type: string
 
     # ─── Event payloads (camelCase wire, per event_schemas.yaml) ─────────
     # 各 EventType 固有の payload。`ActionEvent.event_data` の中身として serialize される。

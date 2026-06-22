@@ -27,7 +27,7 @@ internal sealed class ImmediateActionStrategy
     /// </summary>
     public List<NpcAction> Decide(
         DecisionContext ctx,
-        List<GD.AvailableAction> playActions,
+        List<GD.PlayCardAction> playActions,
         HashSet<string> usedZones,
         AiConfig activeConfig)
     {
