@@ -229,7 +229,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "strong", "weak" } },
+            new GD.AttackAction { SourceInstanceID = "atk1", ValidTargets = new() { "strong", "weak" } },
         };
         var state = BuildState(
             phase: "battle",
@@ -266,7 +266,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
+            new GD.AttackAction { SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
         };
         var state = BuildState(
             phase: "battle",
@@ -304,8 +304,8 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "target" } },
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk2", ValidTargets = new() { "target" } },
+            new GD.AttackAction { SourceInstanceID = "atk1", ValidTargets = new() { "target" } },
+            new GD.AttackAction { SourceInstanceID = "atk2", ValidTargets = new() { "target" } },
         };
         var state = BuildState(
             phase: "battle",
@@ -379,8 +379,8 @@ public class NpcAiTests
         // resolve_pending_choice の variant: hand_card 種別は CardID に候補 ID を載せる。
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.ResolvePendingChoice, SourceInstanceID = "inst_1", CardID = "TST-0001" },
-            new() { Type = ActionTypes.ResolvePendingChoice, SourceInstanceID = "inst_1", CardID = "TST-0002" },
+            new GD.ResolvePendingChoiceAction { SourceInstanceID = "inst_1", CardID = "TST-0001" },
+            new GD.ResolvePendingChoiceAction { SourceInstanceID = "inst_1", CardID = "TST-0002" },
         };
         var state = BuildState(pendingEffectChoice: pending, available: available);
 
@@ -439,8 +439,8 @@ public class NpcAiTests
         };
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_1" } },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+            new GD.PlayCardAction { HandInstanceID = "h_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_1" } },
+            new GD.PlayCardAction { HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
         };
         var state = BuildState(hand: hand, available: available);
 
@@ -465,8 +465,8 @@ public class NpcAiTests
         };
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_weird", CardID = "WEIRD-001", ValidZones = new() { "frontend_1" } },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+            new GD.PlayCardAction { HandInstanceID = "h_weird", CardID = "WEIRD-001", ValidZones = new() { "frontend_1" } },
+            new GD.PlayCardAction { HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
         };
         var state = BuildState(hand: hand, available: available);
 
@@ -489,8 +489,8 @@ public class NpcAiTests
         };
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_1" } },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_0" } },
+            new GD.PlayCardAction { HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_1" } },
+            new GD.PlayCardAction { HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_0" } },
         };
         var state = BuildState(
             hand: hand,
@@ -517,8 +517,8 @@ public class NpcAiTests
         };
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_1" } },
+            new GD.PlayCardAction { HandInstanceID = "hand_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+            new GD.PlayCardAction { HandInstanceID = "hand_tk5", CardID = "TST-0002", ValidZones = new() { "frontend_1" } },
         };
         var state = BuildState(hand: hand, available: available);
 
@@ -541,9 +541,9 @@ public class NpcAiTests
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_0006", CardID = "TST-0007" } };
         var available = new List<GD.AvailableAction>
         {
-            new()
+            new GD.PlayCardAction
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_0006", CardID = "TST-0007",
+                HandInstanceID = "h_0006", CardID = "TST-0007",
                 ValidZones = new() { "frontend_0" }, ChoiceOptions = new() { "use", "reserve" },
             },
         };
@@ -565,9 +565,9 @@ public class NpcAiTests
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_unk", CardID = "UNKNOWN-C" } };
         var available = new List<GD.AvailableAction>
         {
-            new()
+            new GD.PlayCardAction
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_unk", CardID = "UNKNOWN-C",
+                HandInstanceID = "h_unk", CardID = "UNKNOWN-C",
                 ValidZones = new() { "frontend_0" }, ChoiceOptions = new() { "optionA", "optionB" },
             },
         };
@@ -590,9 +590,9 @@ public class NpcAiTests
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_sh1", CardID = "TST-0001" } };
         var available = new List<GD.AvailableAction>
         {
-            new()
+            new GD.PlayCardAction
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001",
+                HandInstanceID = "h_sh1", CardID = "TST-0001",
                 ValidZones = new() { "backend_0", "frontend_0" },
             },
         };
@@ -612,9 +612,9 @@ public class NpcAiTests
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-0003" } };
         var available = new List<GD.AvailableAction>
         {
-            new()
+            new GD.PlayCardAction
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_db", CardID = "TST-0003",
+                HandInstanceID = "h_db", CardID = "TST-0003",
                 ValidZones = new() { "frontend_0", "backend_0" },
             },
         };
@@ -638,7 +638,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.ScaleUp, SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
+            new GD.ScaleUpAction { SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
         };
         var state = BuildState(
             available: available,
@@ -663,7 +663,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.ScaleUp, SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
+            new GD.ScaleUpAction { SourceInstanceID = "db1", TargetRank = "medium", NeedsFamily = true },
         };
         var state = BuildState(
             available: available,
@@ -722,7 +722,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res1", RemainingCapacity = 800 },
+            new GD.MonetizeAction { SourceInstanceID = "res1", RemainingCapacity = 800 },
         };
         var state = BuildState(insightPool: 1000, available: available);
 
@@ -743,7 +743,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res1", RemainingCapacity = 500 },
+            new GD.MonetizeAction { SourceInstanceID = "res1", RemainingCapacity = 500 },
         };
         var state = BuildState(insightPool: 0, available: available);
 
@@ -759,8 +759,8 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_low", RemainingCapacity = 500 },
-            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_high", RemainingCapacity = 500 },
+            new GD.MonetizeAction { SourceInstanceID = "res_low", RemainingCapacity = 500 },
+            new GD.MonetizeAction { SourceInstanceID = "res_high", RemainingCapacity = 500 },
         };
         var state = BuildState(
             insightPool: 1000,
@@ -821,8 +821,8 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_a", RemainingCapacity = 500 },
-            new() { Type = ActionTypes.Monetize, SourceInstanceID = "res_b", RemainingCapacity = 400 },
+            new GD.MonetizeAction { SourceInstanceID = "res_a", RemainingCapacity = 500 },
+            new GD.MonetizeAction { SourceInstanceID = "res_b", RemainingCapacity = 400 },
         };
         var state = BuildState(
             insightPool: 1000,
@@ -850,7 +850,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+            new GD.PlayCardAction { HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
         };
         var state = BuildState(insightPool: 500, available: available);
 
@@ -876,9 +876,9 @@ public class NpcAiTests
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_strat", CardID = "TST-STRAT" } };
         var available = new List<GD.AvailableAction>
         {
-            new()
+            new GD.PlayCardAction
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_strat", CardID = "TST-STRAT",
+                HandInstanceID = "h_strat", CardID = "TST-STRAT",
                 ValidZones = new() { "support_0" },
             },
         };
@@ -901,9 +901,9 @@ public class NpcAiTests
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_noeff", CardID = "TST-NOEFF" } };
         var available = new List<GD.AvailableAction>
         {
-            new()
+            new GD.PlayCardAction
             {
-                Type = ActionTypes.PlayCard, HandInstanceID = "h_noeff", CardID = "TST-NOEFF",
+                HandInstanceID = "h_noeff", CardID = "TST-NOEFF",
                 ValidZones = new() { "support_0" },
             },
         };
@@ -967,7 +967,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
+            new GD.AttackAction { SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
         };
         var state = BuildState(
             turn: 8, phase: "battle",
@@ -1033,7 +1033,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
+            new GD.AttackAction { SourceInstanceID = "atk1", ValidTargets = new() { "low_tp", "high_tp" } },
         };
         var state = BuildState(
             turn: 3, phase: "battle",
@@ -1102,7 +1102,7 @@ public class NpcAiTests
 
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.Attack, SourceInstanceID = "own1", ValidTargets = new() { "low_tp", "high_tp" } },
+            new GD.AttackAction { SourceInstanceID = "own1", ValidTargets = new() { "low_tp", "high_tp" } },
         };
         var state = BuildState(
             turn: 8, phase: "battle",
@@ -1197,8 +1197,8 @@ public class NpcAiTests
         };
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-0006",
+            new GD.PlayCardAction { HandInstanceID = "h_sh1", CardID = "TST-0001", ValidZones = new() { "frontend_0" } },
+            new GD.PlayCardAction { HandInstanceID = "h_att", CardID = "TST-0006",
                     ValidZones = new() { "support_0" }, ValidTargets = new() { "res1" } },
         };
         var state = BuildState(
@@ -1269,9 +1269,9 @@ public class NpcAiTests
         };
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att1", CardID = "TST-0006",
+            new GD.PlayCardAction { HandInstanceID = "h_att1", CardID = "TST-0006",
                     ValidZones = new() { "support_0" }, ValidTargets = new() { "res1" } },
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att2", CardID = "TST-0008",
+            new GD.PlayCardAction { HandInstanceID = "h_att2", CardID = "TST-0008",
                     ValidZones = new() { "support_1" }, ValidTargets = new() { "res1" } },
         };
         var state = BuildState(
@@ -1299,7 +1299,7 @@ public class NpcAiTests
         };
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.PlayCard, HandInstanceID = "h_att", CardID = "TST-0006",
+            new GD.PlayCardAction { HandInstanceID = "h_att", CardID = "TST-0006",
                     ValidZones = new() { "support_0" }, ValidTargets = new() { "res1" } },
         };
         var state = BuildState(hand: hand, available: available);
@@ -1398,7 +1398,7 @@ public class NpcAiTests
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
         };
         var state = BuildState(
             configureOppField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "o1"),
@@ -1417,7 +1417,7 @@ public class NpcAiTests
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
         };
         var state = BuildState(available: available);
 
@@ -1432,7 +1432,7 @@ public class NpcAiTests
         var ai = new NpcAi(MakeConfig(), _cc, _effects, MakeInitiativeCatalog());
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
         };
         var state = BuildState(
             configureOppField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "o1"),
@@ -1449,7 +1449,7 @@ public class NpcAiTests
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects);
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
         };
         var state = BuildState(
             configureOppField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "o1"),
@@ -1468,7 +1468,7 @@ public class NpcAiTests
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Special, CardID = SpecialInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Special, CardID = SpecialInitiativeId },
         };
         var state = BuildState(insightPool: insightPool, available: available);
 
@@ -1486,7 +1486,7 @@ public class NpcAiTests
         var ai = new NpcAi(MakeChoiceRoutineConfig(), _cc, _effects, MakeInitiativeCatalog());
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
         };
         var state = BuildState(
             configureMyField: f => f.Frontend[0] = TestFactory.MakeWireResource(instanceId: "dmg1", damage: 300),
@@ -1507,7 +1507,7 @@ public class NpcAiTests
         var ai = new NpcAi(MakeChoiceRoutineConfig(), _cc, _effects, MakeInitiativeCatalog());
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
         };
         var state = BuildState(available: available);
 
@@ -1522,8 +1522,8 @@ public class NpcAiTests
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
         var available = new List<GD.AvailableAction>
         {
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
-            new() { Type = ActionTypes.UseInitiative, Kind = InitiativeKinds.Special, CardID = SpecialInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Routine, CardID = RoutineInitiativeId },
+            new GD.UseInitiativeAction { Kind = InitiativeKinds.Special, CardID = SpecialInitiativeId },
         };
         var state = BuildState(
             insightPool: 600,

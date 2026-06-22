@@ -10,14 +10,14 @@ namespace OverloadParty.Battle.Npc;
 public static class ActionFilter
 {
     /// <summary>
-    /// 指定アクションタイプに一致するものだけを抽出します。
+    /// 指定 variant 型のアクションだけを抽出します。
     /// </summary>
+    /// <typeparam name="T">抽出する AvailableAction variant 型。</typeparam>
     /// <param name="actions">フィルタ対象のアクション列。</param>
-    /// <param name="actionType">抽出するアクションタイプ。</param>
-    /// <returns>該当アクションのみのリスト。</returns>
-    public static List<GD.AvailableAction> FilterByType(List<GD.AvailableAction> actions, string actionType)
+    /// <returns>該当 variant のみのリスト。</returns>
+    public static List<T> FilterByType<T>(List<GD.AvailableAction> actions) where T : GD.AvailableAction
     {
-        return actions.Where(a => a.Type == actionType).ToList();
+        return actions.OfType<T>().ToList();
     }
 
     /// <summary>

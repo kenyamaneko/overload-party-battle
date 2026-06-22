@@ -24,7 +24,7 @@ internal sealed class AttachmentDeployStrategy
     /// アタッチメントのデプロイアクション列を決定します。
     /// </summary>
     public List<NpcAction> Decide(
-        DecisionContext ctx, List<GD.AvailableAction> playActions, HashSet<string> usedZones)
+        DecisionContext ctx, List<GD.PlayCardAction> playActions, HashSet<string> usedZones)
     {
         var attachments = _config.Attachments!;
 

@@ -175,13 +175,21 @@ public static class TargetSelector
     /// <summary>
     /// Orders AvailableActions by the given order_by stat applied to their source resource on the given field.
     /// </summary>
-    public static List<GD.AvailableAction> OrderActions(
-        List<GD.AvailableAction> actions, string orderBy, GD.Field field, ICardCache cc)
+    /// <typeparam name="T">並べ替える AvailableAction variant 型。</typeparam>
+    /// <param name="actions">並べ替え対象のアクション列。</param>
+    /// <param name="sourceInstanceId">アクションから source リソースの InstanceID を取り出す関数。</param>
+    /// <param name="orderBy">並べ替えに使う stat 指定。</param>
+    /// <param name="field">stat を引く自フィールド。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>並べ替え済みのアクション列。</returns>
+    public static List<T> OrderActions<T>(
+        List<T> actions, Func<T, string?> sourceInstanceId, string orderBy, GD.Field field, ICardCache cc)
+        where T : GD.AvailableAction
     {
         var resMap = WireFieldHelpers.AllResources(field).ToDictionary(r => r.InstanceID);
         var (stat, desc) = ParseOrderBy(orderBy);
-        long Selector(GD.AvailableAction a) =>
-            resMap.TryGetValue(a.SourceInstanceID!, out var r)
+        long Selector(T a) =>
+            resMap.TryGetValue(sourceInstanceId(a)!, out var r)
                 ? GetStatValue(r, stat, cc) : 0;
         return (desc
             ? actions.OrderByDescending(Selector)

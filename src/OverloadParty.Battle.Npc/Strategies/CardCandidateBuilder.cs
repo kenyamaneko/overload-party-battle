@@ -11,7 +11,7 @@ namespace OverloadParty.Battle.Npc.Strategies;
 /// </summary>
 internal static class CardCandidateBuilder
 {
-    public record Candidate<TExtra>(GD.AvailableAction Action, CardDefinition Card, int Priority, TExtra Extra);
+    public record Candidate<TExtra>(GD.PlayCardAction Action, CardDefinition Card, int Priority, TExtra Extra);
 
     /// <summary>
     /// playActions を predicate でフィルタし、projector で (priority, extra) を計算。
@@ -19,10 +19,10 @@ internal static class CardCandidateBuilder
     /// 結果は priority 降順でソート済み。
     /// </summary>
     public static List<Candidate<TExtra>> Build<TExtra>(
-        IEnumerable<GD.AvailableAction> playActions,
+        IEnumerable<GD.PlayCardAction> playActions,
         ICardCache cardCache,
         Func<CardDefinition, bool> predicate,
-        Func<GD.AvailableAction, CardDefinition, (int Priority, TExtra Extra)?> projector)
+        Func<GD.PlayCardAction, CardDefinition, (int Priority, TExtra Extra)?> projector)
     {
         return playActions
             .Select(a => (Action: a, Card: MustGet(cardCache, a.CardID)))
