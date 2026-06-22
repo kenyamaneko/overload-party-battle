@@ -560,8 +560,8 @@ export interface components {
             discardRequired: number;
         };
         /**
-         * @description プレイヤーが現ターンに実行可能なアクション。`type` discriminator で variant を判別する
-         *     oneOf 判別ユニオン。各 variant は自分のフィールドだけを持つ。
+         * @description プレイヤーが現ターンに実行可能なアクション。`type` で variant を判別する
+         *     判別ユニオン。各 variant は自分のフィールドだけを持つ。
          */
         AvailableAction: {
             type: string;
