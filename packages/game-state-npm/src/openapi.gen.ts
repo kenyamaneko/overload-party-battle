@@ -560,8 +560,8 @@ export interface components {
             discardRequired: number;
         };
         /**
-         * @description プレイヤーが現ターンに実行可能なアクション。`type` で variant を判別する
-         *     判別ユニオン。各 variant は自分のフィールドだけを持つ。
+         * @description プレイヤーが現ターンに実行可能なアクション 1 件。`type` がアクション種別
+         *     (play_card / attack など) を示し、その種別に必要なフィールドだけを持つ。
          */
         AvailableAction: {
             type: string;

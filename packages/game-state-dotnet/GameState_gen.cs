@@ -676,8 +676,8 @@ namespace OverloadParty.GameState
     }
 
     /// <summary>
-    /// プレイヤーが現ターンに実行可能なアクション。`type` で variant を判別する
-    /// <br/>判別ユニオン。各 variant は自分のフィールドだけを持つ。
+    /// プレイヤーが現ターンに実行可能なアクション 1 件。`type` がアクション種別
+    /// <br/>(play_card / attack など) を示し、その種別に必要なフィールドだけを持つ。
     /// <br/>
     /// </summary>
     [JsonInheritanceConverter(typeof(AvailableAction), "type")]
