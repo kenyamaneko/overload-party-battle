@@ -170,6 +170,19 @@ monetize:
   order_by: tp_desc
   reserve_ratio: 0.2
 
+initiative:
+  IN-0005:
+    priority: 50
+    condition:
+      stat: damage
+      selector: { owner: myself }
+      min: 1
+  IN-0006:
+    priority: 60
+    condition:
+      selector: { owner: opponent }
+      min: 2
+
 attachments:
   SL-0017:
     priority: 80

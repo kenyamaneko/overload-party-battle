@@ -181,6 +181,18 @@ monetize:
   order_by: tp_desc
   reserve_ratio: 0.2
 
+initiative:
+  IN-0003:
+    priority: 40
+    condition:
+      selector: { owner: opponent, zone: support, face_down: true }
+      min: 1
+  IN-0004:
+    priority: 60
+    condition:
+      selector: { owner: opponent }
+      min: 2
+
 attachments:
   TK-0015:
     priority: 80

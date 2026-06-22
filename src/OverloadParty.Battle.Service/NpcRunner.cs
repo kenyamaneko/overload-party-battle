@@ -155,7 +155,7 @@ public class NpcRunner
                 $"No AI config found for model '{npcModel}'. Available: [{string.Join(", ", _aiConfigs.Keys)}]");
         }
 
-        return new NpcAi(config, _cardCache, _engine.EffectRegistry);
+        return new NpcAi(config, _cardCache, _engine.EffectRegistry, _engine.InitiativeCatalog);
     }
 
     private INpcStrategy? ResolveNpcAIForPlayer(Game game, long playerNum)

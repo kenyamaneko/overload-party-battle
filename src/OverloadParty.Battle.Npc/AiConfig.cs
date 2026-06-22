@@ -52,6 +52,10 @@ public class AiConfig
     [YamlMember(Alias = "monetize")]
     public MonetizeConfig Monetize { get; set; } = new();
 
+    /// <summary>施策 ID から使用設定を引く。デッキがセットした各施策を ID で指定する。</summary>
+    [YamlMember(Alias = "initiative")]
+    public Dictionary<string, InitiativePolicyConfig>? Initiative { get; set; }
+
     // discard: 既存の deploy/effect/attachment/reactive 優先度で判断するため専用設定不要
 
     [YamlMember(Alias = "attachments")]
@@ -263,6 +267,24 @@ public class MonetizeConfig
 
     [YamlMember(Alias = "reserve_ratio")]
     public double ReserveRatio { get; set; }
+}
+
+// ── Initiative ──────────────────────────────────────────────
+
+/// <summary>
+/// 施策 1 件の使用条件と優先度。
+/// </summary>
+public class InitiativePolicyConfig
+{
+    [YamlMember(Alias = "priority")]
+    public int Priority { get; set; }
+
+    /// <summary>使用に必要な Insight プールの下限。スペシャルの温存などに用いる。</summary>
+    [YamlMember(Alias = "min_insight")]
+    public long? MinInsight { get; set; }
+
+    [YamlMember(Alias = "condition")]
+    public ConditionDef? Condition { get; set; }
 }
 
 // ── Attachments ─────────────────────────────────────────────

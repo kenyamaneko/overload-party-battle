@@ -163,6 +163,18 @@ monetize:
   order_by: tp_desc
   reserve_ratio: 0.2
 
+initiative:
+  IN-0007:
+    priority: 50
+    condition:
+      selector: { owner: myself }
+      min: 1
+  IN-0008:
+    priority: 60
+    condition:
+      selector: { owner: myself }
+      min: 2
+
 attachments:
   TN-0014:
     priority: 80
