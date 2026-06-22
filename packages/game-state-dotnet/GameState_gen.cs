@@ -685,7 +685,7 @@ namespace OverloadParty.GameState
     [JsonInheritanceAttribute("attack", typeof(AttackAction))]
     [JsonInheritanceAttribute("scale_up", typeof(ScaleUpAction))]
     [JsonInheritanceAttribute("monetize", typeof(MonetizeAction))]
-    [JsonInheritanceAttribute("use_effect", typeof(UseEffectAction))]
+    [JsonInheritanceAttribute("use_ignition", typeof(UseIgnitionAction))]
     [JsonInheritanceAttribute("use_initiative", typeof(UseInitiativeAction))]
     [JsonInheritanceAttribute("resolve_pending_choice", typeof(ResolvePendingChoiceAction))]
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
@@ -785,7 +785,7 @@ namespace OverloadParty.GameState
     /// フィールド上のカードの起動効果を使用する候補。
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class UseEffectAction : AvailableAction
+    public partial class UseIgnitionAction : AvailableAction
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("cardID")]
@@ -995,7 +995,7 @@ namespace OverloadParty.GameState
     }
 
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
-    public partial class UseEffectEventData
+    public partial class UseIgnitionEventData
     {
 
         [System.Text.Json.Serialization.JsonPropertyName("cardId")]

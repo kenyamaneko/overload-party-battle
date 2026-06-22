@@ -9,10 +9,10 @@ export type GameStatus = (typeof GAME_STATUS)[number];
 export const WIN_REASONS = ["budget_zero", "system_down", "repository_out", "turn_timeout", "disconnect", "turn_limit", "draw", "launch_failure", "surrender"] as const;
 export type WinReason = (typeof WIN_REASONS)[number];
 
-export const ACTION_TYPES = ["play_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "use_initiative", "set_reactive", "end_phase", "forfeit", "select_slot", "reactive", "resolve_pending_choice"] as const;
+export const ACTION_TYPES = ["play_card", "attack", "scale_up", "monetize", "discard_hand", "use_ignition", "use_initiative", "set_reactive", "end_phase", "forfeit", "select_slot", "reactive", "resolve_pending_choice"] as const;
 export type GameActionType = (typeof ACTION_TYPES)[number];
 
-export const EVENT_TYPES = ["play_card", "attach_card", "attack", "scale_up", "monetize", "discard_hand", "use_effect", "use_initiative", "reactive_revealed", "phase_change", "phase_end", "turn_end", "turn_start", "game_over", "battle_start"] as const;
+export const EVENT_TYPES = ["play_card", "attach_card", "attack", "scale_up", "monetize", "discard_hand", "use_ignition", "use_initiative", "reactive_revealed", "phase_change", "phase_end", "turn_end", "turn_start", "game_over", "battle_start"] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
 export const EFFECT_DURATIONS = ["this_turn", "until_next_turn_end", "until_next_own_turn_end", "while_on_field", "permanent", "next_turn"] as const;

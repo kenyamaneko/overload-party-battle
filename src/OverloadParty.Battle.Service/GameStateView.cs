@@ -230,7 +230,7 @@ public static class GameStateView
             SourceInstanceID = a.SourceInstanceID,
             RemainingCapacity = a.RemainingCapacity,
         },
-        ActionTypes.UseEffect => new GD.UseEffectAction
+        ActionTypes.UseIgnition => new GD.UseIgnitionAction
         {
             CardID = a.CardID,
             SourceInstanceID = a.SourceInstanceID,

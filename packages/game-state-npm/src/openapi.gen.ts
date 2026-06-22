@@ -618,7 +618,7 @@ export interface components {
             type: "monetize";
         };
         /** @description フィールド上のカードの起動効果を使用する候補。 */
-        UseEffectAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
+        UseIgnitionAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
             cardID?: string;
             sourceInstanceID?: string;
             validTargets?: string[];
@@ -630,7 +630,7 @@ export interface components {
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
-            type: "use_effect";
+            type: "use_ignition";
         };
         /** @description 施策 (ルーチン / スペシャル) を使用する候補。 */
         UseInitiativeAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
@@ -695,7 +695,7 @@ export interface components {
             discardedCount: number;
             discardedIds: string[];
         };
-        UseEffectEventData: {
+        UseIgnitionEventData: {
             cardId: string;
             sourceId: string;
             targetId?: string;

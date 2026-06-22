@@ -7,7 +7,7 @@ using GD = OverloadParty.GameState;
 namespace OverloadParty.Battle.Npc.Strategies;
 
 /// <summary>
-/// 自フィールド上のカードの起動効果 (UseEffect) の実行判断。
+/// 自フィールド上のカードの起動効果 (UseIgnition) の実行判断。
 /// </summary>
 internal sealed class IgnitionStrategy
 {
@@ -26,7 +26,7 @@ internal sealed class IgnitionStrategy
     public List<NpcAction> Decide(
         DecisionContext ctx, List<GD.AvailableAction> available, AiConfig activeConfig)
     {
-        var ignitionActions = ActionFilter.FilterByType<GD.UseEffectAction>(available);
+        var ignitionActions = ActionFilter.FilterByType<GD.UseIgnitionAction>(available);
 
         var candidates = ignitionActions
             .Select(a =>
@@ -47,7 +47,7 @@ internal sealed class IgnitionStrategy
                 {
                     if (!(x.Action.ValidTargets?.Count > 0))
                     {
-                        return ((GD.UseEffectAction Action, int Priority, string? TargetId)?)null;
+                        return ((GD.UseIgnitionAction Action, int Priority, string? TargetId)?)null;
                     }
                     targetId = SelectTargetFromValid(x.CardId, x.Action.ValidTargets, ctx, activeConfig);
                     if (targetId is null)
@@ -66,8 +66,8 @@ internal sealed class IgnitionStrategy
         return candidates
             .Select(c => new NpcAction
             {
-                ActionType = ActionTypes.UseEffect,
-                Data = new UseEffectRequest
+                ActionType = ActionTypes.UseIgnition,
+                Data = new UseIgnitionRequest
                 {
                     InstanceID = c.Action.SourceInstanceID!,
                     TargetInstanceID = c.TargetId,

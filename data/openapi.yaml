@@ -959,7 +959,7 @@ components:
           attack: "#/components/schemas/AttackAction"
           scale_up: "#/components/schemas/ScaleUpAction"
           monetize: "#/components/schemas/MonetizeAction"
-          use_effect: "#/components/schemas/UseEffectAction"
+          use_ignition: "#/components/schemas/UseIgnitionAction"
           use_initiative: "#/components/schemas/UseInitiativeAction"
           resolve_pending_choice: "#/components/schemas/ResolvePendingChoiceAction"
       properties:
@@ -1045,7 +1045,7 @@ components:
               type: integer
               format: int64
 
-    UseEffectAction:
+    UseIgnitionAction:
       description: フィールド上のカードの起動効果を使用する候補。
       x-battle-csharp-package: state
       allOf:
@@ -1212,7 +1212,7 @@ components:
           items:
             type: string
 
-    UseEffectEventData:
+    UseIgnitionEventData:
       type: object
       x-battle-csharp-package: state
       required: [cardId, sourceId]

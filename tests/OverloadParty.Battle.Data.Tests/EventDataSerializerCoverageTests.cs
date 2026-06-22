@@ -98,7 +98,7 @@ public class EventDataSerializerCoverageTests
         [typeof(ScaleUpEventData)] = new ScaleUpEventData { InstanceId = "i", TargetRank = "medium", InstanceFamily = "M" },
         [typeof(MonetizeEventData)] = new MonetizeEventData { TotalAmount = 100 },
         [typeof(DiscardHandEventData)] = new DiscardHandEventData { DiscardedCount = 2, DiscardedIds = ["x", "y"] },
-        [typeof(UseEffectEventData)] = new UseEffectEventData { CardId = "c", SourceId = "s", TargetId = "t" },
+        [typeof(UseIgnitionEventData)] = new UseIgnitionEventData { CardId = "c", SourceId = "s", TargetId = "t" },
         [typeof(UseInitiativeEventData)] = new UseInitiativeEventData { ProductId = "PD-TST", InitiativeId = "IN-TST-R", Kind = "routine", InitiativeName = "R", InsightCost = 400 },
         [typeof(PhaseChangeEventData)] = new PhaseChangeEventData { PreviousPhase = "main", CurrentPhase = "battle" },
         [typeof(PhaseEndEventData)] = new PhaseEndEventData { Phase = "end", NeedsDiscard = false },

@@ -84,7 +84,7 @@ public enum ActionType
     ScaleUp,
     Monetize,
     DiscardHand,
-    UseEffect,
+    UseIgnition,
     UseInitiative,
     EndPhase,
     Forfeit,
