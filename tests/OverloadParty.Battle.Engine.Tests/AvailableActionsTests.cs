@@ -1315,11 +1315,11 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for UseEffect availability by resource/support state and effect registration.</summary>
-    public class UseEffectRules : Base
+    /// <summary>Tests for UseIgnition availability by resource/support state and effect registration.</summary>
+    public class UseIgnitionRules : Base
     {
         [Fact]
-        public void UseEffect_ResourceWithEffectIncluded()
+        public void UseIgnition_ResourceWithEffectIncluded()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
@@ -1335,11 +1335,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_10");
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
         [Fact]
-        public void UseEffect_ResourceWithoutEffectExcluded()
+        public void UseIgnition_ResourceWithoutEffectExcluded()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
@@ -1354,11 +1354,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
         [Fact]
-        public void UseEffect_DormantExcluded()
+        public void UseIgnition_DormantExcluded()
         {
             // 休止リソースは起動効果を使用不可
             var cc = new TestCardCache();
@@ -1377,11 +1377,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
         [Fact]
-        public void UseEffect_EffectUsedThisTurnExcluded()
+        public void UseIgnition_EffectUsedThisTurnExcluded()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
@@ -1399,11 +1399,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
         [Fact]
-        public void UseEffect_SupportWithEffectIncluded()
+        public void UseIgnition_SupportWithEffectIncluded()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
@@ -1424,11 +1424,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "sup_1");
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "sup_1");
         }
 
         [Fact]
-        public void UseEffect_DeployingSupportExcluded()
+        public void UseIgnition_DeployingSupportExcluded()
         {
             // デプロイ中のカードは稼働していない
             var cc = new TestCardCache();
@@ -1450,11 +1450,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
         [Fact]
-        public void UseEffect_SupportEffectUsedThisTurnExcluded()
+        public void UseIgnition_SupportEffectUsedThisTurnExcluded()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
@@ -1476,11 +1476,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
         [Fact]
-        public void UseEffect_AvailableInBattlePhase()
+        public void UseIgnition_AvailableInBattlePhase()
         {
             // 効果発動はバトルフェーズでも可能
             var cc = new TestCardCache();
@@ -1497,11 +1497,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_10");
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
         [Fact]
-        public void UseEffect_FaceDownResourceExcluded()
+        public void UseIgnition_FaceDownResourceExcluded()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
@@ -1517,15 +1517,15 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect);
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
     }
 
-    /// <summary>Tests for budget-gated UseEffect availability via min/max budget guards.</summary>
-    public class UseEffectBudgetFiltering : Base
+    /// <summary>Tests for budget-gated UseIgnition availability via min/max budget guards.</summary>
+    public class UseIgnitionBudgetFiltering : Base
     {
         [Fact]
-        public void UseEffect_ExcludedWhenBudgetBelowMinimum()
+        public void UseIgnition_ExcludedWhenBudgetBelowMinimum()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0009", tp: 600, av: 1400));
@@ -1542,11 +1542,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 300, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_10");
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
         [Fact]
-        public void UseEffect_IncludedWhenBudgetMeetsMinimum()
+        public void UseIgnition_IncludedWhenBudgetMeetsMinimum()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0009", tp: 600, av: 1400));
@@ -1563,11 +1563,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 500, 0, cc, registry);
 
-            actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_10");
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
         [Fact]
-        public void UseEffect_ExcludedWhenBudgetExceedsMaximum()
+        public void UseIgnition_ExcludedWhenBudgetExceedsMaximum()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0010", tp: 600, av: 1400));
@@ -1584,11 +1584,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 1500, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_120");
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_120");
         }
 
         [Fact]
-        public void UseEffect_IncludedWhenBudgetWithinMaximum()
+        public void UseIgnition_IncludedWhenBudgetWithinMaximum()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0010", tp: 600, av: 1400));
@@ -1605,11 +1605,11 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 800, 0, cc, registry);
 
-            actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_120");
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_120");
         }
 
         [Fact]
-        public void UseEffect_IncludedWhenNoBudgetRequirement()
+        public void UseIgnition_IncludedWhenNoBudgetRequirement()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0011", tp: 600, av: 1400));
@@ -1625,7 +1625,7 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 0, 0, cc, registry);
 
-            actions.Should().Contain(a => a.Type == ActionTypes.UseEffect && a.SourceInstanceID == "res_30");
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_30");
         }
     }
 

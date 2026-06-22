@@ -165,7 +165,7 @@ public class GameLogService
             ScaleUpEventData d => DescribeScaleUp(playerTag, d),
             MonetizeEventData d => DescribeMonetize(playerTag, d),
             DiscardHandEventData d => DescribeDiscardHand(playerTag, d),
-            UseEffectEventData d => DescribeUseEffect(playerTag, d),
+            UseIgnitionEventData d => DescribeUseIgnition(playerTag, d),
             PhaseChangeEventData d => DescribePhaseChange(playerTag, d),
             PhaseEndEventData d => DescribePhaseEnd(d),
             TurnEndEventData d => DescribeTurnEnd(d),
@@ -235,7 +235,7 @@ public class GameLogService
     private static string DescribeDiscardHand(string player, DiscardHandEventData d) =>
         $"{player} discarded {d.DiscardedCount} card{(d.DiscardedCount != 1 ? "s" : "")}";
 
-    private string DescribeUseEffect(string player, UseEffectEventData d)
+    private string DescribeUseIgnition(string player, UseIgnitionEventData d)
     {
         var cardName = ResolveCardName(d.CardId);
         return $"{player} activated effect: {cardName}";

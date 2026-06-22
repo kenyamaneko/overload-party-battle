@@ -5,9 +5,9 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-public class UseEffectProcessorTests
+public class UseIgnitionProcessorTests
 {
-    /// <summary>Shared setup for UseEffectProcessor tests (card cache with a compute and platform card, and a game).</summary>
+    /// <summary>Shared setup for UseIgnitionProcessor tests (card cache with a compute and platform card, and a game).</summary>
     public abstract class Base
     {
         protected readonly TestCardCache _cc = new();
@@ -38,15 +38,15 @@ public class UseEffectProcessorTests
             var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
             state.Player1Field.Frontend[0] = resource;
 
-            var req = new UseEffectRequest { InstanceID = "r_1" };
-            UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "r_1" };
+            UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             handlerCalled.Should().BeTrue();
             resource.EffectUsedThisTurn.Should().BeTrue();
         }
 
         [Fact]
-        public void Process_ResourceEffect_GeneratesUseEffectEvent()
+        public void Process_ResourceEffect_GeneratesUseIgnitionEvent()
         {
             var reg = new EffectRegistry();
             reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
@@ -54,22 +54,22 @@ public class UseEffectProcessorTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
 
-            var req = new UseEffectRequest { InstanceID = "r_1" };
-            var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "r_1" };
+            var result = UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
-            result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseEffect);
+            result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseIgnition);
         }
 
         [Fact]
-        public void Process_NoUseEffect_Throws()
+        public void Process_NoUseIgnition_Throws()
         {
             var reg = new EffectRegistry(); // nothing registered
 
             var state = TestFactory.MakeGameState(turn: 2);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
 
-            var req = new UseEffectRequest { InstanceID = "r_1" };
-            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "r_1" };
+            var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
         }
@@ -85,8 +85,8 @@ public class UseEffectProcessorTests
             resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
             state.Player1Field.Frontend[0] = resource;
 
-            var req = new UseEffectRequest { InstanceID = "r_1" };
-            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "r_1" };
+            var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
         }
@@ -102,8 +102,8 @@ public class UseEffectProcessorTests
             resource.EffectUsedThisTurn = true;
             state.Player1Field.Frontend[0] = resource;
 
-            var req = new UseEffectRequest { InstanceID = "r_1" };
-            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "r_1" };
+            var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             act.Should().Throw<GameRuleException>().WithMessage("*already used*");
         }
@@ -117,8 +117,8 @@ public class UseEffectProcessorTests
             var state = TestFactory.MakeGameState(turn: 2);
             // Nothing on the field
 
-            var req = new UseEffectRequest { InstanceID = "nonexistent" };
-            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "nonexistent" };
+            var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             act.Should().Throw<GameRuleException>().WithMessage("*not found*");
         }
@@ -144,8 +144,8 @@ public class UseEffectProcessorTests
             state.Player1Field.Frontend[0] = source;
             state.Player1Field.Frontend[1] = target;
 
-            var req = new UseEffectRequest { InstanceID = "r_1", TargetInstanceID = "r_2" };
-            UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "r_1", TargetInstanceID = "r_2" };
+            UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             capturedTarget.Should().NotBeNull();
             capturedTarget!.InstanceID.Should().Be("r_2");
@@ -168,8 +168,8 @@ public class UseEffectProcessorTests
             state.Player1Field.Frontend[0] = source;
             state.Player2Field.Frontend[0] = oppTarget;
 
-            var req = new UseEffectRequest { InstanceID = "r_1", TargetInstanceID = "opp_r" };
-            UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "r_1", TargetInstanceID = "opp_r" };
+            UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             capturedTarget!.InstanceID.Should().Be("opp_r");
         }
@@ -198,15 +198,15 @@ public class UseEffectProcessorTests
             };
             state.Player1Field.Support[0] = support;
 
-            var req = new UseEffectRequest { InstanceID = "sup_1" };
-            UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "sup_1" };
+            UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             handlerCalled.Should().BeTrue();
             support.EffectUsedThisTurn.Should().BeTrue();
         }
 
         [Fact]
-        public void Process_SupportNoUseEffect_Throws()
+        public void Process_SupportNoUseIgnition_Throws()
         {
             var reg = new EffectRegistry(); // 200 not registered
 
@@ -218,14 +218,14 @@ public class UseEffectProcessorTests
                 FaceUp = true,
             };
 
-            var req = new UseEffectRequest { InstanceID = "sup_1" };
-            var act = () => UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "sup_1" };
+            var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
         }
 
         [Fact]
-        public void Process_SupportEffect_GeneratesUseEffectEvent()
+        public void Process_SupportEffect_GeneratesUseIgnitionEvent()
         {
             var reg = new EffectRegistry();
             reg.Register("TEST-0200", TriggerType.Ignition, _ => new EffectResult());
@@ -238,10 +238,10 @@ public class UseEffectProcessorTests
                 FaceUp = true,
             };
 
-            var req = new UseEffectRequest { InstanceID = "sup_1" };
-            var result = UseEffectProcessor.Process(state, _game, 1, req, _cc, reg);
+            var req = new UseIgnitionRequest { InstanceID = "sup_1" };
+            var result = UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
-            result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseEffect);
+            result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseIgnition);
         }
     }
 }

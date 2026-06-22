@@ -265,7 +265,7 @@ public class EnumExtensionsTests
         [InlineData(ActionType.ScaleUp, "scale_up")]
         [InlineData(ActionType.Monetize, "monetize")]
         [InlineData(ActionType.DiscardHand, "discard_hand")]
-        [InlineData(ActionType.UseEffect, "use_effect")]
+        [InlineData(ActionType.UseIgnition, "use_ignition")]
         [InlineData(ActionType.EndPhase, "end_phase")]
         [InlineData(ActionType.Forfeit, "forfeit")]
         public void ToWireString_ReturnsExpected(ActionType action, string expected)
@@ -279,7 +279,7 @@ public class EnumExtensionsTests
         [InlineData("scale_up", ActionType.ScaleUp)]
         [InlineData("monetize", ActionType.Monetize)]
         [InlineData("discard_hand", ActionType.DiscardHand)]
-        [InlineData("use_effect", ActionType.UseEffect)]
+        [InlineData("use_ignition", ActionType.UseIgnition)]
         [InlineData("end_phase", ActionType.EndPhase)]
         [InlineData("forfeit", ActionType.Forfeit)]
         public void Parse_ValidInput_ReturnsExpected(string input, ActionType expected)
@@ -308,7 +308,7 @@ public class EnumExtensionsTests
         [InlineData(ActionType.ScaleUp)]
         [InlineData(ActionType.Monetize)]
         [InlineData(ActionType.DiscardHand)]
-        [InlineData(ActionType.UseEffect)]
+        [InlineData(ActionType.UseIgnition)]
         [InlineData(ActionType.EndPhase)]
         [InlineData(ActionType.Forfeit)]
         public void Roundtrip(ActionType action)

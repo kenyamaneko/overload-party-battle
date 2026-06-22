@@ -158,25 +158,25 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing UseEffectRequest.</summary>
-    public class UseEffectRequestDeserialization : Base
+    /// <summary>Tests for deserializing UseIgnitionRequest.</summary>
+    public class UseIgnitionRequestDeserialization : Base
     {
         [Fact]
-        public void UseEffectRequest_DeserializesCorrectly()
+        public void UseIgnitionRequest_DeserializesCorrectly()
         {
             var json = """{ "instanceId": "e1" }""";
 
-            var req = JsonSerializer.Deserialize<UseEffectRequest>(json, JsonOpts)!;
+            var req = JsonSerializer.Deserialize<UseIgnitionRequest>(json, JsonOpts)!;
 
             req.InstanceID.Should().Be("e1");
         }
 
         [Fact]
-        public void UseEffectRequest_ViaJsonElement()
+        public void UseIgnitionRequest_ViaJsonElement()
         {
             var json = """{ "instanceId": "e1", "targetInstanceId": "t1" }""";
 
-            var req = JsonDocument.Parse(json).RootElement.Deserialize<UseEffectRequest>(JsonOpts)!;
+            var req = JsonDocument.Parse(json).RootElement.Deserialize<UseIgnitionRequest>(JsonOpts)!;
 
             req.InstanceID.Should().Be("e1");
             req.TargetInstanceID.Should().Be("t1");

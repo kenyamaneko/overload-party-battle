@@ -160,7 +160,7 @@ public class DiscardHandRequest
 /// <summary>
 /// リソース / サポートカードの起動効果を発動するリクエスト。
 /// </summary>
-public class UseEffectRequest
+public class UseIgnitionRequest
 {
     /// <summary>起動効果を発動するリソース / サポートカードのインスタンス ID。</summary>
     [JsonPropertyName("instanceId")]

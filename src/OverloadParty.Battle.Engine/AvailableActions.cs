@@ -22,7 +22,7 @@ public class AvailableAction
     /// <summary>Valid zone+slot combinations for placement (e.g. "frontend_0").</summary>
     public List<string>? ValidZones { get; set; }
 
-    /// <summary>The source resource/support instance ID (attack, scale_up, use_effect, etc.).</summary>
+    /// <summary>The source resource/support instance ID (attack, scale_up, use_ignition, etc.).</summary>
     public string? SourceInstanceID { get; set; }
 
     /// <summary>Valid target instance IDs (attack targets, attachment targets, etc.).</summary>
@@ -40,7 +40,7 @@ public class AvailableAction
     /// <summary>Remaining monetize capacity for the resource (monetize only).</summary>
     public long RemainingCapacity { get; set; }
 
-    /// <summary>The type of target the effect expects (use_effect only).</summary>
+    /// <summary>The type of target the effect expects (use_ignition only).</summary>
     public string? EffectTargetType { get; set; }
 
     /// <summary>Number of targets required for multi-target effects.</summary>
@@ -110,7 +110,7 @@ public static class AvailableActions
                 actions.AddRange(EnumeratePlayCardActions(state, myField, hand, budget, cc, effects));
                 actions.AddRange(EnumerateScaleUpActions(myField, cc));
                 actions.AddRange(EnumerateMonetizeActions(state, myField, insightPool, cc));
-                actions.AddRange(EnumerateUseEffectActions(state, myField, oppField, budget, cc, effects));
+                actions.AddRange(EnumerateUseIgnitionActions(state, myField, oppField, budget, cc, effects));
                 if (initiatives is not null)
                 {
                     actions.AddRange(EnumerateUseInitiativeActions(state, insightPool, cc, effects, initiatives));
@@ -119,7 +119,7 @@ public static class AvailableActions
 
             case Phase.Battle:
                 actions.AddRange(EnumerateAttackActions(myField, oppField, cc));
-                actions.AddRange(EnumerateUseEffectActions(state, myField, oppField, budget, cc, effects));
+                actions.AddRange(EnumerateUseIgnitionActions(state, myField, oppField, budget, cc, effects));
                 break;
         }
 
@@ -377,7 +377,7 @@ public static class AvailableActions
         }
     }
 
-    private static IEnumerable<AvailableAction> EnumerateUseEffectActions(
+    private static IEnumerable<AvailableAction> EnumerateUseIgnitionActions(
         BattleGameState state, Field myField, Field oppField,
         long budget, ICardCache cc, IEffectRegistry effects)
     {
@@ -395,7 +395,7 @@ public static class AvailableActions
 
             var action = new AvailableAction
             {
-                Type = ActionTypes.UseEffect,
+                Type = ActionTypes.UseIgnition,
                 SourceInstanceID = resource.InstanceID,
                 CardID = card.CardId,
             };
@@ -416,7 +416,7 @@ public static class AvailableActions
 
             var action = new AvailableAction
             {
-                Type = ActionTypes.UseEffect,
+                Type = ActionTypes.UseIgnition,
                 SourceInstanceID = support.InstanceID,
                 CardID = card.CardId,
             };

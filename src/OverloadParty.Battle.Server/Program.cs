@@ -379,7 +379,7 @@ public static class ActionDataDeserializer
         ActionType.ScaleUp => data.Deserialize<ScaleUpRequest>(JsonOpts)!,
         ActionType.Monetize => data.Deserialize<MonetizeRequest>(JsonOpts)!,
         ActionType.DiscardHand => data.Deserialize<DiscardHandRequest>(JsonOpts)!,
-        ActionType.UseEffect => data.Deserialize<UseEffectRequest>(JsonOpts)!,
+        ActionType.UseIgnition => data.Deserialize<UseIgnitionRequest>(JsonOpts)!,
         ActionType.UseInitiative => data.Deserialize<UseInitiativeRequest>(JsonOpts)!,
         ActionType.EndPhase => new object(),
         ActionType.Forfeit => data.Deserialize<ForfeitRequest>(JsonOpts)!,

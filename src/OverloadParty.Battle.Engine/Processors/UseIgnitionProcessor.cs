@@ -5,9 +5,9 @@ using OverloadParty.Battle.Engine.Effects;
 namespace OverloadParty.Battle.Engine.Processors;
 
 /// <summary>
-/// UseEffectProcessor はリソースおよびサポートカードの起動効果アクションを処理します
+/// UseIgnitionProcessor はリソースおよびサポートカードの起動効果アクションを処理します
 /// </summary>
-public static class UseEffectProcessor
+public static class UseIgnitionProcessor
 {
     /// <summary>
     /// プレイヤーのフィールド上のリソース / サポートカードの起動効果を発動します。
@@ -21,7 +21,7 @@ public static class UseEffectProcessor
     /// <returns>The action result containing effect events and state update flag.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
+        UseIgnitionRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var field = state.GetField(playerNum);
 
@@ -45,7 +45,7 @@ public static class UseEffectProcessor
     private static ActionResult IgniteResource(
         BattleGameState state, Game game, long playerNum,
         DeployedResource source,
-        UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
+        UseIgnitionRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var card = ValidateResourceActivation(source, cc, effects);
 
@@ -77,9 +77,9 @@ public static class UseEffectProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = ActionTypes.UseEffect,
+            EventType = ActionTypes.UseIgnition,
             PlayerNum = playerNum,
-            EventData = new UseEffectEventData
+            EventData = new UseIgnitionEventData
             {
                 CardId = card.CardId,
                 SourceId = req.InstanceID,
@@ -93,7 +93,7 @@ public static class UseEffectProcessor
     private static ActionResult IgniteSupport(
         BattleGameState state, Game game, long playerNum,
         Field field, DeployedSupport support,
-        UseEffectRequest req, ICardCache cc, IEffectRegistry effects)
+        UseIgnitionRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var card = cc.MustGet(support.CardID);
 
@@ -121,9 +121,9 @@ public static class UseEffectProcessor
         events.Insert(0, new GameEvent
         {
             GameID = game.GameID,
-            EventType = ActionTypes.UseEffect,
+            EventType = ActionTypes.UseIgnition,
             PlayerNum = playerNum,
-            EventData = new UseEffectEventData
+            EventData = new UseIgnitionEventData
             {
                 CardId = card.CardId,
                 SourceId = req.InstanceID,

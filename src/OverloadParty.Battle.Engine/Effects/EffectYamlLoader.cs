@@ -167,7 +167,7 @@ public static class EffectYamlLoader
             }
         }
 
-        // UseEffectProcessor already enforces once-per-turn for ignition triggers
+        // UseIgnitionProcessor already enforces once-per-turn for ignition triggers
         if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Ignition)
         {
             bool perGame = def.UseLimit switch

@@ -22,7 +22,7 @@ public partial class MonetizeEventData : IEventData { }
 public partial class DiscardHandEventData : IEventData { }
 
 /// <summary>起動効果を使用したイベントのペイロード。</summary>
-public partial class UseEffectEventData : IEventData { }
+public partial class UseIgnitionEventData : IEventData { }
 
 /// <summary>施策を使用したイベントのペイロード。</summary>
 public partial class UseInitiativeEventData : IEventData { }

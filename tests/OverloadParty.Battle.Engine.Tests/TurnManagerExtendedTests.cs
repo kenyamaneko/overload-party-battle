@@ -17,7 +17,7 @@ public class TurnManagerExtendedTests
         [InlineData(ActionType.PlayCard, true)]
         [InlineData(ActionType.ScaleUp, true)]
         [InlineData(ActionType.Monetize, true)]
-        [InlineData(ActionType.UseEffect, true)]
+        [InlineData(ActionType.UseIgnition, true)]
         [InlineData(ActionType.EndPhase, true)]
         [InlineData(ActionType.Attack, false)]
         [InlineData(ActionType.DiscardHand, false)]
@@ -29,7 +29,7 @@ public class TurnManagerExtendedTests
 
         [Theory]
         [InlineData(ActionType.Attack, true)]
-        [InlineData(ActionType.UseEffect, true)]
+        [InlineData(ActionType.UseIgnition, true)]
         [InlineData(ActionType.EndPhase, true)]
         [InlineData(ActionType.PlayCard, false)]
         [InlineData(ActionType.ScaleUp, false)]

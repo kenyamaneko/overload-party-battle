@@ -537,8 +537,8 @@ type UndeployedCard struct {
 	InstanceID string `json:"instanceID"`
 }
 
-// UseEffectAction defines model for UseEffectAction.
-type UseEffectAction struct {
+// UseIgnitionAction defines model for UseIgnitionAction.
+type UseIgnitionAction struct {
 	CardID           *string   `json:"cardID,omitempty"`
 	EffectTargetType *string   `json:"effectTargetType,omitempty"`
 	RequiredCount    *int32    `json:"requiredCount,omitempty"`
@@ -547,8 +547,8 @@ type UseEffectAction struct {
 	ValidTargets     *[]string `json:"validTargets,omitempty"`
 }
 
-// UseEffectEventData defines model for UseEffectEventData.
-type UseEffectEventData struct {
+// UseIgnitionEventData defines model for UseIgnitionEventData.
+type UseIgnitionEventData struct {
 	CardId   string  `json:"cardId"`
 	SourceId string  `json:"sourceId"`
 	TargetId *string `json:"targetId,omitempty"`

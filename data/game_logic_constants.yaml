@@ -38,7 +38,7 @@ action_types:
 - scale_up
 - monetize
 - discard_hand
-- use_effect
+- use_ignition
 - use_initiative
 - set_reactive
 - end_phase
@@ -54,7 +54,7 @@ event_types:
 - scale_up
 - monetize
 - discard_hand
-- use_effect
+- use_ignition
 - use_initiative
 - reactive_revealed
 - phase_change

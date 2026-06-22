@@ -37,7 +37,7 @@ public static class ActionTypes
     public const string ScaleUp = "scale_up";
     public const string Monetize = "monetize";
     public const string DiscardHand = "discard_hand";
-    public const string UseEffect = "use_effect";
+    public const string UseIgnition = "use_ignition";
     public const string UseInitiative = "use_initiative";
     public const string SetReactive = "set_reactive";
     public const string EndPhase = "end_phase";
@@ -55,7 +55,7 @@ public static class EventTypes
     public const string ScaleUp = "scale_up";
     public const string Monetize = "monetize";
     public const string DiscardHand = "discard_hand";
-    public const string UseEffect = "use_effect";
+    public const string UseIgnition = "use_ignition";
     public const string UseInitiative = "use_initiative";
     public const string ReactiveRevealed = "reactive_revealed";
     public const string PhaseChange = "phase_change";

@@ -141,18 +141,18 @@ public class GameServiceDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing use_effect action data.</summary>
-    public class UseEffect : Base
+    /// <summary>Tests for deserializing use_ignition action data.</summary>
+    public class UseIgnition : Base
     {
         [Fact]
-        public void DeserializesToUseEffectRequest()
+        public void DeserializesToUseIgnitionRequest()
         {
             var data = new Dictionary<string, object>
             {
                 ["instanceId"] = "e1",
             };
 
-            var result = SerializeAndDeserialize<UseEffectRequest>(data);
+            var result = SerializeAndDeserialize<UseIgnitionRequest>(data);
 
             result.InstanceID.Should().Be("e1");
         }
@@ -166,7 +166,7 @@ public class GameServiceDeserializationTests
                 ["targetInstanceId"] = "target_1",
             };
 
-            var result = SerializeAndDeserialize<UseEffectRequest>(data);
+            var result = SerializeAndDeserialize<UseIgnitionRequest>(data);
 
             result.InstanceID.Should().Be("e2");
             result.TargetInstanceID.Should().Be("target_1");
