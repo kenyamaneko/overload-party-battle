@@ -1351,12 +1351,12 @@ public class NpcAiTests
               order_by: tp_desc
               reserve_ratio: 0.0
             initiative:
-              routine:
+              TST-IN-R:
                 priority: 50
                 condition:
                   selector: { owner: opponent }
                   min: 1
-              special:
+              TST-IN-S:
                 priority: 60
                 min_insight: 500
             """);
@@ -1387,7 +1387,7 @@ public class NpcAiTests
               order_by: tp_desc
               reserve_ratio: 0.0
             initiative:
-              routine:
+              TST-IN-R:
                 priority: 50
             """);
     }

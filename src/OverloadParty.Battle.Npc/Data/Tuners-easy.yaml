@@ -144,12 +144,12 @@ monetize:
   reserve_ratio: 0.0
 
 initiative:
-  routine:
+  IN-0007:
     priority: 50
     condition:
       selector: { owner: myself }
       min: 1
-  special:
+  IN-0008:
     priority: 60
     condition:
       selector: { owner: myself }

@@ -182,12 +182,12 @@ monetize:
   reserve_ratio: 0.2
 
 initiative:
-  routine:
+  IN-0003:
     priority: 40
     condition:
       selector: { owner: opponent, zone: support, face_down: true }
       min: 1
-  special:
+  IN-0004:
     priority: 60
     condition:
       selector: { owner: opponent }

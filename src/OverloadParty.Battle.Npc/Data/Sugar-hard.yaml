@@ -171,13 +171,13 @@ monetize:
   reserve_ratio: 0.2
 
 initiative:
-  routine:
+  IN-0005:
     priority: 50
     condition:
       stat: damage
       selector: { owner: myself }
       min: 1
-  special:
+  IN-0006:
     priority: 60
     condition:
       selector: { owner: opponent }

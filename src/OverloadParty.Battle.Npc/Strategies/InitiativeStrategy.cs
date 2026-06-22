@@ -43,9 +43,9 @@ internal sealed class InitiativeStrategy
         }
 
         return ActionFilter.FilterByType(available, ActionTypes.UseInitiative)
-            .Select(a => (Action: a, Kind: ResolveKindConfig(config, a.Kind)))
-            .Where(x => x.Kind is not null)
-            .Select(x => BuildCandidate(x.Action, x.Kind!, ctx, activeConfig))
+            .Select(a => (Action: a, Policy: config.GetValueOrDefault(a.CardID)))
+            .Where(x => x.Policy is not null)
+            .Select(x => BuildCandidate(x.Action, x.Policy!, ctx, activeConfig))
             .Where(c => c is not null)
             .Select(c => c!.Value)
             .OrderByDescending(c => c.Priority)
@@ -66,19 +66,19 @@ internal sealed class InitiativeStrategy
     /// 選択対象を要する効果で候補が無い場合は使用しないため null を返します。
     /// </summary>
     /// <param name="action">対象の施策アクション。</param>
-    /// <param name="kindConfig">区分の使用設定。</param>
+    /// <param name="policy">施策の使用設定。</param>
     /// <param name="ctx">現在の判断コンテキスト。</param>
     /// <param name="activeConfig">フェーズ overlay 適用後の AI 設定。</param>
     /// <returns>使用する施策の候補。使用しない場合は null。</returns>
     private (GD.AvailableAction Action, int Priority, Dictionary<string, object>? ChoiceData)? BuildCandidate(
-        GD.AvailableAction action, InitiativeKindConfig kindConfig, DecisionContext ctx, AiConfig activeConfig)
+        GD.AvailableAction action, InitiativePolicyConfig policy, DecisionContext ctx, AiConfig activeConfig)
     {
-        if (kindConfig.MinInsight is { } minInsight && ctx.InsightPool < minInsight)
+        if (policy.MinInsight is { } minInsight && ctx.InsightPool < minInsight)
         {
             return null;
         }
 
-        if (!GuardChecker.Check(kindConfig.Condition, ctx, _cc))
+        if (!GuardChecker.Check(policy.Condition, ctx, _cc))
         {
             return null;
         }
@@ -98,17 +98,6 @@ internal sealed class InitiativeStrategy
             choiceData = new Dictionary<string, object> { ["instanceId"] = target };
         }
 
-        return (action, kindConfig.Priority, choiceData);
+        return (action, policy.Priority, choiceData);
     }
-
-    /// <summary>区分文字列に対応する使用設定を返します。設定が無い区分は null を返します。</summary>
-    /// <param name="config">施策の使用判断設定。</param>
-    /// <param name="kind">施策の区分 (ルーチン / スペシャル)。</param>
-    /// <returns>区分の使用設定。未設定なら null。</returns>
-    private static InitiativeKindConfig? ResolveKindConfig(InitiativeConfig config, string kind) => kind switch
-    {
-        InitiativeKinds.Routine => config.Routine,
-        InitiativeKinds.Special => config.Special,
-        _ => throw new InvalidOperationException($"unknown initiative kind '{kind}'"),
-    };
 }

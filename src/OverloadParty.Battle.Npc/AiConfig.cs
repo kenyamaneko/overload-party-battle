@@ -52,8 +52,9 @@ public class AiConfig
     [YamlMember(Alias = "monetize")]
     public MonetizeConfig Monetize { get; set; } = new();
 
+    /// <summary>施策 ID から使用設定を引く。デッキがセットした各施策を ID で指定する。</summary>
     [YamlMember(Alias = "initiative")]
-    public InitiativeConfig? Initiative { get; set; }
+    public Dictionary<string, InitiativePolicyConfig>? Initiative { get; set; }
 
     // discard: 既存の deploy/effect/attachment/reactive 優先度で判断するため専用設定不要
 
@@ -271,21 +272,9 @@ public class MonetizeConfig
 // ── Initiative ──────────────────────────────────────────────
 
 /// <summary>
-/// 施策の使用判断設定。ルーチン / スペシャルを区分ごとに opt-in する。
+/// 施策 1 件の使用条件と優先度。
 /// </summary>
-public class InitiativeConfig
-{
-    [YamlMember(Alias = "routine")]
-    public InitiativeKindConfig? Routine { get; set; }
-
-    [YamlMember(Alias = "special")]
-    public InitiativeKindConfig? Special { get; set; }
-}
-
-/// <summary>
-/// 施策 1 区分の使用条件と優先度。
-/// </summary>
-public class InitiativeKindConfig
+public class InitiativePolicyConfig
 {
     [YamlMember(Alias = "priority")]
     public int Priority { get; set; }
