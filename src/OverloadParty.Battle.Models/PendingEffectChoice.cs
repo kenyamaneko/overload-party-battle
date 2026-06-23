@@ -61,4 +61,7 @@ public static class ChoiceKinds
 
     /// <summary>フィールド上のリソースを 1 体選ぶ。</summary>
     public const string FieldTarget = "field_target";
+
+    /// <summary>デッキの上から提示された候補のうち 1 枚を選ぶ。</summary>
+    public const string DeckCard = "deck_card";
 }

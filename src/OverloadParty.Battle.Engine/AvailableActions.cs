@@ -521,7 +521,7 @@ public static class AvailableActions
                 Type = ActionTypes.ResolvePendingChoice,
                 SourceInstanceID = pending.EffectInstanceId,
                 CardID = pending.ChoiceKind == ChoiceKinds.HandCard ? id : pending.EffectCardId,
-                ValidTargets = pending.ChoiceKind == ChoiceKinds.FieldTarget ? [id] : null,
+                ValidTargets = pending.ChoiceKind is ChoiceKinds.FieldTarget or ChoiceKinds.DeckCard ? [id] : null,
             })
             .ToList();
     }

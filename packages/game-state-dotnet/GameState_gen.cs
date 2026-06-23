@@ -128,10 +128,16 @@ namespace OverloadParty.GameState
         public string EffectInstanceId { get; set; } = default!;
 
         /// <summary>
-        /// 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。
+        /// 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース、deck_card なら revealedCards に提示されたデッキ上端のカード。
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("choiceKind")]
         public string ChoiceKind { get; set; } = default!;
+
+        /// <summary>
+        /// deck_card 選択時に提示されるデッキ上端のカード。デッキは非公開のためチューザー本人のビューにのみ含まれる。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("revealedCards")]
+        public System.Collections.Generic.List<UndeployedCard> RevealedCards { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

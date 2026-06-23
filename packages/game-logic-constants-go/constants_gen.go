@@ -153,6 +153,7 @@ const (
 	CustomEffectCancelNthDeploy = "cancel_nth_deploy"
 	CustomEffectChainAttackBonus = "chain_attack_bonus"
 	CustomEffectCloudShift = "cloud_shift"
+	CustomEffectDeckTopKeepOne = "deck_top_keep_one"
 	CustomEffectDeploySameTypeFromHand = "deploy_same_type_from_hand"
 	CustomEffectDisableHighTpDeploy = "disable_high_tp_deploy"
 	CustomEffectReattach = "reattach"

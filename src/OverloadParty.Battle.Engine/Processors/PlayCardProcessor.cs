@@ -126,9 +126,16 @@ public static class PlayCardProcessor
                 CardCache = ctx.CC,
                 ChoiceData = req.ChoiceData,
                 Effects = ctx.Effects,
+                Trigger = TriggerType.Ignition,
+                EffectCardId = cardDef.CardId,
+                EffectInstanceId = instanceID,
             };
             var effectResult = handler(effectCtx);
             events.AddRange(effectResult.Events);
+            if (effectResult.PendingChoice is { } pendingChoice)
+            {
+                ctx.State.PendingEffectChoice = pendingChoice;
+            }
         }
 
         CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, instanceID, handCard.ArtNo);

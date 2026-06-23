@@ -24,6 +24,7 @@ public class CustomEffectRegistry
         [CustomEffects.SpotExpiry] = BuildSpotExpiry,
         [CustomEffects.Reattach] = _ => Reattach,
         [CustomEffects.ScaleToZero] = _ => ScaleToZero,
+        [CustomEffects.DeckTopKeepOne] = BuildDeckTopKeepOne,
 
         // target_shield はカード定義を passive に検査する marker（FieldHelpers.IsTargetShielded）。
         // deploy trigger では副作用なしだが、登録しておかないと loader が unknown custom として throw する。
@@ -85,6 +86,70 @@ public class CustomEffectRegistry
                 DamageApplication.Apply(octx, octx.Target, damage);
             }
         };
+    }
+
+    /// <summary>
+    /// デッキの上から count 枚のうち、プレイヤーが選んだ 1 枚を手札に残し、残りをトラッシュに送る。
+    /// meta: { count }
+    /// </summary>
+    /// <param name="meta">対象とするデッキ上端の枚数 count を含むカード定義由来のパラメータ。</param>
+    /// <returns>構築した効果関数。meta に count が欠ける場合は null。</returns>
+    private static Action<OpContext>? BuildDeckTopKeepOne(Dictionary<string, JsonElement>? meta)
+    {
+        if (meta is null || !meta.TryGetValue("count", out var countEl))
+        {
+            return null;
+        }
+        int count = countEl.GetInt32();
+
+        return octx => DeckTopKeepOne(octx, count);
+    }
+
+    /// <summary>
+    /// デッキ上端 count 枚から、選択された 1 枚を手札・残りをトラッシュへ移す。選択値が未指定なら選択待ちに遷移する。
+    /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
+    /// <param name="count">手札・トラッシュへ振り分ける対象とするデッキ上端の枚数。</param>
+    private static void DeckTopKeepOne(OpContext octx, int count)
+    {
+        var deck = octx.State.GetRepository(octx.PlayerNum);
+        int targetCount = Math.Min(count, deck.Count);
+        if (targetCount == 0)
+        {
+            return;
+        }
+
+        var topCards = deck.Take(targetCount).ToList();
+
+        string? chosenId = octx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
+        if (chosenId is null)
+        {
+            // 候補が 1 枚なら選択の余地がないため、そのまま手札へ移す。
+            if (targetCount == 1)
+            {
+                deck.Remove(topCards[0]);
+                octx.State.GetHand(octx.PlayerNum).Add(topCards[0]);
+                return;
+            }
+            var candidates = topCards.Select(c => c.InstanceID).ToList();
+            octx.SuspendForChoice("instanceId", ChoiceKinds.DeckCard, candidates, octx.PlayerNum);
+            return;
+        }
+
+        var kept = topCards.FirstOrDefault(c => c.InstanceID == chosenId)
+            ?? throw new GameRuleException($"chosen card {chosenId} is not among the presented deck cards");
+        foreach (var card in topCards)
+        {
+            deck.Remove(card);
+            if (card.InstanceID == kept.InstanceID)
+            {
+                octx.State.GetHand(octx.PlayerNum).Add(card);
+            }
+            else
+            {
+                octx.State.GetTrash(octx.PlayerNum).Add(card);
+            }
+        }
     }
 
     /// <summary>

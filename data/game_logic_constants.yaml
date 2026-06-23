@@ -140,6 +140,7 @@ custom_effects:
 - cancel_nth_deploy
 - chain_attack_bonus
 - cloud_shift
+- deck_top_keep_one
 - deploy_same_type_from_hand
 - disable_high_tp_deploy
 - reattach

@@ -198,6 +198,52 @@ public class GameStateViewTests
         }
     }
 
+    /// <summary>deck_card 選択時、開示カードがチューザー本人のビューにのみ載ることを検証する。</summary>
+    public class DeckCardChoiceReveal : Base
+    {
+        /// <summary>チューザー (Player1) のデッキ上端 r_1/r_2 を候補にした deck_card 選択待ちを作る。</summary>
+        /// <returns>選択待ち情報。</returns>
+        private static PendingEffectChoice MakeDeckPending() => new()
+        {
+            ChooserPlayerNum = 1,
+            OwnerPlayerNum = 1,
+            EffectCardId = "TST-0500",
+            EffectInstanceId = "trash_x",
+            Trigger = TriggerType.Ignition,
+            ChoiceKey = "instanceId",
+            ChoiceKind = ChoiceKinds.DeckCard,
+            Candidates = ["r_1", "r_2"],
+        };
+
+        [Fact]
+        public void Chooser_SeesRevealedDeckCards()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "TST-0002" });
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_3", CardID = "TST-0001" });
+            state.PendingEffectChoice = MakeDeckPending();
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.PendingEffectChoice!.RevealedCards.Select(c => c.InstanceID)
+                .Should().Equal("r_1", "r_2");
+        }
+
+        [Fact]
+        public void Opponent_DoesNotSeeRevealedDeckCards()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "TST-0002" });
+            state.PendingEffectChoice = MakeDeckPending();
+
+            var result = GameStateView.Build(state, _game, 2, _cc, new EffectRegistry());
+
+            result.PendingEffectChoice!.RevealedCards.Should().BeNull();
+        }
+    }
+
     /// <summary>Tests for budget and insight pool reporting for both players.</summary>
     public class BudgetAndInsightPool : Base
     {

@@ -328,7 +328,7 @@ type OpponentView struct {
 
 // PendingEffectChoiceView pendingEffectChoice の client 公開ビュー。
 type PendingEffectChoiceView struct {
-	// ChoiceKind 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。
+	// ChoiceKind 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース、deck_card なら revealedCards に提示されたデッキ上端のカード。
 	ChoiceKind string `json:"choiceKind"`
 
 	// ChooserPlayerNum 選択を行うプレイヤー番号
@@ -339,6 +339,9 @@ type PendingEffectChoiceView struct {
 
 	// EffectInstanceId 発動中の効果を持つカードのインスタンス ID
 	EffectInstanceId string `json:"effectInstanceId"`
+
+	// RevealedCards deck_card 選択時に提示されるデッキ上端のカード。デッキは非公開のためチューザー本人のビューにのみ含まれる。
+	RevealedCards *[]UndeployedCard `json:"revealedCards,omitempty"`
 }
 
 // PendingSlotSelectView 効果からのリソースデプロイを待っているスロット選択の client 公開ビュー。

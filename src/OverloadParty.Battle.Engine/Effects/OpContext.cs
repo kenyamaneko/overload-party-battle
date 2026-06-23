@@ -101,7 +101,7 @@ public class OpContext
 
     /// <summary>
     /// choice op が ChoiceData 不足で選択待ちに遷移するときの状態を作って Result に格納する。
-    /// SupSource を持つ reactive 経路でのみ呼び出す前提。
+    /// 効果の同定は SupSource、または EffectContext の EffectCardId/EffectInstanceId のいずれかで行う。
     /// </summary>
     /// <param name="choiceKey">ChoiceData に詰める key。再開時のリクエストもこの key で値を解決する。</param>
     /// <param name="choiceKind">選択カテゴリ。<see cref="ChoiceKinds"/> の定数を渡す。</param>
@@ -110,10 +110,12 @@ public class OpContext
     public void SuspendForChoice(
         string choiceKey, string choiceKind, List<string> candidates, long chooserPlayerNum)
     {
-        if (SupSource is null)
+        string? effectCardId = SupSource?.CardID ?? Ctx.EffectCardId;
+        string? effectInstanceId = SupSource?.InstanceID ?? Ctx.EffectInstanceId;
+        if (effectCardId is null || effectInstanceId is null)
         {
             throw new InvalidOperationException(
-                "SuspendForChoice requires SupSource on the context");
+                "SuspendForChoice requires an effect source (SupSource or EffectCardId/EffectInstanceId)");
         }
         if (Ctx.Trigger is not { } trigger)
         {
@@ -125,8 +127,8 @@ public class OpContext
         {
             OwnerPlayerNum = PlayerNum,
             ChooserPlayerNum = chooserPlayerNum,
-            EffectCardId = SupSource.CardID,
-            EffectInstanceId = SupSource.InstanceID,
+            EffectCardId = effectCardId,
+            EffectInstanceId = effectInstanceId,
             Trigger = trigger,
             ChoiceKey = choiceKey,
             ChoiceKind = choiceKind,
