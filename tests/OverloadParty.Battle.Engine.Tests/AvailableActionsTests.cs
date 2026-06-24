@@ -1736,4 +1736,84 @@ public class AvailableActionsTests
             controls.CanEndPhase.Should().BeFalse();
         }
     }
+
+    /// <summary>Tests enumeration of ResolvePendingChoice actions while a choice is pending.</summary>
+    public class ResolvePendingChoiceEnumeration : Base
+    {
+        private static PendingEffectChoice Pending(string choiceKind, params string[] candidates) =>
+            new()
+            {
+                ChooserPlayerNum = 1,
+                OwnerPlayerNum = 1,
+                EffectCardId = "TST-EFFECT",
+                EffectInstanceId = "eff_inst",
+                Trigger = TriggerType.OnDestroy,
+                ChoiceKey = "instanceId",
+                ChoiceKind = choiceKind,
+                Candidates = [.. candidates],
+            };
+
+        [Fact]
+        public void PendingChoice_EnumeratesOneActionPerCandidate()
+        {
+            var cc = new TestCardCache();
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            state.PendingEffectChoice = Pending(ChoiceKinds.FieldTarget, "c1", "c2", "c3");
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+
+            actions.Should().HaveCount(3);
+            actions.Should().OnlyContain(a => a.Type == ActionTypes.ResolvePendingChoice);
+            actions.Should().OnlyContain(a => a.SourceInstanceID == "eff_inst");
+        }
+
+        [Fact]
+        public void PendingChoice_FieldTarget_PutsCandidateInValidTargets()
+        {
+            var cc = new TestCardCache();
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            state.PendingEffectChoice = Pending(ChoiceKinds.FieldTarget, "target_1");
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+
+            var action = actions.Should().ContainSingle().Subject;
+            action.CardID.Should().Be("TST-EFFECT");
+            action.ValidTargets.Should().BeEquivalentTo(["target_1"]);
+        }
+
+        [Fact]
+        public void PendingChoice_HandCard_PutsCandidateInCardId()
+        {
+            var cc = new TestCardCache();
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            state.PendingEffectChoice = Pending(ChoiceKinds.HandCard, "hand_card_1");
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+
+            var action = actions.Should().ContainSingle().Subject;
+            action.CardID.Should().Be("hand_card_1");
+            action.ValidTargets.Should().BeNull();
+        }
+
+        [Fact]
+        public void PendingChoice_ShortCircuitsOtherActions()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            var myField = TestFactory.MakeField();
+            myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
+            var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
+            state.PendingEffectChoice = Pending(ChoiceKinds.FieldTarget, "c1");
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, myField, TestFactory.MakeField(), hand, 5000, 100, cc, new EffectRegistry());
+
+            actions.Should().OnlyContain(a => a.Type == ActionTypes.ResolvePendingChoice);
+            actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard || a.Type == ActionTypes.Monetize);
+        }
+    }
 }
