@@ -487,4 +487,40 @@ public class EndPhaseProcessorTests
             data.ActivePlayer.Should().Be(2L);
         }
     }
+
+    /// <summary>Tests that the end phase fires エンドフェーズ効果 / パッシブ効果 on face-up cards.</summary>
+    public class EndPhaseTriggers : Base
+    {
+        [Fact]
+        public void FiresOnEndPhaseHandler()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            AddRepoCards(state, 2);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+
+            int fired = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnEndPhase, _ => { fired++; return new EffectResult(); });
+
+            EndPhaseProcessor.Process(state, _game, 1, _cc, effects);
+
+            fired.Should().Be(1, "エンドフェーズに エンドフェーズ効果 が発動する");
+        }
+
+        [Fact]
+        public void FiresPassiveHandlerAtEndPhase()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            AddRepoCards(state, 2);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+
+            int fired = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.Passive, _ => { fired++; return new EffectResult(); });
+
+            EndPhaseProcessor.Process(state, _game, 1, _cc, effects);
+
+            fired.Should().Be(1, "エンドフェーズに パッシブ効果 が発動する");
+        }
+    }
 }
