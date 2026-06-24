@@ -1146,6 +1146,39 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "my_1");
             actions.Should().Contain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "my_2");
         }
+
+        [Fact]
+        public void Attack_TargetShieldedDefenderExcludedFromTargets()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var shield = TestFactory.AttachmentCard(cardId: "TST-SHIELD");
+            shield.Effects = [new EffectDef { Trigger = TriggerTypes.Passive, Custom = CustomEffects.TargetShield }];
+            cc.Add(shield);
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
+            var myField = TestFactory.MakeField();
+            myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_1");
+
+            var oppField = TestFactory.MakeField();
+            oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "shielded");
+            // target_shield は同フィールドに他の表向きフロントエンドが居るときだけ機能する
+            oppField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "wall");
+            oppField.Support[0] = new DeployedSupport
+            {
+                InstanceID = "shield_1",
+                CardID = "TST-SHIELD",
+                TargetInstanceID = "shielded",
+                FaceUp = true,
+            };
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+
+            var attack = actions.Single(a => a.Type == ActionTypes.Attack);
+            attack.ValidTargets.Should().NotContain("shielded", "target_shield で保護された対象は攻撃候補から外れる");
+            attack.ValidTargets.Should().Contain("wall");
+        }
     }
 
     /// <summary>Tests for Monetize eligibility and remaining-capacity computation.</summary>
@@ -1312,6 +1345,25 @@ public class AvailableActionsTests
             var a2 = actions.Single(a => a.Type == ActionTypes.Monetize && a.SourceInstanceID == "be_2");
             a1.RemainingCapacity.Should().Be(600);
             a2.RemainingCapacity.Should().Be(500);
+        }
+
+        [Fact]
+        public void Monetize_DormantBackendComputeExcluded()
+        {
+            // 休止リソースは収益化できない
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            var myField = TestFactory.MakeField();
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
+            res.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant });
+            myField.Backend[0] = res;
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
     }
 
@@ -1672,6 +1724,16 @@ public class AvailableActionsTests
 
             var controls = AvailableActions.ComputeTurnControls(state, hand);
             controls.DiscardRequired.Should().Be(0);
+        }
+
+        [Theory]
+        [InlineData(Phase.Draw)]
+        [InlineData(Phase.End)]
+        public void TurnControls_CannotEndPhaseOutsideMainAndBattle(Phase phase)
+        {
+            var state = TestFactory.MakeGameState(phase: phase);
+            var controls = AvailableActions.ComputeTurnControls(state, []);
+            controls.CanEndPhase.Should().BeFalse();
         }
     }
 }
