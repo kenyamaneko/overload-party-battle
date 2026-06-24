@@ -106,9 +106,10 @@ public static class AttackProcessor
         }
         else
         {
-            // 攻撃を受けたときの Elastic スケーリング
+            // 攻撃を受けたときの Elastic スケーリング (RULEBOOK §6: フロントエンドの Compute / AI/ML のみ)
             var defCard = cc.MustGet(defender.CardID);
-            if (defCard.Elastic)
+            bool isFrontend = FieldHelpers.FindResourceZone(oppField, defender.InstanceID) == Zone.Frontend;
+            if (defCard.Elastic && defCard.IsComputeType && isFrontend)
             {
                 StatCalculator.ApplyElasticBonus(defender, defCard);
             }

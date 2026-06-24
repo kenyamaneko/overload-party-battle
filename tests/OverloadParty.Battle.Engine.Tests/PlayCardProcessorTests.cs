@@ -267,6 +267,19 @@ public class PlayCardProcessorTests
 
             act.Should().Throw<GameRuleException>().WithMessage("*incident already played*");
         }
+
+        // RULEBOOK §9: 先攻 T1 では Incident を使用できない (先攻1キル防止)
+        [Fact]
+        public void PlayCard_IncidentOnFirstTurn_IsRejected()
+        {
+            var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main, activePlayer: 1);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0500" });
+
+            var act = () => PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_1"), _cc, new EffectRegistry());
+
+            act.Should().Throw<GameRuleException>().WithMessage("*cannot play incident on first turn*");
+        }
     }
 
     /// <summary>Tests for reactive cards being placed face-down.</summary>

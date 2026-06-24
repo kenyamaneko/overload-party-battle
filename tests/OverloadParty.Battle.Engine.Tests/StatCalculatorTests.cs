@@ -6,7 +6,7 @@ namespace OverloadParty.Battle.Tests.Engine;
 /// <summary>
 /// Tests for StatCalculator based on RULEBOOK.md rules:
 /// - Rank multipliers: small=×1, medium=×2, large=×3
-/// - Instance family: M=(1,1), C=(1.5,0.75), R=(0.75,1.5)
+/// - Instance family: M=(1,1), C=(1.3,0.7), R=(0.7,1.3)
 /// - Elastic: effectiveBonus = free_tier × ln(1 + rawBonus / free_tier)
 /// - MC Elastic: max(0, intrinsicStat - free_tier) × cost_per_request / 100
 /// - Truncation: floor (1 未満切り捨て)
@@ -32,6 +32,25 @@ public class StatCalculatorTests
         public void ComputesElasticBonus(long rawBonus, long scale, long expected)
         {
             StatCalculator.CalculateEffectiveElasticBonus(rawBonus, scale).Should().Be(expected);
+        }
+    }
+
+    /// <summary>Tests for StatCalculator.CalculateIntrinsicStat (MC 用固有ステータス)。</summary>
+    public class CalculateIntrinsicStat
+    {
+        /// <summary>
+        /// intrinsicStat = base × rank × family + 逓減後 ElasticBonus。
+        /// Orchestrator base 600 / free_tier 600、medium ×2、family C ×1.3、rawBonus 300:
+        /// scaledBase = trunc(600 × 2 × 1.3) = 1560、effective = 600 × ln(1.5) ≈ 243 → 1803。
+        /// </summary>
+        [Fact]
+        public void IncludesRankFamilyAndDiminishedElasticBonus()
+        {
+            var card = TestFactory.OrchestratorCard(cardId: "TST-0004");
+            var resource = TestFactory.MakeResource(
+                cardId: "TST-0004", rank: Rank.Medium, family: InstanceFamily.C, elasticBonus: 300);
+
+            StatCalculator.CalculateIntrinsicStat(resource, card).Should().Be(1803);
         }
     }
 
