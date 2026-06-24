@@ -25,12 +25,12 @@ public static class StatCalculator
     }
 
     /// <summary>
-    /// Calculate intrinsic stat (base × rank × family + diminished elastic bonus) used for MC.
-    /// Excludes platform / passive / attachment / temporary effects.
+    /// 維持コスト計算に使う固有ステータス (コンピュート系のスループット / Data 系の Yield) を算出します。
+    /// base × ランク × Instance Family + 逓減後 ElasticBonus で求め、Platform・パッシブ・アタッチメント・一時効果は含めません。
     /// </summary>
     /// <param name="instance">対象リソース。</param>
     /// <param name="card">対象のカード定義。</param>
-    /// <returns>MC 計算に使う固有ステータス。</returns>
+    /// <returns>維持コスト計算に使う固有ステータス。</returns>
     public static long CalculateIntrinsicStat(DeployedResource instance, CardDefinition card)
     {
         long baseStat = card.IsComputeType ? card.BaseThroughput : card.BaseYield;

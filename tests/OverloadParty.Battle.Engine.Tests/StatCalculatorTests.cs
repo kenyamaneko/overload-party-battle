@@ -40,17 +40,24 @@ public class StatCalculatorTests
     {
         /// <summary>
         /// intrinsicStat = base × rank × family + 逓減後 ElasticBonus。
-        /// Orchestrator base 600 / free_tier 600、medium ×2、family C ×1.3、rawBonus 300:
-        /// scaledBase = trunc(600 × 2 × 1.3) = 1560、effective = 600 × ln(1.5) ≈ 243 → 1803。
+        /// Orchestrator base 600 / free_tier 600 を基準に rank・family・ElasticBonus を変えて検証。
+        /// effective bonus は free_tier 固定なので rawBonus 300 → 600 × ln(1.5) ≈ 243。
         /// </summary>
-        [Fact]
-        public void IncludesRankFamilyAndDiminishedElasticBonus()
+        [Theory]
+        [InlineData(Rank.Small, InstanceFamily.M, 0, 600)]      // base のみ
+        [InlineData(Rank.Medium, InstanceFamily.M, 0, 1200)]    // medium ×2
+        [InlineData(Rank.Large, InstanceFamily.M, 0, 1800)]     // large ×3
+        [InlineData(Rank.Medium, InstanceFamily.C, 0, 1560)]    // C ×1.3 = trunc(600×2×1.3)
+        [InlineData(Rank.Medium, InstanceFamily.R, 0, 840)]     // R ×0.7 = trunc(600×2×0.7)
+        [InlineData(Rank.Medium, InstanceFamily.C, 300, 1803)]  // + 逓減後 243
+        public void IncludesRankFamilyAndDiminishedElasticBonus(
+            Rank rank, InstanceFamily family, long elasticBonus, long expected)
         {
             var card = TestFactory.OrchestratorCard(cardId: "TST-0004");
             var resource = TestFactory.MakeResource(
-                cardId: "TST-0004", rank: Rank.Medium, family: InstanceFamily.C, elasticBonus: 300);
+                cardId: "TST-0004", rank: rank, family: family, elasticBonus: elasticBonus);
 
-            StatCalculator.CalculateIntrinsicStat(resource, card).Should().Be(1803);
+            StatCalculator.CalculateIntrinsicStat(resource, card).Should().Be(expected);
         }
     }
 

@@ -300,6 +300,24 @@ public class EndPhaseProcessorTests
 
             state.Player1Budget.Should().Be(5000 - 96);
         }
+
+        [Fact]
+        public void ServerlessElastic_AlwaysFreeMaintenanceCost()
+        {
+            _cc.Add(TestFactory.ServerlessCard(cardId: "TST-0005"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+            AddRepoCards(state, 2);
+
+            // Serverless: cost_per_request=0 → 固有ステータスが free_tier を超えても維持コストは常に 0
+            var resource = TestFactory.MakeResource(
+                cardId: "TST-0005", instanceId: "res_1", faceUp: true,
+                maxTP: 300, currentTP: 300, maxAV: 600, currentAV: 600, elasticBonus: 500);
+            state.Player1Field.Frontend[0] = resource;
+
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+
+            state.Player1Budget.Should().Be(5000);
+        }
     }
 
     /// <summary>Tests for EndPhaseProcessor.Process — insight generation from backend data resources.</summary>
