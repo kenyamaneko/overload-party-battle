@@ -67,6 +67,8 @@ public class SelectSlotProcessorTests
         var data = evt.EventData.Should().BeOfType<SelectSlotEventData>().Subject;
         data.Zone.Should().Be("frontend");
         data.Index.Should().Be(2);
+        data.CardId.Should().Be("TST-0001");
+        data.InstanceId.Should().Be("pending_1");
     }
 
     [Fact]

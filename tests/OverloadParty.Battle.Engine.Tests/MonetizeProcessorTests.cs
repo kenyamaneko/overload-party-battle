@@ -218,4 +218,43 @@ public class MonetizeProcessorTests
             result.Events.Should().Contain(e => e.EventType == ActionTypes.Monetize);
         }
     }
+
+    /// <summary>Tests that the monetize event carries the total distributed インサイト amount.</summary>
+    public class MonetizeEvent : Base
+    {
+        [Fact]
+        public void Process_EventIncludesTotalAmount()
+        {
+            var state = TestFactory.MakeGameState(turn: 2);
+            state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
+            state.Player1Field.Backend[1] = TestFactory.MakeResource(
+                cardId: "TEST-0002", instanceId: "be_2", faceUp: true, maxTP: 400, currentTP: 400);
+            state.SetInsightPool(1, 800);
+
+            var result = MonetizeProcessor.Process(
+                state, _game, 1, MakeReq(Dist("be_1", 300), Dist("be_2", 150)), _cc);
+
+            var evt = result.Events.First(e => e.EventType == ActionTypes.Monetize);
+            evt.EventData.Should().BeOfType<MonetizeEventData>()
+                .Which.TotalAmount.Should().Be(450);
+        }
+    }
+
+    /// <summary>Tests that monetizing an Elastic resource accrues its エラスティックボーナス.</summary>
+    public class ElasticMonetize : Base
+    {
+        [Fact]
+        public void Process_AppliesElasticBonus()
+        {
+            _cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0003"));
+            var state = TestFactory.MakeGameState(turn: 2);
+            var res = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "be_1", faceUp: true);
+            state.Player1Field.Backend[0] = res;
+            state.SetInsightPool(1, 500);
+
+            MonetizeProcessor.Process(state, _game, 1, MakeReq(Dist("be_1", 100)), _cc);
+
+            res.ElasticBonus.Should().BeGreaterThan(0, "Elastic リソースの収益化で エラスティックボーナス が加算される");
+        }
+    }
 }

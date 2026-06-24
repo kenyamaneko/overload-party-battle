@@ -142,4 +142,56 @@ public class DiscardProcessorTests
                 .Which.DiscardedCount.Should().Be(1);
         }
     }
+
+    /// <summary>Tests for DiscardProcessor.Process — the discarded cards leave the 手札.</summary>
+    public class HandReduction : Base
+    {
+        [Fact]
+        public void RemovesDiscardedCardsFromHand()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
+            state.Player1Hand = MakeHand(8);
+            state.Player2Repository = MakeRepo(5);
+
+            DiscardProcessor.Process(state, _game, 1, MakeReq("h_6", "h_7"), _cc, new EffectRegistry());
+
+            state.Player1Hand.Should().HaveCount(6);
+            state.Player1Hand.Should().NotContain(c => c.InstanceID == "h_6" || c.InstanceID == "h_7");
+        }
+
+        [Fact]
+        public void EventIncludesDiscardedIds()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
+            state.Player1Hand = MakeHand(8);
+            state.Player2Repository = MakeRepo(5);
+
+            var result = DiscardProcessor.Process(
+                state, _game, 1, MakeReq("h_6", "h_7"), _cc, new EffectRegistry());
+
+            var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
+            discardEvent.EventData.Should().BeOfType<DiscardHandEventData>()
+                .Which.DiscardedIds.Should().BeEquivalentTo(["h_6", "h_7"]);
+        }
+    }
+
+    /// <summary>Tests for DiscardProcessor.Process — ローンチ失敗 when the discarding player never operated.</summary>
+    public class LaunchFailure : Base
+    {
+        [Fact]
+        public void GameOver_WhenDiscardingPlayerNeverOperated()
+        {
+            // Turn 5 → personalTurn = (5+1)/2 = 3, which >= LaunchFailureTurn=3
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.End, activePlayer: 1);
+            state.Player1Hand = MakeHand(8);
+            state.SetHasOperated(1, false);
+
+            var result = DiscardProcessor.Process(
+                state, _game, 1, MakeReq("h_6", "h_7"), _cc, new EffectRegistry());
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(2);
+            result.GameOver.Reason.Should().Be(WinReasons.LaunchFailure);
+        }
+    }
 }
