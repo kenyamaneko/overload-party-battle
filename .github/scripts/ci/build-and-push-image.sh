@@ -11,9 +11,8 @@ set -euo pipefail
 IMAGE="${REGISTRY}/${PROJECT_ID}/${REPOSITORY}/${IMAGE_NAME}"
 
 echo "::group::docker build ${IMAGE}:${IMAGE_TAG}"
-# Cloudsmith は public repo なので、Dockerfile 内の dotnet restore は
-# nuget.config の feed に対して匿名アクセスする。ビルドコンテキストに
-# 認証 secret は流していない。
+# Cloudsmith は public repo のため、Dockerfile 内で匿名登録した feed に対して
+# dotnet restore が認証なしでアクセスする。ビルドコンテキストに secret は不要。
 docker build -t "${IMAGE}:${IMAGE_TAG}" -t "${IMAGE}:latest" .
 echo "::endgroup::"
 

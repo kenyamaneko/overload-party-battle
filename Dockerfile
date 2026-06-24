@@ -1,9 +1,12 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS builder
 WORKDIR /app
 COPY . .
-# Cloudsmith repos for overload-party are configured as public, so dotnet
-# restore can read OverloadParty.GameDesignConstants without authentication.
-# nuget.config points to the Cloudsmith feed.
+# CI は runner 上で Cloudsmith source を設定するが、その設定は隔離された docker
+# build には届かない。OverloadParty.GameDesignConstants を持つ public feed を
+# コンテナ内でも匿名登録してから復元する。
+RUN dotnet nuget add source \
+      https://nuget.cloudsmith.io/keyandnotes/overload-party-nuget/v3/index.json \
+      --name cloudsmith-overload-party-nuget
 RUN dotnet publish src/OverloadParty.Battle.Server -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0
