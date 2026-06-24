@@ -175,8 +175,12 @@ public class UseInitiativeProcessorTests
             var result = Use(state, InitiativeKinds.Routine, effects, catalog);
 
             var evt = result.Events.Should().ContainSingle(e => e.EventType == EventTypes.UseInitiative).Subject;
-            evt.EventData.Should().BeOfType<UseInitiativeEventData>()
-                .Which.Kind.Should().Be(InitiativeKinds.Routine);
+            var data = evt.EventData.Should().BeOfType<UseInitiativeEventData>().Subject;
+            data.Kind.Should().Be(InitiativeKinds.Routine);
+            data.ProductId.Should().Be(ProductId);
+            data.InitiativeId.Should().Be(RoutineId);
+            data.InitiativeName.Should().Be("R");
+            data.InsightCost.Should().Be(100);
         }
     }
 
