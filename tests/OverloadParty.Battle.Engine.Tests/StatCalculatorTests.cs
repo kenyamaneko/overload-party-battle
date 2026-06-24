@@ -38,11 +38,7 @@ public class StatCalculatorTests
     /// <summary>Tests for StatCalculator.CalculateIntrinsicStat (MC 用固有ステータス)。</summary>
     public class CalculateIntrinsicStat
     {
-        /// <summary>
-        /// intrinsicStat = base × rank × family + 逓減後 ElasticBonus。
-        /// Orchestrator base 600 / free_tier 600 を基準に rank・family・ElasticBonus を変えて検証。
-        /// effective bonus は free_tier 固定なので rawBonus 300 → 600 × ln(1.5) ≈ 243。
-        /// </summary>
+        /// <summary>固有ステータスにランク・Instance Family・逓減後 ElasticBonus が反映されることを検証します。</summary>
         [Theory]
         [InlineData(Rank.Small, InstanceFamily.M, 0, 600)]      // base のみ
         [InlineData(Rank.Medium, InstanceFamily.M, 0, 1200)]    // medium ×2

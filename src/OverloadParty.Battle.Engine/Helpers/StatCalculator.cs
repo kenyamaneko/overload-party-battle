@@ -26,7 +26,6 @@ public static class StatCalculator
 
     /// <summary>
     /// 維持コスト計算に使う固有ステータス (コンピュート系のスループット / Data 系の Yield) を算出します。
-    /// base × ランク × Instance Family + 逓減後 ElasticBonus で求め、Platform・パッシブ・アタッチメント・一時効果は含めません。
     /// </summary>
     /// <param name="instance">対象リソース。</param>
     /// <param name="card">対象のカード定義。</param>
