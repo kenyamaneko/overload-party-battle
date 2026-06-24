@@ -351,4 +351,130 @@ public class PlayCardProcessorTests
             state.Player1Trash.Should().Contain(c => c.InstanceID == "old_att");
         }
     }
+
+    /// <summary>Tests that attaching an アタッチメント emits an attach_card event with the target.</summary>
+    public class AttachCardEvent : Base
+    {
+        [Fact]
+        public void PlayCard_Attachment_EmitsAttachCardEvent()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "host_1", faceUp: true);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_att", CardID = "TEST-0300" });
+
+            var result = PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_att", Zones.Support, 0, targetInstanceId: "host_1"), _cc, new EffectRegistry());
+
+            var evt = result.Events.First(e => e.EventType == EventTypes.AttachCard);
+            var data = evt.EventData.Should().BeOfType<AttachCardEventData>().Subject;
+            data.CardId.Should().Be("TEST-0300");
+            data.TargetId.Should().Be("host_1");
+        }
+    }
+
+    /// <summary>Tests that an アタッチメント fires its own デプロイ時効果 on attach.</summary>
+    public class AttachmentDeployEffect : Base
+    {
+        [Fact]
+        public void PlayCard_Attachment_FiresOwnOnDeploy()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "host_1", faceUp: true);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_att", CardID = "TEST-0300" });
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TEST-0300", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_att", Zones.Support, 0, targetInstanceId: "host_1"), _cc, effects);
+
+            fired.Should().BeTrue("アタッチメントは装備時に自身のデプロイ時効果を発動する");
+        }
+    }
+
+    /// <summary>Tests that an インシデント resolves to トラッシュ with a zoneless play_card event.</summary>
+    public class IncidentPlay : Base
+    {
+        [Fact]
+        public void PlayCard_Incident_MovedToTrashWithZonelessEvent()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_inc", CardID = "TEST-0500" });
+
+            var result = PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_inc"), _cc, new EffectRegistry());
+
+            state.Player1Trash.Should().Contain(c => c.CardID == "TEST-0500");
+            var evt = result.Events.First(e => e.EventType == ActionTypes.PlayCard);
+            var data = evt.EventData.Should().BeOfType<PlayCardEventData>().Subject;
+            data.Zone.Should().Be("");
+            data.Index.Should().Be(-1);
+        }
+    }
+
+    /// <summary>Tests that a ストラテジー runs its 起動効果 from hand and resolves to トラッシュ.</summary>
+    public class StrategyPlay : Base
+    {
+        [Fact]
+        public void PlayCard_Strategy_RunsIgnitionEffectAndTrashes()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_str", CardID = "TEST-0501" });
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TEST-0501", TriggerType.Ignition, ctx =>
+            {
+                fired = true;
+                return new EffectResult { Events = [new GameEvent { EventType = "strategy_effect", GameID = ctx.Game.GameID }] };
+            });
+
+            var result = PlayCardProcessor.Process(state, _game, 1, MakeReq("h_str"), _cc, effects);
+
+            fired.Should().BeTrue("ストラテジーは手札から発動して即時効果を適用する");
+            result.Events.Should().Contain(e => e.EventType == "strategy_effect");
+            state.Player1Trash.Should().Contain(c => c.CardID == "TEST-0501");
+        }
+    }
+
+    /// <summary>Tests that a resource play_card event carries the card id and placement.</summary>
+    public class ResourcePlayEvent : Base
+    {
+        [Fact]
+        public void PlayCard_Resource_EventCarriesCardAndPosition()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" });
+
+            var result = PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_1", Zones.Backend, 2), _cc, new EffectRegistry());
+
+            var evt = result.Events.First(e => e.EventType == ActionTypes.PlayCard);
+            var data = evt.EventData.Should().BeOfType<PlayCardEventData>().Subject;
+            data.CardId.Should().Be("TST-0001");
+            data.Zone.Should().Be(Zones.Backend);
+            data.Index.Should().Be(2);
+        }
+    }
+
+    /// <summary>Tests that placing a サポートカード emits a play_card event with its slot.</summary>
+    public class SupportPlayEvent : Base
+    {
+        [Fact]
+        public void PlayCard_Support_EmitsPlayCardEvent()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_plat", CardID = "TEST-0200" });
+
+            var result = PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_plat", Zones.Support, 1), _cc, new EffectRegistry());
+
+            var evt = result.Events.First(e => e.EventType == ActionTypes.PlayCard);
+            var data = evt.EventData.Should().BeOfType<PlayCardEventData>().Subject;
+            data.CardId.Should().Be("TEST-0200");
+            data.Zone.Should().Be(Zones.Support);
+            data.Index.Should().Be(1);
+        }
+    }
 }
