@@ -102,4 +102,82 @@ public class DrawPhaseProcessorTests
             state.Player1HasOperated.Should().BeTrue();
         }
     }
+
+    /// <summary>Tests that デプロイ時効果 fire when the deploy countdown completes.</summary>
+    public class DeployCompletionTriggers : Base
+    {
+        [Fact]
+        public void Resource_FiresOnDeploy_WhenCountdownReachesZero()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 1);
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, _game, _cc, effects);
+
+            fired.Should().BeTrue("カウントダウン完了で稼働したリソースのデプロイ時効果が発動する");
+        }
+
+        [Fact]
+        public void Resource_DoesNotFireOnDeploy_WhileStillDeploying()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 2);
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, _game, _cc, effects);
+
+            fired.Should().BeFalse("デプロイ完了前はデプロイ時効果を発動しない");
+        }
+
+        [Fact]
+        public void Support_FiresOnDeploy_WhenCountdownReachesZero()
+        {
+            _cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TST-0200",
+                FaceUp = true,
+                DeployingTurnsLeft = 1,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0200", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, _game, _cc, effects);
+
+            fired.Should().BeTrue("カウントダウン完了で稼働したサポートカードのデプロイ時効果が発動する");
+        }
+    }
+
+    /// <summary>Tests that win conditions are evaluated after the draw.</summary>
+    public class WinCheckAfterDraw : Base
+    {
+        [Fact]
+        public void ReturnsGameOver_WhenWinConditionMetAfterDraw()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1, p1Budget: 0);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+
+            var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
+
+            result.Should().NotBeNull();
+            result!.WinnerNum.Should().Be(2);
+            result.Reason.Should().Be(WinReasons.BudgetZero);
+        }
+    }
 }
