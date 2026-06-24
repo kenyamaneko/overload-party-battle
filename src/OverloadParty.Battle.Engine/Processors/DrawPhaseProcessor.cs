@@ -27,7 +27,7 @@ public static class DrawPhaseProcessor
         {
             return new GameOverResult(
                 state.OpponentOf(state.ActivePlayer),
-                WinReason.RepositoryOut.ToWireString());
+                WinReason.DeckOut.ToWireString());
         }
 
         CardMoveHelpers.DrawCards(state, state.ActivePlayer, 1);

@@ -65,7 +65,7 @@ public enum WinReason
 {
     BudgetZero,
     SystemDown,
-    RepositoryOut,
+    DeckOut,
     TurnTimeout,
     Disconnect,
     TurnLimit,

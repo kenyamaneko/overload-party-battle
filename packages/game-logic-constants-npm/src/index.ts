@@ -6,7 +6,7 @@ export type GamePhase = (typeof PHASES)[number] | 'selecting';
 export const GAME_STATUS = ["waiting", "playing", "finished"] as const;
 export type GameStatus = (typeof GAME_STATUS)[number];
 
-export const WIN_REASONS = ["budget_zero", "system_down", "repository_out", "turn_timeout", "disconnect", "turn_limit", "draw", "launch_failure", "surrender"] as const;
+export const WIN_REASONS = ["budget_zero", "system_down", "deck_out", "turn_timeout", "disconnect", "turn_limit", "draw", "launch_failure", "surrender"] as const;
 export type WinReason = (typeof WIN_REASONS)[number];
 
 export const ACTION_TYPES = ["play_card", "attack", "scale_up", "monetize", "discard_hand", "use_ignition", "use_initiative", "set_reactive", "end_phase", "forfeit", "select_slot", "reactive", "resolve_pending_choice"] as const;

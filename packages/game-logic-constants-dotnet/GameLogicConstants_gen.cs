@@ -21,7 +21,7 @@ public static class WinReasons
 {
     public const string BudgetZero = "budget_zero";
     public const string SystemDown = "system_down";
-    public const string RepositoryOut = "repository_out";
+    public const string DeckOut = "deck_out";
     public const string TurnTimeout = "turn_timeout";
     public const string Disconnect = "disconnect";
     public const string TurnLimit = "turn_limit";

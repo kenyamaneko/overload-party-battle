@@ -129,7 +129,7 @@ public static class EnumExtensions
     {
         WinReason.BudgetZero => WinReasons.BudgetZero,
         WinReason.SystemDown => WinReasons.SystemDown,
-        WinReason.RepositoryOut => WinReasons.RepositoryOut,
+        WinReason.DeckOut => WinReasons.DeckOut,
         WinReason.TurnTimeout => WinReasons.TurnTimeout,
         WinReason.Disconnect => WinReasons.Disconnect,
         WinReason.TurnLimit => WinReasons.TurnLimit,
@@ -148,7 +148,7 @@ public static class EnumExtensions
     {
         WinReasons.BudgetZero => WinReason.BudgetZero,
         WinReasons.SystemDown => WinReason.SystemDown,
-        WinReasons.RepositoryOut => WinReason.RepositoryOut,
+        WinReasons.DeckOut => WinReason.DeckOut,
         WinReasons.TurnTimeout => WinReason.TurnTimeout,
         WinReasons.Disconnect => WinReason.Disconnect,
         WinReasons.TurnLimit => WinReason.TurnLimit,
