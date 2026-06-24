@@ -11,60 +11,58 @@ namespace OverloadParty.Battle.Tests.Engine;
 /// </summary>
 public class BranchChoiceOnDeployTests
 {
-    /// <summary>on_deploy に分岐効果を持つ即時配置リソースと共有のキャッシュ・レジストリを用意する。</summary>
-    public abstract class Base
+    private const string ResourceCardId = "TST-0600";
+
+    /// <summary>on_deploy に alpha/beta 分岐を持つ即時配置リソースを登録したキャッシュとレジストリを作る。</summary>
+    /// <returns>カードキャッシュと効果レジストリ。</returns>
+    private static (TestCardCache Cc, TestEffectRegistry Registry) MakeEnv()
     {
-        protected const string ResourceCardId = "TST-0600";
-
-        protected readonly TestCardCache _cc = new();
-        protected readonly TestEffectRegistry _registry = new();
-        protected readonly Game _game = TestFactory.MakeGame();
-
-        protected Base()
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: ResourceCardId, deployTurns: 0));
+        var registry = new TestEffectRegistry();
+        var branches = new Dictionary<string, List<IEffectOp>>
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: ResourceCardId, deployTurns: 0));
-            var branches = new Dictionary<string, List<IEffectOp>>
-            {
-                ["alpha"] = [new InlineOp(o => o.State.SetInsightPool(o.PlayerNum, 111))],
-                ["beta"] = [new InlineOp(o => o.State.SetInsightPool(o.PlayerNum, 222))],
-            };
-            _registry.Register(ResourceCardId, TriggerType.OnDeploy, EffectComposer.Compose(new BranchOnChoiceOp(branches)));
-        }
+            ["alpha"] = [new InlineOp(o => o.State.SetInsightPool(o.PlayerNum, 111))],
+            ["beta"] = [new InlineOp(o => o.State.SetInsightPool(o.PlayerNum, 222))],
+        };
+        registry.Register(ResourceCardId, TriggerType.OnDeploy, EffectComposer.Compose(new BranchOnChoiceOp(branches)));
+        return (cc, registry);
+    }
 
-        /// <summary>分岐リソースを手札に持つ状態を作る。</summary>
-        /// <returns>テスト用ゲーム状態。</returns>
-        protected BattleGameState MakeStateWithHand()
-        {
-            var state = TestFactory.MakeGameState();
-            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = ResourceCardId });
-            return state;
-        }
+    /// <summary>分岐リソースを手札に持つ状態を作る。</summary>
+    /// <returns>テスト用ゲーム状態。</returns>
+    private static BattleGameState MakeStateWithHand()
+    {
+        var state = TestFactory.MakeGameState();
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = ResourceCardId });
+        return state;
+    }
 
-        /// <summary>分岐リソースをフロントエンドにプレイするリクエストを作る。</summary>
-        /// <returns>プレイカードリクエスト。</returns>
-        protected static PlayCardRequest PlayReq() =>
-            new() { CardInstanceID = "h_1", Zone = Zones.Frontend, Index = 0 };
+    /// <summary>分岐リソースをフロントエンドにプレイするリクエストを作る。</summary>
+    /// <returns>プレイカードリクエスト。</returns>
+    private static PlayCardRequest PlayReq() =>
+        new() { CardInstanceID = "h_1", Zone = Zones.Frontend, Index = 0 };
 
-        /// <summary>任意の Action を IEffectOp として実行するテスト専用 op。</summary>
-        protected sealed class InlineOp : IEffectOp
-        {
-            private readonly Action<OpContext> _action;
+    /// <summary>任意の Action を IEffectOp として実行するテスト専用 op。</summary>
+    private sealed class InlineOp : IEffectOp
+    {
+        private readonly Action<OpContext> _action;
 
-            public InlineOp(Action<OpContext> action) => _action = action;
+        public InlineOp(Action<OpContext> action) => _action = action;
 
-            public void Execute(OpContext ctx) => _action(ctx);
-        }
+        public void Execute(OpContext ctx) => _action(ctx);
     }
 
     /// <summary>配置時に分岐の選択待ちへ遷移することを検証する。</summary>
-    public class Play : Base
+    public class Play
     {
         [Fact]
         public void SuspendsForBranchChoice()
         {
+            var (cc, registry) = MakeEnv();
             var state = MakeStateWithHand();
 
-            PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
+            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             state.PendingEffectChoice.Should().NotBeNull();
             var pending = state.PendingEffectChoice!;
@@ -76,16 +74,17 @@ public class BranchChoiceOnDeployTests
     }
 
     /// <summary>選択を解決すると選んだ分岐が実行されることを検証する。</summary>
-    public class Resolve : Base
+    public class Resolve
     {
         [Fact]
         public void RunsChosenBranch()
         {
+            var (cc, registry) = MakeEnv();
             var state = MakeStateWithHand();
-            PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
+            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "beta" };
-            ResolvePendingChoiceProcessor.Process(state, _game, 1, resolveReq, _cc, _registry);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry);
 
             state.PendingEffectChoice.Should().BeNull();
             state.Player1InsightPool.Should().Be(222);

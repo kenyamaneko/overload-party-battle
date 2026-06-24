@@ -7,81 +7,79 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Tests.Engine;
 
 /// <summary>
-/// ストラテジーの起動効果が「デッキ上端を提示して 1 枚選ばせる」選択待ちへ遷移し、
+/// ストラテジーの起動効果が「デッキ上端を見て 1 枚選ばせる」選択待ちへ遷移し、
 /// ResolvePendingChoice で選択 1 枚を手札・残りをトラッシュへ振り分けることを検証する。
 /// </summary>
 public class KeepOneFromDeckTopTests
 {
-    /// <summary>keep_one_from_deck_top を起動効果に持つストラテジーと、共有のカードキャッシュ・レジストリを用意する。</summary>
-    public abstract class Base
+    private const string StrategyCardId = "TST-0500";
+
+    /// <summary>keep_one_from_deck_top を起動効果に持つストラテジーを登録したカードキャッシュとレジストリを作る。</summary>
+    /// <returns>カードキャッシュと効果レジストリ。</returns>
+    private static (TestCardCache Cc, TestEffectRegistry Registry) MakeEnv()
     {
-        protected const string StrategyCardId = "TST-0500";
-
-        protected readonly TestCardCache _cc = new();
-        protected readonly TestEffectRegistry _registry = new();
-        protected readonly Game _game = TestFactory.MakeGame();
-
-        protected Base()
+        var cc = new TestCardCache();
+        cc.Add(new CardDefinition
         {
-            _cc.Add(new CardDefinition
-            {
-                CardId = StrategyCardId,
-                CardName = "TestReveal",
-                CardType = CardTypes.Strategy,
-                Faction = "SHE",
-                DeployTurns = 0,
-            });
-            _registry.Register(StrategyCardId, TriggerType.Ignition, MakeHandler(peek: 2));
-        }
-
-        /// <summary>keep_one_from_deck_top カスタム効果を peek 枚で組んだ起動効果ハンドラを返す。</summary>
-        /// <param name="peek">見るデッキ上端の枚数。</param>
-        /// <returns>合成済みの効果ハンドラ。</returns>
-        private static EffectHandler MakeHandler(int peek)
-        {
-            var meta = new Dictionary<string, JsonElement> { ["peek"] = JsonSerializer.SerializeToElement(peek) };
-            var action = new CustomEffectRegistry().Build(CustomEffects.KeepOneFromDeckTop, meta)
-                ?? throw new InvalidOperationException("failed to build keep_one_from_deck_top");
-            return EffectComposer.Compose(new InlineOp(action));
-        }
-
-        /// <summary>ストラテジーを手札に 1 枚、デッキ上端に d_1/d_2/d_3 を積んだ状態を作る。</summary>
-        /// <returns>テスト用ゲーム状態。</returns>
-        protected static BattleGameState MakeStateWithDeck()
-        {
-            var state = TestFactory.MakeGameState();
-            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = StrategyCardId });
-            state.Player1Repository.Add(new UndeployedCard { InstanceID = "d_1", CardID = "TST-0001" });
-            state.Player1Repository.Add(new UndeployedCard { InstanceID = "d_2", CardID = "TST-0002" });
-            state.Player1Repository.Add(new UndeployedCard { InstanceID = "d_3", CardID = "TST-0003" });
-            return state;
-        }
-
-        /// <summary>手札のストラテジーをプレイするリクエストを作る。</summary>
-        /// <returns>プレイカードリクエスト。</returns>
-        protected static PlayCardRequest PlayReq() =>
-            new() { CardInstanceID = "h_1", Zone = "", Index = 0 };
-
-        /// <summary>任意の Action を IEffectOp として実行するテスト専用 op。</summary>
-        protected sealed class InlineOp : IEffectOp
-        {
-            private readonly Action<OpContext> _action;
-
-            public InlineOp(Action<OpContext> action) => _action = action;
-
-            public void Execute(OpContext ctx) => _action(ctx);
-        }
+            CardId = StrategyCardId,
+            CardName = "TestReveal",
+            CardType = CardTypes.Strategy,
+            Faction = "SHE",
+            DeployTurns = 0,
+        });
+        var registry = new TestEffectRegistry();
+        registry.Register(StrategyCardId, TriggerType.Ignition, MakeHandler(peek: 2));
+        return (cc, registry);
     }
 
-    /// <summary>プレイ時にデッキ上端を提示して選択待ちへ遷移することを検証する。</summary>
-    public class Play : Base
+    /// <summary>keep_one_from_deck_top カスタム効果を peek 枚で組んだ起動効果ハンドラを返す。</summary>
+    /// <param name="peek">見るデッキ上端の枚数。</param>
+    /// <returns>合成済みの効果ハンドラ。</returns>
+    private static EffectHandler MakeHandler(int peek)
+    {
+        var meta = new Dictionary<string, JsonElement> { ["peek"] = JsonSerializer.SerializeToElement(peek) };
+        var action = new CustomEffectRegistry().Build(CustomEffects.KeepOneFromDeckTop, meta)
+            ?? throw new InvalidOperationException("failed to build keep_one_from_deck_top");
+        return EffectComposer.Compose(new InlineOp(action));
+    }
+
+    /// <summary>ストラテジーを手札に 1 枚、デッキ上端に d_1/d_2/d_3 を積んだ状態を作る。</summary>
+    /// <returns>テスト用ゲーム状態。</returns>
+    private static BattleGameState MakeStateWithDeck()
+    {
+        var state = TestFactory.MakeGameState();
+        state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = StrategyCardId });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "d_1", CardID = "TST-0001" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "d_2", CardID = "TST-0002" });
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "d_3", CardID = "TST-0003" });
+        return state;
+    }
+
+    /// <summary>手札のストラテジーをプレイするリクエストを作る。</summary>
+    /// <returns>プレイカードリクエスト。</returns>
+    private static PlayCardRequest PlayReq() =>
+        new() { CardInstanceID = "h_1", Zone = "", Index = 0 };
+
+    /// <summary>任意の Action を IEffectOp として実行するテスト専用 op。</summary>
+    private sealed class InlineOp : IEffectOp
+    {
+        private readonly Action<OpContext> _action;
+
+        public InlineOp(Action<OpContext> action) => _action = action;
+
+        public void Execute(OpContext ctx) => _action(ctx);
+    }
+
+    /// <summary>プレイ時にデッキ上端を見て選択待ちへ遷移することを検証する。</summary>
+    public class Play
     {
         [Fact]
         public void SuspendsForChoice_PresentingDeckTopCards()
         {
+            var (cc, registry) = MakeEnv();
             var state = MakeStateWithDeck();
 
-            PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
+            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             state.PendingEffectChoice.Should().NotBeNull();
             var pending = state.PendingEffectChoice!;
@@ -94,16 +92,17 @@ public class KeepOneFromDeckTopTests
     }
 
     /// <summary>選択を解決すると選択 1 枚を手札・残りをトラッシュへ振り分けることを検証する。</summary>
-    public class Resolve : Base
+    public class Resolve
     {
         [Fact]
         public void KeepsChosenCardToHand_PreservingId()
         {
+            var (cc, registry) = MakeEnv();
             var state = MakeStateWithDeck();
-            PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
+            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "2" };
-            ResolvePendingChoiceProcessor.Process(state, _game, 1, resolveReq, _cc, _registry);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry);
 
             state.PendingEffectChoice.Should().BeNull();
             state.Player1Hand.Select(c => c.InstanceID).Should().Equal("d_2");
@@ -113,28 +112,30 @@ public class KeepOneFromDeckTopTests
         [Fact]
         public void TrashesUnchosenRevealedCards()
         {
+            var (cc, registry) = MakeEnv();
             var state = MakeStateWithDeck();
-            PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
+            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "2" };
-            ResolvePendingChoiceProcessor.Process(state, _game, 1, resolveReq, _cc, _registry);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry);
 
             state.Player1Trash.Select(c => c.InstanceID).Should().Contain("d_1");
         }
     }
 
     /// <summary>プレイ後、選択肢 (具象化カード付き) を持つ resolve アクションが availableActions に現れることを検証する。</summary>
-    public class Surfacing : Base
+    public class Surfacing
     {
         [Fact]
         public void ResolveActionCarriesMaterializedOptions()
         {
+            var (cc, registry) = MakeEnv();
             var state = MakeStateWithDeck();
-            PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
+            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             var actions = AvailableActions.GetAllAvailableActions(
                 state, TestFactory.MakeField(), TestFactory.MakeField(),
-                new List<UndeployedCard>(), 0, 0, _cc, _registry);
+                new List<UndeployedCard>(), 0, 0, cc, registry);
 
             var resolve = actions.Should().ContainSingle(a => a.Type == ActionTypes.ResolvePendingChoice).Subject;
             resolve.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
