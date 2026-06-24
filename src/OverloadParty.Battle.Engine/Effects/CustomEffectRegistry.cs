@@ -24,7 +24,7 @@ public class CustomEffectRegistry
         [CustomEffects.SpotExpiry] = BuildSpotExpiry,
         [CustomEffects.Reattach] = _ => Reattach,
         [CustomEffects.ScaleToZero] = _ => ScaleToZero,
-        [CustomEffects.DeckTopKeepOne] = BuildDeckTopKeepOne,
+        [CustomEffects.KeepOneFromDeckTop] = BuildKeepOneFromDeckTop,
 
         // target_shield はカード定義を passive に検査する marker（FieldHelpers.IsTargetShielded）。
         // deploy trigger では副作用なしだが、登録しておかないと loader が unknown custom として throw する。
@@ -89,31 +89,30 @@ public class CustomEffectRegistry
     }
 
     /// <summary>
-    /// デッキの上から count 枚のうち、プレイヤーが選んだ 1 枚を手札に残し、残りをトラッシュに送る。
-    /// meta: { count }
+    /// デッキの上から指定枚数を見て、プレイヤーが選んだ 1 枚を手札に残し、残りをトラッシュに送る効果を組む。
     /// </summary>
-    /// <param name="meta">対象とするデッキ上端の枚数 count を含むカード定義由来のパラメータ。</param>
-    /// <returns>構築した効果関数。meta に count が欠ける場合は null。</returns>
-    private static Action<OpContext>? BuildDeckTopKeepOne(Dictionary<string, JsonElement>? meta)
+    /// <param name="meta">見る枚数を含むカード定義由来のパラメータ。</param>
+    /// <returns>構築した効果関数。見る枚数が欠ける場合は null。</returns>
+    private static Action<OpContext>? BuildKeepOneFromDeckTop(Dictionary<string, JsonElement>? meta)
     {
-        if (meta is null || !meta.TryGetValue("count", out var countEl))
+        if (meta is null || !meta.TryGetValue("peek", out var peekEl))
         {
             return null;
         }
-        int count = countEl.GetInt32();
+        int peek = peekEl.GetInt32();
 
-        return octx => DeckTopKeepOne(octx, count);
+        return octx => KeepOneFromDeckTop(octx, peek);
     }
 
     /// <summary>
-    /// デッキ上端 count 枚から、選択された 1 枚を手札・残りをトラッシュへ移す。選択値が未指定なら選択待ちに遷移する。
+    /// デッキ上端 peek 枚を見て、選択された 1 枚を手札・残りをトラッシュへ移す。選択値が未指定なら選択待ちに遷移する。
     /// </summary>
     /// <param name="octx">効果実行コンテキスト。</param>
-    /// <param name="count">手札・トラッシュへ振り分ける対象とするデッキ上端の枚数。</param>
-    private static void DeckTopKeepOne(OpContext octx, int count)
+    /// <param name="peek">見るデッキ上端の枚数。</param>
+    private static void KeepOneFromDeckTop(OpContext octx, int peek)
     {
         var deck = octx.State.GetRepository(octx.PlayerNum);
-        int targetCount = Math.Min(count, deck.Count);
+        int targetCount = Math.Min(peek, deck.Count);
         if (targetCount == 0)
         {
             return;

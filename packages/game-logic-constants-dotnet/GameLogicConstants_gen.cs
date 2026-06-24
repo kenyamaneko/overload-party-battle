@@ -153,9 +153,9 @@ public static class CustomEffects
     public const string CancelNthDeploy = "cancel_nth_deploy";
     public const string ChainAttackBonus = "chain_attack_bonus";
     public const string CloudShift = "cloud_shift";
-    public const string DeckTopKeepOne = "deck_top_keep_one";
     public const string DeploySameTypeFromHand = "deploy_same_type_from_hand";
     public const string DisableHighTpDeploy = "disable_high_tp_deploy";
+    public const string KeepOneFromDeckTop = "keep_one_from_deck_top";
     public const string Reattach = "reattach";
     public const string RedirectAttack = "redirect_attack";
     public const string ScaleToZero = "scale_to_zero";

@@ -10,9 +10,9 @@ namespace OverloadParty.Battle.Tests.Engine;
 /// ストラテジーの起動効果が「デッキ上端を提示して 1 枚選ばせる」選択待ちへ遷移し、
 /// ResolvePendingChoice で選択 1 枚を手札・残りをトラッシュへ振り分けることを検証する。
 /// </summary>
-public class DeckTopKeepOneTests
+public class KeepOneFromDeckTopTests
 {
-    /// <summary>deck_top_keep_one を起動効果に持つストラテジーと、共有のカードキャッシュ・レジストリを用意する。</summary>
+    /// <summary>keep_one_from_deck_top を起動効果に持つストラテジーと、共有のカードキャッシュ・レジストリを用意する。</summary>
     public abstract class Base
     {
         protected const string StrategyCardId = "TST-0500";
@@ -31,17 +31,17 @@ public class DeckTopKeepOneTests
                 Faction = "SHE",
                 DeployTurns = 0,
             });
-            _registry.Register(StrategyCardId, TriggerType.Ignition, MakeHandler(count: 2));
+            _registry.Register(StrategyCardId, TriggerType.Ignition, MakeHandler(peek: 2));
         }
 
-        /// <summary>deck_top_keep_one カスタム効果を count 枚で組んだ起動効果ハンドラを返す。</summary>
-        /// <param name="count">提示するデッキ上端の枚数。</param>
+        /// <summary>keep_one_from_deck_top カスタム効果を peek 枚で組んだ起動効果ハンドラを返す。</summary>
+        /// <param name="peek">見るデッキ上端の枚数。</param>
         /// <returns>合成済みの効果ハンドラ。</returns>
-        private static EffectHandler MakeHandler(int count)
+        private static EffectHandler MakeHandler(int peek)
         {
-            var meta = new Dictionary<string, JsonElement> { ["count"] = JsonSerializer.SerializeToElement(count) };
-            var action = new CustomEffectRegistry().Build(CustomEffects.DeckTopKeepOne, meta)
-                ?? throw new InvalidOperationException("failed to build deck_top_keep_one");
+            var meta = new Dictionary<string, JsonElement> { ["peek"] = JsonSerializer.SerializeToElement(peek) };
+            var action = new CustomEffectRegistry().Build(CustomEffects.KeepOneFromDeckTop, meta)
+                ?? throw new InvalidOperationException("failed to build keep_one_from_deck_top");
             return EffectComposer.Compose(new InlineOp(action));
         }
 

@@ -30,7 +30,7 @@ export type BuffType = (typeof BUFF_TYPES)[number];
 export const BUFF_MODES = ["flat", "percent"] as const;
 export type BuffMode = (typeof BUFF_MODES)[number];
 
-export const CUSTOM_EFFECTS = ["cancel_nth_deploy", "chain_attack_bonus", "cloud_shift", "deck_top_keep_one", "deploy_same_type_from_hand", "disable_high_tp_deploy", "reattach", "redirect_attack", "scale_to_zero", "spot_expiry", "target_shield"] as const;
+export const CUSTOM_EFFECTS = ["cancel_nth_deploy", "chain_attack_bonus", "cloud_shift", "deploy_same_type_from_hand", "disable_high_tp_deploy", "keep_one_from_deck_top", "reattach", "redirect_attack", "scale_to_zero", "spot_expiry", "target_shield"] as const;
 export type CustomEffect = (typeof CUSTOM_EFFECTS)[number];
 
 export const EFFECT_CATEGORIES = ["budget_gain", "budget_penalty", "insight_absorb", "insight_gain", "single_damage", "aoe_damage", "buff", "debuff", "heal", "draw", "search", "deploy_free", "recover_card", "reveal_reactive", "destroy_platform", "cancel_action", "survive"] as const;
