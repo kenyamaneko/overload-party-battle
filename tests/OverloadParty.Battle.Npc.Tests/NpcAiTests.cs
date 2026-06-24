@@ -376,11 +376,19 @@ public class NpcAiTests
             EffectInstanceId = "inst_1",
             ChoiceKind = ChoiceKinds.HandCard,
         };
-        // resolve_pending_choice の variant: hand_card 種別は CardID に候補 ID を載せる。
+        // resolve_pending_choice は 1 件で、選択肢を ChoiceOptions に持つ。
         var available = new List<GD.AvailableAction>
         {
-            new GD.ResolvePendingChoiceAction { SourceInstanceID = "inst_1", CardID = "TST-0001" },
-            new GD.ResolvePendingChoiceAction { SourceInstanceID = "inst_1", CardID = "TST-0002" },
+            new GD.ResolvePendingChoiceAction
+            {
+                EffectCardId = "TST-0002",
+                ChoiceKind = ChoiceKinds.HandCard,
+                ChoiceOptions =
+                [
+                    new GD.ChoiceOption { Key = "TST-0001" },
+                    new GD.ChoiceOption { Key = "TST-0002" },
+                ],
+            },
         };
         var state = BuildState(pendingEffectChoice: pending, available: available);
 
@@ -534,49 +542,35 @@ public class NpcAiTests
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
-    public void Deploy_Choice_UsesConfigValue()
+    public void PendingBranchChoice_UsesConfigValue()
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0007", tp: 400, av: 1000));
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_0006", CardID = "TST-0007" } };
+        var pending = new GD.PendingEffectChoiceView
+        {
+            ChooserPlayerNum = 1,
+            EffectCardId = "TST-0007",
+            EffectInstanceId = "inst_1",
+            ChoiceKind = ChoiceKinds.Branch,
+        };
+        // config が "use" を指すので、先頭の "reserve" でなく config 値を選ぶ。
         var available = new List<GD.AvailableAction>
         {
-            new GD.PlayCardAction
+            new GD.ResolvePendingChoiceAction
             {
-                HandInstanceID = "h_0006", CardID = "TST-0007",
-                ValidZones = new() { "frontend_0" }, ChoiceOptions = new() { "use", "reserve" },
+                EffectCardId = "TST-0007",
+                ChoiceKind = ChoiceKinds.Branch,
+                ChoiceOptions =
+                [
+                    new GD.ChoiceOption { Key = "reserve" },
+                    new GD.ChoiceOption { Key = "use" },
+                ],
             },
         };
-        var state = BuildState(hand: hand, available: available);
+        var state = BuildState(pendingEffectChoice: pending, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state);
-        var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
+        var action = ai.DecidePendingEffectChoice(state);
 
-        var req = (PlayCardRequest)deploy.Data;
-        req.ChoiceData.Should().NotBeNull();
-        req.ChoiceData!["option"].Should().Be("use");
-    }
-
-    [Fact]
-    public void Deploy_Choice_NotInConfig_Throws()
-    {
-        _cc.Add(TestFactory.ComputeCard(cardId: "UNKNOWN-C", tp: 300, av: 800));
-        var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_unk", CardID = "UNKNOWN-C" } };
-        var available = new List<GD.AvailableAction>
-        {
-            new GD.PlayCardAction
-            {
-                HandInstanceID = "h_unk", CardID = "UNKNOWN-C",
-                ValidZones = new() { "frontend_0" }, ChoiceOptions = new() { "optionA", "optionB" },
-            },
-        };
-        var state = BuildState(hand: hand, available: available);
-
-        var act = () => ai.DecideMainPhaseActions(state);
-
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*No deploy choice configured*UNKNOWN-C*");
+        ((ResolvePendingChoiceRequest)action!.Data).ChosenId.Should().Be("use");
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -362,8 +362,15 @@ public static class PlayCardProcessor
                 EventOwnerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 Effects = ctx.Effects,
+                Trigger = TriggerType.OnDeploy,
+                EffectCardId = deployed.CardID,
+                EffectInstanceId = deployed.InstanceID,
             });
             events.AddRange(result.Events);
+            if (result.PendingChoice is { } pendingChoice)
+            {
+                ctx.State.PendingEffectChoice = pendingChoice;
+            }
         }
 
         return (false, events);
@@ -397,8 +404,13 @@ public static class PlayCardProcessor
                 EventOwnerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 Effects = ctx.Effects,
+                Trigger = TriggerType.OnDeploy,
             });
             events.AddRange(result.Events);
+            if (result.PendingChoice is { } pendingChoice)
+            {
+                ctx.State.PendingEffectChoice = pendingChoice;
+            }
         }
 
         return events;

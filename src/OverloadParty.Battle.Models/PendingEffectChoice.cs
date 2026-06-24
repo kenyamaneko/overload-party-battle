@@ -63,5 +63,20 @@ public static class ChoiceKinds
     public const string FieldTarget = "field_target";
 
     /// <summary>デッキの上から提示された候補のうち 1 枚を選ぶ。</summary>
-    public const string DeckCard = "deck_card";
+    public const string DeckTop = "deck_top";
+
+    /// <summary>効果の分岐肢のうち 1 つを選ぶ。</summary>
+    public const string Branch = "branch";
+}
+
+/// <summary>
+/// 選択肢 1 件。Key は解決時に返す識別子で、Card は実体が選択側に見えない種別でのみ具象化される表示用カード。
+/// </summary>
+public class ChoiceOption
+{
+    /// <summary>選択を識別する値 (branch キー / カード ID / インスタンス ID / デッキ位置)。</summary>
+    public required string Key { get; set; }
+
+    /// <summary>実体が選択側に見えない種別 (deck_top 等) で具象化される表示用カード。</summary>
+    public UndeployedCard? Card { get; set; }
 }

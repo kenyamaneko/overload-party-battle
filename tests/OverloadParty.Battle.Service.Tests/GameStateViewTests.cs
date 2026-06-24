@@ -198,10 +198,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>deck_card 選択時、開示カードがチューザー本人のビューにのみ載ることを検証する。</summary>
-    public class DeckCardChoiceReveal : Base
+    /// <summary>deck_top 選択時、resolve アクションがチューザーのビューにのみ具象化カード付きで現れることを検証する。</summary>
+    public class DeckTopChoiceReveal : Base
     {
-        /// <summary>チューザー (Player1) のデッキ上端 r_1/r_2 を候補にした deck_card 選択待ちを作る。</summary>
+        /// <summary>チューザー (Player1) のデッキ上端 2 枚を候補にした deck_top 選択待ちを作る。</summary>
         /// <returns>選択待ち情報。</returns>
         private static PendingEffectChoice MakeDeckPending() => new()
         {
@@ -210,13 +210,13 @@ public class GameStateViewTests
             EffectCardId = "TST-0500",
             EffectInstanceId = "trash_x",
             Trigger = TriggerType.Ignition,
-            ChoiceKey = "instanceId",
-            ChoiceKind = ChoiceKinds.DeckCard,
-            Candidates = ["r_1", "r_2"],
+            ChoiceKey = "deckTop",
+            ChoiceKind = ChoiceKinds.DeckTop,
+            Candidates = ["1", "2"],
         };
 
         [Fact]
-        public void Chooser_SeesRevealedDeckCards()
+        public void Chooser_GetsResolveActionWithMaterializedCards()
         {
             var state = TestFactory.MakeGameState();
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
@@ -226,12 +226,13 @@ public class GameStateViewTests
 
             var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
-            result.PendingEffectChoice!.RevealedCards.Select(c => c.InstanceID)
-                .Should().Equal("r_1", "r_2");
+            var resolve = result.MyView.AvailableActions!.OfType<ResolvePendingChoiceAction>().Single();
+            resolve.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
+            resolve.ChoiceOptions.Select(o => o.Card!.InstanceID).Should().Equal("r_1", "r_2");
         }
 
         [Fact]
-        public void Opponent_DoesNotSeeRevealedDeckCards()
+        public void Opponent_GetsNoResolveAction()
         {
             var state = TestFactory.MakeGameState();
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
@@ -240,7 +241,7 @@ public class GameStateViewTests
 
             var result = GameStateView.Build(state, _game, 2, _cc, new EffectRegistry());
 
-            result.PendingEffectChoice!.RevealedCards.Should().BeNull();
+            result.MyView.AvailableActions.Should().BeNull();
         }
     }
 

@@ -57,7 +57,14 @@ public class BranchOnChoiceOp(Dictionary<string, List<IEffectOp>> branches) : IE
             option = val?.ToString();
         }
 
-        if (option is null || !branches.TryGetValue(option, out var ops))
+        if (option is null)
+        {
+            // 選択未提示なら、分岐肢のキーを候補に選択待ちへ遷移する。
+            ctx.SuspendForChoice("option", ChoiceKinds.Branch, branches.Keys.ToList(), ctx.PlayerNum);
+            return;
+        }
+
+        if (!branches.TryGetValue(option, out var ops))
         {
             throw new GameRuleException($"Invalid choice: {option}");
         }

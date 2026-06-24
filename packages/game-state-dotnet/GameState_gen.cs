@@ -128,16 +128,10 @@ namespace OverloadParty.GameState
         public string EffectInstanceId { get; set; } = default!;
 
         /// <summary>
-        /// 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース、deck_card なら revealedCards に提示されたデッキ上端のカード。
+        /// 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("choiceKind")]
         public string ChoiceKind { get; set; } = default!;
-
-        /// <summary>
-        /// deck_card 選択時に提示されるデッキ上端のカード。デッキは非公開のためチューザー本人のビューにのみ含まれる。
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("revealedCards")]
-        public System.Collections.Generic.List<UndeployedCard> RevealedCards { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
@@ -728,9 +722,6 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("validTargets")]
         public System.Collections.Generic.List<string> ValidTargets { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("choiceOptions")]
-        public System.Collections.Generic.List<string> ChoiceOptions { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("effectTargetType")]
         public string EffectTargetType { get; set; } = default!;
 
@@ -839,20 +830,52 @@ namespace OverloadParty.GameState
     }
 
     /// <summary>
-    /// 効果処理中の選択候補 1 件。chosen_id は cardID または validTargets[0] から取る。
+    /// 効果処理中の選択を解決する 1 アクション。chosenId は choiceOptions[].key から選ぶ。
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ResolvePendingChoiceAction : AvailableAction
     {
 
-        [System.Text.Json.Serialization.JsonPropertyName("sourceInstanceID")]
-        public string SourceInstanceID { get; set; } = default!;
+        /// <summary>
+        /// 発動中の効果を持つカードの ID
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("effectCardId")]
+        public string EffectCardId { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("cardID")]
-        public string CardID { get; set; } = default!;
+        /// <summary>
+        /// 選択対象の種別 (hand_card / field_target / deck_top)。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("choiceKind")]
+        public string ChoiceKind { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("validTargets")]
-        public System.Collections.Generic.List<string> ValidTargets { get; set; } = default!;
+        [System.Text.Json.Serialization.JsonPropertyName("choiceOptions")]
+        public System.Collections.Generic.List<ChoiceOption> ChoiceOptions { get; set; } = default!;
+
+    }
+
+    /// <summary>
+    /// 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード ID / インスタンス ID / デッキ位置)。
+    /// <br/>card は実体が選択側に見えない種別 (deck_top 等) でのみ具象化される表示用カード。
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class ChoiceOption
+    {
+
+        [System.Text.Json.Serialization.JsonPropertyName("key")]
+        public string Key { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("card")]
+        public UndeployedCard Card { get; set; } = default!;
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
 
     }
 

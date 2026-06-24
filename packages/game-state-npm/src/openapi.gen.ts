@@ -357,10 +357,8 @@ export interface components {
             effectCardId: string;
             /** @description 発動中の効果を持つカードのインスタンス ID */
             effectInstanceId: string;
-            /** @description 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース、deck_card なら revealedCards に提示されたデッキ上端のカード。 */
+            /** @description 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。 */
             choiceKind: string;
-            /** @description deck_card 選択時に提示されるデッキ上端のカード。デッキは非公開のためチューザー本人のビューにのみ含まれる。 */
-            revealedCards?: components["schemas"]["UndeployedCard"][];
         };
         /**
          * @description 対戦当時の player の name と level の snapshot (battle 開始時点の値、試合中不変)。
@@ -574,7 +572,6 @@ export interface components {
             cardID?: string;
             validZones?: string[];
             validTargets?: string[];
-            choiceOptions?: string[];
             effectTargetType?: string;
         } & {
             /**
@@ -650,17 +647,27 @@ export interface components {
              */
             type: "use_initiative";
         };
-        /** @description 効果処理中の選択候補 1 件。chosen_id は cardID または validTargets[0] から取る。 */
+        /** @description 効果処理中の選択を解決する 1 アクション。chosenId は choiceOptions[].key から選ぶ。 */
         ResolvePendingChoiceAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
-            sourceInstanceID?: string;
-            cardID?: string;
-            validTargets?: string[];
+            /** @description 発動中の効果を持つカードの ID */
+            effectCardId?: string;
+            /** @description 選択対象の種別 (hand_card / field_target / deck_top)。 */
+            choiceKind?: string;
+            choiceOptions?: components["schemas"]["ChoiceOption"][];
         } & {
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             type: "resolve_pending_choice";
+        };
+        /**
+         * @description 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード ID / インスタンス ID / デッキ位置)。
+         *     card は実体が選択側に見えない種別 (deck_top 等) でのみ具象化される表示用カード。
+         */
+        ChoiceOption: {
+            key: string;
+            card?: components["schemas"]["UndeployedCard"];
         };
         PlayCardEventData: {
             cardId: string;

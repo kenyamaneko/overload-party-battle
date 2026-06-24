@@ -229,13 +229,19 @@ public class NpcAi : INpcStrategy
             return null;
         }
 
-        // baseline AI は先頭候補を deterministic に選ぶ。
-        // ChoiceKind ごとに chosen_id の出所が異なる (AvailableActions.EnumerateResolvePendingChoiceActions)。
-        var chosenId = pending.ChoiceKind == ChoiceKinds.HandCard
-            ? first.CardID
-            : first.ValidTargets?.FirstOrDefault()
-              ?? throw new InvalidOperationException(
-                  "resolve_pending_choice action missing validTargets for field-target choice");
+        var options = first.ChoiceOptions ?? new List<GD.ChoiceOption>();
+        if (options.Count == 0)
+        {
+            throw new InvalidOperationException("resolve_pending_choice action has no choice options");
+        }
+
+        // branch 選択は config のデプロイ選択を尊重し、それ以外は先頭を deterministic に選ぶ。
+        var chosenId = pending.ChoiceKind == ChoiceKinds.Branch
+                && _config.Deploy?.Choices is { } choices
+                && choices.TryGetValue(pending.EffectCardId, out var configured)
+                && options.Any(o => o.Key == configured)
+            ? configured
+            : options[0].Key;
 
         return new NpcAction
         {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
@@ -84,8 +85,8 @@ public class DeckTopKeepOneTests
 
             state.PendingEffectChoice.Should().NotBeNull();
             var pending = state.PendingEffectChoice!;
-            pending.ChoiceKind.Should().Be(ChoiceKinds.DeckCard);
-            pending.Candidates.Should().Equal("d_1", "d_2");
+            pending.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
+            pending.Candidates.Should().Equal("1", "2");
             pending.EffectCardId.Should().Be(StrategyCardId);
             pending.Trigger.Should().Be(TriggerType.Ignition);
             state.Player1Repository.Should().HaveCount(3);
@@ -101,7 +102,7 @@ public class DeckTopKeepOneTests
             var state = MakeStateWithDeck();
             PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
 
-            var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "d_2" };
+            var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "2" };
             ResolvePendingChoiceProcessor.Process(state, _game, 1, resolveReq, _cc, _registry);
 
             state.PendingEffectChoice.Should().BeNull();
@@ -115,10 +116,30 @@ public class DeckTopKeepOneTests
             var state = MakeStateWithDeck();
             PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
 
-            var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "d_2" };
+            var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "2" };
             ResolvePendingChoiceProcessor.Process(state, _game, 1, resolveReq, _cc, _registry);
 
             state.Player1Trash.Select(c => c.InstanceID).Should().Contain("d_1");
+        }
+    }
+
+    /// <summary>プレイ後、選択肢 (具象化カード付き) を持つ resolve アクションが availableActions に現れることを検証する。</summary>
+    public class Surfacing : Base
+    {
+        [Fact]
+        public void ResolveActionCarriesMaterializedOptions()
+        {
+            var state = MakeStateWithDeck();
+            PlayCardProcessor.Process(state, _game, 1, PlayReq(), _cc, _registry);
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, TestFactory.MakeField(), TestFactory.MakeField(),
+                new List<UndeployedCard>(), 0, 0, _cc, _registry);
+
+            var resolve = actions.Should().ContainSingle(a => a.Type == ActionTypes.ResolvePendingChoice).Subject;
+            resolve.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
+            resolve.ChoiceOptions!.Select(o => o.Key).Should().Equal("1", "2");
+            resolve.ChoiceOptions!.Select(o => o.Card!.InstanceID).Should().Equal("d_1", "d_2");
         }
     }
 }

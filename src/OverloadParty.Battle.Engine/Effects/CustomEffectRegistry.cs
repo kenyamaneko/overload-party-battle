@@ -119,29 +119,30 @@ public class CustomEffectRegistry
             return;
         }
 
-        var topCards = deck.Take(targetCount).ToList();
-
-        string? chosenId = octx.ChoiceData?.GetValueOrDefault("instanceId")?.ToString();
-        if (chosenId is null)
+        string? chosen = octx.ChoiceData?.GetValueOrDefault("deckTop")?.ToString();
+        if (chosen is null)
         {
             // 候補が 1 枚なら選択の余地がないため、そのまま手札へ移す。
             if (targetCount == 1)
             {
-                deck.Remove(topCards[0]);
-                octx.State.GetHand(octx.PlayerNum).Add(topCards[0]);
+                var only = deck[0];
+                deck.RemoveAt(0);
+                octx.State.GetHand(octx.PlayerNum).Add(only);
                 return;
             }
-            var candidates = topCards.Select(c => c.InstanceID).ToList();
-            octx.SuspendForChoice("instanceId", ChoiceKinds.DeckCard, candidates, octx.PlayerNum);
+            // 候補はデッキ上端の 1 始まりの位置。実体カードは非公開なので位置で参照する。
+            var positions = Enumerable.Range(1, targetCount).Select(i => i.ToString()).ToList();
+            octx.SuspendForChoice("deckTop", ChoiceKinds.DeckTop, positions, octx.PlayerNum);
             return;
         }
 
-        var kept = topCards.FirstOrDefault(c => c.InstanceID == chosenId)
-            ?? throw new GameRuleException($"chosen card {chosenId} is not among the presented deck cards");
+        int keepPosition = int.Parse(chosen);
+        var topCards = deck.Take(targetCount).ToList();
+        var kept = topCards[keepPosition - 1];
         foreach (var card in topCards)
         {
             deck.Remove(card);
-            if (card.InstanceID == kept.InstanceID)
+            if (ReferenceEquals(card, kept))
             {
                 octx.State.GetHand(octx.PlayerNum).Add(card);
             }

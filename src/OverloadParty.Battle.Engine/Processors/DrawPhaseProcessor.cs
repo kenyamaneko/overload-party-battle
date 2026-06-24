@@ -84,7 +84,7 @@ public static class DrawPhaseProcessor
         if (!effects.Has(cardId, TriggerType.OnDeploy)) { return; }
 
         var handler = effects.Get(cardId, TriggerType.OnDeploy)!;
-        handler(new EffectContext
+        var result = handler(new EffectContext
         {
             State = state,
             Game = game,
@@ -95,6 +95,16 @@ public static class DrawPhaseProcessor
             EventOwnerNum = playerNum,
             CardCache = cc,
             Effects = effects,
+            Trigger = TriggerType.OnDeploy,
+            EffectCardId = cardId,
+            EffectInstanceId = source?.InstanceID ?? supSource!.InstanceID,
         });
+        if (result.PendingChoice is not null)
+        {
+            // 遅延配置 (deploy_turns>0) の on_deploy 選択は DrawPhase を途中停止・再開する必要があり未対応。
+            // silent に握りつぶさず明示的に失敗させる。
+            throw new InvalidOperationException(
+                $"deferred on_deploy choice for {cardId} requires resumable draw phase (not yet supported)");
+        }
     }
 }

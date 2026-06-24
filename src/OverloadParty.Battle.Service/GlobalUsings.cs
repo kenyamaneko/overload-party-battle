@@ -9,3 +9,4 @@ global using DeployedResource = OverloadParty.Battle.Models.DeployedResource;
 global using DeployedSupport = OverloadParty.Battle.Models.DeployedSupport;
 global using UndeployedCard = OverloadParty.Battle.Models.UndeployedCard;
 global using TemporaryEffect = OverloadParty.Battle.Models.TemporaryEffect;
+global using ChoiceOption = OverloadParty.Battle.Models.ChoiceOption;

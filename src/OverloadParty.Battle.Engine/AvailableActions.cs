@@ -46,8 +46,11 @@ public class AvailableAction
     /// <summary>Number of targets required for multi-target effects.</summary>
     public int RequiredCount { get; set; }
 
-    /// <summary>Selectable options for choice-based effects.</summary>
-    public List<string>? ChoiceOptions { get; set; }
+    /// <summary>The choice category for resolve_pending_choice actions.</summary>
+    public string? ChoiceKind { get; set; }
+
+    /// <summary>Selectable options for resolve_pending_choice actions.</summary>
+    public List<ChoiceOption>? ChoiceOptions { get; set; }
 
     /// <summary>The initiative kind for use_initiative actions (routine / special).</summary>
     public string? Kind { get; set; }
@@ -101,7 +104,7 @@ public static class AvailableActions
         // 非選択者は空アクションになるが「相手の割り込み処理中」フラグは別レイヤー (TurnControls) で伝える。
         if (state.PendingEffectChoice is { } pendingChoice)
         {
-            return EnumerateResolvePendingChoiceActions(pendingChoice);
+            return EnumerateResolvePendingChoiceActions(state, pendingChoice);
         }
 
         switch (state.CurrentPhase)
@@ -507,22 +510,46 @@ public static class AvailableActions
     }
 
     /// <summary>
-    /// pending reactive choice の選択候補をアクションとして列挙します。
+    /// 保留中の選択を、選択肢を載せた 1 件の ResolvePendingChoice アクションとして列挙します。
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
     /// <param name="pending">保留中の choice 情報。</param>
-    /// <returns>候補ごとに 1 件の ResolvePendingChoice アクション。</returns>
-    private static List<AvailableAction> EnumerateResolvePendingChoiceActions(PendingEffectChoice pending)
+    /// <returns>選択肢 (ChoiceOption) を持つ ResolvePendingChoice アクション 1 件。</returns>
+    private static List<AvailableAction> EnumerateResolvePendingChoiceActions(
+        BattleGameState state, PendingEffectChoice pending)
     {
-        // クライアントは選択時に候補 ID を ResolvePendingChoiceRequest.chosen_id として送る。
-        // ChoiceKind ごとに何の ID なのかが変わるため、UI が解釈しやすいよう別フィールドに載せる。
-        return pending.Candidates
-            .Select(id => new AvailableAction
+        var options = pending.Candidates
+            .Select(key => new ChoiceOption
             {
-                Type = ActionTypes.ResolvePendingChoice,
-                SourceInstanceID = pending.EffectInstanceId,
-                CardID = pending.ChoiceKind == ChoiceKinds.HandCard ? id : pending.EffectCardId,
-                ValidTargets = pending.ChoiceKind is ChoiceKinds.FieldTarget or ChoiceKinds.DeckCard ? [id] : null,
+                Key = key,
+                Card = MaterializeChoiceCard(state, pending, key),
             })
             .ToList();
+
+        return [new AvailableAction
+        {
+            Type = ActionTypes.ResolvePendingChoice,
+            CardID = pending.EffectCardId,
+            ChoiceKind = pending.ChoiceKind,
+            ChoiceOptions = options,
+        }];
+    }
+
+    /// <summary>
+    /// deck_top 選択の候補位置に対応するデッキ上端のカードを具象化します。実体が選択側に見える種別では null。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="pending">保留中の choice 情報。</param>
+    /// <param name="key">候補キー。deck_top では 1 始まりのデッキ位置。</param>
+    /// <returns>具象化したデッキ上端のカード。deck_top 以外では null。</returns>
+    private static UndeployedCard? MaterializeChoiceCard(
+        BattleGameState state, PendingEffectChoice pending, string key)
+    {
+        if (pending.ChoiceKind != ChoiceKinds.DeckTop)
+        {
+            return null;
+        }
+        var deck = state.GetRepository(pending.ChooserPlayerNum);
+        return deck[int.Parse(key) - 1];
     }
 }

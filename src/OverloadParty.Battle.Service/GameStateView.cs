@@ -93,7 +93,7 @@ public static class GameStateView
             TurnStartedAt = state.TurnStartedAt,
             MyView = myView,
             OppView = oppView,
-            PendingEffectChoice = MapPendingEffectChoice(state, state.PendingEffectChoice, playerNum),
+            PendingEffectChoice = MapPendingEffectChoice(state.PendingEffectChoice),
         };
     }
 
@@ -108,8 +108,7 @@ public static class GameStateView
         };
     }
 
-    private static GD.PendingEffectChoiceView? MapPendingEffectChoice(
-        BattleGameState state, PendingEffectChoice? pending, long playerNum)
+    private static GD.PendingEffectChoiceView? MapPendingEffectChoice(PendingEffectChoice? pending)
     {
         if (pending is null) { return null; }
         return new GD.PendingEffectChoiceView
@@ -118,31 +117,17 @@ public static class GameStateView
             EffectCardId = pending.EffectCardId,
             EffectInstanceId = pending.EffectInstanceId,
             ChoiceKind = pending.ChoiceKind,
-            RevealedCards = MapRevealedDeckCards(state, pending, playerNum),
         };
     }
 
-    /// <summary>
-    /// deck_card 選択時、チューザー本人のビューにのみ開示候補のデッキカードを返す。デッキは非公開のため他者には返さない。
-    /// </summary>
-    /// <param name="state">現在のゲーム状態。</param>
-    /// <param name="pending">選択待ち情報。</param>
-    /// <param name="playerNum">ビューの対象プレイヤー番号。</param>
-    /// <returns>開示するデッキカード。deck_card 以外、またはチューザー以外のビューでは null。</returns>
-    private static System.Collections.Generic.List<GD.UndeployedCard>? MapRevealedDeckCards(
-        BattleGameState state, PendingEffectChoice pending, long playerNum)
+    /// <summary>エンジン側の選択肢を wire 形式に変換します。</summary>
+    /// <param name="option">エンジン側の選択肢。</param>
+    /// <returns>wire の選択肢。</returns>
+    private static GD.ChoiceOption MapChoiceOption(ChoiceOption option) => new()
     {
-        if (pending.ChoiceKind != ChoiceKinds.DeckCard || playerNum != pending.ChooserPlayerNum)
-        {
-            return null;
-        }
-        var deck = state.GetRepository(pending.ChooserPlayerNum);
-        // 候補 ID は suspend 時にデッキ上端から採られ、解決まで不変なので必ず存在する。
-        return pending.Candidates
-            .Select(id => deck.First(c => c.InstanceID == id))
-            .Select(MapUndeployedCard)
-            .ToList();
-    }
+        Key = option.Key,
+        Card = option.Card is null ? null : MapUndeployedCard(option.Card),
+    };
 
     // ─── Mapping helpers (Models → GameData) ────────────────
 
@@ -234,7 +219,6 @@ public static class GameStateView
             CardID = a.CardID,
             ValidZones = a.ValidZones,
             ValidTargets = a.ValidTargets,
-            ChoiceOptions = a.ChoiceOptions,
             EffectTargetType = a.EffectTargetType,
         },
         ActionTypes.Attack => new GD.AttackAction
@@ -272,9 +256,9 @@ public static class GameStateView
         },
         ActionTypes.ResolvePendingChoice => new GD.ResolvePendingChoiceAction
         {
-            SourceInstanceID = a.SourceInstanceID,
-            CardID = a.CardID,
-            ValidTargets = a.ValidTargets,
+            EffectCardId = a.CardID,
+            ChoiceKind = a.ChoiceKind,
+            ChoiceOptions = a.ChoiceOptions?.Select(MapChoiceOption).ToList(),
         },
         _ => throw new InvalidOperationException($"unknown available action type '{a.Type}'"),
     };
