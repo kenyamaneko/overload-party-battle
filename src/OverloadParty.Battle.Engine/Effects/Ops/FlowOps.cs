@@ -59,7 +59,6 @@ public class BranchOnChoiceOp(Dictionary<string, List<IEffectOp>> branches) : IE
 
         if (option is null)
         {
-            // 選択未提示なら、分岐肢のキーを候補に選択待ちへ遷移する。
             ctx.SuspendForChoice("option", ChoiceKinds.Branch, branches.Keys.ToList(), ctx.PlayerNum);
             return;
         }

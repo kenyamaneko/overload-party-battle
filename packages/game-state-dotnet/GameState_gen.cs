@@ -851,12 +851,16 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("choiceOptions")]
         public System.Collections.Generic.List<ChoiceOption> ChoiceOptions { get; set; } = default!;
 
+        /// <summary>
+        /// deck_top 選択でチューザーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("revealedDeckTop")]
+        public System.Collections.Generic.List<UndeployedCard> RevealedDeckTop { get; set; } = default!;
+
     }
 
     /// <summary>
-    /// 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード ID / インスタンス ID / デッキ位置)。
-    /// <br/>card は実体が選択側に見えない種別 (deck_top 等) でのみ具象化される表示用カード。
-    /// <br/>
+    /// 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード・インスタンス ID)。
     /// </summary>
     [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
     public partial class ChoiceOption
@@ -864,9 +868,6 @@ namespace OverloadParty.GameState
 
         [System.Text.Json.Serialization.JsonPropertyName("key")]
         public string Key { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("card")]
-        public UndeployedCard Card { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 

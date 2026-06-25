@@ -37,6 +37,10 @@ public class AiConfig
     [YamlMember(Alias = "deploy")]
     public DeployConfig Deploy { get; set; } = new();
 
+    /// <summary>カードごとの分岐効果の選択 (cardId → 分岐肢キー)。trigger 非依存。</summary>
+    [YamlMember(Alias = "branch_choices")]
+    public Dictionary<string, string>? BranchChoices { get; set; }
+
     [YamlMember(Alias = "immediate_cards")]
     public ImmediateConfig ImmediateCards { get; set; } = new();
 
@@ -117,9 +121,6 @@ public class DeployConfig
 
     [YamlMember(Alias = "conditional_priorities")]
     public List<ConditionalPriorityEntry>? ConditionalPriorities { get; set; }
-
-    [YamlMember(Alias = "choices")]
-    public Dictionary<string, string>? Choices { get; set; }
 
     [YamlMember(Alias = "zone_preferences")]
     public Dictionary<string, List<string>>? ZonePreferences { get; set; }

@@ -67,12 +67,12 @@ public class NpcAiTests
                   priority: 40
                 - card_type: Platform
                   priority: 30
-              choices:
-                TST-0007: use
               zone_preferences:
                 Compute: [frontend, backend]
                 DataResource: [backend]
                 Platform: [support]
+            branch_choices:
+              TST-0007: use
             effect_priorities:
               budget_gain:
                 priority: 90
@@ -541,36 +541,74 @@ public class NpcAiTests
     //  デプロイ: choice 解決
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
-    public void PendingBranchChoice_UsesConfigValue()
+    /// <summary>NPC が config の分岐回答に基づいて分岐選択を解決する振る舞いを検証する。</summary>
+    public class BranchChoiceResolution
     {
-        var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var pending = new GD.PendingEffectChoiceView
+        /// <summary>config に分岐回答があるとき、その値で分岐選択を解決することを検証する。</summary>
+        [Fact]
+        public void UsesConfiguredChoice()
         {
-            ChooserPlayerNum = 1,
-            EffectCardId = "TST-0007",
-            EffectInstanceId = "inst_1",
-            ChoiceKind = ChoiceKinds.Branch,
-        };
-        // config が "use" を指すので、先頭の "reserve" でなく config 値を選ぶ。
-        var available = new List<GD.AvailableAction>
-        {
-            new GD.ResolvePendingChoiceAction
+            var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
+            var pending = new GD.PendingEffectChoiceView
             {
+                ChooserPlayerNum = 1,
                 EffectCardId = "TST-0007",
+                EffectInstanceId = "inst_1",
                 ChoiceKind = ChoiceKinds.Branch,
-                ChoiceOptions =
-                [
-                    new GD.ChoiceOption { Key = "reserve" },
-                    new GD.ChoiceOption { Key = "use" },
-                ],
-            },
-        };
-        var state = BuildState(pendingEffectChoice: pending, available: available);
+            };
+            // config が "use" を指すので、先頭の "reserve" でなく config 値を選ぶ。
+            var available = new List<GD.AvailableAction>
+            {
+                new GD.ResolvePendingChoiceAction
+                {
+                    EffectCardId = "TST-0007",
+                    ChoiceKind = ChoiceKinds.Branch,
+                    ChoiceOptions =
+                    [
+                        new GD.ChoiceOption { Key = "reserve" },
+                        new GD.ChoiceOption { Key = "use" },
+                    ],
+                },
+            };
+            var state = BuildState(pendingEffectChoice: pending, available: available);
 
-        var action = ai.DecidePendingEffectChoice(state);
+            var action = ai.DecidePendingEffectChoice(state);
 
-        ((ResolvePendingChoiceRequest)action!.Data).ChosenId.Should().Be("use");
+            ((ResolvePendingChoiceRequest)action!.Data).ChosenId.Should().Be("use");
+        }
+
+        /// <summary>config に該当カードの分岐回答がないとき、解決が例外を投げることを検証する。</summary>
+        [Fact]
+        public void NotConfigured_Throws()
+        {
+            var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
+            var pending = new GD.PendingEffectChoiceView
+            {
+                ChooserPlayerNum = 1,
+                EffectCardId = "TST-9999",
+                EffectInstanceId = "inst_1",
+                ChoiceKind = ChoiceKinds.Branch,
+            };
+            var available = new List<GD.AvailableAction>
+            {
+                new GD.ResolvePendingChoiceAction
+                {
+                    EffectCardId = "TST-9999",
+                    ChoiceKind = ChoiceKinds.Branch,
+                    ChoiceOptions =
+                    [
+                        new GD.ChoiceOption { Key = "reserve" },
+                        new GD.ChoiceOption { Key = "use" },
+                    ],
+                },
+            };
+            var state = BuildState(pendingEffectChoice: pending, available: available);
+
+            var act = () => ai.DecidePendingEffectChoice(state);
+
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*No branch choice configured*TST-9999*");
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -101,8 +101,8 @@ public static class DrawPhaseProcessor
         });
         if (result.PendingChoice is not null)
         {
-            // 遅延配置 (deploy_turns>0) の on_deploy 選択は DrawPhase を途中停止・再開する必要があり未対応。
-            // silent に握りつぶさず明示的に失敗させる。
+            // TODO(#130): on_deploy の発火タイミングを配置時/稼働時に分割し、稼働時に選択を要求する効果
+            // のみがここに到達するようにした上で、resumable DrawPhase で中断・再開を支える。
             throw new InvalidOperationException(
                 $"deferred on_deploy choice for {cardId} requires resumable draw phase (not yet supported)");
         }

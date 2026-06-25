@@ -235,13 +235,14 @@ public class NpcAi : INpcStrategy
             throw new InvalidOperationException("resolve_pending_choice action has no choice options");
         }
 
-        // branch 選択は config のデプロイ選択を尊重し、それ以外は先頭を deterministic に選ぶ。
-        var chosenId = pending.ChoiceKind == ChoiceKinds.Branch
-                && _config.Deploy?.Choices is { } choices
-                && choices.TryGetValue(pending.EffectCardId, out var configured)
-                && options.Any(o => o.Key == configured)
-            ? configured
-            : options[0].Key;
+        var chosenId = pending.ChoiceKind switch
+        {
+            ChoiceKinds.Branch => ResolveBranchChoice(pending.EffectCardId, options),
+            ChoiceKinds.DeckTop or ChoiceKinds.HandCard or ChoiceKinds.FieldTarget
+                => SelectFirstChoice(options),
+            _ => throw new InvalidOperationException(
+                $"Unknown choice kind '{pending.ChoiceKind}' for card '{pending.EffectCardId}'"),
+        };
 
         return new NpcAction
         {
@@ -252,6 +253,35 @@ public class NpcAi : INpcStrategy
             },
         };
     }
+
+    /// <summary>
+    /// branch 選択を NPC config の分岐回答で解決する。回答が無い・候補に無い場合はエラーとする。
+    /// </summary>
+    /// <param name="effectCardId">分岐効果を持つカードの ID。</param>
+    /// <param name="options">提示された選択肢。</param>
+    /// <returns>config が指定する分岐肢キー。</returns>
+    private string ResolveBranchChoice(string effectCardId, List<GD.ChoiceOption> options)
+    {
+        if (_config.BranchChoices is null
+            || !_config.BranchChoices.TryGetValue(effectCardId, out var configured))
+        {
+            throw new InvalidOperationException(
+                $"No branch choice configured for card '{effectCardId}' in model '{_config.Model}'");
+        }
+        if (options.All(o => o.Key != configured))
+        {
+            throw new InvalidOperationException(
+                $"Configured branch choice '{configured}' for card '{effectCardId}' is not an available option");
+        }
+        return configured;
+    }
+
+    /// <summary>
+    /// config を持たない選択 (deck_top / hand_card / field_target) で提示順の先頭を選ぶ NPC の選択ポリシー。
+    /// </summary>
+    /// <param name="options">提示された選択肢。</param>
+    /// <returns>先頭の選択肢キー。</returns>
+    private static string SelectFirstChoice(List<GD.ChoiceOption> options) => options[0].Key;
 
     // ═══════════════════════════════════════════════════════════════
     //  攻撃ターゲット選択

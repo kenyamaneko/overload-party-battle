@@ -126,7 +126,6 @@ public static class GameStateView
     private static GD.ChoiceOption MapChoiceOption(ChoiceOption option) => new()
     {
         Key = option.Key,
-        Card = option.Card is null ? null : MapUndeployedCard(option.Card),
     };
 
     // ─── Mapping helpers (Models → GameData) ────────────────
@@ -259,6 +258,7 @@ public static class GameStateView
             EffectCardId = a.CardID,
             ChoiceKind = a.ChoiceKind,
             ChoiceOptions = a.ChoiceOptions?.Select(MapChoiceOption).ToList(),
+            RevealedDeckTop = a.RevealedDeckTop?.Select(MapUndeployedCard).ToList(),
         },
         _ => throw new InvalidOperationException($"unknown available action type '{a.Type}'"),
     };

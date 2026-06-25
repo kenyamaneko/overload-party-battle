@@ -94,12 +94,9 @@ type BattleStartEventData struct {
 	OpponentName  string `json:"opponent_name"`
 }
 
-// ChoiceOption 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード ID / インスタンス ID / デッキ位置)。
-// card は実体が選択側に見えない種別 (deck_top 等) でのみ具象化される表示用カード。
+// ChoiceOption 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード・インスタンス ID)。
 type ChoiceOption struct {
-	// Card 手札・トラッシュ等にあるカード。
-	Card *UndeployedCard `json:"card,omitempty"`
-	Key  string          `json:"key"`
+	Key string `json:"key"`
 }
 
 // ClientGameState クライアントに返すゲーム状態スナップショット。
@@ -476,7 +473,10 @@ type ResolvePendingChoiceAction struct {
 
 	// EffectCardId 発動中の効果を持つカードの ID
 	EffectCardId *string `json:"effectCardId,omitempty"`
-	Type         string  `json:"type"`
+
+	// RevealedDeckTop deck_top 選択でチューザーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
+	RevealedDeckTop *[]UndeployedCard `json:"revealedDeckTop,omitempty"`
+	Type            string            `json:"type"`
 }
 
 // ScaleUpAction defines model for ScaleUpAction.

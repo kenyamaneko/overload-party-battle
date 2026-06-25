@@ -23,7 +23,7 @@ public static class AiConfigValidator
 
         ValidateAttachments(config, deckCardIds, cc);
         ValidateReactive(config, deckCardIds, cc);
-        ValidateDeployChoices(config, deckCardIds);
+        ValidateBranchChoices(config, deckCardIds);
         ValidateConditionalPriorities(config, deckCardIds);
     }
 
@@ -105,20 +105,25 @@ public static class AiConfigValidator
         }
     }
 
-    private static void ValidateDeployChoices(
+    /// <summary>
+    /// branch_choices が参照するカードがすべてデッキに含まれることを検証します。
+    /// </summary>
+    /// <param name="config">検証対象の AI 設定。</param>
+    /// <param name="deckCardIds">デッキに含まれるカード ID の集合。</param>
+    private static void ValidateBranchChoices(
         AiConfig config, HashSet<string> deckCardIds)
     {
-        if (config.Deploy.Choices is null)
+        if (config.BranchChoices is null)
         {
             return;
         }
 
-        foreach (var cardId in config.Deploy.Choices.Keys)
+        foreach (var cardId in config.BranchChoices.Keys)
         {
             if (!deckCardIds.Contains(cardId))
             {
                 throw new InvalidOperationException(
-                    $"Config '{config.Model}': deploy.choices references " +
+                    $"Config '{config.Model}': branch_choices references " +
                     $"card '{cardId}' which is not in deck");
             }
         }

@@ -84,7 +84,7 @@ public class KeepOneFromDeckTopTests
             state.PendingEffectChoice.Should().NotBeNull();
             var pending = state.PendingEffectChoice!;
             pending.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
-            pending.Candidates.Should().Equal("1", "2");
+            pending.Candidates.Should().Equal("d_1", "d_2");
             pending.EffectCardId.Should().Be(StrategyCardId);
             pending.Trigger.Should().Be(TriggerType.Ignition);
             state.Player1Repository.Should().HaveCount(3);
@@ -101,7 +101,7 @@ public class KeepOneFromDeckTopTests
             var state = MakeStateWithDeck();
             PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
-            var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "2" };
+            var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "d_2" };
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry);
 
             state.PendingEffectChoice.Should().BeNull();
@@ -116,18 +116,18 @@ public class KeepOneFromDeckTopTests
             var state = MakeStateWithDeck();
             PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
-            var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "2" };
+            var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "d_2" };
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry);
 
             state.Player1Trash.Select(c => c.InstanceID).Should().Contain("d_1");
         }
     }
 
-    /// <summary>プレイ後、選択肢 (具象化カード付き) を持つ resolve アクションが availableActions に現れることを検証する。</summary>
+    /// <summary>プレイ後、選択肢と開示カードを持つ resolve アクションが availableActions に現れることを検証する。</summary>
     public class Surfacing
     {
         [Fact]
-        public void ResolveActionCarriesMaterializedOptions()
+        public void ResolveActionCarriesRevealedDeckTop()
         {
             var (cc, registry) = MakeEnv();
             var state = MakeStateWithDeck();
@@ -139,8 +139,8 @@ public class KeepOneFromDeckTopTests
 
             var resolve = actions.Should().ContainSingle(a => a.Type == ActionTypes.ResolvePendingChoice).Subject;
             resolve.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
-            resolve.ChoiceOptions!.Select(o => o.Key).Should().Equal("1", "2");
-            resolve.ChoiceOptions!.Select(o => o.Card!.InstanceID).Should().Equal("d_1", "d_2");
+            resolve.ChoiceOptions!.Select(o => o.Key).Should().Equal("d_1", "d_2");
+            resolve.RevealedDeckTop!.Select(c => c.InstanceID).Should().Equal("d_1", "d_2");
         }
     }
 }

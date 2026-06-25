@@ -349,6 +349,7 @@ public static class PlayCardProcessor
         if (cancelled) { return (true, events); }
 
         // Stage 2: デプロイされたカード自身の効果。
+        // TODO(#130): on_deploy トリガーの発火タイミング分割 (配置時/稼働時) で本経路の振り分けが変わる。
         if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
         {
             var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;
@@ -392,6 +393,7 @@ public static class PlayCardProcessor
 
         if (cancelled) { return events; }
 
+        // TODO(#130): on_deploy トリガーの発火タイミング分割 (配置時/稼働時) で本経路の振り分けが変わる。
         if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
         {
             var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;

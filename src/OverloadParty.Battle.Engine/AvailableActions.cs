@@ -52,6 +52,9 @@ public class AvailableAction
     /// <summary>Selectable options for resolve_pending_choice actions.</summary>
     public List<ChoiceOption>? ChoiceOptions { get; set; }
 
+    /// <summary>deck_top 選択でチューザーに開示するデッキ上端カード。各 InstanceID が ChoiceOption.Key に対応する。</summary>
+    public List<UndeployedCard>? RevealedDeckTop { get; set; }
+
     /// <summary>The initiative kind for use_initiative actions (routine / special).</summary>
     public string? Kind { get; set; }
 
@@ -518,13 +521,7 @@ public static class AvailableActions
     private static List<AvailableAction> EnumerateResolvePendingChoiceActions(
         BattleGameState state, PendingEffectChoice pending)
     {
-        var options = pending.Candidates
-            .Select(key => new ChoiceOption
-            {
-                Key = key,
-                Card = MaterializeChoiceCard(state, pending, key),
-            })
-            .ToList();
+        var options = pending.Candidates.Select(key => new ChoiceOption { Key = key }).ToList();
 
         return [new AvailableAction
         {
@@ -532,24 +529,26 @@ public static class AvailableActions
             CardID = pending.EffectCardId,
             ChoiceKind = pending.ChoiceKind,
             ChoiceOptions = options,
+            RevealedDeckTop = BuildRevealedDeckTop(state, pending),
         }];
     }
 
     /// <summary>
-    /// deck_top 選択の候補位置に対応するデッキ上端のカードを具象化します。実体が選択側に見える種別では null。
+    /// deck_top 選択でチューザーに開示するデッキ上端カードを候補順に返します。deck_top 以外では null。
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
     /// <param name="pending">保留中の choice 情報。</param>
-    /// <param name="key">候補キー。deck_top では 1 始まりのデッキ位置。</param>
-    /// <returns>具象化したデッキ上端のカード。deck_top 以外では null。</returns>
-    private static UndeployedCard? MaterializeChoiceCard(
-        BattleGameState state, PendingEffectChoice pending, string key)
+    /// <returns>候補のインスタンス ID に対応するデッキ上端カード。deck_top 以外では null。</returns>
+    private static List<UndeployedCard>? BuildRevealedDeckTop(
+        BattleGameState state, PendingEffectChoice pending)
     {
         if (pending.ChoiceKind != ChoiceKinds.DeckTop)
         {
             return null;
         }
         var deck = state.GetRepository(pending.ChooserPlayerNum);
-        return deck[int.Parse(key) - 1];
+        return pending.Candidates
+            .Select(key => deck.First(card => card.InstanceID == key))
+            .ToList();
     }
 }

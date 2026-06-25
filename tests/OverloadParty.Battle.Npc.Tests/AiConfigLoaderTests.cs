@@ -107,14 +107,14 @@ public class AiConfigLoaderTests
         var yaml = """
             model: test
             faction: SHE
+            branch_choices:
+              TST-0003: use
             deploy:
               priorities:
                 - card_id: TST-0001
                   priority: 80
                 - card_type: Compute
                   priority: 50
-              choices:
-                TST-0003: use
               zone_preferences:
                 Compute: [frontend, backend]
                 DataResource: [backend]
@@ -126,7 +126,7 @@ public class AiConfigLoaderTests
         config.Deploy.Priorities[0].CardId.Should().Be("TST-0001");
         config.Deploy.Priorities[0].Priority.Should().Be(80);
         config.Deploy.Priorities[1].CardType.Should().Be("Compute");
-        config.Deploy.Choices!["TST-0003"].Should().Be("use");
+        config.BranchChoices!["TST-0003"].Should().Be("use");
         config.Deploy.ZonePreferences!["Compute"].Should().Equal("frontend", "backend");
     }
 

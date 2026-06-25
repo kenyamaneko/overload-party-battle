@@ -46,6 +46,9 @@ budget:
   low_threshold: 1500
   maintenance_limit_ratio: 0.8
 
+branch_choices:
+  SH-0006: use
+
 deploy:
   priorities:
     - card_type: Compute
@@ -56,9 +59,6 @@ deploy:
       priority: 30
     - card_type: Attachment
       priority: 60
-
-  choices:
-    SH-0006: use
 
   zone_preferences:
     Compute: [frontend, backend]

@@ -654,6 +654,8 @@ export interface components {
             /** @description 選択対象の種別 (hand_card / field_target / deck_top)。 */
             choiceKind?: string;
             choiceOptions?: components["schemas"]["ChoiceOption"][];
+            /** @description deck_top 選択でチューザーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。 */
+            revealedDeckTop?: components["schemas"]["UndeployedCard"][];
         } & {
             /**
              * @description discriminator enum property added by openapi-typescript
@@ -661,13 +663,9 @@ export interface components {
              */
             type: "resolve_pending_choice";
         };
-        /**
-         * @description 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード ID / インスタンス ID / デッキ位置)。
-         *     card は実体が選択側に見えない種別 (deck_top 等) でのみ具象化される表示用カード。
-         */
+        /** @description 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード・インスタンス ID)。 */
         ChoiceOption: {
             key: string;
-            card?: components["schemas"]["UndeployedCard"];
         };
         PlayCardEventData: {
             cardId: string;

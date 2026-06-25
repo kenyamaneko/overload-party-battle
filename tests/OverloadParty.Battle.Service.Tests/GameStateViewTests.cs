@@ -212,11 +212,11 @@ public class GameStateViewTests
             Trigger = TriggerType.Ignition,
             ChoiceKey = "deckTop",
             ChoiceKind = ChoiceKinds.DeckTop,
-            Candidates = ["1", "2"],
+            Candidates = ["r_1", "r_2"],
         };
 
         [Fact]
-        public void Chooser_GetsResolveActionWithMaterializedCards()
+        public void Chooser_GetsResolveActionWithRevealedDeckTop()
         {
             var state = TestFactory.MakeGameState();
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
@@ -228,7 +228,8 @@ public class GameStateViewTests
 
             var resolve = result.MyView.AvailableActions!.OfType<ResolvePendingChoiceAction>().Single();
             resolve.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
-            resolve.ChoiceOptions.Select(o => o.Card!.InstanceID).Should().Equal("r_1", "r_2");
+            resolve.ChoiceOptions.Select(o => o.Key).Should().Equal("r_1", "r_2");
+            resolve.RevealedDeckTop!.Select(c => c.InstanceID).Should().Equal("r_1", "r_2");
         }
 
         [Fact]

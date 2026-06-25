@@ -70,13 +70,10 @@ public static class ChoiceKinds
 }
 
 /// <summary>
-/// 選択肢 1 件。Key は解決時に返す識別子で、Card は実体が選択側に見えない種別でのみ具象化される表示用カード。
+/// 選択肢 1 件。Key は解決時に返す識別子。
 /// </summary>
 public class ChoiceOption
 {
-    /// <summary>選択を識別する値 (branch キー / カード ID / インスタンス ID / デッキ位置)。</summary>
+    /// <summary>選択を識別する値 (branch キー / カード・インスタンス ID)。</summary>
     public required string Key { get; set; }
-
-    /// <summary>実体が選択側に見えない種別 (deck_top 等) で具象化される表示用カード。</summary>
-    public UndeployedCard? Card { get; set; }
 }
