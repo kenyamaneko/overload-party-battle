@@ -39,9 +39,16 @@ public static class PlayCardProcessor
         var handCard = hand[handIdx];
         var cardDef = cc.MustGet(handCard.CardID);
 
-        if (cardDef.CardType == CardTypes.Incident && state.GetIncidentPlayedThisTurn(playerNum))
+        if (cardDef.CardType == CardTypes.Incident)
         {
-            throw new GameRuleException("incident already played this turn");
+            if (TurnManager.IsFirstTurn(state.CurrentTurn))
+            {
+                throw new GameRuleException("cannot play incident on first turn");
+            }
+            if (state.GetIncidentPlayedThisTurn(playerNum))
+            {
+                throw new GameRuleException("incident already played this turn");
+            }
         }
 
         var ctx = new PlayContext(state, game, playerNum, cc, effects);

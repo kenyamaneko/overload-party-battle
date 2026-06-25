@@ -111,9 +111,8 @@ public static class EndPhaseProcessor
         long baseCost;
         if (card.Elastic)
         {
-            long intrinsic = card.IsComputeType ? card.BaseThroughput : card.BaseYield;
-            long scaledStat = intrinsic * BattleConstants.GetRankMultiplier(resource.Rank) + resource.ElasticBonus;
-            baseCost = Math.Max(0, scaledStat - card.FreeTier) * card.CostPerRequest / 100;
+            long intrinsicStat = StatCalculator.CalculateIntrinsicStat(resource, card);
+            baseCost = Math.Max(0, intrinsicStat - card.FreeTier) * card.CostPerRequest / 100;
         }
         else
         {
