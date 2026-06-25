@@ -24,7 +24,7 @@ game_status:
 win_reasons:
 - budget_zero
 - system_down
-- repository_out
+- deck_out
 - turn_timeout
 - disconnect
 - turn_limit

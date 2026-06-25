@@ -21,7 +21,7 @@ const (
 const (
 	WinReasonBudgetZero = "budget_zero"
 	WinReasonSystemDown = "system_down"
-	WinReasonRepositoryOut = "repository_out"
+	WinReasonDeckOut = "deck_out"
 	WinReasonTurnTimeout = "turn_timeout"
 	WinReasonDisconnect = "disconnect"
 	WinReasonTurnLimit = "turn_limit"
