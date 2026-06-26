@@ -488,8 +488,6 @@ public class EndPhaseProcessorTests
         }
     }
 
-    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
-
     /// <summary>エンドフェーズ用にコンピュート系リソースを登録したキャッシュを作る。</summary>
     /// <returns>TST-0001 を登録したキャッシュ。</returns>
     private static TestCardCache EndPhaseCc()

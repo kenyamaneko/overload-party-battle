@@ -18,9 +18,9 @@ public class DiscardProcessorTests
             _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 1));
         }
 
-        /// <summary>指定インスタンス ID 群の手札調整リクエストを生成する。</summary>
+        /// <summary>指定インスタンス ID 群の手札破棄リクエストを生成する。</summary>
         /// <param name="ids">破棄するカードのインスタンス ID 群。</param>
-        /// <returns>手札調整リクエスト。</returns>
+        /// <returns>手札破棄リクエスト。</returns>
         protected static DiscardHandRequest MakeReq(params string[] ids) =>
             new() { CardInstanceIDs = [.. ids] };
 
@@ -143,9 +143,7 @@ public class DiscardProcessorTests
         }
     }
 
-    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
-
-    /// <summary>手札調整に使うコンピュート系リソースを登録したキャッシュを作る。</summary>
+    /// <summary>手札破棄に使うコンピュート系リソースを登録したキャッシュを作る。</summary>
     /// <returns>TST-0001 を登録したキャッシュ。</returns>
     private static TestCardCache DiscardCc()
     {
@@ -154,9 +152,9 @@ public class DiscardProcessorTests
         return cc;
     }
 
-    /// <summary>指定インスタンス ID 群の手札調整リクエストを作る。</summary>
+    /// <summary>指定インスタンス ID 群の手札破棄リクエストを作る。</summary>
     /// <param name="ids">破棄するインスタンス ID 群。</param>
-    /// <returns>手札調整リクエスト。</returns>
+    /// <returns>手札破棄リクエスト。</returns>
     private static DiscardHandRequest Req(params string[] ids) => new() { CardInstanceIDs = [.. ids] };
 
     /// <summary>指定枚数の手札を作る。</summary>
@@ -202,7 +200,7 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>稼働実績のないプレイヤーが手札調整に至るとローンチ失敗で敗北することを検証する。</summary>
+    /// <summary>稼働実績のないプレイヤーが手札破棄に至るとローンチ失敗で敗北することを検証する。</summary>
     public class LaunchFailure
     {
         [Fact]

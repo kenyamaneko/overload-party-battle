@@ -649,8 +649,6 @@ public class AttackProcessorTests
         }
     }
 
-    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
-
     /// <summary>標準的なコンピュート系リソース 1 種を持つカードキャッシュを作る。</summary>
     /// <returns>TST-0001 (TP=600 / AV=1400 / SLA=400) を登録したキャッシュ。</returns>
     private static TestCardCache StandardCc()
@@ -688,7 +686,6 @@ public class AttackProcessorTests
     /// <summary>attack_damage_reduction バフが適用 ダメージ を軽減することを検証する。</summary>
     public class DamageReduction
     {
-        // 攻撃 600 に対し軽減量を 200 / 600 (同値) / 800 (超過) で振り、0 で頭打ちになることを確認する。
         [Theory]
         [InlineData(200, 400)]
         [InlineData(600, 0)]
@@ -778,7 +775,6 @@ public class AttackProcessorTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
-            // target_shield は同フィールドに他の表向きフロントエンドが居るときだけ機能する
             state.Player2Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "wall_1", faceUp: true);
             state.Player2Field.Support[0] = new DeployedSupport
             {
@@ -792,6 +788,36 @@ public class AttackProcessorTests
                 state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
 
             act.Should().Throw<GameRuleException>().WithMessage("*target_shield*");
+        }
+    }
+
+    /// <summary>装備先リソースが破壊されると、そのアタッチメントも破壊されトラッシュへ送られることを検証する。</summary>
+    public class AttachmentDestroyedWithHost
+    {
+        [Fact]
+        public void DestroyingHost_AlsoDestroysItsAttachment()
+        {
+            var cc = StandardCc();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
+            cc.Add(TestFactory.AttachmentCard(cardId: "TST-0301"));
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "att_1",
+                CardID = "TST-0301",
+                TargetInstanceID = "def_1",
+                FaceUp = true,
+            };
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def_1").Should().BeNull("装備先が破壊される");
+            state.Player2Field.Support.Select(s => s.InstanceID).Should().NotContain("att_1", "アタッチメントも破壊される");
+            state.Player2Trash.Should().Contain(c => c.InstanceID == "att_1", "破壊されたアタッチメントはトラッシュへ送られる");
         }
     }
 }

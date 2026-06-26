@@ -103,8 +103,6 @@ public class DrawPhaseProcessorTests
         }
     }
 
-    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
-
     /// <summary>ドローフェーズ用にコンピュート系リソースを登録したキャッシュを作る。</summary>
     /// <returns>TST-0001 を登録したキャッシュ。</returns>
     private static TestCardCache DrawCc()

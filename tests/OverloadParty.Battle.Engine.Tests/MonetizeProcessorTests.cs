@@ -219,8 +219,6 @@ public class MonetizeProcessorTests
         }
     }
 
-    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
-
     /// <summary>バックエンド収益化に使うコンピュート系リソース 2 種を持つキャッシュを作る。</summary>
     /// <returns>TST-0001 (TP=600) / TST-0005 (TP=400) を登録したキャッシュ。</returns>
     private static TestCardCache ComputeCc()
@@ -279,6 +277,23 @@ public class MonetizeProcessorTests
             MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 100)), cc);
 
             res.ElasticBonus.Should().BeGreaterThan(0, "Elastic リソースの収益化で エラスティックボーナス が加算される");
+        }
+    }
+
+    /// <summary>インサイト が 0 のときに収益化しようとすると拒否されることを検証する。</summary>
+    public class ZeroInsight
+    {
+        [Fact]
+        public void Process_ZeroInsightPool_Throws()
+        {
+            var cc = ComputeCc();
+            var state = TestFactory.MakeGameState(turn: 2);
+            state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
+            state.SetInsightPool(1, 0);
+
+            var act = () => MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 100)), cc);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*insight pool*");
         }
     }
 }

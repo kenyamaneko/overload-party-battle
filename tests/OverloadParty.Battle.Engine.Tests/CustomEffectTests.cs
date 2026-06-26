@@ -8,33 +8,29 @@ namespace OverloadParty.Battle.Tests.Effects;
 
 public class CustomEffectTests
 {
-    /// <summary>カスタム効果が読む source/target/support/選択データを指定して op コンテキストを組み立てる。</summary>
+    /// <summary>プレイヤー 1 を効果オーナーとし、source/target/support/選択データを指定して op コンテキストを組み立てる。</summary>
     /// <param name="state">操作対象のゲーム状態。</param>
     /// <param name="cc">カードキャッシュ。</param>
-    /// <param name="playerNum">効果オーナーのプレイヤー番号。</param>
     /// <param name="source">効果のソースリソース。</param>
     /// <param name="target">効果の対象リソース。</param>
     /// <param name="supSource">サポートゾーンのソース (アタッチメント / リアクティブ)。</param>
     /// <param name="choiceData">プレイヤーの選択データ。</param>
-    /// <param name="eventOwnerNum">イベントを起こしたプレイヤー番号。</param>
     /// <returns>op コンテキスト。</returns>
     private static OpContext MakeOpContext(
-        BattleGameState state, TestCardCache cc, long playerNum = 1,
+        BattleGameState state, TestCardCache cc,
         DeployedResource? source = null, DeployedResource? target = null,
         DeployedSupport? supSource = null,
-        Dictionary<string, object>? choiceData = null,
-        long? eventOwnerNum = null)
+        Dictionary<string, object>? choiceData = null)
     {
         var ctx = new EffectContext
         {
             State = state,
             Game = TestFactory.MakeGame(),
-            PlayerNum = playerNum,
+            PlayerNum = 1,
             Source = source,
             Target = target,
             SupSource = supSource,
             ChoiceData = choiceData,
-            EventOwnerNum = eventOwnerNum,
             CardCache = cc,
             Effects = new EffectRegistry(),
             Trigger = TriggerType.OnDeploy,
@@ -91,7 +87,6 @@ public class CustomEffectTests
     /// <summary>高 スループット の Compute系リソース が稼働したとき 休止 を付与する効果。</summary>
     public class DisableHighTpDeploy
     {
-        // スループット 閾値 900 の境界 (899 は不発 / 900 ちょうどで発動) を確認する。
         [Theory]
         [InlineData(899, false)]
         [InlineData(900, true)]
@@ -105,7 +100,7 @@ public class CustomEffectTests
             state.Player2Field.Frontend[0] = target;
 
             var effect = new CustomEffectRegistry().Build(CustomEffects.DisableHighTpDeploy, null)!;
-            effect(MakeOpContext(state, cc, playerNum: 1, target: target));
+            effect(MakeOpContext(state, cc, target: target));
 
             FieldHelpers.HasTemporaryEffect(target, BuffTypes.Dormant).Should().Be(expectDormant);
         }
@@ -120,7 +115,6 @@ public class CustomEffectTests
         /// <param name="turn">デプロイされたターン。</param>
         private static void DeployN(BattleGameState state, int count, long turn)
         {
-            // フロントエンド (3 枠) を埋めてからバックエンドへ溢れさせる。
             int feCount = Math.Min(count, BattleConstants.SlotsPerZone);
             for (int i = 0; i < feCount; i++)
             {
@@ -149,14 +143,13 @@ public class CustomEffectTests
             var watcher = Watcher();
             state.Player1Field.Support[0] = watcher;
 
-            var opCtx = MakeOpContext(state, cc, playerNum: 1, supSource: watcher);
+            var opCtx = MakeOpContext(state, cc, supSource: watcher);
             new CustomEffectRegistry().Build(CustomEffects.CancelNthDeploy, null)!(opCtx);
 
             opCtx.Result.ShouldCancelAction.Should().BeTrue();
             watcher.EffectUsedThisTurn.Should().BeTrue();
         }
 
-        // 3 体目以外 (2 体目 / 4 体目) では発動しない。
         [Theory]
         [InlineData(2)]
         [InlineData(4)]
@@ -170,7 +163,7 @@ public class CustomEffectTests
             state.Player1Field.Support[0] = watcher;
 
             var act = () => new CustomEffectRegistry().Build(CustomEffects.CancelNthDeploy, null)!(
-                MakeOpContext(state, cc, playerNum: 1, supSource: watcher));
+                MakeOpContext(state, cc, supSource: watcher));
 
             act.Should().Throw<GameRuleException>();
         }
@@ -191,7 +184,7 @@ public class CustomEffectTests
             state.Player1Field.Support[0] = att;
 
             new CustomEffectRegistry().Build(CustomEffects.Reattach, null)!(
-                MakeOpContext(state, cc, playerNum: 1, supSource: att,
+                MakeOpContext(state, cc, supSource: att,
                     choiceData: new Dictionary<string, object> { ["instanceId"] = "new_host" }));
 
             att.TargetInstanceID.Should().Be("new_host");
@@ -213,7 +206,7 @@ public class CustomEffectTests
             state.Player1Field.Frontend[0] = source;
 
             new CustomEffectRegistry().Build(CustomEffects.ScaleToZero, null)!(
-                MakeOpContext(state, cc, playerNum: 1, source: source));
+                MakeOpContext(state, cc, source: source));
 
             source.TemporaryEffects.Should().Contain(e =>
                 e.EffectType == BuffTypes.MaintenanceReduction && e.Value == 60);
@@ -230,7 +223,7 @@ public class CustomEffectTests
             state.Player1Field.Frontend[0] = source;
 
             var act = () => new CustomEffectRegistry().Build(CustomEffects.ScaleToZero, null)!(
-                MakeOpContext(state, cc, playerNum: 1, source: source));
+                MakeOpContext(state, cc, source: source));
 
             act.Should().Throw<GameRuleException>().WithMessage("*deploy turn*");
         }
@@ -247,7 +240,7 @@ public class CustomEffectTests
             state.Player1Field.Frontend[0] = source;
 
             var act = () => new CustomEffectRegistry().Build(CustomEffects.ScaleToZero, null)!(
-                MakeOpContext(state, cc, playerNum: 1, source: source));
+                MakeOpContext(state, cc, source: source));
 
             act.Should().Throw<GameRuleException>().WithMessage("*attacked*");
         }
@@ -263,11 +256,11 @@ public class CustomEffectTests
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState(turn: 3);
             var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
-            source.DeployedOnTurn = 1; // 経過 2 ターン == turns で自壊する境界
+            source.DeployedOnTurn = 1;
             state.Player1Field.Frontend[0] = source;
 
             new CustomEffectRegistry().Build(CustomEffects.SpotExpiry, Meta("""{"turns":2}"""))!(
-                MakeOpContext(state, cc, playerNum: 1, source: source));
+                MakeOpContext(state, cc, source: source));
 
             FieldHelpers.FindResourceByID(state.Player1Field, "src").Should().BeNull();
         }
@@ -279,11 +272,11 @@ public class CustomEffectTests
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState(turn: 2);
             var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
-            source.DeployedOnTurn = 1; // 経過 1 ターン < turns
+            source.DeployedOnTurn = 1;
             state.Player1Field.Frontend[0] = source;
 
             new CustomEffectRegistry().Build(CustomEffects.SpotExpiry, Meta("""{"turns":2}"""))!(
-                MakeOpContext(state, cc, playerNum: 1, source: source));
+                MakeOpContext(state, cc, source: source));
 
             FieldHelpers.FindResourceByID(state.Player1Field, "src").Should().NotBeNull();
         }
@@ -305,11 +298,10 @@ public class CustomEffectTests
         [Fact]
         public void DeployEffect_IsNoOp()
         {
-            var cc = new TestCardCache();
             var state = TestFactory.MakeGameState();
             var effect = new CustomEffectRegistry().Build(CustomEffects.TargetShield, null)!;
 
-            var act = () => effect(MakeOpContext(state, cc));
+            var act = () => effect(MakeOpContext(state, new TestCardCache()));
 
             act.Should().NotThrow();
         }
@@ -353,7 +345,7 @@ public class CustomEffectTests
             state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
 
             new CustomEffectRegistry().Build(CustomEffects.DeploySameTypeFromHand, null)!(
-                MakeOpContext(state, cc, playerNum: 1, target: target,
+                MakeOpContext(state, cc, target: target,
                     choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }));
 
             state.PendingSlotSelects.Should().ContainSingle();
@@ -371,7 +363,7 @@ public class CustomEffectTests
             state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0100" }];
 
             var act = () => new CustomEffectRegistry().Build(CustomEffects.DeploySameTypeFromHand, null)!(
-                MakeOpContext(state, cc, playerNum: 1, target: target,
+                MakeOpContext(state, cc, target: target,
                     choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0100" }));
 
             act.Should().Throw<GameRuleException>().WithMessage("*same type*");
@@ -392,7 +384,7 @@ public class CustomEffectTests
             state.Player1Field.Support[0] = sup;
 
             new CustomEffectRegistry().Build(CustomEffects.CloudShift, Meta("""{"faction":"SHE","deploy_discount":300}"""))!(
-                MakeOpContext(state, cc, playerNum: 1, supSource: sup,
+                MakeOpContext(state, cc, supSource: sup,
                     choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }));
 
             state.GetBudget(1).Should().Be(5300);
@@ -413,8 +405,7 @@ public class CustomEffectTests
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe", faceUp: true);
 
             var act = () => new CustomEffectRegistry().Build(CustomEffects.RedirectAttack, null)!(
-                MakeOpContext(state, cc, playerNum: 1,
-                    choiceData: new Dictionary<string, object> { ["instanceId"] = "fe" }));
+                MakeOpContext(state, cc, choiceData: new Dictionary<string, object> { ["instanceId"] = "fe" }));
 
             act.Should().NotThrow();
         }
@@ -428,8 +419,7 @@ public class CustomEffectTests
             state.Player2Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be", faceUp: true);
 
             var act = () => new CustomEffectRegistry().Build(CustomEffects.RedirectAttack, null)!(
-                MakeOpContext(state, cc, playerNum: 1,
-                    choiceData: new Dictionary<string, object> { ["instanceId"] = "be" }));
+                MakeOpContext(state, cc, choiceData: new Dictionary<string, object> { ["instanceId"] = "be" }));
 
             act.Should().Throw<GameRuleException>().WithMessage("*frontend*");
         }

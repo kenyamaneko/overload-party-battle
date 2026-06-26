@@ -352,8 +352,6 @@ public class PlayCardProcessorTests
         }
     }
 
-    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
-
     /// <summary>各カードタイプのダミーを登録したカードキャッシュを作る。</summary>
     /// <returns>コンピュート / アタッチメント / インシデント / ストラテジー / プラットフォーム を登録したキャッシュ。</returns>
     private static TestCardCache PlayCc()

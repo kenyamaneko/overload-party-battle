@@ -211,8 +211,6 @@ public class ScaleUpProcessorTests
         }
     }
 
-    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
-
     /// <summary>リサイザブルなコンピュート系リソース 1 種を持つカードキャッシュを作る。</summary>
     /// <returns>TST-0001 (リサイザブル / TP=600) を登録したキャッシュ。</returns>
     private static TestCardCache ResizableCc()
@@ -331,6 +329,28 @@ public class ScaleUpProcessorTests
                 state, TestFactory.MakeGame(), 1, Req("ghost", "medium", "M"), cc, new EffectRegistry());
 
             act.Should().Throw<GameRuleException>().WithMessage("*not found*");
+        }
+    }
+
+    /// <summary>スケールダウン (高ランクから低ランク) が拒否されることを検証する。</summary>
+    public class ScaleDown
+    {
+        [Theory]
+        [InlineData("medium")]
+        [InlineData("small")]
+        public void Process_ScaleDownFromLarge_Throws(string targetRank)
+        {
+            var cc = ResizableCc();
+            var state = TestFactory.MakeGameState(turn: 3);
+            var resource = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "inst_1", rank: Rank.Large, family: InstanceFamily.M, faceUp: true);
+            resource.DeployedOnTurn = 1;
+            state.Player1Field.Frontend[0] = resource;
+
+            var act = () => ScaleUpProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req("inst_1", targetRank, "M"), cc, new EffectRegistry());
+
+            act.Should().Throw<GameRuleException>().WithMessage("*higher rank*");
         }
     }
 }
