@@ -211,51 +211,73 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>Tests that a successful scale-up assigns the chosen instance family.</summary>
-    public class FamilyChange : Base
+    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
+
+    /// <summary>リサイザブルなコンピュート系リソース 1 種を持つカードキャッシュを作る。</summary>
+    /// <returns>TST-0001 (リサイザブル / TP=600) を登録したキャッシュ。</returns>
+    private static TestCardCache ResizableCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, resizable: true, deployTurns: 1));
+        return cc;
+    }
+
+    /// <summary>スケールアップリクエストを作る。</summary>
+    /// <param name="instanceId">対象リソースのインスタンス ID。</param>
+    /// <param name="targetRank">要求ランク。</param>
+    /// <param name="family">要求インスタンスファミリー。</param>
+    /// <returns>スケールアップリクエスト。</returns>
+    private static ScaleUpRequest Req(string instanceId, string targetRank, string? family = null) =>
+        new() { InstanceID = instanceId, TargetRank = targetRank, InstanceFamily = family };
+
+    /// <summary>スモールからの昇格で選んだインスタンスファミリーが付与されることを検証する。</summary>
+    public class FamilyChange
     {
         [Fact]
         public void Process_AssignsInstanceFamily_WhenScalingFromSmall()
         {
+            var cc = ResizableCc();
             var state = TestFactory.MakeGameState(turn: 3);
             var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_1", rank: Rank.Small, family: null, faceUp: true);
             resource.DeployedOnTurn = 1;
             state.Player1Field.Frontend[0] = resource;
 
-            ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", "medium", "C"), _cc, new EffectRegistry());
+            ScaleUpProcessor.Process(state, TestFactory.MakeGame(), 1, Req("inst_1", "medium", "C"), cc, new EffectRegistry());
 
             resource.InstanceFamily.Should().Be(InstanceFamily.C);
         }
     }
 
-    /// <summary>Tests that a higher rank recomputes 可用性 / スループット upward.</summary>
-    public class StatRecalculation : Base
+    /// <summary>高ランクほど 可用性 / スループット が再計算で増えることを検証する。</summary>
+    public class StatRecalculation
     {
         [Fact]
         public void Process_RecalculatesMaxAvAndMaxTp_ForHigherRank()
         {
+            var cc = ResizableCc();
             var state = TestFactory.MakeGameState(turn: 3);
             var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_1", rank: Rank.Small, family: null, faceUp: true);
             resource.DeployedOnTurn = 1;
             state.Player1Field.Frontend[0] = resource;
 
-            ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, new EffectRegistry());
+            ScaleUpProcessor.Process(state, TestFactory.MakeGame(), 1, Req("inst_1", "medium", "M"), cc, new EffectRegistry());
             long mediumAV = resource.MaxAV;
             long mediumTP = resource.MaxTP!.Value;
 
-            ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", "large", "M"), _cc, new EffectRegistry());
+            ScaleUpProcessor.Process(state, TestFactory.MakeGame(), 1, Req("inst_1", "large", "M"), cc, new EffectRegistry());
 
             resource.MaxAV.Should().BeGreaterThan(mediumAV, "高ランクほど 可用性 が再計算で増える");
             resource.MaxTP!.Value.Should().BeGreaterThan(mediumTP, "高ランクほど スループット が再計算で増える");
         }
     }
 
-    /// <summary>Tests that scale-up fires the OnScaleUp 誘発効果 on the resource and its attachment.</summary>
-    public class OnScaleUpTrigger : Base
+    /// <summary>スケールアップで自身と装備アタッチメントの OnScaleUp 誘発効果が発動することを検証する。</summary>
+    public class OnScaleUpTrigger
     {
         [Fact]
         public void Process_FiresOnScaleUpForResource()
         {
+            var cc = ResizableCc();
             var state = TestFactory.MakeGameState(turn: 3);
             var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
             resource.DeployedOnTurn = 1;
@@ -265,7 +287,7 @@ public class ScaleUpProcessorTests
             var effects = new TestEffectRegistry();
             effects.Register("TST-0001", TriggerType.OnScaleUp, _ => { fired++; return new EffectResult(); });
 
-            ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, effects);
+            ScaleUpProcessor.Process(state, TestFactory.MakeGame(), 1, Req("inst_1", "medium", "M"), cc, effects);
 
             fired.Should().Be(1, "スケールアップで自身の OnScaleUp 誘発効果が発動する");
         }
@@ -273,7 +295,7 @@ public class ScaleUpProcessorTests
         [Fact]
         public void Process_FiresOnScaleUpForAttachment()
         {
-            _cc.Add(TestFactory.AttachmentCard(cardId: "TST-0300"));
+            var cc = ResizableCc();
             var state = TestFactory.MakeGameState(turn: 3);
             var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: true);
             resource.DeployedOnTurn = 1;
@@ -281,31 +303,32 @@ public class ScaleUpProcessorTests
             state.Player1Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "att_1",
-                CardID = "TST-0300",
+                CardID = "TST-0301",
                 TargetInstanceID = "inst_1",
                 FaceUp = true,
             };
 
             int fired = 0;
             var effects = new TestEffectRegistry();
-            effects.Register("TST-0300", TriggerType.OnScaleUp, _ => { fired++; return new EffectResult(); });
+            effects.Register("TST-0301", TriggerType.OnScaleUp, _ => { fired++; return new EffectResult(); });
 
-            ScaleUpProcessor.Process(state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, effects);
+            ScaleUpProcessor.Process(state, TestFactory.MakeGame(), 1, Req("inst_1", "medium", "M"), cc, effects);
 
             fired.Should().Be(1, "装備したアタッチメントの OnScaleUp も発動する");
         }
     }
 
-    /// <summary>Tests that scaling a resource that is not on the field is rejected.</summary>
-    public class ResourceNotFound : Base
+    /// <summary>フィールドに存在しないリソースのスケールアップが拒否されることを検証する。</summary>
+    public class ResourceNotFound
     {
         [Fact]
         public void Process_ResourceNotFound_Throws()
         {
+            var cc = ResizableCc();
             var state = TestFactory.MakeGameState(turn: 3);
 
             var act = () => ScaleUpProcessor.Process(
-                state, _game, 1, MakeReq("ghost", "medium", "M"), _cc, new EffectRegistry());
+                state, TestFactory.MakeGame(), 1, Req("ghost", "medium", "M"), cc, new EffectRegistry());
 
             act.Should().Throw<GameRuleException>().WithMessage("*not found*");
         }

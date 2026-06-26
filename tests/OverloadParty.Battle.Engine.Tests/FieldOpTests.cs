@@ -7,42 +7,33 @@ namespace OverloadParty.Battle.Tests.Effects;
 
 public class FieldOpTests
 {
-    /// <summary>Shared setup for field-op tests (card cache, game, and op-context builder).</summary>
-    public abstract class Base
+    /// <summary>共有ゲームとカードキャッシュを束ねた op コンテキストを組み立てる。</summary>
+    /// <param name="state">操作対象のゲーム状態。</param>
+    /// <param name="cc">カードキャッシュ。</param>
+    /// <param name="playerNum">操作プレイヤー番号。</param>
+    /// <param name="source">自身に作用する op のソースリソース。</param>
+    /// <param name="choiceData">選択で分岐する op のプレイヤー選択データ。</param>
+    /// <returns>op コンテキスト。</returns>
+    private static OpContext MakeOpContext(
+        BattleGameState state, TestCardCache cc, long playerNum = 1,
+        DeployedResource? source = null,
+        Dictionary<string, object>? choiceData = null)
     {
-        protected readonly TestCardCache _cc = new();
-        protected readonly Game _game = TestFactory.MakeGame();
-
-        /// <summary>Builds an op context wired with the shared game and card cache.</summary>
-        /// <param name="state">The game state to operate on.</param>
-        /// <param name="playerNum">The acting player number.</param>
-        /// <param name="source">The source resource for ops that act on their own card.</param>
-        /// <param name="target">The target resource for ops that act on a chosen card.</param>
-        /// <param name="choiceData">Player choice data for ops that branch on selection.</param>
-        /// <returns>An op context for the supplied state and player.</returns>
-        protected OpContext MakeOpContext(
-            BattleGameState state, long playerNum,
-            DeployedResource? source = null,
-            DeployedResource? target = null,
-            Dictionary<string, object>? choiceData = null)
+        var ctx = new EffectContext
         {
-            var ctx = new EffectContext
-            {
-                State = state,
-                Game = _game,
-                PlayerNum = playerNum,
-                Source = source,
-                Target = target,
-                ChoiceData = choiceData,
-                CardCache = _cc,
-                Effects = new EffectRegistry(),
-            };
-            return new OpContext(ctx);
-        }
+            State = state,
+            Game = TestFactory.MakeGame(),
+            PlayerNum = playerNum,
+            Source = source,
+            ChoiceData = choiceData,
+            CardCache = cc,
+            Effects = new EffectRegistry(),
+        };
+        return new OpContext(ctx);
     }
 
-    /// <summary>Tests for the reactive-support peek op.</summary>
-    public class PeekReactive : Base
+    /// <summary>相手の伏せ リアクティブ を覗き見る op (表向きにはしない)。</summary>
+    public class PeekReactive
     {
         [Fact]
         public void PeekReactiveOp_AddsPeekedBy_WhenHiddenSupportExists()
@@ -51,18 +42,15 @@ public class FieldOpTests
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "sup_1",
-                CardID = "TST-REACT",
+                CardID = "TST-0400",
                 FaceUp = false,
             };
 
-            var op = new PeekReactiveOp();
-            var opCtx = MakeOpContext(state, playerNum: 1);
-
-            op.Execute(opCtx);
+            new PeekReactiveOp().Execute(MakeOpContext(state, new TestCardCache(), playerNum: 1));
 
             var support = state.Player2Field.Support[0]!;
-            support.FaceUp.Should().BeFalse("peek should not flip the card face-up");
-            support.PeekedBy.Should().Contain(1, "player 1 should be in PeekedBy");
+            support.FaceUp.Should().BeFalse("覗き見はカードを表向きにしない");
+            support.PeekedBy.Should().Contain(1, "プレイヤー 1 が PeekedBy に入る");
         }
 
         [Fact]
@@ -72,14 +60,11 @@ public class FieldOpTests
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "sup_1",
-                CardID = "TST-REACT",
+                CardID = "TST-0400",
                 FaceUp = true,
             };
 
-            var op = new PeekReactiveOp();
-            var opCtx = MakeOpContext(state, playerNum: 1);
-
-            op.Execute(opCtx);
+            new PeekReactiveOp().Execute(MakeOpContext(state, new TestCardCache(), playerNum: 1));
 
             state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty();
         }
@@ -91,18 +76,14 @@ public class FieldOpTests
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "sup_1",
-                CardID = "TST-REACT",
+                CardID = "TST-0400",
                 FaceUp = false,
                 PeekedBy = [1],
             };
 
-            var op = new PeekReactiveOp();
-            var opCtx = MakeOpContext(state, playerNum: 1);
+            new PeekReactiveOp().Execute(MakeOpContext(state, new TestCardCache(), playerNum: 1));
 
-            op.Execute(opCtx);
-
-            state.Player2Field.Support[0]!.PeekedBy.Should().HaveCount(1,
-                "should not add duplicate player number");
+            state.Player2Field.Support[0]!.PeekedBy.Should().HaveCount(1, "同じプレイヤー番号は重複追加しない");
         }
 
         [Fact]
@@ -112,58 +93,55 @@ public class FieldOpTests
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "sup_visible",
-                CardID = "TST-REACT-A",
+                CardID = "TST-0401",
                 FaceUp = true,
             };
             state.Player2Field.Support[1] = new DeployedSupport
             {
                 InstanceID = "sup_hidden",
-                CardID = "TST-REACT-B",
+                CardID = "TST-0402",
                 FaceUp = false,
             };
 
-            var op = new PeekReactiveOp();
-            var opCtx = MakeOpContext(state, playerNum: 1);
+            new PeekReactiveOp().Execute(MakeOpContext(state, new TestCardCache(), playerNum: 1));
 
-            op.Execute(opCtx);
-
-            state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty("face-up card should not be peeked");
+            state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty("表向きのカードは覗かない");
             state.Player2Field.Support[1]!.PeekedBy.Should().Contain(1);
         }
     }
 
-    /// <summary>Tests for the destroy-check op that 破壊 resources whose 実効 可用性 reaches zero.</summary>
-    public class DestroyCheck : Base
+    /// <summary>実効 可用性 が 0 以下のリソースを 破壊 する op。</summary>
+    public class DestroyCheck
     {
-        [Fact]
-        public void DestroyCheckOp_DestroysResourceAtZeroAvailability()
+        // 実効 可用性 = MaxAV - Damage。境界 (0 ちょうど) とオーバーキル (負) で破壊、正で存続。
+        [Theory]
+        [InlineData(1000, 1000, true)]
+        [InlineData(1000, 1500, true)]
+        [InlineData(1000, 999, false)]
+        public void DestroyCheckOp_DestroysOnlyAtOrBelowZeroAvailability(long maxAV, long damage, bool shouldDestroy)
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState();
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0001", instanceId: "dead", maxAV: 1000, damage: 1000);
-            state.Player1Field.Frontend[1] = TestFactory.MakeResource(
-                cardId: "TST-0001", instanceId: "alive", maxAV: 1000, damage: 0);
+                cardId: "TST-0001", instanceId: "res", maxAV: maxAV, damage: damage);
 
-            var op = new DestroyCheckOp(PlayerRef.Myself);
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new DestroyCheckOp(PlayerRef.Myself).Execute(MakeOpContext(state, cc, playerNum: 1));
 
-            FieldHelpers.FindResourceByID(state.Player1Field, "dead")
-                .Should().BeNull("実効 可用性 0 のリソースは破壊される");
-            FieldHelpers.FindResourceByID(state.Player1Field, "alive")
-                .Should().NotBeNull("可用性が残るリソースは破壊されない");
+            (FieldHelpers.FindResourceByID(state.Player1Field, "res") is null)
+                .Should().Be(shouldDestroy);
         }
 
         [Fact]
         public void DestroyCheckOp_MovesDestroyedResourceToTrash()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState();
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
                 cardId: "TST-0001", instanceId: "dead", maxAV: 1000, damage: 1000);
 
-            var op = new DestroyCheckOp(PlayerRef.Myself);
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new DestroyCheckOp(PlayerRef.Myself).Execute(MakeOpContext(state, cc, playerNum: 1));
 
             state.GetTrash(1).Should().Contain(c => c.InstanceID == "dead");
         }
@@ -171,23 +149,23 @@ public class FieldOpTests
         [Fact]
         public void DestroyCheckOp_Both_ScansOwnAndOpponentFields()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState();
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
                 cardId: "TST-0001", instanceId: "mine_dead", maxAV: 500, damage: 500);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
                 cardId: "TST-0001", instanceId: "opp_dead", maxAV: 500, damage: 500);
 
-            var op = new DestroyCheckOp(PlayerRef.Both);
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new DestroyCheckOp(PlayerRef.Both).Execute(MakeOpContext(state, cc, playerNum: 1));
 
             FieldHelpers.FindResourceByID(state.Player1Field, "mine_dead").Should().BeNull();
             FieldHelpers.FindResourceByID(state.Player2Field, "opp_dead").Should().BeNull();
         }
     }
 
-    /// <summary>Tests for the op that flips the 相手 の hidden リアクティブ face-up.</summary>
-    public class RevealReactive : Base
+    /// <summary>相手の伏せ リアクティブ を表向きに開示する op。</summary>
+    public class RevealReactive
     {
         [Fact]
         public void RevealReactiveOp_FlipsFirstHiddenSupportFaceUp()
@@ -196,12 +174,11 @@ public class FieldOpTests
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "sup_1",
-                CardID = "TST-REACT",
+                CardID = "TST-0400",
                 FaceUp = false,
             };
 
-            var op = new RevealReactiveOp();
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new RevealReactiveOp().Execute(MakeOpContext(state, new TestCardCache(), playerNum: 1));
 
             state.Player2Field.Support[0]!.FaceUp.Should().BeTrue("伏せたリアクティブが表向きに開示される");
         }
@@ -213,12 +190,11 @@ public class FieldOpTests
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "sup_1",
-                CardID = "TST-REACT",
+                CardID = "TST-0400",
                 FaceUp = true,
             };
 
-            var op = new RevealReactiveOp();
-            var act = () => op.Execute(MakeOpContext(state, playerNum: 1));
+            var act = () => new RevealReactiveOp().Execute(MakeOpContext(state, new TestCardCache(), playerNum: 1));
 
             act.Should().NotThrow();
             state.Player2Field.Support[0]!.FaceUp.Should().BeTrue();
@@ -231,30 +207,30 @@ public class FieldOpTests
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "sup_visible",
-                CardID = "TST-REACT-A",
+                CardID = "TST-0401",
                 FaceUp = true,
             };
             state.Player2Field.Support[1] = new DeployedSupport
             {
                 InstanceID = "sup_hidden",
-                CardID = "TST-REACT-B",
+                CardID = "TST-0402",
                 FaceUp = false,
             };
 
-            var op = new RevealReactiveOp();
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new RevealReactiveOp().Execute(MakeOpContext(state, new TestCardCache(), playerNum: 1));
 
             state.Player2Field.Support[1]!.FaceUp.Should().BeTrue("最初の伏せリアクティブが開示される");
         }
     }
 
-    /// <summary>Tests for the op that 破壊 a プラットフォーム in the 相手 の サポートゾーン.</summary>
-    public class DestroyPlatform : Base
+    /// <summary>相手の サポートゾーン の プラットフォーム を 破壊 する op。</summary>
+    public class DestroyPlatform
     {
         [Fact]
         public void DestroyPlatformOp_DestroysOpponentPlatform()
         {
-            _cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
             var state = TestFactory.MakeGameState();
             state.Player2Field.Support[0] = new DeployedSupport
             {
@@ -263,8 +239,7 @@ public class FieldOpTests
                 FaceUp = true,
             };
 
-            var op = new DestroyPlatformOp();
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new DestroyPlatformOp().Execute(MakeOpContext(state, cc, playerNum: 1));
 
             state.Player2Field.Support.Select(s => s.InstanceID).Should().NotContain("plat_1");
             state.GetTrash(2).Should().Contain(c => c.InstanceID == "plat_1");
@@ -273,14 +248,14 @@ public class FieldOpTests
         [Fact]
         public void DestroyPlatformOp_SelectsByChoiceInstanceId()
         {
-            _cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
             var state = TestFactory.MakeGameState();
             state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "plat_a", CardID = "TST-0200", FaceUp = true };
             state.Player2Field.Support[1] = new DeployedSupport { InstanceID = "plat_b", CardID = "TST-0200", FaceUp = true };
-            var choice = new Dictionary<string, object> { ["instanceId"] = "plat_b" };
 
-            var op = new DestroyPlatformOp();
-            op.Execute(MakeOpContext(state, playerNum: 1, choiceData: choice));
+            new DestroyPlatformOp().Execute(MakeOpContext(state, cc, playerNum: 1,
+                choiceData: new Dictionary<string, object> { ["instanceId"] = "plat_b" }));
 
             var remaining = state.Player2Field.Support.Select(s => s.InstanceID).ToList();
             remaining.Should().NotContain("plat_b");
@@ -290,13 +265,13 @@ public class FieldOpTests
         [Fact]
         public void DestroyPlatformOp_Throws_WhenSelectedSupportIsNotPlatform()
         {
-            _cc.Add(TestFactory.ReactiveCard(cardId: "TST-0400"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ReactiveCard(cardId: "TST-0400"));
             var state = TestFactory.MakeGameState();
             state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "react_1", CardID = "TST-0400", FaceUp = false };
-            var choice = new Dictionary<string, object> { ["instanceId"] = "react_1" };
 
-            var op = new DestroyPlatformOp();
-            var act = () => op.Execute(MakeOpContext(state, playerNum: 1, choiceData: choice));
+            var act = () => new DestroyPlatformOp().Execute(MakeOpContext(state, cc, playerNum: 1,
+                choiceData: new Dictionary<string, object> { ["instanceId"] = "react_1" }));
 
             act.Should().Throw<GameRuleException>();
         }
@@ -304,31 +279,33 @@ public class FieldOpTests
         [Fact]
         public void DestroyPlatformOp_DoesNothing_WhenNoPlatformPresent()
         {
-            _cc.Add(TestFactory.ReactiveCard(cardId: "TST-0400"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ReactiveCard(cardId: "TST-0400"));
             var state = TestFactory.MakeGameState();
             state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "react_1", CardID = "TST-0400", FaceUp = false };
 
-            var op = new DestroyPlatformOp();
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new DestroyPlatformOp().Execute(MakeOpContext(state, cc, playerNum: 1));
 
             state.Player2Field.Support.Select(s => s.InstanceID).Should().Contain("react_1");
         }
     }
 
-    /// <summary>Tests for the op that reduces the source resource's remaining デプロイターン.</summary>
-    public class ReduceDeployTurns : Base
+    /// <summary>ソースリソースの残り デプロイターン を減らす op。</summary>
+    public class ReduceDeployTurns
     {
+        // 通常減算と、0 で頭打ちになる境界を確認する。
         [Theory]
         [InlineData(2, 1, 1)]
         [InlineData(3, 2, 1)]
         [InlineData(1, 3, 0)]
+        [InlineData(0, 1, 0)]
         public void ReduceDeployTurnsOp_DecrementsAndClampsAtZero(long start, long reduce, long expected)
         {
             var state = TestFactory.MakeGameState();
             var source = TestFactory.MakeResource(instanceId: "src", deployLeft: start);
 
-            var op = new ReduceDeployTurnsOp(new StaticAmount(reduce));
-            op.Execute(MakeOpContext(state, playerNum: 1, source: source));
+            new ReduceDeployTurnsOp(new StaticAmount(reduce)).Execute(
+                MakeOpContext(state, new TestCardCache(), playerNum: 1, source: source));
 
             source.DeployingTurnsLeft.Should().Be(expected);
         }
@@ -338,8 +315,8 @@ public class FieldOpTests
         {
             var state = TestFactory.MakeGameState();
 
-            var op = new ReduceDeployTurnsOp(new StaticAmount(1));
-            var act = () => op.Execute(MakeOpContext(state, playerNum: 1));
+            var act = () => new ReduceDeployTurnsOp(new StaticAmount(1)).Execute(
+                MakeOpContext(state, new TestCardCache(), playerNum: 1));
 
             act.Should().NotThrow();
         }

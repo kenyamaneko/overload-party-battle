@@ -7,32 +7,25 @@ namespace OverloadParty.Battle.Tests.Effects;
 
 public class InsightOpTests
 {
-    /// <summary>Shared setup for insight-op tests (card cache, game, and op-context builder).</summary>
-    public abstract class Base
+    /// <summary>指定プレイヤー視点の op コンテキストを組み立てる。</summary>
+    /// <param name="state">操作対象のゲーム状態。</param>
+    /// <param name="playerNum">効果オーナーのプレイヤー番号。</param>
+    /// <returns>op コンテキスト。</returns>
+    private static OpContext MakeOpContext(BattleGameState state, long playerNum)
     {
-        protected readonly TestCardCache _cc = new();
-        protected readonly Game _game = TestFactory.MakeGame();
-
-        /// <summary>Builds an op context for the supplied state and player.</summary>
-        /// <param name="state">The game state to operate on.</param>
-        /// <param name="playerNum">The acting player number.</param>
-        /// <returns>An op context for the supplied state and player.</returns>
-        protected OpContext MakeOpContext(BattleGameState state, long playerNum)
+        var ctx = new EffectContext
         {
-            var ctx = new EffectContext
-            {
-                State = state,
-                Game = _game,
-                PlayerNum = playerNum,
-                CardCache = _cc,
-                Effects = new EffectRegistry(),
-            };
-            return new OpContext(ctx);
-        }
+            State = state,
+            Game = TestFactory.MakeGame(),
+            PlayerNum = playerNum,
+            CardCache = new TestCardCache(),
+            Effects = new EffectRegistry(),
+        };
+        return new OpContext(ctx);
     }
 
-    /// <summary>Tests for the op that adds インサイト to the 自分 の インサイトプール.</summary>
-    public class GainInsight : Base
+    /// <summary>自分の インサイトプール に インサイト を加算する op。</summary>
+    public class GainInsight
     {
         [Theory]
         [InlineData(0, 300, 300)]
@@ -42,41 +35,43 @@ public class InsightOpTests
             var state = TestFactory.MakeGameState();
             state.SetInsightPool(1, initial);
 
-            var op = new GainInsightOp(new StaticAmount(amount));
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new GainInsightOp(new StaticAmount(amount)).Execute(MakeOpContext(state, 1));
 
             state.GetInsightPool(1).Should().Be(expected);
         }
     }
 
-    /// <summary>Tests for the op that transfers インサイト from the 相手 の プール to the 自分 の プール.</summary>
-    public class AbsorbInsight : Base
+    /// <summary>相手の インサイト を自分へ移す op。吸収量は相手の保有量で頭打ちになる。</summary>
+    public class AbsorbInsight
     {
-        [Fact]
-        public void AbsorbInsightOp_TransfersFromOpponentToOwner()
-        {
-            var state = TestFactory.MakeGameState();
-            state.SetInsightPool(1, 100);
-            state.SetInsightPool(2, 500);
-
-            var op = new AbsorbInsightOp(new StaticAmount(300));
-            op.Execute(MakeOpContext(state, playerNum: 1));
-
-            state.GetInsightPool(1).Should().Be(400);
-            state.GetInsightPool(2).Should().Be(200);
-        }
-
-        [Fact]
-        public void AbsorbInsightOp_ClampsToOpponentAvailableInsight()
+        // 相手プール (oppPool) を要求量未満 / 同量 / 超過 で振り、移動量 = min(要求, oppPool) を確認する。
+        [Theory]
+        [InlineData(120, 300, 120, 0)]
+        [InlineData(300, 300, 300, 0)]
+        [InlineData(500, 300, 300, 200)]
+        public void AbsorbInsightOp_TransfersClampedToOpponentPool(
+            long oppPool, long amount, long expectedGained, long expectedOppLeft)
         {
             var state = TestFactory.MakeGameState();
             state.SetInsightPool(1, 0);
-            state.SetInsightPool(2, 120);
+            state.SetInsightPool(2, oppPool);
 
-            var op = new AbsorbInsightOp(new StaticAmount(300));
-            op.Execute(MakeOpContext(state, playerNum: 1));
+            new AbsorbInsightOp(new StaticAmount(amount)).Execute(MakeOpContext(state, 1));
 
-            state.GetInsightPool(1).Should().Be(120, "相手が持つ インサイト を超えて吸収できない");
+            state.GetInsightPool(1).Should().Be(expectedGained);
+            state.GetInsightPool(2).Should().Be(expectedOppLeft);
+        }
+
+        [Fact]
+        public void AbsorbInsightOp_TransfersNothing_WhenOpponentPoolEmpty()
+        {
+            var state = TestFactory.MakeGameState();
+            state.SetInsightPool(1, 50);
+            state.SetInsightPool(2, 0);
+
+            new AbsorbInsightOp(new StaticAmount(300)).Execute(MakeOpContext(state, 1));
+
+            state.GetInsightPool(1).Should().Be(50);
             state.GetInsightPool(2).Should().Be(0);
         }
     }

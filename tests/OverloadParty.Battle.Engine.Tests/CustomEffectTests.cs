@@ -8,70 +8,64 @@ namespace OverloadParty.Battle.Tests.Effects;
 
 public class CustomEffectTests
 {
-    /// <summary>Shared setup for custom-effect tests (card cache, game, registry, and op-context builder).</summary>
-    public abstract class Base
+    /// <summary>カスタム効果が読む source/target/support/選択データを指定して op コンテキストを組み立てる。</summary>
+    /// <param name="state">操作対象のゲーム状態。</param>
+    /// <param name="cc">カードキャッシュ。</param>
+    /// <param name="playerNum">効果オーナーのプレイヤー番号。</param>
+    /// <param name="source">効果のソースリソース。</param>
+    /// <param name="target">効果の対象リソース。</param>
+    /// <param name="supSource">サポートゾーンのソース (アタッチメント / リアクティブ)。</param>
+    /// <param name="choiceData">プレイヤーの選択データ。</param>
+    /// <param name="eventOwnerNum">イベントを起こしたプレイヤー番号。</param>
+    /// <returns>op コンテキスト。</returns>
+    private static OpContext MakeOpContext(
+        BattleGameState state, TestCardCache cc, long playerNum = 1,
+        DeployedResource? source = null, DeployedResource? target = null,
+        DeployedSupport? supSource = null,
+        Dictionary<string, object>? choiceData = null,
+        long? eventOwnerNum = null)
     {
-        protected readonly TestCardCache _cc = new();
-        protected readonly Game _game = TestFactory.MakeGame();
-        protected readonly CustomEffectRegistry _registry = new();
-
-        /// <summary>Builds an op context wiring the source/target/support and choice data a custom effect reads.</summary>
-        /// <param name="state">The game state to operate on.</param>
-        /// <param name="playerNum">The effect owner's player number.</param>
-        /// <param name="source">The effect source resource.</param>
-        /// <param name="target">The effect target resource.</param>
-        /// <param name="supSource">The support-zone source (attachment / reactive).</param>
-        /// <param name="choiceData">Player choice data.</param>
-        /// <param name="eventOwnerNum">The player who triggered the event.</param>
-        /// <returns>An op context for the supplied inputs.</returns>
-        protected OpContext MakeOpContext(
-            BattleGameState state, long playerNum = 1,
-            DeployedResource? source = null, DeployedResource? target = null,
-            DeployedSupport? supSource = null,
-            Dictionary<string, object>? choiceData = null,
-            long? eventOwnerNum = null)
+        var ctx = new EffectContext
         {
-            var ctx = new EffectContext
-            {
-                State = state,
-                Game = _game,
-                PlayerNum = playerNum,
-                Source = source,
-                Target = target,
-                SupSource = supSource,
-                ChoiceData = choiceData,
-                EventOwnerNum = eventOwnerNum,
-                CardCache = _cc,
-                Effects = new EffectRegistry(),
-                Trigger = TriggerType.OnDeploy,
-            };
-            return new OpContext(ctx);
-        }
-
-        /// <summary>Parses a custom effect's meta block from JSON.</summary>
-        /// <param name="json">The meta object as JSON.</param>
-        /// <returns>The deserialized meta dictionary.</returns>
-        protected static Dictionary<string, JsonElement> Meta(string json) =>
-            JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json)!;
+            State = state,
+            Game = TestFactory.MakeGame(),
+            PlayerNum = playerNum,
+            Source = source,
+            Target = target,
+            SupSource = supSource,
+            ChoiceData = choiceData,
+            EventOwnerNum = eventOwnerNum,
+            CardCache = cc,
+            Effects = new EffectRegistry(),
+            Trigger = TriggerType.OnDeploy,
+        };
+        return new OpContext(ctx);
     }
 
-    /// <summary>Tests the chain attack bonus that adds ダメージ when a しゅがーらぼ Compute系リソース ally is present.</summary>
-    public class ChainAttackBonus : Base
+    /// <summary>カスタム効果の meta ブロックを JSON から組み立てる。</summary>
+    /// <param name="json">meta オブジェクトの JSON。</param>
+    /// <returns>meta 辞書。</returns>
+    private static Dictionary<string, JsonElement> Meta(string json) =>
+        JsonSerializer.Deserialize<Dictionary<string, JsonElement>>(json)!;
+
+    /// <summary>しゅがーらぼ の Compute系リソース が並ぶとき対象に追加 ダメージ を与える効果。</summary>
+    public class ChainAttackBonus
     {
         [Fact]
         public void AppliesBonusDamage_WhenSugarComputeAllyPresent()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "SRC"));
-            _cc.Add(TestFactory.ComputeCard(cardId: "ALLY", faction: Factions.Sugar));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0010", faction: Factions.Sugar));
             var state = TestFactory.MakeGameState();
-            var source = TestFactory.MakeResource(cardId: "SRC", instanceId: "src", faceUp: true);
+            var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
             state.Player1Field.Frontend[0] = source;
-            state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "ALLY", instanceId: "ally", faceUp: true);
-            var target = TestFactory.MakeResource(cardId: "SRC", instanceId: "tgt", faceUp: true, maxAV: 2000, damage: 0);
+            state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0010", instanceId: "ally", faceUp: true);
+            var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "tgt", faceUp: true, maxAV: 2000, damage: 0);
             state.Player2Field.Frontend[0] = target;
 
-            var effect = _registry.Build(CustomEffects.ChainAttackBonus, Meta("""{"damage":200}"""))!;
-            effect(MakeOpContext(state, source: source, target: target));
+            var effect = new CustomEffectRegistry().Build(CustomEffects.ChainAttackBonus, Meta("""{"damage":200}"""))!;
+            effect(MakeOpContext(state, cc, source: source, target: target));
 
             target.Damage.Should().Be(200);
         }
@@ -79,136 +73,147 @@ public class CustomEffectTests
         [Fact]
         public void NoBonus_WhenNoSugarComputeAlly()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "SRC"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState();
-            var source = TestFactory.MakeResource(cardId: "SRC", instanceId: "src", faceUp: true);
+            var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
             state.Player1Field.Frontend[0] = source;
-            var target = TestFactory.MakeResource(cardId: "SRC", instanceId: "tgt", faceUp: true, maxAV: 2000, damage: 0);
+            var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "tgt", faceUp: true, maxAV: 2000, damage: 0);
             state.Player2Field.Frontend[0] = target;
 
-            var effect = _registry.Build(CustomEffects.ChainAttackBonus, Meta("""{"damage":200}"""))!;
-            effect(MakeOpContext(state, source: source, target: target));
+            var effect = new CustomEffectRegistry().Build(CustomEffects.ChainAttackBonus, Meta("""{"damage":200}"""))!;
+            effect(MakeOpContext(state, cc, source: source, target: target));
 
             target.Damage.Should().Be(0);
         }
     }
 
-    /// <summary>Tests applying 休止 to a high-スループット Compute系リソース on deploy.</summary>
-    public class DisableHighTpDeploy : Base
+    /// <summary>高 スループット の Compute系リソース が稼働したとき 休止 を付与する効果。</summary>
+    public class DisableHighTpDeploy
     {
-        [Fact]
-        public void AppliesDormant_WhenHighTpComputeDeployed()
+        // スループット 閾値 900 の境界 (899 は不発 / 900 ちょうどで発動) を確認する。
+        [Theory]
+        [InlineData(899, false)]
+        [InlineData(900, true)]
+        [InlineData(1200, true)]
+        public void AppliesDormant_OnlyAtOrAboveThreshold(long maxTP, bool expectDormant)
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "BIG"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState();
-            var target = TestFactory.MakeResource(cardId: "BIG", instanceId: "big", faceUp: true, maxTP: 900);
+            var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "tgt", faceUp: true, maxTP: maxTP);
             state.Player2Field.Frontend[0] = target;
 
-            var effect = _registry.Build(CustomEffects.DisableHighTpDeploy, null)!;
-            effect(MakeOpContext(state, playerNum: 1, target: target));
+            var effect = new CustomEffectRegistry().Build(CustomEffects.DisableHighTpDeploy, null)!;
+            effect(MakeOpContext(state, cc, playerNum: 1, target: target));
 
-            FieldHelpers.HasTemporaryEffect(target, BuffTypes.Dormant).Should().BeTrue();
-        }
-
-        [Fact]
-        public void NoDormant_WhenTpBelowThreshold()
-        {
-            _cc.Add(TestFactory.ComputeCard(cardId: "SMALL"));
-            var state = TestFactory.MakeGameState();
-            var target = TestFactory.MakeResource(cardId: "SMALL", instanceId: "small", faceUp: true, maxTP: 600);
-            state.Player2Field.Frontend[0] = target;
-
-            var effect = _registry.Build(CustomEffects.DisableHighTpDeploy, null)!;
-            effect(MakeOpContext(state, playerNum: 1, target: target));
-
-            FieldHelpers.HasTemporaryEffect(target, BuffTypes.Dormant).Should().BeFalse();
+            FieldHelpers.HasTemporaryEffect(target, BuffTypes.Dormant).Should().Be(expectDormant);
         }
     }
 
-    /// <summary>Tests cancelling the 相手 の 3 体目のデプロイ in a turn.</summary>
-    public class CancelNthDeploy : Base
+    /// <summary>相手の 3 体目のデプロイをキャンセルする効果。</summary>
+    public class CancelNthDeploy
     {
-        private static void DeployThree(BattleGameState state, long turn)
+        /// <summary>相手フィールドに当該ターンデプロイのリソースを指定数だけ並べる。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="count">並べるリソース数。</param>
+        /// <param name="turn">デプロイされたターン。</param>
+        private static void DeployN(BattleGameState state, int count, long turn)
         {
-            for (int i = 0; i < 3; i++)
+            // フロントエンド (3 枠) を埋めてからバックエンドへ溢れさせる。
+            int feCount = Math.Min(count, BattleConstants.SlotsPerZone);
+            for (int i = 0; i < feCount; i++)
             {
                 var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: $"d_{i}", faceUp: true);
                 res.DeployedOnTurn = turn;
                 state.Player2Field.Frontend[i] = res;
             }
+            for (int i = feCount; i < count; i++)
+            {
+                var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: $"d_{i}", faceUp: true);
+                res.DeployedOnTurn = turn;
+                state.Player2Field.Backend[i - feCount] = res;
+            }
         }
+
+        private static DeployedSupport Watcher() =>
+            new() { InstanceID = "watcher", CardID = "TST-0001", FaceUp = false };
 
         [Fact]
         public void CancelsAndMarksUsed_OnThirdDeploy()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState(turn: 4);
-            DeployThree(state, 4);
-            var watcher = new DeployedSupport { InstanceID = "watcher", CardID = "TST-0001", FaceUp = false };
+            DeployN(state, 3, 4);
+            var watcher = Watcher();
             state.Player1Field.Support[0] = watcher;
 
-            var effect = _registry.Build(CustomEffects.CancelNthDeploy, null)!;
-            var opCtx = MakeOpContext(state, playerNum: 1, supSource: watcher);
-            effect(opCtx);
+            var opCtx = MakeOpContext(state, cc, playerNum: 1, supSource: watcher);
+            new CustomEffectRegistry().Build(CustomEffects.CancelNthDeploy, null)!(opCtx);
 
             opCtx.Result.ShouldCancelAction.Should().BeTrue();
             watcher.EffectUsedThisTurn.Should().BeTrue();
         }
 
-        [Fact]
-        public void Throws_WhenNotThirdDeploy()
+        // 3 体目以外 (2 体目 / 4 体目) では発動しない。
+        [Theory]
+        [InlineData(2)]
+        [InlineData(4)]
+        public void Throws_WhenNotThirdDeploy(int deployCount)
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState(turn: 4);
-            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "d_0", faceUp: true);
-            res.DeployedOnTurn = 4;
-            state.Player2Field.Frontend[0] = res;
-            var watcher = new DeployedSupport { InstanceID = "watcher", CardID = "TST-0001", FaceUp = false };
+            DeployN(state, deployCount, 4);
+            var watcher = Watcher();
             state.Player1Field.Support[0] = watcher;
 
-            var effect = _registry.Build(CustomEffects.CancelNthDeploy, null)!;
-            var act = () => effect(MakeOpContext(state, playerNum: 1, supSource: watcher));
+            var act = () => new CustomEffectRegistry().Build(CustomEffects.CancelNthDeploy, null)!(
+                MakeOpContext(state, cc, playerNum: 1, supSource: watcher));
 
             act.Should().Throw<GameRuleException>();
         }
     }
 
-    /// <summary>Tests moving an アタッチメント to a different target resource.</summary>
-    public class Reattach : Base
+    /// <summary>アタッチメント を別の対象リソースへ付け替える効果。</summary>
+    public class Reattach
     {
         [Fact]
         public void MovesAttachmentToNewTarget()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState();
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "old_host", faceUp: true);
             state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "new_host", faceUp: true);
-            var att = new DeployedSupport { InstanceID = "att", CardID = "TST-0001", TargetInstanceID = "old_host", FaceUp = true };
+            var att = new DeployedSupport { InstanceID = "att", CardID = "TST-0301", TargetInstanceID = "old_host", FaceUp = true };
             state.Player1Field.Support[0] = att;
 
-            var effect = _registry.Build(CustomEffects.Reattach, null)!;
-            effect(MakeOpContext(state, playerNum: 1, supSource: att,
-                choiceData: new Dictionary<string, object> { ["instanceId"] = "new_host" }));
+            new CustomEffectRegistry().Build(CustomEffects.Reattach, null)!(
+                MakeOpContext(state, cc, playerNum: 1, supSource: att,
+                    choiceData: new Dictionary<string, object> { ["instanceId"] = "new_host" }));
 
             att.TargetInstanceID.Should().Be("new_host");
         }
     }
 
-    /// <summary>Tests waiving 維持コスト for an idle Elastic リソース.</summary>
-    public class ScaleToZero : Base
+    /// <summary>攻撃も デプロイ もしていない Elastic リソース の 維持コスト を当ターン 0 にする効果。</summary>
+    public class ScaleToZero
     {
         [Fact]
         public void AddsMaintenanceReduction_ForIdleElastic()
         {
-            _cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0003"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0003"));
             var state = TestFactory.MakeGameState(turn: 5);
             var source = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "src", faceUp: true, elasticBonus: 600);
             source.DeployedOnTurn = 1;
             source.LastAttackTurn = 0;
             state.Player1Field.Frontend[0] = source;
 
-            var effect = _registry.Build(CustomEffects.ScaleToZero, null)!;
-            effect(MakeOpContext(state, playerNum: 1, source: source));
+            new CustomEffectRegistry().Build(CustomEffects.ScaleToZero, null)!(
+                MakeOpContext(state, cc, playerNum: 1, source: source));
 
             source.TemporaryEffects.Should().Contain(e =>
                 e.EffectType == BuffTypes.MaintenanceReduction && e.Value == 60);
@@ -217,33 +222,52 @@ public class CustomEffectTests
         [Fact]
         public void Throws_WhenUsedOnDeployTurn()
         {
-            _cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0003"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0003"));
             var state = TestFactory.MakeGameState(turn: 5);
             var source = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "src", faceUp: true);
             source.DeployedOnTurn = 5;
             state.Player1Field.Frontend[0] = source;
 
-            var effect = _registry.Build(CustomEffects.ScaleToZero, null)!;
-            var act = () => effect(MakeOpContext(state, playerNum: 1, source: source));
+            var act = () => new CustomEffectRegistry().Build(CustomEffects.ScaleToZero, null)!(
+                MakeOpContext(state, cc, playerNum: 1, source: source));
 
             act.Should().Throw<GameRuleException>().WithMessage("*deploy turn*");
         }
-    }
 
-    /// <summary>Tests self-破壊 after the configured number of turns since deploy.</summary>
-    public class SpotExpiry : Base
-    {
         [Fact]
-        public void DestroysSource_AfterExpiryTurns()
+        public void Throws_WhenSourceAttackedLastTurn()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
-            var state = TestFactory.MakeGameState(turn: 3);
-            var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0003"));
+            var state = TestFactory.MakeGameState(turn: 5);
+            var source = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "src", faceUp: true, elasticBonus: 600);
             source.DeployedOnTurn = 1;
+            source.LastAttackTurn = 4;
             state.Player1Field.Frontend[0] = source;
 
-            var effect = _registry.Build(CustomEffects.SpotExpiry, Meta("""{"turns":2}"""))!;
-            effect(MakeOpContext(state, playerNum: 1, source: source));
+            var act = () => new CustomEffectRegistry().Build(CustomEffects.ScaleToZero, null)!(
+                MakeOpContext(state, cc, playerNum: 1, source: source));
+
+            act.Should().Throw<GameRuleException>().WithMessage("*attacked*");
+        }
+    }
+
+    /// <summary>デプロイから一定ターン後に自壊する効果。</summary>
+    public class SpotExpiry
+    {
+        [Fact]
+        public void DestroysSource_AtOrAfterExpiryTurns()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var state = TestFactory.MakeGameState(turn: 3);
+            var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
+            source.DeployedOnTurn = 1; // 経過 2 ターン == turns で自壊する境界
+            state.Player1Field.Frontend[0] = source;
+
+            new CustomEffectRegistry().Build(CustomEffects.SpotExpiry, Meta("""{"turns":2}"""))!(
+                MakeOpContext(state, cc, playerNum: 1, source: source));
 
             FieldHelpers.FindResourceByID(state.Player1Field, "src").Should().BeNull();
         }
@@ -251,29 +275,41 @@ public class CustomEffectTests
         [Fact]
         public void Survives_BeforeExpiry()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState(turn: 2);
             var source = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
-            source.DeployedOnTurn = 1;
+            source.DeployedOnTurn = 1; // 経過 1 ターン < turns
             state.Player1Field.Frontend[0] = source;
 
-            var effect = _registry.Build(CustomEffects.SpotExpiry, Meta("""{"turns":2}"""))!;
-            effect(MakeOpContext(state, playerNum: 1, source: source));
+            new CustomEffectRegistry().Build(CustomEffects.SpotExpiry, Meta("""{"turns":2}"""))!(
+                MakeOpContext(state, cc, playerNum: 1, source: source));
 
             FieldHelpers.FindResourceByID(state.Player1Field, "src").Should().NotBeNull();
         }
     }
 
-    /// <summary>Tests the target_shield marker (deploy no-op) and the FieldHelpers protection check it drives.</summary>
-    public class TargetShield : Base
+    /// <summary>target_shield マーカー (デプロイ時は no-op) と、それを読む保護判定。</summary>
+    public class TargetShield
     {
+        private static TestCardCache ShieldCache()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var shield = TestFactory.AttachmentCard(cardId: "TST-0301");
+            shield.Effects = [new EffectDef { Trigger = TriggerTypes.Passive, Custom = CustomEffects.TargetShield }];
+            cc.Add(shield);
+            return cc;
+        }
+
         [Fact]
         public void DeployEffect_IsNoOp()
         {
+            var cc = new TestCardCache();
             var state = TestFactory.MakeGameState();
-            var effect = _registry.Build(CustomEffects.TargetShield, null)!;
+            var effect = new CustomEffectRegistry().Build(CustomEffects.TargetShield, null)!;
 
-            var act = () => effect(MakeOpContext(state));
+            var act = () => effect(MakeOpContext(state, cc));
 
             act.Should().NotThrow();
         }
@@ -281,49 +317,44 @@ public class CustomEffectTests
         [Fact]
         public void IsTargetShielded_True_WithShieldAndAnotherFrontend()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
-            var shield = TestFactory.AttachmentCard(cardId: "TST-SHIELD");
-            shield.Effects = [new EffectDef { Trigger = TriggerTypes.Passive, Custom = CustomEffects.TargetShield }];
-            _cc.Add(shield);
+            var cc = ShieldCache();
             var field = TestFactory.MakeField();
             var protectedRes = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "prot", faceUp: true);
             field.Frontend[0] = protectedRes;
             field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "wall", faceUp: true);
-            field.Support[0] = new DeployedSupport { InstanceID = "s", CardID = "TST-SHIELD", TargetInstanceID = "prot", FaceUp = true };
+            field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0301", TargetInstanceID = "prot", FaceUp = true };
 
-            FieldHelpers.IsTargetShielded(protectedRes, field, _cc).Should().BeTrue();
+            FieldHelpers.IsTargetShielded(protectedRes, field, cc).Should().BeTrue();
         }
 
         [Fact]
         public void IsTargetShielded_False_WithoutAnotherFrontend()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
-            var shield = TestFactory.AttachmentCard(cardId: "TST-SHIELD");
-            shield.Effects = [new EffectDef { Trigger = TriggerTypes.Passive, Custom = CustomEffects.TargetShield }];
-            _cc.Add(shield);
+            var cc = ShieldCache();
             var field = TestFactory.MakeField();
             var protectedRes = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "prot", faceUp: true);
             field.Frontend[0] = protectedRes;
-            field.Support[0] = new DeployedSupport { InstanceID = "s", CardID = "TST-SHIELD", TargetInstanceID = "prot", FaceUp = true };
+            field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0301", TargetInstanceID = "prot", FaceUp = true };
 
-            FieldHelpers.IsTargetShielded(protectedRes, field, _cc).Should().BeFalse();
+            FieldHelpers.IsTargetShielded(protectedRes, field, cc).Should().BeFalse();
         }
     }
 
-    /// <summary>Tests deploying a same-type card from 手札 to replace a destroyed リソース.</summary>
-    public class DeploySameTypeFromHand : Base
+    /// <summary>破壊された リソース と同タイプのカードを 手札 からデプロイする効果。</summary>
+    public class DeploySameTypeFromHand
     {
         [Fact]
         public void EnqueuesSlotSelect_WhenChoiceMatchesType()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", subtype: "VM"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", subtype: "VM"));
             var state = TestFactory.MakeGameState();
             var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "destroyed");
             state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
 
-            var effect = _registry.Build(CustomEffects.DeploySameTypeFromHand, null)!;
-            effect(MakeOpContext(state, playerNum: 1, target: target,
-                choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }));
+            new CustomEffectRegistry().Build(CustomEffects.DeploySameTypeFromHand, null)!(
+                MakeOpContext(state, cc, playerNum: 1, target: target,
+                    choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }));
 
             state.PendingSlotSelects.Should().ContainSingle();
             state.Player1Hand.Should().BeEmpty();
@@ -332,55 +363,58 @@ public class CustomEffectTests
         [Fact]
         public void Throws_WhenChoiceTypeMismatch()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", subtype: "VM"));
-            _cc.Add(TestFactory.DataCard(cardId: "TST-DB", subtype: "Database"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", subtype: "VM"));
+            cc.Add(TestFactory.DataCard(cardId: "TST-0100", subtype: "Database"));
             var state = TestFactory.MakeGameState();
             var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "destroyed");
-            state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-DB" }];
+            state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0100" }];
 
-            var effect = _registry.Build(CustomEffects.DeploySameTypeFromHand, null)!;
-            var act = () => effect(MakeOpContext(state, playerNum: 1, target: target,
-                choiceData: new Dictionary<string, object> { ["cardId"] = "TST-DB" }));
+            var act = () => new CustomEffectRegistry().Build(CustomEffects.DeploySameTypeFromHand, null)!(
+                MakeOpContext(state, cc, playerNum: 1, target: target,
+                    choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0100" }));
 
             act.Should().Throw<GameRuleException>().WithMessage("*same type*");
         }
     }
 
-    /// <summary>Tests cloud_shift: deploy a filtered card from 手札 with a discount, then self-破壊.</summary>
-    public class CloudShift : Base
+    /// <summary>手札 からフィルタ一致カードを割引付きでデプロイし、発動元を自壊させる効果。</summary>
+    public class CloudShift
     {
         [Fact]
         public void DeploysFromHand_AppliesDiscount_AndSelfDestructs()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState(p1Budget: 5000);
             state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
-            var sup = new DeployedSupport { InstanceID = "sup", CardID = "TST-PLAT", FaceUp = true };
+            var sup = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0201", FaceUp = true };
             state.Player1Field.Support[0] = sup;
 
-            var effect = _registry.Build(CustomEffects.CloudShift, Meta("""{"faction":"SHE","deploy_discount":300}"""))!;
-            effect(MakeOpContext(state, playerNum: 1, supSource: sup,
-                choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }));
+            new CustomEffectRegistry().Build(CustomEffects.CloudShift, Meta("""{"faction":"SHE","deploy_discount":300}"""))!(
+                MakeOpContext(state, cc, playerNum: 1, supSource: sup,
+                    choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }));
 
             state.GetBudget(1).Should().Be(5300);
             state.PendingSlotSelects.Should().ContainSingle();
-            state.Player1Field.Support.Select(s => s.InstanceID).Should().NotContain("sup");
+            state.Player1Field.Support.Select(s => s.InstanceID).Should().NotContain("sup_1");
         }
     }
 
-    /// <summary>Tests redirect_attack validating the redirect target is the 相手 の フロントエンド.</summary>
-    public class RedirectAttack : Base
+    /// <summary>再ダメージ先が 相手 の フロントエンド であることを検証する効果。</summary>
+    public class RedirectAttack
     {
         [Fact]
         public void Validates_WhenTargetIsOpponentFrontend()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState();
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe", faceUp: true);
 
-            var effect = _registry.Build(CustomEffects.RedirectAttack, null)!;
-            var act = () => effect(MakeOpContext(state, playerNum: 1,
-                choiceData: new Dictionary<string, object> { ["instanceId"] = "fe" }));
+            var act = () => new CustomEffectRegistry().Build(CustomEffects.RedirectAttack, null)!(
+                MakeOpContext(state, cc, playerNum: 1,
+                    choiceData: new Dictionary<string, object> { ["instanceId"] = "fe" }));
 
             act.Should().NotThrow();
         }
@@ -388,13 +422,14 @@ public class CustomEffectTests
         [Fact]
         public void Throws_WhenTargetNotOpponentFrontend()
         {
-            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var state = TestFactory.MakeGameState();
             state.Player2Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be", faceUp: true);
 
-            var effect = _registry.Build(CustomEffects.RedirectAttack, null)!;
-            var act = () => effect(MakeOpContext(state, playerNum: 1,
-                choiceData: new Dictionary<string, object> { ["instanceId"] = "be" }));
+            var act = () => new CustomEffectRegistry().Build(CustomEffects.RedirectAttack, null)!(
+                MakeOpContext(state, cc, playerNum: 1,
+                    choiceData: new Dictionary<string, object> { ["instanceId"] = "be" }));
 
             act.Should().Throw<GameRuleException>().WithMessage("*frontend*");
         }

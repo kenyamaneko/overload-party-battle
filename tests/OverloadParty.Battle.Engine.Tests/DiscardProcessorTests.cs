@@ -143,17 +143,45 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>Tests for DiscardProcessor.Process — the discarded cards leave the 手札.</summary>
-    public class HandReduction : Base
+    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
+
+    /// <summary>手札調整に使うコンピュート系リソースを登録したキャッシュを作る。</summary>
+    /// <returns>TST-0001 を登録したキャッシュ。</returns>
+    private static TestCardCache DiscardCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 1));
+        return cc;
+    }
+
+    /// <summary>指定インスタンス ID 群の手札調整リクエストを作る。</summary>
+    /// <param name="ids">破棄するインスタンス ID 群。</param>
+    /// <returns>手札調整リクエスト。</returns>
+    private static DiscardHandRequest Req(params string[] ids) => new() { CardInstanceIDs = [.. ids] };
+
+    /// <summary>指定枚数の手札を作る。</summary>
+    /// <param name="count">手札枚数。</param>
+    /// <returns>手札リスト。</returns>
+    private static List<UndeployedCard> Hand(int count) =>
+        [.. Enumerable.Range(0, count).Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-0001" })];
+
+    /// <summary>指定枚数のリポジトリを作る。</summary>
+    /// <param name="count">リポジトリ枚数。</param>
+    /// <returns>リポジトリリスト。</returns>
+    private static List<UndeployedCard> Repo(int count) =>
+        [.. Enumerable.Range(0, count).Select(i => new UndeployedCard { InstanceID = $"r_{i}", CardID = "TST-0001" })];
+
+    /// <summary>破棄したカードが手札から取り除かれ、イベントに ID が載ることを検証する。</summary>
+    public class HandReduction
     {
         [Fact]
         public void RemovesDiscardedCardsFromHand()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
-            state.Player1Hand = MakeHand(8);
-            state.Player2Repository = MakeRepo(5);
+            state.Player1Hand = Hand(8);
+            state.Player2Repository = Repo(5);
 
-            DiscardProcessor.Process(state, _game, 1, MakeReq("h_6", "h_7"), _cc, new EffectRegistry());
+            DiscardProcessor.Process(state, TestFactory.MakeGame(), 1, Req("h_6", "h_7"), DiscardCc(), new EffectRegistry());
 
             state.Player1Hand.Should().HaveCount(6);
             state.Player1Hand.Should().NotContain(c => c.InstanceID == "h_6" || c.InstanceID == "h_7");
@@ -163,11 +191,10 @@ public class DiscardProcessorTests
         public void EventIncludesDiscardedIds()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
-            state.Player1Hand = MakeHand(8);
-            state.Player2Repository = MakeRepo(5);
+            state.Player1Hand = Hand(8);
+            state.Player2Repository = Repo(5);
 
-            var result = DiscardProcessor.Process(
-                state, _game, 1, MakeReq("h_6", "h_7"), _cc, new EffectRegistry());
+            var result = DiscardProcessor.Process(state, TestFactory.MakeGame(), 1, Req("h_6", "h_7"), DiscardCc(), new EffectRegistry());
 
             var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
             discardEvent.EventData.Should().BeOfType<DiscardHandEventData>()
@@ -175,19 +202,18 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>Tests for DiscardProcessor.Process — ローンチ失敗 when the discarding player never operated.</summary>
-    public class LaunchFailure : Base
+    /// <summary>稼働実績のないプレイヤーが手札調整に至るとローンチ失敗で敗北することを検証する。</summary>
+    public class LaunchFailure
     {
         [Fact]
         public void GameOver_WhenDiscardingPlayerNeverOperated()
         {
-            // Turn 5 → personalTurn = (5+1)/2 = 3, which >= LaunchFailureTurn=3
+            // ターン 5 → personalTurn = (5+1)/2 = 3 で LaunchFailureTurn=3 に到達
             var state = TestFactory.MakeGameState(turn: 5, phase: Phase.End, activePlayer: 1);
-            state.Player1Hand = MakeHand(8);
+            state.Player1Hand = Hand(8);
             state.SetHasOperated(1, false);
 
-            var result = DiscardProcessor.Process(
-                state, _game, 1, MakeReq("h_6", "h_7"), _cc, new EffectRegistry());
+            var result = DiscardProcessor.Process(state, TestFactory.MakeGame(), 1, Req("h_6", "h_7"), DiscardCc(), new EffectRegistry());
 
             result.GameOver.Should().NotBeNull();
             result.GameOver!.WinnerNum.Should().Be(2);

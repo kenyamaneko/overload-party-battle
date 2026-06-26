@@ -219,20 +219,43 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests that the monetize event carries the total distributed インサイト amount.</summary>
-    public class MonetizeEvent : Base
+    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
+
+    /// <summary>バックエンド収益化に使うコンピュート系リソース 2 種を持つキャッシュを作る。</summary>
+    /// <returns>TST-0001 (TP=600) / TST-0005 (TP=400) を登録したキャッシュ。</returns>
+    private static TestCardCache ComputeCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", tp: 400, name: "SmallCompute"));
+        return cc;
+    }
+
+    /// <summary>配分群から収益化リクエストを作る。</summary>
+    /// <param name="dists">収益化の配分。</param>
+    /// <returns>収益化リクエスト。</returns>
+    private static MonetizeRequest Req(params MonetizeDistribution[] dists) => new() { Distributions = [.. dists] };
+
+    /// <summary>インスタンスと量から 1 件の収益化配分を作る。</summary>
+    /// <param name="id">バックエンドリソースのインスタンス ID。</param>
+    /// <param name="amount">配分する インサイト 量。</param>
+    /// <returns>収益化配分。</returns>
+    private static MonetizeDistribution Dist(string id, long amount) => new() { InstanceID = id, Amount = amount };
+
+    /// <summary>収益化イベントが配分した インサイト 合計を載せることを検証する。</summary>
+    public class MonetizeEvent
     {
         [Fact]
         public void Process_EventIncludesTotalAmount()
         {
+            var cc = ComputeCc();
             var state = TestFactory.MakeGameState(turn: 2);
             state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
             state.Player1Field.Backend[1] = TestFactory.MakeResource(
-                cardId: "TEST-0002", instanceId: "be_2", faceUp: true, maxTP: 400, currentTP: 400);
+                cardId: "TST-0005", instanceId: "be_2", faceUp: true, maxTP: 400, currentTP: 400);
             state.SetInsightPool(1, 800);
 
-            var result = MonetizeProcessor.Process(
-                state, _game, 1, MakeReq(Dist("be_1", 300), Dist("be_2", 150)), _cc);
+            var result = MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 300), Dist("be_2", 150)), cc);
 
             var evt = result.Events.First(e => e.EventType == ActionTypes.Monetize);
             evt.EventData.Should().BeOfType<MonetizeEventData>()
@@ -240,19 +263,20 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests that monetizing an Elastic resource accrues its エラスティックボーナス.</summary>
-    public class ElasticMonetize : Base
+    /// <summary>Elastic リソースの収益化で エラスティックボーナス が加算されることを検証する。</summary>
+    public class ElasticMonetize
     {
         [Fact]
         public void Process_AppliesElasticBonus()
         {
-            _cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0003"));
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0003"));
             var state = TestFactory.MakeGameState(turn: 2);
             var res = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "be_1", faceUp: true);
             state.Player1Field.Backend[0] = res;
             state.SetInsightPool(1, 500);
 
-            MonetizeProcessor.Process(state, _game, 1, MakeReq(Dist("be_1", 100)), _cc);
+            MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 100)), cc);
 
             res.ElasticBonus.Should().BeGreaterThan(0, "Elastic リソースの収益化で エラスティックボーナス が加算される");
         }

@@ -649,64 +649,79 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attacker records the turn it last attacked.</summary>
-    public class AttackerState : Base
+    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
+
+    /// <summary>標準的なコンピュート系リソース 1 種を持つカードキャッシュを作る。</summary>
+    /// <returns>TST-0001 (TP=600 / AV=1400 / SLA=400) を登録したキャッシュ。</returns>
+    private static TestCardCache StandardCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400));
+        return cc;
+    }
+
+    /// <summary>攻撃リクエストを作る。</summary>
+    /// <param name="attacker">攻撃側インスタンス ID。</param>
+    /// <param name="target">対象インスタンス ID。</param>
+    /// <returns>攻撃リクエスト。</returns>
+    private static AttackRequest Atk(string attacker, string target) =>
+        new() { AttackerInstanceID = attacker, TargetInstanceID = target };
+
+    /// <summary>攻撃者が最後に攻撃したターンを記録することを検証する。</summary>
+    public class AttackerState
     {
         [Fact]
         public void RecordsLastAttackTurn()
         {
+            var cc = StandardCc();
             var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
 
-            var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
-            state.Player1Field.Frontend[0] = attacker;
-
-            var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
-            state.Player2Field.Frontend[0] = defender;
-
-            AttackProcessor.Process(state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
+            var attacker = state.Player1Field.Frontend[0]!;
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
 
             attacker.LastAttackTurn.Should().Be(5);
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attack_damage_reduction buff lowers applied damage.</summary>
-    public class DamageReduction : Base
+    /// <summary>attack_damage_reduction バフが適用 ダメージ を軽減することを検証する。</summary>
+    public class DamageReduction
     {
-        [Fact]
-        public void AttackDamageReductionBuffReducesDamage()
+        // 攻撃 600 に対し軽減量を 200 / 600 (同値) / 800 (超過) で振り、0 で頭打ちになることを確認する。
+        [Theory]
+        [InlineData(200, 400)]
+        [InlineData(600, 0)]
+        [InlineData(800, 0)]
+        public void AttackDamageReductionBuffClampsDamage(long reduction, long expectedDamage)
         {
+            var cc = StandardCc();
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
-
-            var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
-            state.Player1Field.Frontend[0] = attacker;
-
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
             var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
             defender.TemporaryEffects.Add(new TemporaryEffect
             {
                 EffectType = BuffTypes.AttackDamageReduction,
-                Value = 200,
+                Value = reduction,
             });
             state.Player2Field.Frontend[0] = defender;
 
-            AttackProcessor.Process(state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
 
-            defender.Damage.Should().Be(400, "600 の攻撃が軽減 200 で 400 になる");
+            defender.Damage.Should().Be(expectedDamage);
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — OnHit trigger on the attacked defender.</summary>
-    public class OnHitEffect : Base
+    /// <summary>攻撃を受けた防御者の OnHit 誘発効果が発動することを検証する。</summary>
+    public class OnHitEffect
     {
         [Fact]
         public void FiresOnDefenderWhenAttacked()
         {
+            var cc = StandardCc();
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
-
-            var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
-            state.Player1Field.Frontend[0] = attacker;
-
-            var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
-            state.Player2Field.Frontend[0] = defender;
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
 
             bool hitHandlerCalled = false;
             var effects = new TestEffectRegistry();
@@ -719,66 +734,62 @@ public class AttackProcessorTests
                 };
             });
 
-            var result = AttackProcessor.Process(state, _game, 1, MakeReq("atk_1", "def_1"), _cc, effects);
+            var result = AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, effects);
 
             hitHandlerCalled.Should().BeTrue("攻撃を受けた防御者の OnHit 誘発効果が発動する");
             result.Events.Should().Contain(e => e.EventType == "on_hit_triggered");
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — OnFieldChange fires after a 破壊 changes the field.</summary>
-    public class OnFieldChangeAfterDestroy : Base
+    /// <summary>破壊で盤面が変化した後に OnFieldChange が発動することを検証する。</summary>
+    public class OnFieldChangeAfterDestroy
     {
         [Fact]
         public void FiresAfterDefenderDestroyed()
         {
+            var cc = StandardCc();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
-
-            var attacker = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
-            state.Player1Field.Frontend[0] = attacker;
-
-            var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
-            state.Player2Field.Frontend[0] = defender;
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
 
             int fieldChangeFires = 0;
             var effects = new TestEffectRegistry();
-            effects.Register("TEST-0002", TriggerType.OnFieldChange, _ => { fieldChangeFires++; return new EffectResult(); });
+            effects.Register("TST-0005", TriggerType.OnFieldChange, _ => { fieldChangeFires++; return new EffectResult(); });
 
-            AttackProcessor.Process(state, _game, 1, MakeReq("atk_1", "def_1"), _cc, effects);
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, effects);
 
             fieldChangeFires.Should().Be(1, "リソース破壊で盤面が変化し OnFieldChange が発動する");
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — a target_shield protected defender cannot be attacked.</summary>
-    public class TargetShieldProtection : Base
+    /// <summary>target_shield で保護された防御者を攻撃できないことを検証する。</summary>
+    public class TargetShieldProtection
     {
         [Fact]
         public void Process_ShieldedDefender_Throws()
         {
-            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
-
-            var shield = TestFactory.AttachmentCard(cardId: "TST-SHIELD");
+            var cc = StandardCc();
+            var shield = TestFactory.AttachmentCard(cardId: "TST-0301");
             shield.Effects = [new EffectDef { Trigger = TriggerTypes.Passive, Custom = CustomEffects.TargetShield }];
-            _cc.Add(shield);
+            cc.Add(shield);
 
-            var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
-            state.Player1Field.Frontend[0] = attacker;
-
-            var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
-            state.Player2Field.Frontend[0] = defender;
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
             // target_shield は同フィールドに他の表向きフロントエンドが居るときだけ機能する
             state.Player2Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "wall_1", faceUp: true);
             state.Player2Field.Support[0] = new DeployedSupport
             {
-                InstanceID = "shield_1",
-                CardID = "TST-SHIELD",
+                InstanceID = "sup_1",
+                CardID = "TST-0301",
                 TargetInstanceID = "def_1",
                 FaceUp = true,
             };
 
             var act = () => AttackProcessor.Process(
-                state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
+                state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
 
             act.Should().Throw<GameRuleException>().WithMessage("*target_shield*");
         }

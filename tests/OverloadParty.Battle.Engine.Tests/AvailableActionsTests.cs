@@ -1152,7 +1152,7 @@ public class AvailableActionsTests
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
-            var shield = TestFactory.AttachmentCard(cardId: "TST-SHIELD");
+            var shield = TestFactory.AttachmentCard(cardId: "TST-0301");
             shield.Effects = [new EffectDef { Trigger = TriggerTypes.Passive, Custom = CustomEffects.TargetShield }];
             cc.Add(shield);
 
@@ -1166,8 +1166,8 @@ public class AvailableActionsTests
             oppField.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "wall");
             oppField.Support[0] = new DeployedSupport
             {
-                InstanceID = "shield_1",
-                CardID = "TST-SHIELD",
+                InstanceID = "sup_1",
+                CardID = "TST-0301",
                 TargetInstanceID = "shielded",
                 FaceUp = true,
             };
@@ -1350,7 +1350,6 @@ public class AvailableActionsTests
         [Fact]
         public void Monetize_DormantBackendComputeExcluded()
         {
-            // 休止リソースは収益化できない
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
 
@@ -1737,15 +1736,15 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests enumeration of ResolvePendingChoice actions while a choice is pending.</summary>
-    public class ResolvePendingChoiceEnumeration : Base
+    /// <summary>選択待ち中の ResolvePendingChoice アクション列挙を検証する。</summary>
+    public class ResolvePendingChoiceEnumeration
     {
         private static PendingEffectChoice Pending(string choiceKind, params string[] candidates) =>
             new()
             {
                 ChooserPlayerNum = 1,
                 OwnerPlayerNum = 1,
-                EffectCardId = "TST-EFFECT",
+                EffectCardId = "TST-0001",
                 EffectInstanceId = "eff_inst",
                 Trigger = TriggerType.OnDestroy,
                 ChoiceKey = "instanceId",
@@ -1779,7 +1778,7 @@ public class AvailableActionsTests
                 state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             var action = actions.Should().ContainSingle().Subject;
-            action.CardID.Should().Be("TST-EFFECT");
+            action.CardID.Should().Be("TST-0001");
             action.ValidTargets.Should().BeEquivalentTo(["target_1"]);
         }
 

@@ -7,33 +7,26 @@ namespace OverloadParty.Battle.Tests.Effects;
 
 public class FlowOpTests
 {
-    /// <summary>Shared setup for flow-op tests (card cache, game, and op-context builder).</summary>
-    public abstract class Base
+    /// <summary>対象を任意指定して op コンテキストを組み立てる。</summary>
+    /// <param name="state">操作対象のゲーム状態。</param>
+    /// <param name="target">破壊を免れさせる対象リソース。</param>
+    /// <returns>プレイヤー 1 視点の op コンテキスト。</returns>
+    private static OpContext MakeOpContext(BattleGameState state, DeployedResource? target = null)
     {
-        protected readonly TestCardCache _cc = new();
-        protected readonly Game _game = TestFactory.MakeGame();
-
-        /// <summary>Builds an op context with an optional target resource.</summary>
-        /// <param name="state">The game state to operate on.</param>
-        /// <param name="target">The target resource for ops that protect a chosen card.</param>
-        /// <returns>An op context for player 1.</returns>
-        protected OpContext MakeOpContext(BattleGameState state, DeployedResource? target = null)
+        var ctx = new EffectContext
         {
-            var ctx = new EffectContext
-            {
-                State = state,
-                Game = _game,
-                PlayerNum = 1,
-                Target = target,
-                CardCache = _cc,
-                Effects = new EffectRegistry(),
-            };
-            return new OpContext(ctx);
-        }
+            State = state,
+            Game = TestFactory.MakeGame(),
+            PlayerNum = 1,
+            Target = target,
+            CardCache = new TestCardCache(),
+            Effects = new EffectRegistry(),
+        };
+        return new OpContext(ctx);
     }
 
-    /// <summary>Tests for the op that cancels the triggering アクション (リアクティブの効果に使う).</summary>
-    public class CancelAction : Base
+    /// <summary>トリガーとなったアクションをキャンセルする op (リアクティブの効果に使う)。</summary>
+    public class CancelAction
     {
         [Fact]
         public void SetCancelActionOp_SetsShouldCancelAction()
@@ -47,19 +40,23 @@ public class FlowOpTests
         }
     }
 
-    /// <summary>Tests for the op that prevents 破壊 by leaving the target at a surviving 可用性.</summary>
-    public class SurviveDestruction : Base
+    /// <summary>破壊を免れさせ、対象を surviveAV の 可用性 で残す op。</summary>
+    public class SurviveDestruction
     {
-        [Fact]
-        public void SurviveDestructionOp_LeavesTargetAtSurviveAvailability()
+        // surviveAV を MaxAV 未満 / 等しい / 超過 で振り、実効 可用性 = min(surviveAV, MaxAV) になることを確認する。
+        [Theory]
+        [InlineData(1000, 200, 200)]
+        [InlineData(1000, 1000, 1000)]
+        [InlineData(100, 500, 100)]
+        public void SurviveDestructionOp_LeavesTargetAtClampedAvailability(long maxAV, long surviveAV, long expectedEffectiveAV)
         {
             var state = TestFactory.MakeGameState();
-            var target = TestFactory.MakeResource(instanceId: "t", maxAV: 1000, damage: 1000);
+            var target = TestFactory.MakeResource(instanceId: "t", maxAV: maxAV, damage: maxAV);
 
-            var op = new SurviveDestructionOp(surviveAV: 200);
-            op.Execute(MakeOpContext(state, target: target));
+            var op = new SurviveDestructionOp(surviveAV);
+            op.Execute(MakeOpContext(state, target));
 
-            target.EffectiveAV.Should().Be(200, "破壊を免れ surviveAV の 可用性 で残る");
+            target.EffectiveAV.Should().Be(expectedEffectiveAV);
         }
 
         [Fact]
@@ -68,23 +65,10 @@ public class FlowOpTests
             var state = TestFactory.MakeGameState();
             var target = TestFactory.MakeResource(instanceId: "t", maxAV: 1000, damage: 1000);
 
-            var op = new SurviveDestructionOp(surviveAV: 200);
-            var opCtx = MakeOpContext(state, target: target);
-            op.Execute(opCtx);
+            var opCtx = MakeOpContext(state, target);
+            new SurviveDestructionOp(200).Execute(opCtx);
 
             opCtx.Result.ShouldCancelAction.Should().BeTrue();
-        }
-
-        [Fact]
-        public void SurviveDestructionOp_ClampsDamageAtZero_WhenSurviveAvExceedsMaxAv()
-        {
-            var state = TestFactory.MakeGameState();
-            var target = TestFactory.MakeResource(instanceId: "t", maxAV: 100, damage: 50);
-
-            var op = new SurviveDestructionOp(surviveAV: 500);
-            op.Execute(MakeOpContext(state, target: target));
-
-            target.Damage.Should().Be(0);
         }
 
         [Fact]
@@ -92,8 +76,7 @@ public class FlowOpTests
         {
             var state = TestFactory.MakeGameState();
 
-            var op = new SurviveDestructionOp(surviveAV: 200);
-            var act = () => op.Execute(MakeOpContext(state));
+            var act = () => new SurviveDestructionOp(200).Execute(MakeOpContext(state));
 
             act.Should().Throw<GameRuleException>();
         }

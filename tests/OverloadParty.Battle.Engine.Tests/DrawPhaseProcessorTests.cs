@@ -103,47 +103,86 @@ public class DrawPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests that デプロイ時効果 fire when the deploy countdown completes.</summary>
-    public class DeployCompletionTriggers : Base
+    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
+
+    /// <summary>ドローフェーズ用にコンピュート系リソースを登録したキャッシュを作る。</summary>
+    /// <returns>TST-0001 を登録したキャッシュ。</returns>
+    private static TestCardCache DrawCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        return cc;
+    }
+
+    /// <summary>デプロイのカウントダウン完了でデプロイ時効果が発動することを検証する。</summary>
+    public class DeployCompletionTriggers
     {
         [Fact]
-        public void Resource_FiresOnDeploy_WhenCountdownReachesZero()
+        public void Resource_OneTurnDeploy_FlipsAndFiresAfterOneDraw()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
-            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 1);
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 1);
+            state.Player1Field.Frontend[0] = res;
 
             bool fired = false;
             var effects = new TestEffectRegistry();
             effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
 
-            DrawPhaseProcessor.Process(state, _game, _cc, effects);
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
 
-            fired.Should().BeTrue("カウントダウン完了で稼働したリソースのデプロイ時効果が発動する");
+            res.DeployingTurnsLeft.Should().Be(0);
+            res.FaceUp.Should().BeTrue();
+            fired.Should().BeTrue("1 ターンデプロイは 1 回のドローで稼働しデプロイ時効果が発動する");
         }
 
         [Fact]
-        public void Resource_DoesNotFireOnDeploy_WhileStillDeploying()
+        public void Resource_TwoTurnDeploy_StaysDeployingAfterFirstDraw()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
-            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 2);
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 2);
+            state.Player1Field.Frontend[0] = res;
 
             bool fired = false;
             var effects = new TestEffectRegistry();
             effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
 
-            DrawPhaseProcessor.Process(state, _game, _cc, effects);
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
 
-            fired.Should().BeFalse("デプロイ完了前はデプロイ時効果を発動しない");
+            res.DeployingTurnsLeft.Should().Be(1);
+            res.FaceUp.Should().BeFalse();
+            fired.Should().BeFalse("2 ターンデプロイは 1 回目のドローでは稼働せず発動しない");
+        }
+
+        [Fact]
+        public void Resource_TwoTurnDeploy_FlipsAndFiresAfterSecondDraw()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "TST-0001" });
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 2);
+            state.Player1Field.Frontend[0] = res;
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
+            // 次のターンのドローフェーズを模して再度ドローさせる
+            state.CurrentPhase = Phase.Draw;
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
+
+            res.DeployingTurnsLeft.Should().Be(0);
+            res.FaceUp.Should().BeTrue();
+            fired.Should().BeTrue("2 ターンデプロイは 2 回目のドローで稼働しデプロイ時効果が発動する");
         }
 
         [Fact]
         public void Support_FiresOnDeploy_WhenCountdownReachesZero()
         {
-            _cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            var cc = DrawCc();
+            cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
             state.Player1Field.Support[0] = new DeployedSupport
@@ -158,14 +197,14 @@ public class DrawPhaseProcessorTests
             var effects = new TestEffectRegistry();
             effects.Register("TST-0200", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
 
-            DrawPhaseProcessor.Process(state, _game, _cc, effects);
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), cc, effects);
 
             fired.Should().BeTrue("カウントダウン完了で稼働したサポートカードのデプロイ時効果が発動する");
         }
     }
 
-    /// <summary>Tests that win conditions are evaluated after the draw.</summary>
-    public class WinCheckAfterDraw : Base
+    /// <summary>ドロー後に勝敗判定が評価されることを検証する。</summary>
+    public class WinCheckAfterDraw
     {
         [Fact]
         public void ReturnsGameOver_WhenWinConditionMetAfterDraw()
@@ -173,7 +212,7 @@ public class DrawPhaseProcessorTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1, p1Budget: 0);
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
 
-            var result = DrawPhaseProcessor.Process(state, _game, _cc, new EffectRegistry());
+            var result = DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), new EffectRegistry());
 
             result.Should().NotBeNull();
             result!.WinnerNum.Should().Be(2);

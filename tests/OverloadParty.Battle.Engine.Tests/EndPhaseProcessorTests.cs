@@ -488,21 +488,42 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests that the end phase fires エンドフェーズ効果 / パッシブ効果 on face-up cards.</summary>
-    public class EndPhaseTriggers : Base
+    // ─── 以下 #129 追加分 (継承を使わず nested + static ヘルパで構成) ───
+
+    /// <summary>エンドフェーズ用にコンピュート系リソースを登録したキャッシュを作る。</summary>
+    /// <returns>TST-0001 を登録したキャッシュ。</returns>
+    private static TestCardCache EndPhaseCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        return cc;
+    }
+
+    /// <summary>指定プレイヤーのリポジトリにカードを 2 枚補充する。</summary>
+    /// <param name="state">対象のゲーム状態。</param>
+    /// <param name="playerNum">補充先のプレイヤー番号。</param>
+    private static void AddRepo(BattleGameState state, long playerNum)
+    {
+        var repo = state.GetRepository(playerNum);
+        repo.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+        repo.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "TST-0001" });
+    }
+
+    /// <summary>エンドフェーズに エンドフェーズ効果 / パッシブ効果 が発動することを検証する。</summary>
+    public class EndPhaseTriggers
     {
         [Fact]
         public void FiresOnEndPhaseHandler()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
-            AddRepoCards(state, 2);
+            AddRepo(state, 2);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
 
             int fired = 0;
             var effects = new TestEffectRegistry();
             effects.Register("TST-0001", TriggerType.OnEndPhase, _ => { fired++; return new EffectResult(); });
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
 
             fired.Should().Be(1, "エンドフェーズに エンドフェーズ効果 が発動する");
         }
@@ -511,14 +532,14 @@ public class EndPhaseProcessorTests
         public void FiresPassiveHandlerAtEndPhase()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
-            AddRepoCards(state, 2);
+            AddRepo(state, 2);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
 
             int fired = 0;
             var effects = new TestEffectRegistry();
             effects.Register("TST-0001", TriggerType.Passive, _ => { fired++; return new EffectResult(); });
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
 
             fired.Should().Be(1, "エンドフェーズに パッシブ効果 が発動する");
         }
