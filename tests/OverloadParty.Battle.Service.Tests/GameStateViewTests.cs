@@ -198,10 +198,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>deck_top 選択時、resolve アクションがチューザーのビューにのみ具象化カード付きで現れることを検証する。</summary>
+    /// <summary>deck_top 選択時、resolve アクションが選択するプレイヤーのビューにのみ具象化カード付きで現れることを検証する。</summary>
     public class DeckTopChoiceReveal : Base
     {
-        /// <summary>チューザー (Player1) のデッキ上端 2 枚を候補にした deck_top 選択待ちを作る。</summary>
+        /// <summary>選択するプレイヤー (Player1) のデッキ上端 2 枚を候補にした deck_top 選択待ちを作る。</summary>
         /// <returns>選択待ち情報。</returns>
         private static PendingEffectChoice MakeDeckPending() => new()
         {

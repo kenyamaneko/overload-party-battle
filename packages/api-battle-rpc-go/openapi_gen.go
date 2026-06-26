@@ -474,7 +474,7 @@ type ResolvePendingChoiceAction struct {
 	// EffectCardId 発動中の効果を持つカードの ID
 	EffectCardId *string `json:"effectCardId,omitempty"`
 
-	// RevealedDeckTop deck_top 選択でチューザーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
+	// RevealedDeckTop deck_top 選択で選択するプレイヤーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
 	RevealedDeckTop *[]UndeployedCard `json:"revealedDeckTop,omitempty"`
 	Type            string            `json:"type"`
 }

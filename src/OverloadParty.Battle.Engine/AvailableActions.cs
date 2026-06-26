@@ -52,7 +52,7 @@ public class AvailableAction
     /// <summary>Selectable options for resolve_pending_choice actions.</summary>
     public List<ChoiceOption>? ChoiceOptions { get; set; }
 
-    /// <summary>deck_top 選択でチューザーに開示するデッキ上端カード。各 InstanceID が ChoiceOption.Key に対応する。</summary>
+    /// <summary>deck_top 選択で選択するプレイヤーに開示するデッキ上端カード。各 InstanceID が ChoiceOption.Key に対応する。</summary>
     public List<UndeployedCard>? RevealedDeckTop { get; set; }
 
     /// <summary>The initiative kind for use_initiative actions (routine / special).</summary>
@@ -534,7 +534,7 @@ public static class AvailableActions
     }
 
     /// <summary>
-    /// deck_top 選択でチューザーに開示するデッキ上端カードを候補順に返します。deck_top 以外では null。
+    /// deck_top 選択で選択するプレイヤーに開示するデッキ上端カードを候補順に返します。deck_top 以外では null。
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
     /// <param name="pending">保留中の choice 情報。</param>

@@ -852,7 +852,7 @@ namespace OverloadParty.GameState
         public System.Collections.Generic.List<ChoiceOption> ChoiceOptions { get; set; } = default!;
 
         /// <summary>
-        /// deck_top 選択でチューザーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
+        /// deck_top 選択で選択するプレイヤーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("revealedDeckTop")]
         public System.Collections.Generic.List<UndeployedCard> RevealedDeckTop { get; set; } = default!;

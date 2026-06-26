@@ -1111,7 +1111,7 @@ components:
                 $ref: "#/components/schemas/ChoiceOption"
             revealedDeckTop:
               type: array
-              description: deck_top 選択でチューザーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
+              description: deck_top 選択で選択するプレイヤーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
               items:
                 $ref: "#/components/schemas/UndeployedCard"
 

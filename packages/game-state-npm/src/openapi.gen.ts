@@ -654,7 +654,7 @@ export interface components {
             /** @description 選択対象の種別 (hand_card / field_target / deck_top)。 */
             choiceKind?: string;
             choiceOptions?: components["schemas"]["ChoiceOption"][];
-            /** @description deck_top 選択でチューザーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。 */
+            /** @description deck_top 選択で選択するプレイヤーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。 */
             revealedDeckTop?: components["schemas"]["UndeployedCard"][];
         } & {
             /**
