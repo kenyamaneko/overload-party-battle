@@ -61,6 +61,9 @@ game_phases:
       single_damage: 80
       aoe_damage: 85
 
+branch_choices:
+  SL-0004: autopilot
+
 deploy:
   priorities:
     - card_type: Compute
@@ -71,9 +74,6 @@ deploy:
       priority: 30
     - card_type: Attachment
       priority: 60
-
-  choices:
-    SL-0004: autopilot
 
   zone_preferences:
     Compute: [frontend, backend]

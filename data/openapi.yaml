@@ -528,7 +528,7 @@ components:
           x-go-name: EffectInstanceId
         choiceKind:
           type: string
-          description: 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。
+          description: 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
 
     PlayerSummary:
       type: object
@@ -989,10 +989,6 @@ components:
               type: array
               items:
                 type: string
-            choiceOptions:
-              type: array
-              items:
-                type: string
             effectTargetType:
               type: string
 
@@ -1095,24 +1091,38 @@ components:
               type: string
 
     ResolvePendingChoiceAction:
-      description: 効果処理中の選択候補 1 件。chosen_id は cardID または validTargets[0] から取る。
+      description: 効果処理中の選択を解決する 1 アクション。chosenId は choiceOptions[].key から選ぶ。
       x-battle-csharp-package: state
       allOf:
         - $ref: "#/components/schemas/AvailableAction"
         - type: object
           properties:
-            sourceInstanceID:
+            effectCardId:
               type: string
-              x-go-name: SourceInstanceID
-              x-csharp-name: SourceInstanceID
-            cardID:
+              description: 発動中の効果を持つカードの ID
+              x-go-name: EffectCardId
+              x-csharp-name: EffectCardId
+            choiceKind:
               type: string
-              x-go-name: CardID
-              x-csharp-name: CardID
-            validTargets:
+              description: 選択対象の種別 (hand_card / field_target / deck_top)。
+            choiceOptions:
               type: array
               items:
-                type: string
+                $ref: "#/components/schemas/ChoiceOption"
+            revealedDeckTop:
+              type: array
+              description: deck_top 選択で選択するプレイヤーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
+              items:
+                $ref: "#/components/schemas/UndeployedCard"
+
+    ChoiceOption:
+      type: object
+      description: 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード・インスタンス ID)。
+      x-battle-csharp-package: state
+      required: [key]
+      properties:
+        key:
+          type: string
 
     # ─── Event payloads (camelCase wire, per event_schemas.yaml) ─────────
     # 各 EventType 固有の payload。`ActionEvent.event_data` の中身として serialize される。

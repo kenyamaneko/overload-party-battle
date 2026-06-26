@@ -67,12 +67,12 @@ public class NpcAiTests
                   priority: 40
                 - card_type: Platform
                   priority: 30
-              choices:
-                TST-0007: use
               zone_preferences:
                 Compute: [frontend, backend]
                 DataResource: [backend]
                 Platform: [support]
+            branch_choices:
+              TST-0007: use
             effect_priorities:
               budget_gain:
                 priority: 90
@@ -376,11 +376,19 @@ public class NpcAiTests
             EffectInstanceId = "inst_1",
             ChoiceKind = ChoiceKinds.HandCard,
         };
-        // resolve_pending_choice の variant: hand_card 種別は CardID に候補 ID を載せる。
+        // resolve_pending_choice は 1 件で、選択肢を ChoiceOptions に持つ。
         var available = new List<GD.AvailableAction>
         {
-            new GD.ResolvePendingChoiceAction { SourceInstanceID = "inst_1", CardID = "TST-0001" },
-            new GD.ResolvePendingChoiceAction { SourceInstanceID = "inst_1", CardID = "TST-0002" },
+            new GD.ResolvePendingChoiceAction
+            {
+                EffectCardId = "TST-0002",
+                ChoiceKind = ChoiceKinds.HandCard,
+                ChoiceOptions =
+                [
+                    new GD.ChoiceOption { Key = "TST-0001" },
+                    new GD.ChoiceOption { Key = "TST-0002" },
+                ],
+            },
         };
         var state = BuildState(pendingEffectChoice: pending, available: available);
 
@@ -533,50 +541,74 @@ public class NpcAiTests
     //  デプロイ: choice 解決
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
-    public void Deploy_Choice_UsesConfigValue()
+    /// <summary>NPC が config の分岐回答に基づいて分岐選択を解決する振る舞いを検証する。</summary>
+    public class BranchChoiceResolution
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0007", tp: 400, av: 1000));
-        var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_0006", CardID = "TST-0007" } };
-        var available = new List<GD.AvailableAction>
+        /// <summary>config に分岐回答があるとき、その値で分岐選択を解決することを検証する。</summary>
+        [Fact]
+        public void UsesConfiguredChoice()
         {
-            new GD.PlayCardAction
+            var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
+            var pending = new GD.PendingEffectChoiceView
             {
-                HandInstanceID = "h_0006", CardID = "TST-0007",
-                ValidZones = new() { "frontend_0" }, ChoiceOptions = new() { "use", "reserve" },
-            },
-        };
-        var state = BuildState(hand: hand, available: available);
+                ChooserPlayerNum = 1,
+                EffectCardId = "TST-0007",
+                EffectInstanceId = "inst_1",
+                ChoiceKind = ChoiceKinds.Branch,
+            };
+            // config が "use" を指すので、先頭の "reserve" でなく config 値を選ぶ。
+            var available = new List<GD.AvailableAction>
+            {
+                new GD.ResolvePendingChoiceAction
+                {
+                    EffectCardId = "TST-0007",
+                    ChoiceKind = ChoiceKinds.Branch,
+                    ChoiceOptions =
+                    [
+                        new GD.ChoiceOption { Key = "reserve" },
+                        new GD.ChoiceOption { Key = "use" },
+                    ],
+                },
+            };
+            var state = BuildState(pendingEffectChoice: pending, available: available);
 
-        var actions = ai.DecideMainPhaseActions(state);
-        var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
+            var action = ai.DecidePendingEffectChoice(state);
 
-        var req = (PlayCardRequest)deploy.Data;
-        req.ChoiceData.Should().NotBeNull();
-        req.ChoiceData!["option"].Should().Be("use");
-    }
+            ((ResolvePendingChoiceRequest)action!.Data).ChosenId.Should().Be("use");
+        }
 
-    [Fact]
-    public void Deploy_Choice_NotInConfig_Throws()
-    {
-        _cc.Add(TestFactory.ComputeCard(cardId: "UNKNOWN-C", tp: 300, av: 800));
-        var ai = new NpcAi(MakeConfig(), _cc, _effects);
-        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_unk", CardID = "UNKNOWN-C" } };
-        var available = new List<GD.AvailableAction>
+        /// <summary>config に該当カードの分岐回答がないとき、解決が例外を投げることを検証する。</summary>
+        [Fact]
+        public void NotConfigured_Throws()
         {
-            new GD.PlayCardAction
+            var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
+            var pending = new GD.PendingEffectChoiceView
             {
-                HandInstanceID = "h_unk", CardID = "UNKNOWN-C",
-                ValidZones = new() { "frontend_0" }, ChoiceOptions = new() { "optionA", "optionB" },
-            },
-        };
-        var state = BuildState(hand: hand, available: available);
+                ChooserPlayerNum = 1,
+                EffectCardId = "TST-9999",
+                EffectInstanceId = "inst_1",
+                ChoiceKind = ChoiceKinds.Branch,
+            };
+            var available = new List<GD.AvailableAction>
+            {
+                new GD.ResolvePendingChoiceAction
+                {
+                    EffectCardId = "TST-9999",
+                    ChoiceKind = ChoiceKinds.Branch,
+                    ChoiceOptions =
+                    [
+                        new GD.ChoiceOption { Key = "reserve" },
+                        new GD.ChoiceOption { Key = "use" },
+                    ],
+                },
+            };
+            var state = BuildState(pendingEffectChoice: pending, available: available);
 
-        var act = () => ai.DecideMainPhaseActions(state);
+            var act = () => ai.DecidePendingEffectChoice(state);
 
-        act.Should().Throw<InvalidOperationException>()
-            .WithMessage("*No deploy choice configured*UNKNOWN-C*");
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*No branch choice configured*TST-9999*");
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════

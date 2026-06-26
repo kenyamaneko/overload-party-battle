@@ -133,9 +133,16 @@ public static class PlayCardProcessor
                 CardCache = ctx.CC,
                 ChoiceData = req.ChoiceData,
                 Effects = ctx.Effects,
+                Trigger = TriggerType.Ignition,
+                EffectCardId = cardDef.CardId,
+                EffectInstanceId = instanceID,
             };
             var effectResult = handler(effectCtx);
             events.AddRange(effectResult.Events);
+            if (effectResult.PendingChoice is { } pendingChoice)
+            {
+                ctx.State.PendingEffectChoice = pendingChoice;
+            }
         }
 
         CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, instanceID, handCard.ArtNo);
@@ -349,6 +356,7 @@ public static class PlayCardProcessor
         if (cancelled) { return (true, events); }
 
         // Stage 2: デプロイされたカード自身の効果。
+        // TODO(#130): on_deploy トリガーの発火タイミング分割 (配置時/稼働時) で本経路の振り分けが変わる。
         if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
         {
             var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;
@@ -362,8 +370,15 @@ public static class PlayCardProcessor
                 EventOwnerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 Effects = ctx.Effects,
+                Trigger = TriggerType.OnDeploy,
+                EffectCardId = deployed.CardID,
+                EffectInstanceId = deployed.InstanceID,
             });
             events.AddRange(result.Events);
+            if (result.PendingChoice is { } pendingChoice)
+            {
+                ctx.State.PendingEffectChoice = pendingChoice;
+            }
         }
 
         return (false, events);
@@ -385,6 +400,7 @@ public static class PlayCardProcessor
 
         if (cancelled) { return events; }
 
+        // TODO(#130): on_deploy トリガーの発火タイミング分割 (配置時/稼働時) で本経路の振り分けが変わる。
         if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
         {
             var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;
@@ -397,8 +413,13 @@ public static class PlayCardProcessor
                 EventOwnerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 Effects = ctx.Effects,
+                Trigger = TriggerType.OnDeploy,
             });
             events.AddRange(result.Events);
+            if (result.PendingChoice is { } pendingChoice)
+            {
+                ctx.State.PendingEffectChoice = pendingChoice;
+            }
         }
 
         return events;

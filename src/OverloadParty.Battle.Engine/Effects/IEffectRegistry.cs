@@ -43,6 +43,12 @@ public class EffectContext
     /// <summary>Support-zone source (for platform/reactive cards).</summary>
     public DeployedSupport? SupSource { get; init; }
 
+    /// <summary>SupSource を持たない起動効果経路で、選択待ち・再開時に効果を同定するカード ID。</summary>
+    public string? EffectCardId { get; init; }
+
+    /// <summary>SupSource を持たない起動効果経路で、選択待ち・再開時に効果を同定するインスタンス ID。</summary>
+    public string? EffectInstanceId { get; init; }
+
     /// <summary>Card definition cache for lookups.</summary>
     public required ICardCache CardCache { get; init; }
 

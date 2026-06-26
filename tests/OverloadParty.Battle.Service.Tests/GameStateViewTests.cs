@@ -198,6 +198,54 @@ public class GameStateViewTests
         }
     }
 
+    /// <summary>deck_top 選択時、resolve アクションが選択するプレイヤーのビューにのみ具象化カード付きで現れることを検証する。</summary>
+    public class DeckTopChoiceReveal : Base
+    {
+        /// <summary>選択するプレイヤー (Player1) のデッキ上端 2 枚を候補にした deck_top 選択待ちを作る。</summary>
+        /// <returns>選択待ち情報。</returns>
+        private static PendingEffectChoice MakeDeckPending() => new()
+        {
+            ChooserPlayerNum = 1,
+            OwnerPlayerNum = 1,
+            EffectCardId = "TST-0500",
+            EffectInstanceId = "trash_x",
+            Trigger = TriggerType.Ignition,
+            ChoiceKey = "deckTop",
+            ChoiceKind = ChoiceKinds.DeckTop,
+            Candidates = ["r_1", "r_2"],
+        };
+
+        [Fact]
+        public void Chooser_GetsResolveActionWithRevealedDeckTop()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "TST-0002" });
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_3", CardID = "TST-0001" });
+            state.PendingEffectChoice = MakeDeckPending();
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            var resolve = result.MyView.AvailableActions!.OfType<ResolvePendingChoiceAction>().Single();
+            resolve.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
+            resolve.ChoiceOptions.Select(o => o.Key).Should().Equal("r_1", "r_2");
+            resolve.RevealedDeckTop!.Select(c => c.InstanceID).Should().Equal("r_1", "r_2");
+        }
+
+        [Fact]
+        public void Opponent_GetsNoResolveAction()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_2", CardID = "TST-0002" });
+            state.PendingEffectChoice = MakeDeckPending();
+
+            var result = GameStateView.Build(state, _game, 2, _cc, new EffectRegistry());
+
+            result.MyView.AvailableActions.Should().BeNull();
+        }
+    }
+
     /// <summary>Tests for budget and insight pool reporting for both players.</summary>
     public class BudgetAndInsightPool : Base
     {
