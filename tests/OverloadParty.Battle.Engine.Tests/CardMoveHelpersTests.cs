@@ -57,7 +57,7 @@ public class CardMoveHelpersTests
         }
 
         [Fact]
-        public void AssignsNewInstanceIDs()
+        public void PreservesDeckInstanceIDs()
         {
             var state = TestFactory.MakeGameState();
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" });
@@ -65,11 +65,11 @@ public class CardMoveHelpersTests
 
             CardMoveHelpers.DrawCards(state, 1, 2);
 
-            // Each drawn card should have a unique new InstanceID
+            // 引いたカードはデッキで割り当て済みの InstanceID を保持する (カードの同一性は不変)。
             var ids = state.Player1Hand.Select(h => h.InstanceID).ToList();
             ids.Should().OnlyHaveUniqueItems();
-            ids.Should().NotContain("r_1");
-            ids.Should().NotContain("r_2");
+            ids.Should().Contain("r_1");
+            ids.Should().Contain("r_2");
         }
 
         [Fact]

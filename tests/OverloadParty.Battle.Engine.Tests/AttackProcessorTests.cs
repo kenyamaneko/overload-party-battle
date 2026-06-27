@@ -301,6 +301,30 @@ public class AttackProcessorTests
 
             defender.ElasticBonus.Should().BeGreaterThan(bonusBefore);
         }
+
+        // RULEBOOK §6: 被攻撃生存の Elastic 増分はフロントエンドの Compute / AI/ML 限定。
+        // 貫通で攻撃されたバックエンドの Elastic Database は Yield ボーナスを得ない。
+        [Fact]
+        public void BackendElasticDataResource_NoBonusOnSurvive()
+        {
+            _cc.Add(TestFactory.DataCard(
+                cardId: "TST-0006", subtype: "Database", elastic: true, elasticIncrement: 100, freeTier: 400));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+
+            var attacker = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+            state.Player1Field.Frontend[0] = attacker;
+
+            // 相手フロントエンドは空 → バックエンドを直接攻撃可能 (貫通)
+            var defender = TestFactory.MakeResource(
+                cardId: "TST-0006", instanceId: "def_1", faceUp: true,
+                maxAV: 1400, currentAV: 1400, maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+            state.Player2Field.Backend[0] = defender;
+
+            AttackProcessor.Process(
+                state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
+
+            defender.ElasticBonus.Should().Be(0);
+        }
     }
 
     /// <summary>Tests for AttackProcessor.Process — attack event payload contents.</summary>

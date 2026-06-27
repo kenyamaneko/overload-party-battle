@@ -86,7 +86,6 @@ public class CardDefinition : IEffectSource
 public class ComputeStats
 {
     public long Throughput { get; set; }
-    public long? ThroughputMax { get; set; }
     public long Availability { get; set; }
     public long MaintenanceCost { get; set; }
     public long SLAPenalty { get; set; }
@@ -98,7 +97,6 @@ public class ComputeStats
 public class DataResourceStats
 {
     public long Yield { get; set; }
-    public long? YieldMax { get; set; }
     public long Availability { get; set; }
     public long MaintenanceCost { get; set; }
     public long SLAPenalty { get; set; }

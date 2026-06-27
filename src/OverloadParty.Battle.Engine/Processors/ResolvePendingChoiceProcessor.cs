@@ -55,10 +55,6 @@ public static class ResolvePendingChoiceProcessor
             [pending.ChoiceKey] = req.ChosenId,
         };
 
-        // pending を先にクリアしておく。再実行で choice op が再度 ChoiceData 不足を検知することは無いが、
-        // 何らかの理由で同 handler が別の選択を要求した場合に古い pending が残り続けないよう先消し。
-        state.PendingEffectChoice = null;
-
         var ctx = new EffectContext
         {
             State = state,
@@ -74,9 +70,15 @@ public static class ResolvePendingChoiceProcessor
             IncidentCard = incidentCard,
             EventDamage = pending.EventDamage,
             Effects = effects,
+            Trigger = pending.Trigger,
+            EffectCardId = pending.EffectCardId,
+            EffectInstanceId = pending.EffectInstanceId,
         };
 
         var result = handler(ctx);
+
+        // 再実行した効果がさらに選択を要求する多段選択を捨てずに繋ぐため、新たな選択待ちを伝播する。
+        state.PendingEffectChoice = result.PendingChoice;
 
         return new ActionResult
         {

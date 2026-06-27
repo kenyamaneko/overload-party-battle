@@ -24,12 +24,7 @@ public static class CardMoveHelpers
         {
             var card = repo[0];
             repo.RemoveAt(0);
-            hand.Add(new UndeployedCard
-            {
-                InstanceID = state.NextInstanceID(),
-                CardID = card.CardID,
-                ArtNo = card.ArtNo,
-            });
+            hand.Add(card);
         }
         return toDraw;
     }
@@ -51,13 +46,7 @@ public static class CardMoveHelpers
         }
 
         repo.Remove(found);
-        var hand = state.GetHand(playerNum);
-        hand.Add(new UndeployedCard
-        {
-            InstanceID = state.NextInstanceID(),
-            CardID = found.CardID,
-            ArtNo = found.ArtNo,
-        });
+        state.GetHand(playerNum).Add(found);
         return true;
     }
 

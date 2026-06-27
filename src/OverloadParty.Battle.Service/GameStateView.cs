@@ -120,6 +120,14 @@ public static class GameStateView
         };
     }
 
+    /// <summary>エンジン側の選択肢を wire 形式に変換します。</summary>
+    /// <param name="option">エンジン側の選択肢。</param>
+    /// <returns>wire の選択肢。</returns>
+    private static GD.ChoiceOption MapChoiceOption(ChoiceOption option) => new()
+    {
+        Key = option.Key,
+    };
+
     // ─── Mapping helpers (Models → GameData) ────────────────
 
     private static GD.Field MapField(Field field)
@@ -210,7 +218,6 @@ public static class GameStateView
             CardID = a.CardID,
             ValidZones = a.ValidZones,
             ValidTargets = a.ValidTargets,
-            ChoiceOptions = a.ChoiceOptions,
             EffectTargetType = a.EffectTargetType,
         },
         ActionTypes.Attack => new GD.AttackAction
@@ -248,9 +255,10 @@ public static class GameStateView
         },
         ActionTypes.ResolvePendingChoice => new GD.ResolvePendingChoiceAction
         {
-            SourceInstanceID = a.SourceInstanceID,
-            CardID = a.CardID,
-            ValidTargets = a.ValidTargets,
+            EffectCardId = a.CardID,
+            ChoiceKind = a.ChoiceKind,
+            ChoiceOptions = a.ChoiceOptions?.Select(MapChoiceOption).ToList(),
+            RevealedDeckTop = a.RevealedDeckTop?.Select(MapUndeployedCard).ToList(),
         },
         _ => throw new InvalidOperationException($"unknown available action type '{a.Type}'"),
     };

@@ -61,4 +61,19 @@ public static class ChoiceKinds
 
     /// <summary>フィールド上のリソースを 1 体選ぶ。</summary>
     public const string FieldTarget = "field_target";
+
+    /// <summary>デッキの上から提示された候補のうち 1 枚を選ぶ。</summary>
+    public const string DeckTop = "deck_top";
+
+    /// <summary>効果の分岐肢のうち 1 つを選ぶ。</summary>
+    public const string Branch = "branch";
+}
+
+/// <summary>
+/// 選択肢 1 件。Key は解決時に返す識別子。
+/// </summary>
+public class ChoiceOption
+{
+    /// <summary>選択を識別する値 (branch キー / カード・インスタンス ID)。</summary>
+    public required string Key { get; set; }
 }

@@ -24,7 +24,7 @@ game_status:
 win_reasons:
 - budget_zero
 - system_down
-- repository_out
+- deck_out
 - turn_timeout
 - disconnect
 - turn_limit
@@ -142,6 +142,7 @@ custom_effects:
 - cloud_shift
 - deploy_same_type_from_hand
 - disable_high_tp_deploy
+- keep_one_from_deck_top
 - reattach
 - redirect_attack
 - scale_to_zero

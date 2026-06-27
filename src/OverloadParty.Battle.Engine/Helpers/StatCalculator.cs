@@ -25,6 +25,35 @@ public static class StatCalculator
     }
 
     /// <summary>
+    /// 維持コスト計算に使う固有ステータス (コンピュート系のスループット / Data 系の Yield) を算出します。
+    /// </summary>
+    /// <param name="instance">対象リソース。</param>
+    /// <param name="card">対象のカード定義。</param>
+    /// <returns>維持コスト計算に使う固有ステータス。</returns>
+    public static long CalculateIntrinsicStat(DeployedResource instance, CardDefinition card)
+    {
+        long baseStat = card.IsComputeType ? card.BaseThroughput : card.BaseYield;
+        long rankMult = BattleConstants.GetRankMultiplier(instance.Rank);
+
+        double familyMult = 1.0;
+        if (instance.InstanceFamily is { } family)
+        {
+            var (statMult, _) = BattleConstants.GetFamilyMultiplier(family);
+            familyMult = statMult;
+        }
+
+        long scaledBase = Truncate(baseStat * rankMult * familyMult);
+
+        long elasticBonus = 0;
+        if (card.Elastic && card.FreeTier > 0)
+        {
+            elasticBonus = CalculateEffectiveElasticBonus(instance.ElasticBonus, card.FreeTier);
+        }
+
+        return scaledBase + elasticBonus;
+    }
+
+    /// <summary>
     /// Calculate effective throughput for a resource, including all bonuses.
     /// </summary>
     /// <param name="instance">対象リソース。</param>

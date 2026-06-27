@@ -94,6 +94,11 @@ type BattleStartEventData struct {
 	OpponentName  string `json:"opponent_name"`
 }
 
+// ChoiceOption 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード・インスタンス ID)。
+type ChoiceOption struct {
+	Key string `json:"key"`
+}
+
 // ClientGameState クライアントに返すゲーム状態スナップショット。
 type ClientGameState struct {
 	// ActivePlayer アクティブプレイヤー番号 (1 or 2)
@@ -328,7 +333,7 @@ type OpponentView struct {
 
 // PendingEffectChoiceView pendingEffectChoice の client 公開ビュー。
 type PendingEffectChoiceView struct {
-	// ChoiceKind 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。
+	// ChoiceKind 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
 	ChoiceKind string `json:"choiceKind"`
 
 	// ChooserPlayerNum 選択を行うプレイヤー番号
@@ -365,7 +370,6 @@ type PhaseEndEventData struct {
 // PlayCardAction defines model for PlayCardAction.
 type PlayCardAction struct {
 	CardID           *string   `json:"cardID,omitempty"`
-	ChoiceOptions    *[]string `json:"choiceOptions,omitempty"`
 	EffectTargetType *string   `json:"effectTargetType,omitempty"`
 	HandInstanceID   *string   `json:"handInstanceID,omitempty"`
 	Type             string    `json:"type"`
@@ -463,10 +467,16 @@ type ReactiveRevealedEventData struct {
 
 // ResolvePendingChoiceAction defines model for ResolvePendingChoiceAction.
 type ResolvePendingChoiceAction struct {
-	CardID           *string   `json:"cardID,omitempty"`
-	SourceInstanceID *string   `json:"sourceInstanceID,omitempty"`
-	Type             string    `json:"type"`
-	ValidTargets     *[]string `json:"validTargets,omitempty"`
+	// ChoiceKind 選択対象の種別 (hand_card / field_target / deck_top)。
+	ChoiceKind    *string         `json:"choiceKind,omitempty"`
+	ChoiceOptions *[]ChoiceOption `json:"choiceOptions,omitempty"`
+
+	// EffectCardId 発動中の効果を持つカードの ID
+	EffectCardId *string `json:"effectCardId,omitempty"`
+
+	// RevealedDeckTop deck_top 選択で選択するプレイヤーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。
+	RevealedDeckTop *[]UndeployedCard `json:"revealedDeckTop,omitempty"`
+	Type            string            `json:"type"`
 }
 
 // ScaleUpAction defines model for ScaleUpAction.

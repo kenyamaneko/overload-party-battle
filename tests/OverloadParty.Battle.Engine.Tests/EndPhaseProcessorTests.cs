@@ -266,9 +266,10 @@ public class EndPhaseProcessorTests
             AddRepoCards(state, 2);
 
             // Elastic container with elastic bonus pushing stat above free tier
-            // baseStat = 500, rank small = x1, elasticBonus = 300
-            // scaledStat = 500 * 1 + 300 = 800
-            // MC = max(0, 800 - 500) * 10 / 100 = 300 * 10 / 100 = 30
+            // baseStat = 500, rank small ×1, family ×1, elasticBonus(raw) = 300
+            // effectiveElasticBonus = 500 × ln(1 + 300/500) ≈ 235
+            // intrinsicStat = 500 + 235 = 735
+            // MC = max(0, 735 - 500) × 10 / 100 = 23
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0002", instanceId: "res_1", faceUp: true,
                 maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200, elasticBonus: 300);
@@ -276,7 +277,46 @@ public class EndPhaseProcessorTests
 
             EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
 
-            state.Player1Budget.Should().Be(5000 - 30);
+            state.Player1Budget.Should().Be(5000 - 23);
+        }
+
+        [Fact]
+        public void ElasticResource_FamilyMultiplierIncludedInMC()
+        {
+            _cc.Add(TestFactory.OrchestratorCard(cardId: "TST-0004"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+            AddRepoCards(state, 2);
+
+            // R+E Orchestrator: base TP=600, free_tier=600, cost_per_request=10
+            // medium ×2, family C ×1.3 → intrinsicStat = trunc(600 × 2 × 1.3) = 1560
+            // MC = max(0, 1560 - 600) × 10 / 100 = 96
+            var resource = TestFactory.MakeResource(
+                cardId: "TST-0004", instanceId: "res_1", faceUp: true,
+                rank: Rank.Medium, family: InstanceFamily.C,
+                maxTP: 1560, currentTP: 1560, maxAV: 3600, currentAV: 3600);
+            state.Player1Field.Frontend[0] = resource;
+
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+
+            state.Player1Budget.Should().Be(5000 - 96);
+        }
+
+        [Fact]
+        public void ServerlessElastic_AlwaysFreeMaintenanceCost()
+        {
+            _cc.Add(TestFactory.ServerlessCard(cardId: "TST-0005"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+            AddRepoCards(state, 2);
+
+            // Serverless: cost_per_request=0 → 固有ステータスが free_tier を超えても維持コストは常に 0
+            var resource = TestFactory.MakeResource(
+                cardId: "TST-0005", instanceId: "res_1", faceUp: true,
+                maxTP: 300, currentTP: 300, maxAV: 600, currentAV: 600, elasticBonus: 500);
+            state.Player1Field.Frontend[0] = resource;
+
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+
+            state.Player1Budget.Should().Be(5000);
         }
     }
 

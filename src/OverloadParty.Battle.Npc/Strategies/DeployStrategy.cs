@@ -66,11 +66,6 @@ internal sealed class DeployStrategy
                 Zone = pos.Zone,
                 Index = pos.Index,
             };
-            if (c.Action.ChoiceOptions?.Count > 0)
-            {
-                var choice = ResolveDeployChoice(c.Card.CardId);
-                req.ChoiceData = new Dictionary<string, object> { ["option"] = choice };
-            }
 
             actions.Add(new NpcAction { ActionType = ActionTypes.PlayCard, Data = req });
             deployed.Add(c.Action.HandInstanceID!);
@@ -112,17 +107,5 @@ internal sealed class DeployStrategy
         // ObjectStorage は唯一フロントエンドにも置ける Data subtype なので独立キー扱い。
         if (card.IsDataResource && card.Subtype == "ObjectStorage") { return "ObjectStorage"; }
         return card.CardType;
-    }
-
-    private string ResolveDeployChoice(string cardId)
-    {
-        if (_config.Deploy.Choices is not null
-            && _config.Deploy.Choices.TryGetValue(cardId, out var choice))
-        {
-            return choice;
-        }
-
-        throw new InvalidOperationException(
-            $"No deploy choice configured for card '{cardId}' in model '{_config.Model}'");
     }
 }

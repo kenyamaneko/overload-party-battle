@@ -27,7 +27,7 @@ public static class DrawPhaseProcessor
         {
             return new GameOverResult(
                 state.OpponentOf(state.ActivePlayer),
-                WinReason.RepositoryOut.ToWireString());
+                WinReason.DeckOut.ToWireString());
         }
 
         CardMoveHelpers.DrawCards(state, state.ActivePlayer, 1);
@@ -84,7 +84,7 @@ public static class DrawPhaseProcessor
         if (!effects.Has(cardId, TriggerType.OnDeploy)) { return; }
 
         var handler = effects.Get(cardId, TriggerType.OnDeploy)!;
-        handler(new EffectContext
+        var result = handler(new EffectContext
         {
             State = state,
             Game = game,
@@ -95,6 +95,16 @@ public static class DrawPhaseProcessor
             EventOwnerNum = playerNum,
             CardCache = cc,
             Effects = effects,
+            Trigger = TriggerType.OnDeploy,
+            EffectCardId = cardId,
+            EffectInstanceId = source?.InstanceID ?? supSource!.InstanceID,
         });
+        if (result.PendingChoice is not null)
+        {
+            // TODO(#130): on_deploy の発火タイミングを配置時/稼働時に分割し、稼働時に選択を要求する効果
+            // のみがここに到達するようにした上で、resumable DrawPhase で中断・再開を支える。
+            throw new InvalidOperationException(
+                $"deferred on_deploy choice for {cardId} requires resumable draw phase (not yet supported)");
+        }
     }
 }

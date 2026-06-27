@@ -21,7 +21,7 @@ const (
 const (
 	WinReasonBudgetZero = "budget_zero"
 	WinReasonSystemDown = "system_down"
-	WinReasonRepositoryOut = "repository_out"
+	WinReasonDeckOut = "deck_out"
 	WinReasonTurnTimeout = "turn_timeout"
 	WinReasonDisconnect = "disconnect"
 	WinReasonTurnLimit = "turn_limit"
@@ -155,6 +155,7 @@ const (
 	CustomEffectCloudShift = "cloud_shift"
 	CustomEffectDeploySameTypeFromHand = "deploy_same_type_from_hand"
 	CustomEffectDisableHighTpDeploy = "disable_high_tp_deploy"
+	CustomEffectKeepOneFromDeckTop = "keep_one_from_deck_top"
 	CustomEffectReattach = "reattach"
 	CustomEffectRedirectAttack = "redirect_attack"
 	CustomEffectScaleToZero = "scale_to_zero"

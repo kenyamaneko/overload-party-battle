@@ -66,7 +66,7 @@ public class DrawPhaseProcessorTests
 
             result.Should().NotBeNull();
             result!.WinnerNum.Should().Be(2);
-            result.Reason.Should().Be("repository_out");
+            result.Reason.Should().Be("deck_out");
         }
     }
 

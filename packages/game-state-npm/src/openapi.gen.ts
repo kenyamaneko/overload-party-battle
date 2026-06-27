@@ -357,7 +357,7 @@ export interface components {
             effectCardId: string;
             /** @description 発動中の効果を持つカードのインスタンス ID */
             effectInstanceId: string;
-            /** @description 選択対象の種別。hand_card なら候補は手札カード、field_target ならフィールド上のリソース。 */
+            /** @description 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。 */
             choiceKind: string;
         };
         /**
@@ -572,7 +572,6 @@ export interface components {
             cardID?: string;
             validZones?: string[];
             validTargets?: string[];
-            choiceOptions?: string[];
             effectTargetType?: string;
         } & {
             /**
@@ -648,17 +647,25 @@ export interface components {
              */
             type: "use_initiative";
         };
-        /** @description 効果処理中の選択候補 1 件。chosen_id は cardID または validTargets[0] から取る。 */
+        /** @description 効果処理中の選択を解決する 1 アクション。chosenId は choiceOptions[].key から選ぶ。 */
         ResolvePendingChoiceAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
-            sourceInstanceID?: string;
-            cardID?: string;
-            validTargets?: string[];
+            /** @description 発動中の効果を持つカードの ID */
+            effectCardId?: string;
+            /** @description 選択対象の種別 (hand_card / field_target / deck_top)。 */
+            choiceKind?: string;
+            choiceOptions?: components["schemas"]["ChoiceOption"][];
+            /** @description deck_top 選択で選択するプレイヤーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。 */
+            revealedDeckTop?: components["schemas"]["UndeployedCard"][];
         } & {
             /**
              * @description discriminator enum property added by openapi-typescript
              * @enum {string}
              */
             type: "resolve_pending_choice";
+        };
+        /** @description 選択肢 1 件。key は解決時に返す識別子 (branch キー / カード・インスタンス ID)。 */
+        ChoiceOption: {
+            key: string;
         };
         PlayCardEventData: {
             cardId: string;

@@ -13,7 +13,7 @@ public class CustomEffectRegistry
     private readonly Dictionary<string, Func<Dictionary<string, JsonElement>?, Action<OpContext>?>> _factories = new()
     {
         // Phase 2-2: 既存カスタム（EffectInit から移行）
-        [CustomEffects.ChainAttackBonus] = BuildChainAttackBonus,
+        [CustomEffects.ChainAttackBonus] = RequireMeta("damage", element => element.GetInt64(), ChainAttackBonus),
         [CustomEffects.DeploySameTypeFromHand] = _ => DeploySameTypeFromHand,
         [CustomEffects.DisableHighTpDeploy] = _ => DisableHighTpDeploy,
         [CustomEffects.CancelNthDeploy] = _ => CancelNthDeploy,
@@ -24,6 +24,7 @@ public class CustomEffectRegistry
         [CustomEffects.SpotExpiry] = BuildSpotExpiry,
         [CustomEffects.Reattach] = _ => Reattach,
         [CustomEffects.ScaleToZero] = _ => ScaleToZero,
+        [CustomEffects.KeepOneFromDeckTop] = RequireMeta("peek", element => element.GetInt32(), KeepOneFromDeckTop),
 
         // target_shield はカード定義を passive に検査する marker（FieldHelpers.IsTargetShielded）。
         // deploy trigger では副作用なしだが、登録しておかないと loader が unknown custom として throw する。
@@ -31,6 +32,20 @@ public class CustomEffectRegistry
     };
 
     private static void NoOp(OpContext _) { }
+
+    /// <summary>
+    /// meta から必須パラメータ 1 件を読み出し、それを束縛した効果関数を返すファクトリを組む。
+    /// </summary>
+    /// <typeparam name="T">効果が受け取るパラメータの型。</typeparam>
+    /// <param name="key">meta から読むキー。</param>
+    /// <param name="read">JsonElement を効果が要する型へ変換する関数。</param>
+    /// <param name="effect">読み出した値を適用する効果。</param>
+    /// <returns>meta を受け取り効果関数を返すファクトリ。meta に該当キーが無ければ null を返す。</returns>
+    private static Func<Dictionary<string, JsonElement>?, Action<OpContext>?> RequireMeta<T>(
+        string key, Func<JsonElement, T> read, Action<OpContext, T> effect) =>
+        meta => meta is not null && meta.TryGetValue(key, out var element)
+            ? octx => effect(octx, read(element))
+            : null;
 
     /// <summary>
     /// Builds a custom effect function for the given name and meta parameters.
@@ -54,37 +69,77 @@ public class CustomEffectRegistry
 
     /// <summary>
     /// 他の自分の しゅがーらぼ Compute系リソースが自分のフロントエンドに居る場合、対象に追加ダメージを与える。
-    /// meta: { damage }
     /// </summary>
-    /// <param name="meta">カード定義由来の追加ダメージ量。</param>
-    /// <returns>構築した効果関数。meta に damage が欠ける場合は null。</returns>
-    private static Action<OpContext>? BuildChainAttackBonus(Dictionary<string, JsonElement>? meta)
+    /// <param name="octx">効果実行コンテキスト。</param>
+    /// <param name="damage">カード定義由来の追加ダメージ量。</param>
+    private static void ChainAttackBonus(OpContext octx, long damage)
     {
-        if (meta is null || !meta.TryGetValue("damage", out var damageEl))
+        if (octx.Target is null)
         {
-            return null;
+            return;
         }
-        long damage = damageEl.GetInt64();
 
-        return octx =>
-        {
-            if (octx.Target is null)
+        var ally = octx.MyField.Frontend
+            .Where(r => r.InstanceID != octx.Source?.InstanceID)
+            .FirstOrDefault(r =>
             {
+                var card = octx.CardCache.MustGet(r.CardID);
+                return card.Faction == Factions.Sugar && card.IsComputeType;
+            });
+        if (ally is not null)
+        {
+            DamageApplication.Apply(octx, octx.Target, damage);
+        }
+    }
+
+    /// <summary>SuspendForChoice / ChoiceData で deck_top 選択値を受け渡す key。</summary>
+    private const string DeckTopChoiceKey = "deckTop";
+
+    /// <summary>
+    /// デッキ上端 peek 枚を見て、選択された 1 枚を手札・残りをトラッシュへ移す。選択値が未指定なら選択待ちに遷移する。
+    /// </summary>
+    /// <param name="octx">効果実行コンテキスト。</param>
+    /// <param name="peek">見るデッキ上端の枚数。</param>
+    private static void KeepOneFromDeckTop(OpContext octx, int peek)
+    {
+        var deck = octx.State.GetRepository(octx.PlayerNum);
+        int targetCount = Math.Min(peek, deck.Count);
+        // デッキが空なら覗くカードが無い。サーチ効果の失敗 (対象なし) と同じく、コストは既に払われ効果は何もしない。
+        if (targetCount == 0)
+        {
+            return;
+        }
+
+        var topCards = deck.Take(targetCount).ToList();
+        string? chosen = octx.ChoiceData?.GetValueOrDefault(DeckTopChoiceKey)?.ToString();
+        if (chosen is null)
+        {
+            // 候補が 1 枚なら選択の余地がないため、そのまま手札へ移す。
+            if (targetCount == 1)
+            {
+                var only = topCards[0];
+                deck.Remove(only);
+                octx.State.GetHand(octx.PlayerNum).Add(only);
                 return;
             }
+            var candidates = topCards.Select(card => card.InstanceID).ToList();
+            octx.SuspendForChoice(DeckTopChoiceKey, ChoiceKinds.DeckTop, candidates, octx.PlayerNum);
+            return;
+        }
 
-            var ally = octx.MyField.Frontend
-                .Where(r => r.InstanceID != octx.Source?.InstanceID)
-                .FirstOrDefault(r =>
-                {
-                    var card = octx.CardCache.MustGet(r.CardID);
-                    return card.Faction == Factions.Sugar && card.IsComputeType;
-                });
-            if (ally is not null)
+        var kept = topCards.First(card => card.InstanceID == chosen);
+        foreach (var card in topCards)
+        {
+            deck.Remove(card);
+            if (ReferenceEquals(card, kept))
             {
-                DamageApplication.Apply(octx, octx.Target, damage);
+                octx.State.GetHand(octx.PlayerNum).Add(card);
             }
-        };
+            else
+            {
+                octx.State.GetTrash(octx.PlayerNum).Add(card);
+            }
+        }
     }
 
     /// <summary>
