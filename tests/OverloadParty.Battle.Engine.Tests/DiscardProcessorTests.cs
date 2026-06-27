@@ -200,7 +200,7 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>稼働実績のないプレイヤーが手札破棄に至るとローンチ失敗で敗北することを検証する。</summary>
+    /// <summary>手札破棄でターンを終える経路でも、エンドフェーズと同じローンチ失敗判定 (3 ターン目までに稼働実績なしで敗北) が走ることを検証する。</summary>
     public class LaunchFailure
     {
         [Fact]
