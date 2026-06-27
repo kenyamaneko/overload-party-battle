@@ -672,4 +672,176 @@ public class AttackProcessorTests
                 .PlayerNum.Should().Be(2);
         }
     }
+
+    /// <summary>標準的なコンピュート系リソース 1 種を持つカードキャッシュを作る。</summary>
+    /// <returns>TST-0001 (TP=600 / AV=1400 / SLA=400) を登録したキャッシュ。</returns>
+    private static TestCardCache StandardCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400));
+        return cc;
+    }
+
+    /// <summary>攻撃リクエストを作る。</summary>
+    /// <param name="attacker">攻撃側インスタンス ID。</param>
+    /// <param name="target">対象インスタンス ID。</param>
+    /// <returns>攻撃リクエスト。</returns>
+    private static AttackRequest Atk(string attacker, string target) =>
+        new() { AttackerInstanceID = attacker, TargetInstanceID = target };
+
+    /// <summary>攻撃者が最後に攻撃したターンを記録することを検証する。</summary>
+    public class AttackerState
+    {
+        [Fact]
+        public void RecordsLastAttackTurn()
+        {
+            var cc = StandardCc();
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+
+            var attacker = state.Player1Field.Frontend[0]!;
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
+
+            attacker.LastAttackTurn.Should().Be(5);
+        }
+    }
+
+    /// <summary>attack_damage_reduction バフが適用 ダメージ を軽減することを検証する。</summary>
+    public class DamageReduction
+    {
+        [Theory]
+        [InlineData(200, 400)]
+        [InlineData(600, 0)]
+        [InlineData(800, 0)]
+        public void AttackDamageReductionBuffClampsDamage(long reduction, long expectedDamage)
+        {
+            var cc = StandardCc();
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+            var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+            defender.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = BuffTypes.AttackDamageReduction,
+                Value = reduction,
+            });
+            state.Player2Field.Frontend[0] = defender;
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
+
+            defender.Damage.Should().Be(expectedDamage);
+        }
+    }
+
+    /// <summary>攻撃を受けた防御者の OnHit 誘発効果が発動することを検証する。</summary>
+    public class OnHitEffect
+    {
+        [Fact]
+        public void FiresOnDefenderWhenAttacked()
+        {
+            var cc = StandardCc();
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+
+            bool hitHandlerCalled = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnHit, ctx =>
+            {
+                hitHandlerCalled = true;
+                return new EffectResult
+                {
+                    Events = [new GameEvent { EventType = "on_hit_triggered", GameID = ctx.Game.GameID }]
+                };
+            });
+
+            var result = AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, effects);
+
+            hitHandlerCalled.Should().BeTrue("攻撃を受けた防御者の OnHit 誘発効果が発動する");
+            result.Events.Should().Contain(e => e.EventType == "on_hit_triggered");
+        }
+    }
+
+    /// <summary>破壊で盤面が変化した後に OnFieldChange が発動することを検証する。</summary>
+    public class OnFieldChangeAfterDestroy
+    {
+        [Fact]
+        public void FiresAfterDefenderDestroyed()
+        {
+            var cc = StandardCc();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+
+            int fieldChangeFires = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0005", TriggerType.OnFieldChange, _ => { fieldChangeFires++; return new EffectResult(); });
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, effects);
+
+            fieldChangeFires.Should().Be(1, "リソース破壊で盤面が変化し OnFieldChange が発動する");
+        }
+    }
+
+    /// <summary>target_shield で保護された防御者を攻撃できないことを検証する。</summary>
+    public class TargetShieldProtection
+    {
+        [Fact]
+        public void Process_ShieldedDefender_Throws()
+        {
+            var cc = StandardCc();
+            var shield = TestFactory.AttachmentCard(cardId: "TST-0301");
+            shield.Effects = [new EffectDef { Trigger = TriggerTypes.Passive, Custom = CustomEffects.TargetShield }];
+            cc.Add(shield);
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk_1", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+            state.Player2Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "wall_1", faceUp: true);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TST-0301",
+                TargetInstanceID = "def_1",
+                FaceUp = true,
+            };
+
+            var act = () => AttackProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
+
+            act.Should().Throw<GameRuleException>().WithMessage("*target_shield*");
+        }
+    }
+
+    /// <summary>装備先リソースが破壊されると、そのアタッチメントも破壊されトラッシュへ送られることを検証する。</summary>
+    public class AttachmentDestroyedWithHost
+    {
+        [Fact]
+        public void DestroyingHost_AlsoDestroysItsAttachment()
+        {
+            var cc = StandardCc();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
+            cc.Add(TestFactory.AttachmentCard(cardId: "TST-0301"));
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "att_1",
+                CardID = "TST-0301",
+                TargetInstanceID = "def_1",
+                FaceUp = true,
+            };
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, new EffectRegistry());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def_1").Should().BeNull("装備先が破壊される");
+            state.Player2Field.Support.Select(s => s.InstanceID).Should().NotContain("att_1", "アタッチメントも破壊される");
+            state.Player2Trash.Should().Contain(c => c.InstanceID == "att_1", "破壊されたアタッチメントはトラッシュへ送られる");
+        }
+    }
 }

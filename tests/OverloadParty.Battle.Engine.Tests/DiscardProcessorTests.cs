@@ -18,9 +18,9 @@ public class DiscardProcessorTests
             _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 1));
         }
 
-        /// <summary>指定インスタンス ID 群の手札調整リクエストを生成する。</summary>
+        /// <summary>指定インスタンス ID 群の手札破棄リクエストを生成する。</summary>
         /// <param name="ids">破棄するカードのインスタンス ID 群。</param>
-        /// <returns>手札調整リクエスト。</returns>
+        /// <returns>手札破棄リクエスト。</returns>
         protected static DiscardHandRequest MakeReq(params string[] ids) =>
             new() { CardInstanceIDs = [.. ids] };
 
@@ -140,6 +140,63 @@ public class DiscardProcessorTests
             var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
             discardEvent.EventData.Should().BeOfType<DiscardHandEventData>()
                 .Which.DiscardedCount.Should().Be(1);
+        }
+    }
+
+    /// <summary>手札破棄に使うコンピュート系リソースを登録したキャッシュを作る。</summary>
+    /// <returns>TST-0001 を登録したキャッシュ。</returns>
+    private static TestCardCache DiscardCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 1));
+        return cc;
+    }
+
+    /// <summary>指定インスタンス ID 群の手札破棄リクエストを作る。</summary>
+    /// <param name="ids">破棄するインスタンス ID 群。</param>
+    /// <returns>手札破棄リクエスト。</returns>
+    private static DiscardHandRequest Req(params string[] ids) => new() { CardInstanceIDs = [.. ids] };
+
+    /// <summary>指定枚数の手札を作る。</summary>
+    /// <param name="count">手札枚数。</param>
+    /// <returns>手札リスト。</returns>
+    private static List<UndeployedCard> Hand(int count) =>
+        [.. Enumerable.Range(0, count).Select(i => new UndeployedCard { InstanceID = $"h_{i}", CardID = "TST-0001" })];
+
+    /// <summary>指定枚数のリポジトリを作る。</summary>
+    /// <param name="count">リポジトリ枚数。</param>
+    /// <returns>リポジトリリスト。</returns>
+    private static List<UndeployedCard> Repo(int count) =>
+        [.. Enumerable.Range(0, count).Select(i => new UndeployedCard { InstanceID = $"r_{i}", CardID = "TST-0001" })];
+
+    /// <summary>破棄したカードが手札から取り除かれ、イベントに ID が載ることを検証する。</summary>
+    public class HandReduction
+    {
+        [Fact]
+        public void RemovesDiscardedCardsFromHand()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
+            state.Player1Hand = Hand(8);
+            state.Player2Repository = Repo(5);
+
+            DiscardProcessor.Process(state, TestFactory.MakeGame(), 1, Req("h_6", "h_7"), DiscardCc(), new EffectRegistry());
+
+            state.Player1Hand.Should().HaveCount(6);
+            state.Player1Hand.Should().NotContain(c => c.InstanceID == "h_6" || c.InstanceID == "h_7");
+        }
+
+        [Fact]
+        public void EventIncludesDiscardedIds()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
+            state.Player1Hand = Hand(8);
+            state.Player2Repository = Repo(5);
+
+            var result = DiscardProcessor.Process(state, TestFactory.MakeGame(), 1, Req("h_6", "h_7"), DiscardCc(), new EffectRegistry());
+
+            var discardEvent = result.Events.First(e => e.EventType == ActionTypes.DiscardHand);
+            discardEvent.EventData.Should().BeOfType<DiscardHandEventData>()
+                .Which.DiscardedIds.Should().BeEquivalentTo(["h_6", "h_7"]);
         }
     }
 }

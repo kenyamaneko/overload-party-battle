@@ -102,4 +102,96 @@ public class DrawPhaseProcessorTests
             state.Player1HasOperated.Should().BeTrue();
         }
     }
+
+    /// <summary>ドローフェーズ用にコンピュート系リソースを登録したキャッシュを作る。</summary>
+    /// <returns>TST-0001 を登録したキャッシュ。</returns>
+    private static TestCardCache DrawCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        return cc;
+    }
+
+    /// <summary>デプロイのカウントダウン完了でデプロイ時効果が発動することを検証する。</summary>
+    public class DeployCompletionTriggers
+    {
+        [Fact]
+        public void Resource_OneTurnDeploy_FlipsAndFiresAfterOneDrawPhase()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 1);
+            state.Player1Field.Frontend[0] = res;
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
+
+            res.DeployingTurnsLeft.Should().Be(0);
+            res.FaceUp.Should().BeTrue();
+            fired.Should().BeTrue("デプロイターン 1 のリソースは 1 回のドローフェーズ通過で稼働しデプロイ時効果が発動する");
+        }
+
+        [Fact]
+        public void Resource_TwoTurnDeploy_StaysDeployingAfterFirstDrawPhase()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 2);
+            state.Player1Field.Frontend[0] = res;
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
+
+            res.DeployingTurnsLeft.Should().Be(1);
+            res.FaceUp.Should().BeFalse();
+            fired.Should().BeFalse("デプロイターン 2 のリソースは 1 回目のドローフェーズ通過では稼働せず発動しない");
+        }
+
+        [Fact]
+        public void Support_FiresOnDeploy_WhenCountdownReachesZero()
+        {
+            var cc = DrawCc();
+            cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TST-0200",
+                FaceUp = true,
+                DeployingTurnsLeft = 1,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0200", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), cc, effects);
+
+            fired.Should().BeTrue("カウントダウン完了で稼働したサポートカードのデプロイ時効果が発動する");
+        }
+    }
+
+    /// <summary>ドロー後に勝敗判定が評価されることを検証する。</summary>
+    public class WinCheckAfterDraw
+    {
+        [Fact]
+        public void ReturnsGameOver_WhenWinConditionMetAfterDraw()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1, p1Budget: 0);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+
+            var result = DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), new EffectRegistry());
+
+            result.Should().NotBeNull();
+            result!.WinnerNum.Should().Be(2);
+            result.Reason.Should().Be(WinReasons.BudgetZero);
+        }
+    }
 }

@@ -460,6 +460,7 @@ public class EndPhaseProcessorTests
     /// <summary>Tests for EndPhaseProcessor.Process — launch failure ends the game.</summary>
     public class LaunchFailure : Base
     {
+        // 手札破棄が不要な場合: EndPhase がその場でローンチ失敗判定を行い敗北する。
         [Fact]
         public void LaunchFailure_GameOver()
         {
@@ -472,6 +473,30 @@ public class EndPhaseProcessorTests
 
             result.GameOver.Should().NotBeNull();
             result.GameOver!.WinnerNum.Should().Be(2);
+        }
+
+        // 手札破棄が必要な場合: EndPhase は判定を保留して破棄を要求し、破棄解決時に同じ判定が走り敗北する。
+        [Fact]
+        public void LaunchFailure_DeferredToDiscardWhenHandOverLimit()
+        {
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle, activePlayer: 1);
+            state.SetHasOperated(1, false);
+            foreach (var i in Enumerable.Range(0, 8))
+            {
+                state.Player1Hand.Add(new UndeployedCard { InstanceID = $"hand_{i}", CardID = "TST-0001" });
+            }
+
+            var endResult = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+
+            endResult.ShouldDiscard.Should().BeTrue("手札超過のため判定は保留され破棄が要求される");
+            endResult.GameOver.Should().BeNull();
+
+            var discardResult = DiscardProcessor.Process(
+                state, _game, 1, new DiscardHandRequest { CardInstanceIDs = ["hand_6", "hand_7"] }, _cc, new EffectRegistry());
+
+            discardResult.GameOver.Should().NotBeNull("破棄解決時にローンチ失敗判定が走る");
+            discardResult.GameOver!.WinnerNum.Should().Be(2);
+            discardResult.GameOver.Reason.Should().Be(WinReasons.LaunchFailure);
         }
     }
 
@@ -525,6 +550,61 @@ public class EndPhaseProcessorTests
             var data = evt.EventData.Should().BeOfType<TurnStartInternalEventData>().Subject;
             data.Turn.Should().Be(3L);
             data.ActivePlayer.Should().Be(2L);
+        }
+    }
+
+    /// <summary>エンドフェーズ用にコンピュート系リソースを登録したキャッシュを作る。</summary>
+    /// <returns>TST-0001 を登録したキャッシュ。</returns>
+    private static TestCardCache EndPhaseCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        return cc;
+    }
+
+    /// <summary>指定プレイヤーのリポジトリにカードを 2 枚補充する。</summary>
+    /// <param name="state">対象のゲーム状態。</param>
+    /// <param name="playerNum">補充先のプレイヤー番号。</param>
+    private static void AddRepo(BattleGameState state, long playerNum)
+    {
+        var repo = state.GetRepository(playerNum);
+        repo.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+        repo.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "TST-0001" });
+    }
+
+    /// <summary>エンドフェーズに エンドフェーズ効果 / パッシブ効果 が発動することを検証する。</summary>
+    public class EndPhaseTriggers
+    {
+        [Fact]
+        public void FiresOnEndPhaseHandler()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            AddRepo(state, 2);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+
+            int fired = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnEndPhase, _ => { fired++; return new EffectResult(); });
+
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
+
+            fired.Should().Be(1, "エンドフェーズに エンドフェーズ効果 が発動する");
+        }
+
+        [Fact]
+        public void FiresPassiveHandlerAtEndPhase()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            AddRepo(state, 2);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+
+            int fired = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.Passive, _ => { fired++; return new EffectResult(); });
+
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
+
+            fired.Should().Be(1, "エンドフェーズに パッシブ効果 が発動する");
         }
     }
 }

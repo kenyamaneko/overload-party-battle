@@ -57,7 +57,28 @@ public class UseIgnitionProcessorTests
             var req = new UseIgnitionRequest { InstanceID = "r_1" };
             var result = UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
-            result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseIgnition);
+            var evt = result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseIgnition).Subject;
+            var data = evt.EventData.Should().BeOfType<UseIgnitionEventData>().Subject;
+            data.CardId.Should().Be("TST-0001");
+            data.SourceId.Should().Be("r_1");
+        }
+
+        [Fact]
+        public void Process_ResourceEffect_EventCarriesTargetId()
+        {
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
+
+            var req = new UseIgnitionRequest { InstanceID = "r_1", TargetInstanceID = "opp_1" };
+            var result = UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            var evt = result.Events.First(e => e.EventType == ActionTypes.UseIgnition);
+            evt.EventData.Should().BeOfType<UseIgnitionEventData>()
+                .Which.TargetId.Should().Be("opp_1");
         }
 
         [Fact]
@@ -241,7 +262,10 @@ public class UseIgnitionProcessorTests
             var req = new UseIgnitionRequest { InstanceID = "sup_1" };
             var result = UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
-            result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseIgnition);
+            var evt = result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.UseIgnition).Subject;
+            var data = evt.EventData.Should().BeOfType<UseIgnitionEventData>().Subject;
+            data.CardId.Should().Be("TEST-0200");
+            data.SourceId.Should().Be("sup_1");
         }
     }
 }
