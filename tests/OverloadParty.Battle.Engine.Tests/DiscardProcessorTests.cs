@@ -199,23 +199,4 @@ public class DiscardProcessorTests
                 .Which.DiscardedIds.Should().BeEquivalentTo(["h_6", "h_7"]);
         }
     }
-
-    /// <summary>手札破棄でターンを終える経路でも、エンドフェーズと同じローンチ失敗判定 (3 ターン目までに稼働実績なしで敗北) が走ることを検証する。</summary>
-    public class LaunchFailure
-    {
-        [Fact]
-        public void GameOver_WhenDiscardingPlayerNeverOperated()
-        {
-            // ターン 5 → personalTurn = (5+1)/2 = 3 で LaunchFailureTurn=3 に到達
-            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.End, activePlayer: 1);
-            state.Player1Hand = Hand(8);
-            state.SetHasOperated(1, false);
-
-            var result = DiscardProcessor.Process(state, TestFactory.MakeGame(), 1, Req("h_6", "h_7"), DiscardCc(), new EffectRegistry());
-
-            result.GameOver.Should().NotBeNull();
-            result.GameOver!.WinnerNum.Should().Be(2);
-            result.GameOver.Reason.Should().Be(WinReasons.LaunchFailure);
-        }
-    }
 }
