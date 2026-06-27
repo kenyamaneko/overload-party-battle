@@ -1753,7 +1753,7 @@ public class AvailableActionsTests
             };
 
         [Fact]
-        public void PendingChoice_EnumeratesOneActionPerCandidate()
+        public void PendingChoice_EmitsSingleActionWithOptionPerCandidate()
         {
             var cc = new TestCardCache();
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
@@ -1762,28 +1762,14 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
-            actions.Should().HaveCount(3);
-            actions.Should().OnlyContain(a => a.Type == ActionTypes.ResolvePendingChoice);
-            actions.Should().OnlyContain(a => a.SourceInstanceID == "eff_inst");
-        }
-
-        [Fact]
-        public void PendingChoice_FieldTarget_PutsCandidateInValidTargets()
-        {
-            var cc = new TestCardCache();
-            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
-            state.PendingEffectChoice = Pending(ChoiceKinds.FieldTarget, "target_1");
-
-            var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
-
             var action = actions.Should().ContainSingle().Subject;
-            action.CardID.Should().Be("TST-0001");
-            action.ValidTargets.Should().BeEquivalentTo(["target_1"]);
+            action.Type.Should().Be(ActionTypes.ResolvePendingChoice);
+            action.CardID.Should().Be("TST-0001", "効果カード ID を載せる");
+            action.ChoiceOptions!.Select(o => o.Key).Should().Equal("c1", "c2", "c3");
         }
 
         [Fact]
-        public void PendingChoice_HandCard_PutsCandidateInCardId()
+        public void PendingChoice_CarriesChoiceKind()
         {
             var cc = new TestCardCache();
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
@@ -1793,8 +1779,8 @@ public class AvailableActionsTests
                 state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             var action = actions.Should().ContainSingle().Subject;
-            action.CardID.Should().Be("hand_card_1");
-            action.ValidTargets.Should().BeNull();
+            action.ChoiceKind.Should().Be(ChoiceKinds.HandCard);
+            action.ChoiceOptions!.Select(o => o.Key).Should().Equal("hand_card_1");
         }
 
         [Fact]
