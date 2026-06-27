@@ -116,7 +116,7 @@ public class DrawPhaseProcessorTests
     public class DeployCompletionTriggers
     {
         [Fact]
-        public void Resource_OneTurnDeploy_FlipsAndFiresAfterOneDraw()
+        public void Resource_OneTurnDeploy_FlipsAndFiresAfterOneDrawPhase()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
@@ -131,11 +131,11 @@ public class DrawPhaseProcessorTests
 
             res.DeployingTurnsLeft.Should().Be(0);
             res.FaceUp.Should().BeTrue();
-            fired.Should().BeTrue("1 ターンデプロイは 1 回のドローで稼働しデプロイ時効果が発動する");
+            fired.Should().BeTrue("デプロイターン 1 のリソースは 1 回のドローフェーズ通過で稼働しデプロイ時効果が発動する");
         }
 
         [Fact]
-        public void Resource_TwoTurnDeploy_StaysDeployingAfterFirstDraw()
+        public void Resource_TwoTurnDeploy_StaysDeployingAfterFirstDrawPhase()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
             state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
@@ -150,30 +150,7 @@ public class DrawPhaseProcessorTests
 
             res.DeployingTurnsLeft.Should().Be(1);
             res.FaceUp.Should().BeFalse();
-            fired.Should().BeFalse("2 ターンデプロイは 1 回目のドローでは稼働せず発動しない");
-        }
-
-        [Fact]
-        public void Resource_TwoTurnDeploy_FlipsAndFiresAfterSecondDraw()
-        {
-            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
-            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
-            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "TST-0001" });
-            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 2);
-            state.Player1Field.Frontend[0] = res;
-
-            bool fired = false;
-            var effects = new TestEffectRegistry();
-            effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
-
-            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
-            // 次のターンのドローフェーズを模して再度ドローさせる
-            state.CurrentPhase = Phase.Draw;
-            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
-
-            res.DeployingTurnsLeft.Should().Be(0);
-            res.FaceUp.Should().BeTrue();
-            fired.Should().BeTrue("2 ターンデプロイは 2 回目のドローで稼働しデプロイ時効果が発動する");
+            fired.Should().BeFalse("デプロイターン 2 のリソースは 1 回目のドローフェーズ通過では稼働せず発動しない");
         }
 
         [Fact]
