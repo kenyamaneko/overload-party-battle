@@ -1,111 +1,114 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Effects.Ops;
+using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Effects;
 
+/// <summary>
+/// trash_to_hand の op を起動効果として登録し、起動効果の使用 (use_ignition) 越しに
+/// トラッシュのカードが手札へ戻ることを検証する。op を直接叩かず、プレイヤーのアクションを起点にする。
+/// </summary>
 public class TrashToHandOpTests
 {
-    private readonly TestCardCache _cc = new();
-    private readonly Game _game = TestFactory.MakeGame();
+    private const string SourceCard = "TST-0009";
 
-    public TrashToHandOpTests()
+    /// <summary>trash_to_hand の op を起動効果として登録した環境を作る。</summary>
+    /// <param name="op">登録する trash_to_hand の op。</param>
+    /// <returns>カードキャッシュと効果レジストリ。</returns>
+    private static (TestCardCache Cc, EffectRegistry Effects) Env(TrashToHandOp op)
     {
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", faction: "Tenki"));
-        _cc.Add(TestFactory.ComputeCard(cardId: "TST-0002", faction: "Sugar"));
-        _cc.Add(TestFactory.DataCard(cardId: "TST-DB01", faction: "Tenki"));
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: SourceCard));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", faction: Factions.Tenki));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0002", faction: Factions.Sugar));
+        var effects = new EffectRegistry();
+        effects.RegisterComposed(SourceCard, TriggerType.Ignition, op);
+        return (cc, effects);
     }
 
-    private EffectContext MakeContext(BattleGameState state, Dictionary<string, object>? choiceData = null)
+    /// <summary>発動元リソースとトラッシュを設定した状態を作る。</summary>
+    /// <param name="trash">トラッシュに置くカード列。</param>
+    /// <returns>発動元を配置しトラッシュを設定したゲーム状態。</returns>
+    private static BattleGameState StateWithTrash(params UndeployedCard[] trash)
     {
-        return new EffectContext
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: SourceCard, instanceId: "src", faceUp: true);
+        state.Player1Trash = [.. trash];
+        state.Player1Hand = [];
+        return state;
+    }
+
+    /// <summary>起動効果を使用するリクエストを作る。</summary>
+    /// <param name="instanceId">手札へ戻すトラッシュのカードのインスタンス ID。任意。</param>
+    /// <returns>起動効果使用リクエスト。</returns>
+    private static UseIgnitionRequest Use(string? instanceId = null) =>
+        new()
         {
-            State = state,
-            Game = _game,
-            PlayerNum = 1,
-            CardCache = _cc,
-            ChoiceData = choiceData,
-            Effects = new EffectRegistry(),
+            InstanceID = "src",
+            ChoiceData = instanceId is null ? null : new Dictionary<string, object> { ["instanceId"] = instanceId },
         };
-    }
 
     [Fact]
-    public void NoChoiceData_Throws()
+    public void Ignition_NoChoiceData_Throws()
     {
-        var state = TestFactory.MakeGameState();
-        state.Player1Trash = [new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" }];
+        var (cc, effects) = Env(new TrashToHandOp());
+        var state = StateWithTrash(new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" });
 
-        var op = new TrashToHandOp();
-        var octx = new OpContext(MakeContext(state));
+        var act = () => UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use(), cc, effects);
 
-        var act = () => op.Execute(octx);
         act.Should().Throw<GameRuleException>().WithMessage("*No card chosen*");
     }
 
     [Fact]
-    public void ValidChoice_NoFilter_MovesCardToHand()
+    public void Ignition_ValidChoice_MovesCardFromTrashToHand()
     {
-        var state = TestFactory.MakeGameState();
-        state.Player1Trash = [new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" }];
-        state.Player1Hand = [];
+        var (cc, effects) = Env(new TrashToHandOp());
+        var state = StateWithTrash(new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" });
 
-        var op = new TrashToHandOp();
-        var octx = new OpContext(MakeContext(state, new Dictionary<string, object> { ["instanceId"] = "t_1" }));
-        op.Execute(octx);
+        UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("t_1"), cc, effects);
 
         state.Player1Trash.Should().BeEmpty();
-        state.Player1Hand.Should().ContainSingle()
-            .Which.CardID.Should().Be("TST-0001");
+        state.Player1Hand.Should().ContainSingle().Which.CardID.Should().Be("TST-0001");
     }
 
     [Fact]
-    public void ValidChoice_PassingFilter_MovesCardToHand()
+    public void Ignition_ChoicePassingFilter_MovesOnlyMatchingCard()
     {
-        var state = TestFactory.MakeGameState();
-        state.Player1Trash =
-        [
+        var (cc, effects) = Env(new TrashToHandOp { Filter = c => c.Faction == Factions.Tenki });
+        var state = StateWithTrash(
             new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" },
-            new UndeployedCard { InstanceID = "t_2", CardID = "TST-0002" },
-        ];
-        state.Player1Hand = [];
+            new UndeployedCard { InstanceID = "t_2", CardID = "TST-0002" });
 
-        var op = new TrashToHandOp { Filter = c => c.Faction == "Tenki" };
-        var octx = new OpContext(MakeContext(state, new Dictionary<string, object> { ["instanceId"] = "t_1" }));
-        op.Execute(octx);
+        UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("t_1"), cc, effects);
 
         state.Player1Trash.Should().ContainSingle(c => c.InstanceID == "t_2");
-        state.Player1Hand.Should().ContainSingle()
-            .Which.CardID.Should().Be("TST-0001");
+        state.Player1Hand.Should().ContainSingle().Which.CardID.Should().Be("TST-0001");
     }
 
     [Fact]
-    public void ChoiceThatFailsFilter_Throws()
+    public void Ignition_ChoiceFailingFilter_Throws()
     {
-        var state = TestFactory.MakeGameState();
-        state.Player1Trash =
-        [
+        var (cc, effects) = Env(new TrashToHandOp { Filter = c => c.Faction == Factions.Tenki });
+        var state = StateWithTrash(
             new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" },
-            new UndeployedCard { InstanceID = "t_2", CardID = "TST-0002" },
-        ];
+            new UndeployedCard { InstanceID = "t_2", CardID = "TST-0002" });
 
-        var op = new TrashToHandOp { Filter = c => c.Faction == "Tenki" };
-        var octx = new OpContext(MakeContext(state, new Dictionary<string, object> { ["instanceId"] = "t_2" }));
+        var act = () => UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("t_2"), cc, effects);
 
-        var act = () => op.Execute(octx);
         act.Should().Throw<GameRuleException>().WithMessage("*does not match*");
+        state.Player1Trash.Should().HaveCount(2);
     }
 
     [Fact]
-    public void ChoiceInstanceNotInTrash_Throws()
+    public void Ignition_ChoiceInstanceNotInTrash_Throws()
     {
-        var state = TestFactory.MakeGameState();
-        state.Player1Trash = [new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" }];
+        var (cc, effects) = Env(new TrashToHandOp());
+        var state = StateWithTrash(new UndeployedCard { InstanceID = "t_1", CardID = "TST-0001" });
 
-        var op = new TrashToHandOp();
-        var octx = new OpContext(MakeContext(state, new Dictionary<string, object> { ["instanceId"] = "nope" }));
+        var act = () => UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("nope"), cc, effects);
 
-        var act = () => op.Execute(octx);
         act.Should().Throw<GameRuleException>().WithMessage("*not in trash*");
     }
 }

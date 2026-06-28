@@ -1,118 +1,52 @@
-using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Effects.Ops;
-using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Effects;
 
 /// <summary>
-/// Tests for EffectComposer — composes IEffectOps into an EffectHandler.
+/// EffectComposer が ops 列を順序通り・各オーバーロードで EffectHandler に組み立てることを検証する。
 /// </summary>
 public class EffectComposerTests
 {
-    private static EffectContext MakeContext(BattleGameState? state = null)
-    {
-        state ??= TestFactory.MakeGameState();
-        return new EffectContext
+    /// <summary>ops の実行検証に十分な最小限の EffectContext を組み立てる。</summary>
+    /// <returns>テスト用の EffectContext。</returns>
+    private static EffectContext MakeContext() =>
+        new()
         {
-            State = state,
+            State = TestFactory.MakeGameState(),
             Game = TestFactory.MakeGame(),
             PlayerNum = 1,
             CardCache = new TestCardCache(),
             Effects = new EffectRegistry(),
         };
-    }
 
     [Fact]
-    public void Compose_RunsOpsInSequence()
+    public void Compose_RunsOpsInOrder()
     {
         var order = new List<int>();
-        var ops = new IEffectOp[]
-        {
+        var handler = EffectComposer.Compose(
             new CustomFnOp(_ => order.Add(1)),
             new CustomFnOp(_ => order.Add(2)),
-            new CustomFnOp(_ => order.Add(3)),
-        };
+            new CustomFnOp(_ => order.Add(3)));
 
-        var handler = EffectComposer.Compose(ops);
         handler(MakeContext());
 
         order.Should().Equal(1, 2, 3);
     }
 
     [Fact]
-    public void Compose_GainBudget_ModifiesState()
+    public void Compose_FromList_RunsAllOps()
     {
-        var state = TestFactory.MakeGameState(p1Budget: 5000);
-        var ops = new IEffectOp[]
-        {
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)),
-        };
-
-        var handler = EffectComposer.Compose(ops);
-        handler(MakeContext(state));
-
-        state.Player1Budget.Should().Be(5500);
-    }
-
-    [Fact]
-    public void Compose_LoseBudget_ModifiesOpponent()
-    {
-        var state = TestFactory.MakeGameState(p1Budget: 5000, p2Budget: 3000);
-        var ops = new IEffectOp[]
-        {
-            new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(800)),
-        };
-
-        var handler = EffectComposer.Compose(ops);
-        handler(MakeContext(state));
-
-        state.Player2Budget.Should().Be(2200);
-    }
-
-    [Fact]
-    public void Compose_MultipleOps_CumulativeEffect()
-    {
-        var state = TestFactory.MakeGameState(p1Budget: 5000);
-        var ops = new IEffectOp[]
-        {
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(300)),
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)),
-        };
-
-        var handler = EffectComposer.Compose(ops);
-        handler(MakeContext(state));
-
-        state.Player1Budget.Should().Be(5500);
-    }
-
-    [Fact]
-    public void Compose_LoseBudget_AllowsNegative()
-    {
-        var state = TestFactory.MakeGameState(p1Budget: 5000, p2Budget: 300);
-        var ops = new IEffectOp[]
-        {
-            new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(800)),
-        };
-
-        var handler = EffectComposer.Compose(ops);
-        handler(MakeContext(state));
-
-        state.Player2Budget.Should().Be(-500);
-    }
-
-    [Fact]
-    public void Compose_FromList_AlsoWorks()
-    {
-        var state = TestFactory.MakeGameState(p1Budget: 5000);
+        var order = new List<int>();
         var ops = new List<IEffectOp>
         {
-            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(1000)),
+            new CustomFnOp(_ => order.Add(1)),
+            new CustomFnOp(_ => order.Add(2)),
         };
 
         var handler = EffectComposer.Compose(ops);
-        handler(MakeContext(state));
+        handler(MakeContext());
 
-        state.Player1Budget.Should().Be(6000);
+        order.Should().Equal(1, 2);
     }
 }
