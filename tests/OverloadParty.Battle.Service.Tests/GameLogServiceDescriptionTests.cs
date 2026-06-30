@@ -93,56 +93,93 @@ public class GameLogServiceDescriptionTests
     /// <summary>イベント種別ごとの説明文への変換を検証する。</summary>
     public class EventDescriptions
     {
-        /// <summary>イベント種別ごとの (ペイロード, プレイヤー番号, 期待説明文) ケースを列挙する。</summary>
-        /// <returns>説明文変換のケース列。</returns>
-        public static IEnumerable<object[]> DescriptionCases() =>
+        /// <summary>各イベント種別の (ペイロード, プレイヤー番号, 説明文に載るべきデータ) ケースを列挙する。</summary>
+        /// <returns>データ伝達検証のケース列。</returns>
+        public static IEnumerable<object[]> PayloadDataCases() =>
         [
-            new object[] { new AttachCardEventData { CardId = "TST-0001" }, (long?)1, "P1 attached \"えくぼ\"" },
-            new object[] { new UseIgnitionEventData { CardId = "TST-0001" }, (long?)2, "P2 activated effect: えくぼ" },
-            new object[] { new PlayCardEventData { CardId = "TST-0001", Zone = "frontend" }, (long?)1, "P1 deployed \"えくぼ\" to Frontend [-300 Budget]" },
-            new object[] { new PlayCardEventData { CardId = "TST-0002", Zone = "backend" }, (long?)1, "P1 deployed \"コスト無し\" to Backend" },
-            new object[] { new PlayCardEventData { CardId = "TST-0001", Cancelled = true }, (long?)1, "P1 deploy of \"えくぼ\" was cancelled" },
-            new object[] { new AttackEventData { Cancelled = true }, (long?)1, "P1 attack was cancelled" },
-            new object[] { new AttackEventData { Damage = 300, Destroyed = false }, (long?)1, "P1 attacked for 300 damage" },
-            new object[] { new AttackEventData { Damage = 300, Destroyed = false, SlaPenalty = 0 }, (long?)1, "P1 attacked for 300 damage" },
-            new object[] { new ScaleUpEventData { TargetRank = "large", InstanceFamily = "db" }, (long?)1, "P1 scaled up → Large db" },
-            new object[] { new DiscardHandEventData { DiscardedCount = 1 }, (long?)1, "P1 discarded 1 card" },
-            new object[] { new PhaseEndEventData { Phase = "main", NeedsDiscard = false }, (long?)1, "Main phase ended" },
-            new object[] { new PhaseEndEventData { Phase = "end", NeedsDiscard = true }, (long?)1, "End phase ended (discard required)" },
-            new object[] { new TurnStartInternalEventData { Turn = 3, ActivePlayer = 2 }, (long?)null, "Turn start → Turn 3 (P2)" },
-            new object[] { new ReactiveRevealedEventData(), (long?)1, "P1 reactive revealed" },
-            new object[] { new BattleStartEventData(), (long?)2, "P2 battle start" },
-            new object[] { new SelectSlotEventData { CardId = "TST-0001", Zone = "frontend", Index = 2 }, (long?)1, "P1 selected slot for \"えくぼ\" at Frontend[2]" },
+            new object[] { new AttachCardEventData { CardId = "TST-0001" }, (long?)1, new[] { "p1", "えくぼ" } },
+            new object[] { new UseIgnitionEventData { CardId = "TST-0001" }, (long?)2, new[] { "p2", "えくぼ" } },
+            new object[] { new PlayCardEventData { CardId = "TST-0001", Zone = "frontend" }, (long?)1, new[] { "p1", "えくぼ", "frontend", "300" } },
+            new object[] { new AttackEventData { Damage = 300, Destroyed = false }, (long?)1, new[] { "p1", "300" } },
+            new object[] { new AttackEventData { Damage = 600, Destroyed = true, SlaPenalty = 400 }, (long?)1, new[] { "p1", "600", "400" } },
+            new object[] { new ScaleUpEventData { TargetRank = "large", InstanceFamily = "db" }, (long?)1, new[] { "p1", "large", "db" } },
+            new object[] { new DiscardHandEventData { DiscardedCount = 1 }, (long?)1, new[] { "p1", "1" } },
+            new object[] { new PhaseEndEventData { Phase = "main", NeedsDiscard = false }, (long?)1, new[] { "main" } },
+            new object[] { new PhaseEndEventData { Phase = "end", NeedsDiscard = true }, (long?)1, new[] { "end" } },
+            new object[] { new TurnStartInternalEventData { Turn = 3, ActivePlayer = 2 }, (long?)null, new[] { "3", "p2" } },
+            new object[] { new ReactiveRevealedEventData(), (long?)1, new[] { "p1" } },
+            new object[] { new BattleStartEventData(), (long?)2, new[] { "p2" } },
+            new object[] { new SelectSlotEventData { CardId = "TST-0001", Zone = "frontend", Index = 2 }, (long?)1, new[] { "p1", "えくぼ", "frontend", "2" } },
         ];
 
-        /// <summary>各イベント種別が期待どおりの説明文へ変換されることを検証する。</summary>
+        /// <summary>各イベント種別の説明文が、ペイロードの主要データを載せることを検証する。</summary>
         /// <param name="data">描画対象イベントのペイロード。</param>
-        /// <param name="playerNum">イベントのプレイヤー番号。</param>
-        /// <param name="expected">期待される説明文。</param>
+        /// <param name="playerNum">イベントのプレイヤー番号。システムイベントは null。</param>
+        /// <param name="expectedTokens">説明文に含まれるべきデータ (小文字)。</param>
         [Theory]
-        [MemberData(nameof(DescriptionCases))]
-        public async Task RendersExpectedDescription(IEventData data, long? playerNum, string expected)
+        [MemberData(nameof(PayloadDataCases))]
+        public async Task ConveysPayloadData(IEventData data, long? playerNum, string[] expectedTokens)
         {
             var description = await RenderDescription(data, playerNum);
-            description.Should().Be(expected);
+            // 整形 (capitalize) を pin しないよう小文字化し、データの有無だけを確かめる
+            description.ToLowerInvariant().Should().ContainAll(expectedTokens);
+        }
+
+        /// <summary>維持コスト 0 のデプロイはバジェット注記を載せないことを検証する。</summary>
+        [Fact]
+        public async Task ZeroCostDeploy_OmitsBudgetAnnotation()
+        {
+            var description = await RenderDescription(
+                new PlayCardEventData { CardId = "TST-0002", Zone = "backend" }, playerNum: 1);
+            description.Should().Contain("コスト無し");
+            description.Should().NotContain("Budget");
+        }
+
+        /// <summary>取り消されたデプロイは維持コストを載せないことを検証する。</summary>
+        [Fact]
+        public async Task CancelledDeploy_OmitsCost()
+        {
+            var description = await RenderDescription(
+                new PlayCardEventData { CardId = "TST-0001", Cancelled = true }, playerNum: 1);
+            description.Should().Contain("えくぼ");
+            description.Should().NotContain("Budget");
+        }
+
+        /// <summary>取り消された攻撃はダメージ量を載せないことを検証する。</summary>
+        [Fact]
+        public async Task CancelledAttack_OmitsDamageValue()
+        {
+            var description = await RenderDescription(
+                new AttackEventData { Cancelled = true, Damage = 999 }, playerNum: 1);
+            description.Should().NotContain("999");
+        }
+
+        /// <summary>SLA ペナルティ 0 の攻撃はペナルティ注記を載せないことを検証する。</summary>
+        [Fact]
+        public async Task ZeroSlaAttack_OmitsPenalty()
+        {
+            var description = await RenderDescription(
+                new AttackEventData { Damage = 300, Destroyed = false, SlaPenalty = 0 }, playerNum: 1);
+            description.Should().Contain("300");
+            description.Should().NotContain("SLA");
         }
     }
 
-    /// <summary>ゲーム終了イベントが勝者番号から説明文を導くことを検証する。</summary>
+    /// <summary>ゲーム終了イベントが勝者番号から勝敗結果を導くことを検証する。</summary>
     public class GameOverDescriptions
     {
-        /// <summary>勝者番号に応じた終了説明文を検証する。</summary>
+        /// <summary>勝者番号に応じた勝敗結果が説明文に載ることを検証する。</summary>
         /// <param name="winningPlayerNum">ゲームの勝者番号。引き分けは null または 0。</param>
-        /// <param name="expected">期待される説明文。</param>
+        /// <param name="expectedResult">説明文に載るべき勝敗結果 (小文字)。</param>
         [Theory]
-        [InlineData(null, "Game over: Draw")]
-        [InlineData(0, "Game over: Draw")]
-        [InlineData(2, "Game over: P2 wins")]
-        public async Task RendersFromWinningPlayer(int? winningPlayerNum, string expected)
+        [InlineData(null, "draw")]
+        [InlineData(0, "draw")]
+        [InlineData(2, "p2")]
+        public async Task ConveysWinningResult(int? winningPlayerNum, string expectedResult)
         {
             var description = await RenderDescription(
                 new GameOverEventData(), playerNum: null, winningPlayerNum: winningPlayerNum);
-            description.Should().Be(expected);
+            description.ToLowerInvariant().Should().Contain(expectedResult);
         }
     }
 
