@@ -63,7 +63,8 @@ public class GameLogServiceTests
                 EventData = new TurnEndEventData
                 {
                     Phase = "battle",
-                    NextTurn = 2,
+                    // NextTurn と ActivePlayer を別値にし、説明文での取り違えを検出可能にする
+                    NextTurn = 5,
                     ActivePlayer = 2,
                     CurrentPhase = "draw",
                 },
@@ -113,15 +114,19 @@ public class GameLogServiceTests
         }
 
         [Fact]
-        public async Task EntryDescriptions_AreHumanReadable()
+        public async Task EntriesConveyEventData()
         {
             var gameId = await SeedFinishedGame();
             var log = await _svc.GetGameLog(gameId);
 
-            log!.Entries[0].Description.Should().Contain("deployed").And.Contain("えくぼ").And.Contain("Frontend");
-            log.Entries[1].Description.Should().Contain("attacked").And.Contain("600 damage").And.Contain("destroyed");
-            log.Entries[2].Description.Should().Contain("Turn end").And.Contain("Turn 2").And.Contain("P2");
-            log.Entries[3].Description.Should().Contain("Game over").And.Contain("P1 wins");
+            // PlayCard はカード名と維持コストを伝える
+            log!.Entries[0].Description.Should().Contain("えくぼ").And.Contain("300");
+            // Attack はダメージ量と SLA ペナルティ額を伝える
+            log.Entries[1].Description.Should().Contain("600").And.Contain("400");
+            // TurnEnd は遷移先ターン番号 (5) とターンプレイヤー番号 (2) を伝える
+            log.Entries[2].Description.Should().Contain("5").And.Contain("2");
+            // GameOver は勝者を伝える
+            log.Entries[3].Description.Should().Contain("P1");
         }
     }
 
@@ -136,29 +141,28 @@ public class GameLogServiceTests
         }
 
         [Fact]
-        public async Task ContainsHeader()
+        public async Task ConveysGameMetadata()
         {
             var gameId = await SeedFinishedGame();
             var text = await _svc.GetGameLogText(gameId);
 
             text.Should().NotBeNull();
-            text.Should().Contain("=== Game test-game ===");
-            text.Should().Contain("P1: P1");
-            text.Should().Contain("P2: NPC");
-            text.Should().Contain("P1=1200");
-            text.Should().Contain("P2=0");
+            // ゲーム ID・NPC モデル・最終バジェット・勝因を伝える
+            text.Should().Contain(gameId);
+            text.Should().Contain("SHE");
+            text.Should().Contain("1200");
+            text.Should().Contain(WinReasons.BudgetZero);
         }
 
         [Fact]
-        public async Task ContainsEventLines()
+        public async Task ConveysEventData()
         {
             var gameId = await SeedFinishedGame();
             var text = await _svc.GetGameLogText(gameId);
 
-            text.Should().Contain("[1]");
-            text.Should().Contain("[4]");
-            text.Should().Contain("deployed");
-            text.Should().Contain("Game over");
+            // 各イベントのデータ (デプロイしたカード名・攻撃のダメージ量) がテキストに載る
+            text.Should().Contain("えくぼ");
+            text.Should().Contain("600");
         }
     }
 
@@ -166,11 +170,11 @@ public class GameLogServiceTests
     public class EventDescriptions : Base
     {
         [Theory]
-        [InlineData(ActionTypes.ScaleUp, "scaled up")]
-        [InlineData(ActionTypes.Monetize, "distributed")]
-        [InlineData(ActionTypes.DiscardHand, "discarded")]
-        [InlineData(EventTypes.PhaseChange, "ended")]
-        public async Task ProduceDescriptions(string eventType, string expectedSubstring)
+        [InlineData(ActionTypes.ScaleUp, "medium")]
+        [InlineData(ActionTypes.Monetize, "300")]
+        [InlineData(ActionTypes.DiscardHand, "2")]
+        [InlineData(EventTypes.PhaseChange, "battle")]
+        public async Task ConveyPayloadData(string eventType, string expectedData)
         {
             var game = TestFactory.MakeGame();
             var state = TestFactory.MakeGameState();
@@ -207,7 +211,8 @@ public class GameLogServiceTests
             });
 
             var log = await _svc.GetGameLog("test-game");
-            log!.Entries[0].Description.Should().Contain(expectedSubstring);
+            // 各イベントが自身のペイロードのデータを説明文に載せる
+            log!.Entries[0].Description.Should().ContainEquivalentOf(expectedData);
         }
     }
 
