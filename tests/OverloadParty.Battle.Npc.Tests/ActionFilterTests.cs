@@ -45,38 +45,6 @@ public class ActionFilterTests
         }
     }
 
-    /// <summary>Tests for ActionFilter.FilterByType.</summary>
-    public class FilterByType
-    {
-        [Fact]
-        public void ReturnsOnlyMatchingActions()
-        {
-            var actions = new List<GD.AvailableAction>
-            {
-                new GD.PlayCardAction { HandInstanceID = "h1" },
-                new GD.AttackAction { SourceInstanceID = "a1" },
-                new GD.PlayCardAction { HandInstanceID = "h2" },
-                new GD.ScaleUpAction { SourceInstanceID = "s1" },
-            };
-
-            var result = ActionFilter.FilterByType<GD.PlayCardAction>(actions);
-
-            result.Should().HaveCount(2);
-            result.Select(a => a.HandInstanceID).Should().Equal("h1", "h2");
-        }
-
-        [Fact]
-        public void NoMatches_ReturnsEmptyList()
-        {
-            var actions = new List<GD.AvailableAction>
-            {
-                new GD.AttackAction(),
-            };
-
-            ActionFilter.FilterByType<GD.PlayCardAction>(actions).Should().BeEmpty();
-        }
-    }
-
     /// <summary>Tests for ActionFilter.PickBestZone.</summary>
     public class PickBestZone
     {

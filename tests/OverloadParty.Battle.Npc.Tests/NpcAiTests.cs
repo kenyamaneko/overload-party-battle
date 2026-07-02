@@ -315,7 +315,10 @@ public class NpcAiTests
         var actions = ai.DecideBattlePhaseActions(state);
         var attacks = actions.Where(a => a.ActionType == ActionTypes.Attack).ToList();
 
-        attacks.Should().HaveCount(2);
+        attacks.Select(a => ((AttackRequest)a.Data).AttackerInstanceID)
+            .Should().BeEquivalentTo(new[] { "atk1", "atk2" }, "2 体のリソースがそれぞれ攻撃する");
+        attacks.Should().OnlyContain(a => ((AttackRequest)a.Data).TargetInstanceID == "target",
+            "唯一の相手リソースが両方の攻撃の対象になる");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -917,11 +920,10 @@ public class NpcAiTests
         var state = BuildState(hand: hand, available: available);
 
         var actions = ai.DecideMainPhaseActions(state);
-        var play = actions.FirstOrDefault(a =>
-            a.ActionType == ActionTypes.PlayCard
-            && ((PlayCardRequest)a.Data).CardInstanceID == "h_strat");
 
-        play.Should().NotBeNull();
+        // 即時ストラテジーは他アクションより先に決定されるため列の先頭に来る
+        actions[0].ActionType.Should().Be(ActionTypes.PlayCard);
+        ((PlayCardRequest)actions[0].Data).CardInstanceID.Should().Be("h_strat");
     }
 
     [Fact]
