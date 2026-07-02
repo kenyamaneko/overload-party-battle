@@ -243,18 +243,15 @@ public class EffectRegistrationTests
     /// <summary>Tests that effect info / classification is exposed for cards.</summary>
     public class EffectInfoClassification : Base
     {
-        [Fact]
-        public void Card104_EffectInfo_HasDamageCategory()
+        [Theory]
+        [InlineData("NT-0013", EffectCategory.SingleDamage)]
+        [InlineData("NT-0010", EffectCategory.BudgetGain)]
+        public void EffectInfo_HasExpectedCategory(string cardId, EffectCategory expected)
         {
-            var info = _registry.GetEffectInfo("NT-0013", TriggerType.Ignition);
-            info.Should().NotBeNull();
-        }
+            var info = _registry.GetEffectInfo(cardId, TriggerType.Ignition);
 
-        [Fact]
-        public void Card101_EffectInfo_HasBudgetCategory()
-        {
-            var info = _registry.GetEffectInfo("NT-0010", TriggerType.Ignition);
             info.Should().NotBeNull();
+            info!.HasCategory(expected).Should().BeTrue();
         }
     }
 
