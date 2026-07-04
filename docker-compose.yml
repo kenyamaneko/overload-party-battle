@@ -1,6 +1,6 @@
-# ローカル動作確認用の PostgreSQL。
-# テストでは Testcontainers が別途コンテナを起動するため、
-# 本 compose はあくまで `make run` (cmd/server) のローカル動作確認用。
+# battle のローカル開発スタック。構成と使い方は `make help` を参照。
+name: overload-party-battle
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -8,8 +8,6 @@ services:
       POSTGRES_USER: battle
       POSTGRES_PASSWORD: battle
       POSTGRES_DB: battle
-    ports:
-      - "5432:5432"
     volumes:
       - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
       - battle_pgdata:/var/lib/postgresql/data
@@ -19,5 +17,28 @@ services:
       timeout: 2s
       retries: 15
 
+  battle:
+    image: mcr.microsoft.com/dotnet/sdk:10.0
+    working_dir: /src
+    entrypoint: ["/bin/sh", "/src/docker/dev-run.sh"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Local
+      ASPNETCORE_URLS: http://+:9002
+      PORT: "9002"
+      DATABASE_CONN: Host=postgres;Port=5432;Database=battle;Username=battle;Password=battle;Search Path=battle
+      NPC_AI_CONFIG_DIR: /src/src/OverloadParty.Battle.Npc/Data
+      # カードは card サービスから取得する。単体スタックには card が居ないため、
+      # 対戦カード読み込みには別途 card を含むスタック (e2e) が要る。
+      CARD_SERVICE_URL: http://card:9003
+    volumes:
+      - ./:/src
+      - battle_nuget:/root/.nuget/packages
+    ports:
+      - "9002:9002"
+
 volumes:
   battle_pgdata:
+  battle_nuget:
