@@ -1,11 +1,8 @@
-.PHONY: build run test test-coverage clean restore update-common db-up db-down db-reset help
+.PHONY: build run test test-coverage clean restore update-common down help
 
 # ─── Config ──────────────────────────────────────────────
 SLN     := OverloadParty.Battle.slnx
 SERVER  := src/OverloadParty.Battle.Server
-
-# ─── Common Repo ─────────────────────────────────────────
-COMMON_DIR  ?= $(CURDIR)/../overload-party-common
 
 # ─── Build ───────────────────────────────────────────────
 restore:  ## Restore NuGet packages
@@ -14,27 +11,12 @@ restore:  ## Restore NuGet packages
 build:  ## Build the solution
 	dotnet build $(SLN)
 
-# ─── DB ──────────────────────────────────────────────────
-db-up:  ## Start local Postgres (docker compose)
-	docker compose up -d postgres
-
-db-down:  ## Stop local Postgres
-	docker compose down
-
-db-reset:  ## Drop volume and recreate DB
-	docker compose down -v
-	docker compose up -d postgres
-
 # ─── Run ─────────────────────────────────────────────────
-PORT ?= 9002
+run:  ## Run the full local stack (app + infra) in compose; edit source and restart `battle` to reload
+	docker compose up
 
-run: db-up  ## Run local dev server (port 9002, compose Postgres 接続)
-	@lsof -ti :$(PORT) | xargs kill -9 2>/dev/null || true
-	ASPNETCORE_ENVIRONMENT=Development \
-	DATABASE_CONN="Host=localhost;Port=5432;Database=battle;Username=battle;Password=battle;Search Path=battle" \
-	CARDS_JSON_PATH=$(COMMON_DIR)/packages/game-state-dotnet/cache/cards_gen.json \
-	NPC_AI_CONFIG_DIR=$(CURDIR)/src/OverloadParty.Battle.Npc/Data \
-		dotnet run --project $(SERVER)
+down:  ## Stop the local stack and remove volumes
+	docker compose down -v
 
 # ─── Test ────────────────────────────────────────────────
 test:  ## Run all tests (Testcontainers; requires Docker running)
