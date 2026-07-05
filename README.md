@@ -19,7 +19,7 @@ Gateway (:9001)
               ▼
 Battle (このサービス, :9002)
   ├─ PostgreSQL  battle スキーマ (games / game_npcs / game_decks /
-  │                               game_players / game_states /
+  │                               player_summary / game_states /
   │                               game_actions / game_events)
   └─ Card Service (:9003, 起動時 1 回の GET /internal/v1/cards)
 ```

@@ -4,16 +4,15 @@
 
 ---
 
-## 1. ゲームロジック
+## ゲームロジック
 
-### 1.1 ターン管理
+### ターン管理
 
 **フェーズ順序:**
 
 | フェーズ | 内容 |
 |------|------|
 | `draw` | リポジトリから手札に1枚ドロー |
-| `yield` | バックエンドリソースのInsight生成処理 |
 | `main` | カードプレイ・スケールアップ・アタッチメント等 |
 | `battle` | 攻撃実行 |
 | `end` | エンドフェーズ処理、ターン切り替え |
@@ -21,7 +20,7 @@
 **フェーズ進行フロー:**
 
 ```
-draw → yield → main → battle → end → (ActivePlayer切替) → draw ...
+draw → main → battle → end → (ActivePlayer切替) → draw ...
 ```
 
 **エンドフェーズの詳細手順:**
@@ -30,28 +29,18 @@ draw → yield → main → battle → end → (ActivePlayer切替) → draw ...
 
 | 手順 | 処理 | 実装関数 / 備考 |
 |------|------|------|
-| 1 | Passive / OnEndPhase 効果の発火 | `FirePassiveEffects` — フィールドのカードを `DeployOrder` 昇順で走査し、`TriggerType.Passive` / `OnEndPhase` ハンドラを実行 |
-| 2 | 維持コスト徴収 | `CollectMaintenanceCost` — 全表向きリソースの維持コストを合算し budget から減算（Elastic カードは `BaseThroughput/Yield * RankMultiplier + ElasticBonus` を超過した分のみ従量課金） |
-| 3 | Insight 生成 & Elastic ボーナス累積 | `GenerateInsight` — バックエンドの Data 系リソースが `StatCalculator.CalculateEffectiveInsight` で yield を計算し Insight プールに加算。続けて `StatCalculator.ApplyElasticBonus` で `ElasticBonus` を `elasticIncrement` ぶん**累積**（リセットではない。逓減は `EffectiveElasticBonus` が対数スケールで処理） |
-| 4 | 一時効果の終了 | `ExpireTemporaryEffects` — `duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
-| 5 | ターン単位フラグのリセット | `ResetPerTurnFlags` — `HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |
+| 1 | Passive / OnEndPhase 効果の発火 | `FirePassiveEffects`：フィールドのカードを `DeployOrder` 昇順で走査し、`TriggerType.Passive` / `OnEndPhase` ハンドラを実行 |
+| 2 | 維持コスト徴収 | `CollectMaintenanceCost`：全表向きリソースの維持コストを合算し budget から減算（Elastic カードは `BaseThroughput/Yield * RankMultiplier + ElasticBonus` を超過した分のみ従量課金） |
+| 3 | Insight 生成 & Elastic ボーナス累積 | `GenerateInsight`：バックエンドの Data 系リソースが `StatCalculator.CalculateEffectiveInsight` で yield を計算し Insight プールに加算。続けて `StatCalculator.ApplyElasticBonus` で `ElasticBonus` を `elasticIncrement` ぶん**累積**（リセットではない。逓減は `CalculateEffectiveElasticBonus` が対数スケールで処理） |
+| 4 | 一時効果の終了 | `ExpireTemporaryEffects`：`duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
+| 5 | ターン単位フラグのリセット | `ResetPerTurnFlags`：`HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |
 | 6 | 手札上限チェック | 手札が **6枚** を超過している場合、サーバーが `discard_prompt` を送信（後続 7–8 は破棄完了後に実行）|
 | 7 | プレイヤーが破棄カードを選択 | クライアントが `discard_hand` で破棄するカードを送信（15秒タイムアウト）。タイムアウト時は手札の末尾から自動的に破棄（古い順）|
 | 8 | ターン切り替え | `WinConditionChecker.CheckLaunchFailure` → 問題なければ `TurnManager.SwitchActivePlayer` → 次プレイヤーの `DrawPhaseProcessor.Process` を起動 |
 
-> Note: 旧バージョンのドキュメントには「Elastic 値のリセット」手順が存在したが、実装上 `ElasticBonus` は毎ターン累積する設計（逓減は `StatCalculator.EffectiveElasticBonus` の対数スケーリングで表現）のため、リセットステップは存在しない。
+> Note: 旧バージョンのドキュメントには「Elastic 値のリセット」手順が存在したが、実装上 `ElasticBonus` は毎ターン累積する設計（逓減は `StatCalculator.CalculateEffectiveElasticBonus` の対数スケーリングで表現）のため、リセットステップは存在しない。
 
-### 1.2 チェーン解決
-
-**解決アルゴリズム:**
-
-| 項目 | 内容 |
-|------|------|
-| 解決順序 | LIFO（スタックの逆順） |
-| アクションタイプ | `attack` / `component_effect` / `reactive` |
-| 解決後 | 解決済みエントリをクリア |
-
-### 1.3 効果計算
+### 効果計算
 
 **リソーススタッツ計算の優先順序:**
 
@@ -65,49 +54,49 @@ draw → yield → main → battle → end → (ActivePlayer切替) → draw ...
 | 6 | 一時効果（そのターンのみ） |
 | 7 | 現在AV = MaxAV − ダメージ蔓積量 |
 
-### 1.4 Available Actions と NPC AI 統合
+### Available Actions と NPC AI 統合
 
 **Available Actions（Master Duel 方式）:**
 
-サーバーが `ComputeAvailableActions()` でフェーズごとの有効アクションを計算し、クライアントとNPC AIの両方に提供する。
+サーバーがフェーズごとの有効アクションを計算し、クライアントとNPC AIの両方に提供する。
 
 | 項目 | 内容 |
 |------|------|
-| 計算タイミング | 状態更新ごと（Battle Server）、NPC ターン開始時（`GameService`） |
-| 関数 | `Engine.ComputeAvailableActions(state, game, playerNum, ...)` |
+| 計算タイミング | `GameStateView.Build`（Service）が ClientGameState を組み立てるとき。アクティブプレイヤー（効果選択待ち中は chooser）の分のみ算出 |
+| 関数 | `AvailableActions.GetAllAvailableActions(state, myField, oppField, hand, budget, insightPool, ...)`（Engine） |
 | 戻り値 | `List<AvailableAction>`（タイプ別 discriminated union） |
-| クライアント向け | `ClientGameState.my.available_actions` に含めて Gateway 経由で WebSocket 送信 |
-| NPC 向け | `RunNpcTurnIfNeeded` 内で計算し Strategy に渡す |
+| クライアント向け | `ClientGameState.myView.availableActions` に含めて Gateway 経由で WebSocket 送信 |
+| NPC 向け | `NpcRunner` が情報秘匿済み ClientGameState の一部として strategy に渡す |
 
 **AvailableAction のアクションタイプ:**
 
 | Type | 主要フィールド |
 |------|---------------|
-| `play_card` | `HandInstanceID`, `CardID`, `ValidZones`, `ValidTargets`, `Cost` |
+| `play_card` | `HandInstanceID`, `CardID`, `ValidZones`, `ValidTargets`, `EffectTargetType` |
 | `attack` | `SourceInstanceID`, `ValidTargets` |
-| `scale_up` | `SourceInstanceID`, `Cost`, `TargetRank`, `NeedsFamily`, `RequiredCount` |
+| `scale_up` | `SourceInstanceID`, `TargetRank`, `InstanceFamily`, `NeedsFamily` |
 | `monetize` | `SourceInstanceID`, `RemainingCapacity` |
-| `use_effect` | `SourceInstanceID`, `ValidTargets`, `EffectTargetType` |
-| `set_reactive` | `SourceInstanceID` |
+| `use_ignition` | `CardID`, `SourceInstanceID`, `ValidTargets`, `EffectTargetType`, `RequiredCount` |
+| `use_initiative` | `CardID`, `Kind`, `Cost`, `ValidTargets`, `EffectTargetType` |
+| `resolve_pending_choice` | `EffectCardId`, `ChoiceKind`, `ChoiceOptions` |
 
 ゲームフロー制御（フェーズ終了、手札破棄）は `available_actions` に含めず、`turn_controls` メッセージとして別途送信される。
 
 **NPC AI アーキテクチャ（Battle Server / C#）:**
 
 ```
-Engine.ComputeAvailableActions()
-        │
+NpcRunner (Service)
+        │ GameStateView.Build で情報秘匿済み ClientGameState を組み立て
         ▼
-┌─────────────────────┐
-│  IStrategy interface │  DecideMainPhaseActions(state, game, playerNum, available)
-│                      │  DecideBattlePhaseActions(state, game, playerNum, available)
-│                      │  DecideDiscard(state, playerNum)
-│                      │  DecideStartingResources(deckCards)
-└────────┬────────────┘
+┌──────────────────────┐  DecideMainPhaseActions(clientState)
+│ INpcStrategy         │  DecideBattlePhaseActions(clientState)
+│ interface            │  DecideDiscard(clientState, discardCount)
+│                      │  DecideSlotSelect(clientState)
+│                      │  DecidePendingEffectChoice(clientState)
+└────────┬─────────────┘
          │
-    ┌────┴────┐
-    ▼         ▼
-StandardAi   FactionAi (SHE / Tenki / Sugar / Tuners)
+         ▼
+NpcAi (YAML 設定駆動: 陣営 SHE / Tenki / Sugar / Tuners × 難易度 easy / hard)
 ```
 
 NPC は `List<AvailableAction>` から最適なアクションを選択するのみ。
@@ -115,31 +104,33 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 
 **NPC の決定フロー（Main Phase）:**
 
-| 順序 | 処理 | ヘルパー |
-|------|------|---------|
-| 1 | Strategy/Incident カードを使用 | `DoImmediateActions()` — `EvaluateCard` でスコアリング |
-| 2 | Resource カードをデプロイ | `DoDeployActions()` — `PickBestZone` でゾーン選択 |
-| 3 | フィールド効果を発動 | `DecideActivateActions()` — `SelectTargetFromValid` でターゲット制約 |
-| 4 | スケールアップ | `DoScaleUpActions()` — `AvailableAction.Cost` / `TargetRank` を使用 |
-| 5 | Insight 配分 | `DoDistributeYieldActions()` — `RemainingCapacity` で greedy 配分 |
-| 6 | フェーズ終了 | `MakeEndPhaseAction()` |
+| 順序 | 処理 | 実装 |
+|------|------|------|
+| 1 | Strategy / Incident カードを使用 | `ImmediateActionStrategy` |
+| 2 | Resource カードをデプロイ | `DeployStrategy`（Attachment / Reactive は設定がある場合のみ `AttachmentDeployStrategy` / `ReactiveDeployStrategy`） |
+| 3 | 起動効果を発動 | `IgnitionStrategy` |
+| 4 | 施策を使用 | `InitiativeStrategy`（施策カタログがある場合のみ） |
+| 5 | スケールアップ | `ScaleUpStrategy` |
+| 6 | Insight 配分 | `MonetizeStrategy`（Insight Pool > 0 の場合のみ） |
+| 7 | フェーズ終了 | `MakeEndPhaseAction()` |
 
 **NPC 関連ファイル（battle リポ: `src/OverloadParty.Battle.Npc/`）:**
 
 | ファイル | 役割 |
 |---------|------|
-| `StandardAi.cs` | IStrategy インターフェース、StandardAI 実装 |
-| `FactionAi.cs` | FactionAI（陣営別パラメータ・オーバーライド） |
+| `INpcStrategy.cs` | NPC 意思決定のインターフェース |
+| `NpcAi.cs` | YAML 設定駆動の実装。判断を `Strategies/` 配下へ委譲 |
+| `Strategies/` | アクション種別ごとの戦略（デプロイ・起動効果・施策・スケールアップ・収益化 等） |
+| `AiConfig.cs` / `AiConfigLoader.cs` / `AiConfigValidator.cs` | 陣営 × 難易度の AI 設定 YAML の読み込みと検証 |
 | `ActionFilter.cs` | AvailableAction 用ヘルパー（`FilterByType`, `PickBestZone` 等） |
-| `ActionEvaluator.cs` | カードスコアリング、ターゲット選択ヒューリスティクス |
-| `Targeting.cs` | ターゲット選択戦略（`WeakestInZone`, `StrongestInZone` 等） |
-| `NpcDecks.cs` | 陣営別デッキ定義 |
+| `TargetSelector.cs` | ターゲット選択ヘルパー（`WeakestInZone`, `StrongestInZone` 等） |
+| `Data/` | 同梱の陣営別 AI 設定 YAML |
 
 ---
 
-## 2. 状態管理
+## 状態管理
 
-### 2.1 排他制御（悲観ロック）
+### 排他制御（悲観ロック）
 
 | 項目 | 内容 |
 |------|------|
@@ -149,16 +140,16 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 
 1 ゲームの書き手はターンプレイヤーのアクション（+ NPC 進行）に限られ同一行への同時書き込みが稀なため、リトライ機構を持たない行ロックによる直列化を採用する。ロック対象は常に単一行のためデッドロックは発生しない。
 
-### 2.2 イベントソーシング
+### イベントソーシング
 
 | 項目 | 内容 |
 |------|------|
 | 目的 | リプレイ機能・デバッグ用に全アクションを記録 |
-| テーブル | `GameEvents`（追記のみ） |
+| テーブル | `game_events`（追記のみ） |
 | リプレイ方法 | 初期状態からイベントを順番に適用 |
 | リプレイクエリ | `sequence_number ASC` 順に取得 |
 
-### 2.3 アクション失敗時のフィードバック
+### アクション失敗時のフィードバック
 
 アクション処理が失敗した場合、battle は `GameRuleException` を 400、その他を 500 として `{"error": "..."}` 形式で gateway に返す。gateway はこれを WS の `action_rejected` メッセージ（`gameID` / `actionType` / `reason`）としてクライアントへ中継する。ルール違反はリトライしても成功しないため、自動リトライは行わない。
 
@@ -167,7 +158,7 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 
 ---
 
-## 3. アクション検証
+## アクション検証
 
 全アクションで以下の **統一された検証順序** を適用する。各ステップで不正があれば即座にエラーを返し、後続の検証は行わない。
 
@@ -189,10 +180,10 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 | `attack` | Battle Phase | フィールド上の自コンピュート（表向き） | 相手フィールド上の表向きリソース | — | 攻撃済みでない |
 | `scale_up` | Main Phase | フィールド上の自リソース（表向き） | — | — | Resizable 属性、現在Rank < 対象Rank |
 | `monetize` | Main Phase | バックエンドのコンピュート（休止でない） | — | — | Insight Pool 残量 ≥ 分配量、TP上限 |
-| `use_effect` | Main/Battle Phase | 効果を持つカード | 効果の対象 | 効果コスト | 1ターン1回制限 |
+| `use_ignition` | Main/Battle Phase | 効果を持つカード | 効果の対象 | 効果コスト | 1ターン1回制限 |
 | `use_initiative` | Main Phase | デッキが選んだプロダクトの施策 | 施策の対象 | Insight | ルーチン 1ターン1回 / スペシャル 1ゲーム1回、先攻 T1 不可 |
 
-## 4. 実装規約
+## 実装規約
 
 ### Card 取得失敗時の fail-fast 戦略
 
@@ -200,11 +191,11 @@ card service からの Card 取得に失敗した場合、リトライせず `En
 
 ### 既存ヘルパーの再利用
 
-フィールド走査には `FieldHelpers.AllFaceUpResources` / `AllResources` / `TargetSelector.FaceUpInZone` を再利用する。同じパターンの for ループを新たに書かない。
+フィールド走査には `FieldHelpers.AllFaceUpResources` / `AllResources`、NPC 側は `TargetSelector` のゾーン走査ヘルパー（`WeakestInZone` / `StrongestInZone` 等）を再利用する。同じパターンの for ループを新たに書かない。
 
 ---
 
-## 5. csproj 境界と責務
+## csproj 境界と責務
 
 Battle サービスは複数の csproj に分割し、各プロジェクトの責務と依存方向を境界として固定する。責務違反 (domain logic が外界に依存する等) がビルド時に検出できる状態を保つ。
 
@@ -225,7 +216,7 @@ Battle サービスは複数の csproj に分割し、各プロジェクトの�
 
 ### port の置き場所
 
-port — Engine が外界に要求する操作の interface — は `Engine/Ports/` 配下に置く。port は Engine が宣言した外界への要求であり Engine に閉じているため、別プロジェクトへ切り出さず Engine 内に置く。domain logic と同じ階層に混在させず `Ports/` に分離することで、両者の性質の違いを構造で示す。
+port（Engine が外界に要求する操作の interface）は `Engine/Ports/` 配下に置く。port は Engine が宣言した外界への要求であり Engine に閉じているため、別プロジェクトへ切り出さず Engine 内に置く。domain logic と同じ階層に混在させず `Ports/` に分離することで、両者の性質の違いを構造で示す。
 
 ### 依存の集約
 
