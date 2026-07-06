@@ -20,10 +20,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for WeakestInZone selecting the lowest effective-AV face-up resource.</summary>
+    [Trait("対象", "最弱リソースの選択")]
     public class WeakestInZone : Base
     {
-        [Fact]
+        [Fact(DisplayName = "実効可用性が最も低い表向きリソースを返す")]
         public void WeakestInZone_ReturnsFaceUpResourceWithLowestEffectiveAV()
         {
             var field = TestFactory.MakeWireField();
@@ -35,7 +35,7 @@ public class TargetSelectorTests
             result.Should().Be("weak");
         }
 
-        [Fact]
+        [Fact(DisplayName = "実効可用性はダメージを差し引いて評価する")]
         public void WeakestInZone_ConsidersDamageInEffectiveAV()
         {
             var field = TestFactory.MakeWireField();
@@ -47,7 +47,7 @@ public class TargetSelectorTests
             result.Should().Be("high_av_damaged");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ゾーン指定が null のとき、フロントエンドとバックエンドの両方から探す")]
         public void WeakestInZone_NullZone_SearchesBothZones()
         {
             var field = TestFactory.MakeWireField();
@@ -59,7 +59,7 @@ public class TargetSelectorTests
             result.Should().Be("be_res");
         }
 
-        [Fact]
+        [Fact(DisplayName = "裏向きリソースを対象から除く")]
         public void WeakestInZone_IgnoresFaceDownResources()
         {
             var field = TestFactory.MakeWireField();
@@ -71,7 +71,7 @@ public class TargetSelectorTests
             result.Should().Be("face_up");
         }
 
-        [Fact]
+        [Fact(DisplayName = "フィールドが空のとき、null を返す")]
         public void WeakestInZone_EmptyField_ReturnsNull()
         {
             var field = TestFactory.MakeWireField();
@@ -82,10 +82,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for StrongestInZone selecting the highest-value resource.</summary>
+    [Trait("対象", "最強リソースの選択")]
     public class StrongestInZone : Base
     {
-        [Fact]
+        [Fact(DisplayName = "比較値が最も高いリソースを返す")]
         public void StrongestInZone_ReturnsResourceWithHighestValue()
         {
             var field = TestFactory.MakeWireField();
@@ -97,7 +97,7 @@ public class TargetSelectorTests
             result.Should().Be("high_tp");
         }
 
-        [Fact]
+        [Fact(DisplayName = "Data系リソースはイールドを比較値に使う")]
         public void StrongestInZone_UsesYieldForDataCards()
         {
             var field = TestFactory.MakeWireField();
@@ -111,7 +111,7 @@ public class TargetSelectorTests
             result.Should().Be("data_res");
         }
 
-        [Fact]
+        [Fact(DisplayName = "フィールドが空のとき、null を返す")]
         public void StrongestInZone_EmptyField_ReturnsNull()
         {
             var field = TestFactory.MakeWireField();
@@ -122,10 +122,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for MostDamagedOwn selecting the most-damaged face-up resource.</summary>
+    [Trait("対象", "最大ダメージリソースの選択")]
     public class MostDamagedOwn : Base
     {
-        [Fact]
+        [Fact(DisplayName = "最もダメージの大きい表向きリソースを返す")]
         public void MostDamagedOwn_ReturnsMostDamagedFaceUpResource()
         {
             var field = TestFactory.MakeWireField();
@@ -138,7 +138,7 @@ public class TargetSelectorTests
             result.Should().Be("heavily_dmg");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ダメージを受けたリソースが無いとき、null を返す")]
         public void MostDamagedOwn_NoDamagedResources_ReturnsNull()
         {
             var field = TestFactory.MakeWireField();
@@ -149,7 +149,7 @@ public class TargetSelectorTests
             result.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "フィールドが空のとき、null を返す")]
         public void MostDamagedOwn_EmptyField_ReturnsNull()
         {
             var field = TestFactory.MakeWireField();
@@ -160,10 +160,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for CountAllResources counting face-up resources across zones.</summary>
+    [Trait("対象", "全リソース数の集計")]
     public class CountAllResources : Base
     {
-        [Fact]
+        [Fact(DisplayName = "表向きのリソースだけを数える")]
         public void CountAllResources_CountsFaceUpOnly()
         {
             var field = TestFactory.MakeWireField();
@@ -176,7 +176,7 @@ public class TargetSelectorTests
             count.Should().Be(2);
         }
 
-        [Fact]
+        [Fact(DisplayName = "フィールドが空のとき、0 を返す")]
         public void CountAllResources_EmptyField_ReturnsZero()
         {
             var field = TestFactory.MakeWireField();
@@ -185,10 +185,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for CountResourcesInZone counting within a zone or both zones.</summary>
+    [Trait("対象", "ゾーン内リソース数の集計")]
     public class CountResourcesInZone : Base
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドを指定したとき、そのゾーンのリソースだけを数える")]
         public void CountResourcesInZone_FrontendOnly()
         {
             var field = TestFactory.MakeWireField();
@@ -201,7 +201,7 @@ public class TargetSelectorTests
             count.Should().Be(2);
         }
 
-        [Fact]
+        [Fact(DisplayName = "ゾーン指定が null のとき、両ゾーンのリソースを数える")]
         public void CountResourcesInZone_NullZone_CountsBothZones()
         {
             var field = TestFactory.MakeWireField();
@@ -214,10 +214,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for HasDamagedResource detecting any damaged face-up resource.</summary>
+    [Trait("対象", "被ダメージリソースの有無")]
     public class HasDamagedResource : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ダメージを受けたリソースがあるとき、true を返す")]
         public void HasDamagedResource_WithDamaged_ReturnsTrue()
         {
             var field = TestFactory.MakeWireField();
@@ -226,7 +226,7 @@ public class TargetSelectorTests
             TargetSelector.HasDamagedResource(field).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "ダメージを受けたリソースが無いとき、false を返す")]
         public void HasDamagedResource_NoDamaged_ReturnsFalse()
         {
             var field = TestFactory.MakeWireField();
@@ -235,7 +235,7 @@ public class TargetSelectorTests
             TargetSelector.HasDamagedResource(field).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "フィールドが空のとき、false を返す")]
         public void HasDamagedResource_EmptyField_ReturnsFalse()
         {
             var field = TestFactory.MakeWireField();
@@ -244,10 +244,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for HasFaceDownSupport detecting a face-down support on the opponent field.</summary>
+    [Trait("対象", "裏向きサポートの有無")]
     public class HasFaceDownSupport : Base
     {
-        [Fact]
+        [Fact(DisplayName = "裏向きのサポートがあるとき、true を返す")]
         public void HasFaceDownSupport_WithFaceDown_ReturnsTrue()
         {
             var field = TestFactory.MakeWireOpponentField();
@@ -256,7 +256,7 @@ public class TargetSelectorTests
             TargetSelector.HasFaceDownSupport(field).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "全て表向きのとき、false を返す")]
         public void HasFaceDownSupport_AllFaceUp_ReturnsFalse()
         {
             var field = TestFactory.MakeWireOpponentField();
@@ -265,7 +265,7 @@ public class TargetSelectorTests
             TargetSelector.HasFaceDownSupport(field).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "サポートが無いとき、false を返す")]
         public void HasFaceDownSupport_EmptySupport_ReturnsFalse()
         {
             var field = TestFactory.MakeWireOpponentField();
@@ -274,10 +274,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for HasPlatform detecting a visible platform on the opponent field.</summary>
+    [Trait("対象", "プラットフォームの有無")]
     public class HasPlatform : Base
     {
-        [Fact]
+        [Fact(DisplayName = "見えているプラットフォームがあるとき、true を返す")]
         public void HasPlatform_WithPlatformCard_ReturnsTrue()
         {
             var field = TestFactory.MakeWireOpponentField();
@@ -286,7 +286,7 @@ public class TargetSelectorTests
             TargetSelector.HasPlatform(field, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プラットフォームでないサポートだけのとき、false を返す")]
         public void HasPlatform_NoPlatform_ReturnsFalse()
         {
             var field = TestFactory.MakeWireOpponentField();
@@ -295,7 +295,7 @@ public class TargetSelectorTests
             TargetSelector.HasPlatform(field, _cc).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "裏向きで未覗き見のサポートは対象外で、false を返す")]
         public void HasPlatform_FaceDownUnpeeked_NotVisible_ReturnsFalse()
         {
             // 情報秘匿: 裏向き未覗き見のサポートは CardID が null。Platform 判定対象外。
@@ -306,10 +306,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for FindFirstPlatformId returning the first platform instance id.</summary>
+    [Trait("対象", "先頭プラットフォームの特定")]
     public class FirstPlatformId : Base
     {
-        [Fact]
+        [Fact(DisplayName = "プラットフォームがあるとき、そのインスタンス ID を返す")]
         public void FirstPlatformId_ReturnsPlatformInstanceID()
         {
             var field = TestFactory.MakeWireOpponentField();
@@ -320,7 +320,7 @@ public class TargetSelectorTests
             result.Should().Be("plat_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "プラットフォームが無いとき、null を返す")]
         public void FirstPlatformId_NoPlatform_ReturnsNull()
         {
             var field = TestFactory.MakeWireOpponentField();
@@ -329,10 +329,10 @@ public class TargetSelectorTests
         }
     }
 
-    /// <summary>Tests for CalculateResourceValue deriving a resource's comparison value.</summary>
+    [Trait("対象", "リソース比較値の算出")]
     public class ResourceValue : Base
     {
-        [Fact]
+        [Fact(DisplayName = "現在スループットがあるとき、その値を比較値にする")]
         public void ResourceValue_CurrentTP_ReturnsTP()
         {
             var res = TestFactory.MakeWireResource(cardId: "TST-0001", currentTP: 700);
@@ -342,7 +342,7 @@ public class TargetSelectorTests
             value.Should().Be(700);
         }
 
-        [Fact]
+        [Fact(DisplayName = "現在イールドがあるとき、その値を比較値にする")]
         public void ResourceValue_CurrentYield_ReturnsYield()
         {
             var res = TestFactory.MakeWireResource(cardId: "TST-0002", currentTP: null, currentYield: 500, maxYield: 500);
@@ -352,7 +352,7 @@ public class TargetSelectorTests
             value.Should().Be(500);
         }
 
-        [Fact]
+        [Fact(DisplayName = "現在ステータスが無いとき、カード定義の基礎値を比較値にする")]
         public void ResourceValue_NoCurrentStats_FallsBackToCardDefinition()
         {
             var res = TestFactory.MakeWireResource(cardId: "TST-0001", currentTP: null, currentYield: null);

@@ -73,10 +73,10 @@ public class PriorityResolverTests
         }
     }
 
-    /// <summary>Tests for Resolve mapping an effect category to a priority and usability.</summary>
+    [Trait("対象", "効果カテゴリの優先度解決")]
     public class Resolve : Base
     {
-        [Fact]
+        [Fact(DisplayName = "budget_gain はバジェットが threshold 未満のとき、高優先度を返す")]
         public void BudgetGain_LowBudget_ReturnsHighPriority()
         {
             var ctx = MakeCtx(budget: 500);
@@ -98,7 +98,7 @@ public class PriorityResolverTests
             pri.Should().Be(90);
         }
 
-        [Fact]
+        [Fact(DisplayName = "budget_gain はバジェットが threshold 以上のとき、低優先度を返す")]
         public void BudgetGain_HighBudget_ReturnsLowPriority()
         {
             var ctx = MakeCtx(budget: 5000);
@@ -120,7 +120,7 @@ public class PriorityResolverTests
             pri.Should().Be(40);
         }
 
-        [Fact]
+        [Fact(DisplayName = "draw は手札が hand_threshold 未満のとき、高優先度を返す")]
         public void Draw_FewCards_ReturnsHighPriority()
         {
             var hand = new List<GD.UndeployedCard>
@@ -147,7 +147,7 @@ public class PriorityResolverTests
             pri.Should().Be(80);
         }
 
-        [Fact]
+        [Fact(DisplayName = "draw は手札が hand_threshold 以上のとき、低優先度を返す")]
         public void Draw_ManyCards_ReturnsLowPriority()
         {
             var hand = Enumerable.Range(0, 5)
@@ -172,7 +172,7 @@ public class PriorityResolverTests
             pri.Should().Be(30);
         }
 
-        [Fact]
+        [Fact(DisplayName = "単純な優先度は config の値をそのまま返す")]
         public void SimplePriority_ReturnsConfiguredValue()
         {
             var ctx = MakeCtx();
@@ -189,7 +189,7 @@ public class PriorityResolverTests
             pri.Should().Be(75);
         }
 
-        [Fact]
+        [Fact(DisplayName = "config に無いカテゴリは使用不可を返す")]
         public void CategoryNotInConfig_ReturnsNotUsable()
         {
             var ctx = MakeCtx();
@@ -202,7 +202,7 @@ public class PriorityResolverTests
             use.Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "リアクティブ系のカテゴリ (cancel_action) は使用不可を返す")]
         public void ReactiveCategory_NotUsable()
         {
             var ctx = MakeCtx();
@@ -218,7 +218,7 @@ public class PriorityResolverTests
             use.Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "single_damage はターゲットが無いとき、使用不可を返す")]
         public void SingleDamage_NoTargets_NotUsable()
         {
             var ctx = MakeCtx(); // empty opponent field
@@ -234,7 +234,7 @@ public class PriorityResolverTests
             use.Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "single_damage はターゲットがあるとき、使用可で優先度を返す")]
         public void SingleDamage_WithTargets_Usable()
         {
             var oppField = TestFactory.MakeWireOpponentField();
@@ -253,7 +253,7 @@ public class PriorityResolverTests
             pri.Should().Be(60);
         }
 
-        [Fact]
+        [Fact(DisplayName = "heal は被ダメージリソースが無いとき、使用不可を返す")]
         public void Heal_NoDamage_NotUsable()
         {
             var field = TestFactory.MakeWireField();
@@ -271,7 +271,7 @@ public class PriorityResolverTests
             use.Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "エントリの condition を満たさないとき、使用不可を返す")]
         public void WithEntryCondition_NotMet_NotUsable()
         {
             var ctx = MakeCtx(); // empty opponent field
@@ -296,10 +296,10 @@ public class PriorityResolverTests
         }
     }
 
-    /// <summary>Tests for Evaluate computing usability and priority for a full card.</summary>
+    [Trait("対象", "カード効果の評価")]
     public class Evaluate : Base
     {
-        [Fact]
+        [Fact(DisplayName = "効果情報が無いカードは使用不可を返す")]
         public void NoEffectInfo_ReturnsNotUsable()
         {
             var ctx = MakeCtx();
@@ -312,7 +312,7 @@ public class PriorityResolverTests
             use.Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "効果があるカードは config の優先度を返す")]
         public void WithEffect_ReturnsConfigPriority()
         {
             var reg = new StubEffectRegistry();
@@ -340,10 +340,10 @@ public class PriorityResolverTests
         }
     }
 
-    /// <summary>Tests for SelectTarget rejecting categories without a resolvable spec.</summary>
+    [Trait("対象", "効果ターゲットの選択")]
     public class SelectTarget : Base
     {
-        [Fact]
+        [Fact(DisplayName = "解決可能な spec を持つカテゴリが無いとき、例外を投げる")]
         public void Throws_when_no_category_has_a_resolvable_spec()
         {
             var ctx = MakeCtx();
@@ -354,7 +354,7 @@ public class PriorityResolverTests
             act.Should().Throw<InvalidOperationException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "カテゴリの spec が未設定のとき、例外を投げる")]
         public void Throws_when_category_spec_is_unconfigured()
         {
             var ctx = MakeCtx();
