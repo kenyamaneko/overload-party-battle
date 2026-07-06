@@ -4,10 +4,6 @@ using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Service;
 
-/// <summary>
-/// GameLogService がイベントを人間可読な説明文へ変換する際の、イベント種別ごとの分岐と
-/// 勝者ラベル・所要時間の表記仕様を検証する。
-/// </summary>
 public class GameLogServiceDescriptionTests
 {
     private const string GameId = "test-game";
@@ -90,7 +86,7 @@ public class GameLogServiceDescriptionTests
         return (await svc.GetGameLogText(GameId))!;
     }
 
-    /// <summary>イベント種別ごとの説明文への変換を検証する。</summary>
+    [Trait("対象", "イベント説明文")]
     public class EventDescriptions
     {
         /// <summary>各イベント種別の (ペイロード, プレイヤー番号, 説明文に載るべきデータ) ケースを列挙する。</summary>
@@ -112,11 +108,7 @@ public class GameLogServiceDescriptionTests
             new object[] { new SelectSlotEventData { CardId = "TST-0001", Zone = "frontend", Index = 2 }, (long?)1, new[] { "p1", "えくぼ", "frontend", "2" } },
         ];
 
-        /// <summary>各イベント種別の説明文が、ペイロードの主要データを載せることを検証する。</summary>
-        /// <param name="data">描画対象イベントのペイロード。</param>
-        /// <param name="playerNum">イベントのプレイヤー番号。システムイベントは null。</param>
-        /// <param name="expectedTokens">説明文に含まれるべきデータ (小文字)。</param>
-        [Theory]
+        [Theory(DisplayName = "各イベント種別の説明文が、ペイロードの主要データを含む")]
         [MemberData(nameof(PayloadDataCases))]
         public async Task ConveysPayloadData(IEventData data, long? playerNum, string[] expectedTokens)
         {
@@ -125,8 +117,7 @@ public class GameLogServiceDescriptionTests
             description.ToLowerInvariant().Should().ContainAll(expectedTokens);
         }
 
-        /// <summary>維持コスト 0 のデプロイはバジェット注記を載せないことを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "維持コスト 0 のデプロイの説明文はバジェット注記を含まない")]
         public async Task ZeroCostDeploy_OmitsBudgetAnnotation()
         {
             var description = await RenderDescription(
@@ -135,8 +126,7 @@ public class GameLogServiceDescriptionTests
             description.Should().NotContain("Budget");
         }
 
-        /// <summary>取り消されたデプロイは維持コストを載せないことを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "取り消されたデプロイの説明文は維持コストを含まない")]
         public async Task CancelledDeploy_OmitsCost()
         {
             var description = await RenderDescription(
@@ -145,8 +135,7 @@ public class GameLogServiceDescriptionTests
             description.Should().NotContain("Budget");
         }
 
-        /// <summary>取り消された攻撃はダメージ量を載せないことを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "取り消された攻撃の説明文はダメージ量を含まない")]
         public async Task CancelledAttack_OmitsDamageValue()
         {
             var description = await RenderDescription(
@@ -154,8 +143,7 @@ public class GameLogServiceDescriptionTests
             description.Should().NotContain("999");
         }
 
-        /// <summary>SLA ペナルティ 0 の攻撃はペナルティ注記を載せないことを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "SLA ペナルティ 0 の攻撃の説明文はペナルティ注記を含まない")]
         public async Task ZeroSlaAttack_OmitsPenalty()
         {
             var description = await RenderDescription(
@@ -165,13 +153,10 @@ public class GameLogServiceDescriptionTests
         }
     }
 
-    /// <summary>ゲーム終了イベントが勝者番号から勝敗結果を導くことを検証する。</summary>
+    [Trait("対象", "ゲーム終了の説明文")]
     public class GameOverDescriptions
     {
-        /// <summary>勝者番号に応じた勝敗結果が説明文に載ることを検証する。</summary>
-        /// <param name="winningPlayerNum">ゲームの勝者番号。引き分けは null または 0。</param>
-        /// <param name="expectedResult">説明文に載るべき勝敗結果 (小文字)。</param>
-        [Theory]
+        [Theory(DisplayName = "ゲーム終了の説明文が勝者番号に応じた勝敗結果を含む")]
         [InlineData(null, "draw")]
         [InlineData(0, "draw")]
         [InlineData(2, "p2")]
@@ -183,22 +168,20 @@ public class GameLogServiceDescriptionTests
         }
     }
 
-    /// <summary>不正なイベントデータを握りつぶさず例外にすることを検証する。</summary>
+    [Trait("対象", "不正なイベントデータ")]
     public class MalformedEventData
     {
         /// <summary>switch のどのアームにも一致しない未知のイベントデータ型。</summary>
         private sealed class UnrecognizedEventData : IEventData { }
 
-        /// <summary>EventData が null のイベントは例外になることを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "EventData が null のイベントは例外になる")]
         public async Task NullEventData_Throws()
         {
             Func<Task> act = () => BuildLogWithEvent(null, playerNum: 1, winningPlayerNum: 1);
             await act.Should().ThrowAsync<InvalidOperationException>();
         }
 
-        /// <summary>未知のイベントデータ型は例外になることを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "未知のイベントデータ型は例外になる")]
         public async Task UnknownEventDataType_Throws()
         {
             Func<Task> act = () => BuildLogWithEvent(new UnrecognizedEventData(), playerNum: 1, winningPlayerNum: 1);
@@ -206,13 +189,10 @@ public class GameLogServiceDescriptionTests
         }
     }
 
-    /// <summary>構造化ログの勝者ラベルが勝者番号から導かれることを検証する。</summary>
+    [Trait("対象", "勝者ラベル")]
     public class WinnerLabel
     {
-        /// <summary>勝者番号がラベルへ変換されることを検証する。</summary>
-        /// <param name="winningPlayerNum">ゲームの勝者番号。未決着は null または 0。</param>
-        /// <param name="expected">期待される勝者ラベル。</param>
-        [Theory]
+        [Theory(DisplayName = "構造化ログの勝者ラベルが勝者番号から導かれる")]
         [InlineData(null, null)]
         [InlineData(0, null)]
         [InlineData(2, "player2")]
@@ -222,8 +202,7 @@ public class GameLogServiceDescriptionTests
             log.Winner.Should().Be(expected);
         }
 
-        /// <summary>定義外の勝者番号は例外になることを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "定義外の勝者番号は例外になる")]
         public async Task InvalidWinningPlayerNum_Throws()
         {
             Func<Task> act = () => BuildLog(3, BaseCreatedAt, BaseCreatedAt.AddMinutes(5));
@@ -231,31 +210,24 @@ public class GameLogServiceDescriptionTests
         }
     }
 
-    /// <summary>所要時間が終了状態に応じて算出・表記されることを検証する。</summary>
+    [Trait("対象", "所要時間")]
     public class Duration
     {
-        /// <summary>終了済みゲームの所要時間が秒数で算出されることを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "終了済みゲームの所要時間が秒数で算出される")]
         public async Task FinishedGame_ReportsSeconds()
         {
             var log = await BuildLog(1, BaseCreatedAt, BaseCreatedAt.AddSeconds(150));
             log.DurationSeconds.Should().Be(150);
         }
 
-        /// <summary>進行中ゲームの所要時間が null になることを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "進行中ゲームの所要時間は null になる")]
         public async Task InProgressGame_HasNullSeconds()
         {
             var log = await BuildLog(1, BaseCreatedAt, null);
             log.DurationSeconds.Should().BeNull();
         }
 
-        /// <summary>終了済みゲームのテキスト所要時間が時・分・秒で整形されることを検証する。</summary>
-        /// <param name="hours">作成時刻からの経過時。</param>
-        /// <param name="minutes">作成時刻からの経過分。</param>
-        /// <param name="seconds">作成時刻からの経過秒。</param>
-        /// <param name="expected">期待される所要時間表記。</param>
-        [Theory]
+        [Theory(DisplayName = "終了済みゲームのテキスト所要時間が時・分・秒で整形される")]
         [InlineData(0, 2, 30, "2m30s")]
         [InlineData(1, 5, 7, "1h05m07s")]
         public async Task TextFormatsFinishedDuration(int hours, int minutes, int seconds, string expected)
@@ -265,8 +237,7 @@ public class GameLogServiceDescriptionTests
             text.Should().Contain(expected);
         }
 
-        /// <summary>進行中ゲームのテキスト所要時間が進行中表記になることを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "進行中ゲームのテキスト所要時間は進行中表記になる")]
         public async Task InProgressGame_TextShowsInProgress()
         {
             var text = await BuildText(BaseCreatedAt, null);
