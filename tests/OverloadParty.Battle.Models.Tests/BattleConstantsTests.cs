@@ -2,17 +2,12 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Models;
 
-/// <summary>
-/// Tests for BattleConstants multiplier functions. Validates the rulebook
-/// rank multipliers (small ×1 / medium ×2 / large ×3) and instance family
-/// multipliers (M standard / C throughput-yield ×1.3 / R availability ×1.3).
-/// </summary>
 public class BattleConstantsTests
 {
-    /// <summary>Tests for BattleConstants.GetRankMultiplier.</summary>
+    [Trait("対象", "ランク倍率")]
     public class GetRankMultiplier
     {
-        [Theory]
+        [Theory(DisplayName = "ランクに応じた倍率を返す")]
         [InlineData(Rank.Small, 1)]
         [InlineData(Rank.Medium, 2)]
         [InlineData(Rank.Large, 3)]
@@ -21,13 +16,13 @@ public class BattleConstantsTests
             BattleConstants.GetRankMultiplier(rank).Should().Be(expected);
         }
 
-        [Fact]
+        [Fact(DisplayName = "ランクが null (リサイズ不可) のとき、基準倍率 1 を返す")]
         public void NoRank_NonResizable_ReturnsBaseMultiplier()
         {
             BattleConstants.GetRankMultiplier(null).Should().Be(1);
         }
 
-        [Fact]
+        [Fact(DisplayName = "未定義のランクのとき、ArgumentOutOfRangeException を投げる")]
         public void UnknownRank_Throws()
         {
             var act = () => BattleConstants.GetRankMultiplier((Rank)99);
@@ -35,10 +30,10 @@ public class BattleConstantsTests
         }
     }
 
-    /// <summary>Tests for BattleConstants.GetFamilyMultiplier.</summary>
+    [Trait("対象", "インスタンスファミリー倍率")]
     public class GetFamilyMultiplier
     {
-        [Theory]
+        [Theory(DisplayName = "インスタンスファミリーごとにスループット・可用性の倍率を返す")]
         [InlineData(InstanceFamily.M, 1.0, 1.0)]
         [InlineData(InstanceFamily.C, 1.3, 0.7)]
         [InlineData(InstanceFamily.R, 0.7, 1.3)]
@@ -47,7 +42,7 @@ public class BattleConstantsTests
             BattleConstants.GetFamilyMultiplier(family).Should().Be((tpMult, avMult));
         }
 
-        [Fact]
+        [Fact(DisplayName = "未定義のインスタンスファミリーのとき、ArgumentOutOfRangeException を投げる")]
         public void UnknownFamily_Throws()
         {
             var act = () => BattleConstants.GetFamilyMultiplier((InstanceFamily)99);
