@@ -13,10 +13,10 @@ namespace OverloadParty.Battle.Tests.Engine;
 /// </summary>
 public class WinConditionTests
 {
-    /// <summary>Tests for the budget-zero win condition.</summary>
+    [Trait("対象", "バジェットゼロ敗北判定")]
     public class ByBudget
     {
-        [Theory]
+        [Theory(DisplayName = "残りバジェットで勝敗を判定する (0 以下で敗北、両者 0 なら引き分け)")]
         [InlineData(0, 3000, 2, "budget_zero")]
         [InlineData(1000, -500, 1, "budget_zero")]
         [InlineData(0, 0, 0, "draw")]
@@ -33,10 +33,10 @@ public class WinConditionTests
         }
     }
 
-    /// <summary>Tests for the system-down win condition.</summary>
+    [Trait("対象", "システムダウン敗北判定")]
     public class BySystemDown
     {
-        [Fact]
+        [Fact(DisplayName = "稼働実績のあるプレイヤーの表向きリソースが 0 になると、相手が勝者になりシステムダウン敗北する")]
         public void NoActiveResources_OpponentWins()
         {
             var state = TestFactory.MakeGameState();
@@ -53,7 +53,7 @@ public class WinConditionTests
             result.Reason.Should().Be("system_down");
         }
 
-        [Fact]
+        [Fact(DisplayName = "両者とも表向きリソースが 0 のとき、システムダウンで引き分けになる")]
         public void BothDown_Draw()
         {
             var state = TestFactory.MakeGameState();
@@ -68,11 +68,7 @@ public class WinConditionTests
             result.Reason.Should().Be("draw");
         }
 
-        /// <summary>
-        /// 稼働実績フラグが true のプレイヤーにのみ適用
-        /// Never-deployed player should not trigger system down.
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "稼働実績のないプレイヤーは表向きリソースが 0 でもシステムダウン敗北にならない")]
         public void NoActiveResources_ButNeverDeployed_NoSystemDown()
         {
             var state = TestFactory.MakeGameState();
@@ -84,7 +80,7 @@ public class WinConditionTests
             WinConditionChecker.Check(state, game).Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "表向きリソースが 1 体でも存在すれば、システムダウンと判定されない")]
         public void WithFaceUpResource_IsSystemDownReturnsFalse()
         {
             var state = TestFactory.MakeGameState();
@@ -95,13 +91,10 @@ public class WinConditionTests
         }
     }
 
-    /// <summary>Tests for the turn-limit win condition.</summary>
+    [Trait("対象", "ターンリミット決着判定")]
     public class ByTurnLimit
     {
-        /// <summary>
-        /// T30 → Budget 多い方が勝利
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "ターン 30 到達時にバジェットが多いプレイヤー 1 が勝者になる")]
         public void HigherBudgetWins()
         {
             var state = TestFactory.MakeGameState(turn: 30, p1Budget: 3000, p2Budget: 2000);
@@ -114,7 +107,7 @@ public class WinConditionTests
             result.Reason.Should().Be("turn_limit");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ターン 30 到達時にバジェットが多いプレイヤー 2 が勝者になる")]
         public void Player2HigherBudget()
         {
             var state = TestFactory.MakeGameState(turn: 30, p1Budget: 1000, p2Budget: 4000);
@@ -127,10 +120,7 @@ public class WinConditionTests
             result.Reason.Should().Be("turn_limit");
         }
 
-        /// <summary>
-        /// 同額なら引き分け
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "ターン 30 到達時にバジェットが同額なら引き分けになる")]
         public void EqualBudget_Draw()
         {
             var state = TestFactory.MakeGameState(turn: 30, p1Budget: 2500, p2Budget: 2500);
@@ -143,7 +133,7 @@ public class WinConditionTests
             result.Reason.Should().Be("draw");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ターン 29 ではターンリミットに達しておらず、勝敗が決まらない")]
         public void BeforeTurnLimit_NoGameOver()
         {
             var state = TestFactory.MakeGameState(turn: 29);
@@ -153,10 +143,10 @@ public class WinConditionTests
         }
     }
 
-    /// <summary>Tests for the timeout win condition.</summary>
+    [Trait("対象", "タイムアウト敗北判定")]
     public class ByTimeout
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 のタイムバンクが 0 になると、相手が勝者になりタイムアウト敗北する")]
         public void Player1Timeout_Player2Wins()
         {
             var state = TestFactory.MakeGameState();
@@ -170,7 +160,7 @@ public class WinConditionTests
             result.Reason.Should().Be("turn_timeout");
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 のタイムバンクが 0 未満 (-10) になると、相手が勝者になりタイムアウト敗北する")]
         public void Player2Timeout_Player1Wins()
         {
             var state = TestFactory.MakeGameState();
@@ -184,7 +174,7 @@ public class WinConditionTests
             result.Reason.Should().Be("turn_timeout");
         }
 
-        [Fact]
+        [Fact(DisplayName = "両者のタイムバンクが 0 のとき、タイムアウトで引き分けになる")]
         public void BothTimeout_Draw()
         {
             var state = TestFactory.MakeGameState();
@@ -200,16 +190,10 @@ public class WinConditionTests
         }
     }
 
-    /// <summary>Tests for WinConditionChecker.CheckLaunchFailure.</summary>
+    [Trait("対象", "ローンチ失敗判定")]
     public class ByLaunchFailure
     {
-        /// <summary>
-        /// 自分の3ターン目（先攻T5、後攻T6）のエンドフェーズ終了時に
-        /// 一度も表向きリソースが存在しなかった場合に敗北。
-        /// personalTurn = (currentTurn + 1) / 2
-        /// Turn 5 → personalTurn = 3 (先攻)
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "先攻の 3 ターン目 (全体ターン 5) 終了時に稼働実績がなければ、ローンチ失敗と判定される")]
         public void Turn5_FirstPlayer_NoResources_True()
         {
             var state = TestFactory.MakeGameState(turn: 5);
@@ -218,10 +202,7 @@ public class WinConditionTests
             WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeTrue();
         }
 
-        /// <summary>
-        /// Turn 6 → personalTurn = (6+1)/2 = 3 (後攻の3ターン目)
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "後攻の 3 ターン目 (全体ターン 6) 終了時に稼働実績がなければ、ローンチ失敗と判定される")]
         public void Turn6_SecondPlayer_NoResources_True()
         {
             var state = TestFactory.MakeGameState(turn: 6);
@@ -230,7 +211,7 @@ public class WinConditionTests
             WinConditionChecker.CheckLaunchFailure(state, 2).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "3 ターン目より前 (全体ターン 3) では、稼働実績がなくてもローンチ失敗にならない")]
         public void BeforeTurn3_ReturnsFalse()
         {
             var state = TestFactory.MakeGameState(turn: 3); // personalTurn = 2
@@ -239,7 +220,7 @@ public class WinConditionTests
             WinConditionChecker.CheckLaunchFailure(state, 1).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "3 ターン目 (全体ターン 5) でも稼働実績があれば、ローンチ失敗にならない")]
         public void HasDeployed_ReturnsFalse()
         {
             var state = TestFactory.MakeGameState(turn: 5);
@@ -249,10 +230,10 @@ public class WinConditionTests
         }
     }
 
-    /// <summary>Tests for win condition priority ordering.</summary>
+    [Trait("対象", "勝敗判定の優先順位")]
     public class Priority
     {
-        [Fact]
+        [Fact(DisplayName = "バジェットゼロとシステムダウンが同時に成立するとき、バジェットゼロが優先して敗因になる")]
         public void BudgetZero_TakesPriority_OverSystemDown()
         {
             var state = TestFactory.MakeGameState(p1Budget: 0);
@@ -266,10 +247,10 @@ public class WinConditionTests
         }
     }
 
-    /// <summary>Tests that a normal game state yields no win condition.</summary>
+    [Trait("対象", "勝敗未確定の判定")]
     public class NoWinCondition
     {
-        [Fact]
+        [Fact(DisplayName = "両者が稼働中で十分なバジェットがある通常状態では、勝敗が決まらない")]
         public void NormalState_NoGameOver()
         {
             var state = TestFactory.MakeGameState(turn: 5, p1Budget: 4000, p2Budget: 3500);

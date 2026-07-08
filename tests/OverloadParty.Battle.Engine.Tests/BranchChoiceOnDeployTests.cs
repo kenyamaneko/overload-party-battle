@@ -5,10 +5,6 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// 即時配置 (deploy_turns=0) のリソースが on_deploy の分岐選択を要求するとき、プレイで選択待ちへ遷移し、
-/// ResolvePendingChoice で選んだ分岐が実行されることを検証する。
-/// </summary>
 public class BranchChoiceOnDeployTests
 {
     private const string ResourceCardId = "TST-0600";
@@ -53,10 +49,10 @@ public class BranchChoiceOnDeployTests
         public void Execute(OpContext ctx) => _action(ctx);
     }
 
-    /// <summary>配置時に分岐の選択待ちへ遷移することを検証する。</summary>
+    [Trait("対象", "分岐選択によるプレイの中断")]
     public class Play
     {
-        [Fact]
+        [Fact(DisplayName = "分岐を持つ即時配置リソースをプレイすると alpha/beta の分岐選択待ちへ中断する")]
         public void SuspendsForBranchChoice()
         {
             var (cc, registry) = MakeEnv();
@@ -73,10 +69,10 @@ public class BranchChoiceOnDeployTests
         }
     }
 
-    /// <summary>選択を解決すると選んだ分岐が実行されることを検証する。</summary>
+    [Trait("対象", "分岐選択の解決")]
     public class Resolve
     {
-        [Fact]
+        [Fact(DisplayName = "分岐選択を beta で解決すると選んだ分岐が実行されインサイトプールが 222 になる")]
         public void RunsChosenBranch()
         {
             var (cc, registry) = MakeEnv();

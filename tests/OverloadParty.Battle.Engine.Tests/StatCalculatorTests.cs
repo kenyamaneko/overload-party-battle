@@ -13,15 +13,10 @@ namespace OverloadParty.Battle.Tests.Engine;
 /// </summary>
 public class StatCalculatorTests
 {
-    /// <summary>Tests for StatCalculator.CalculateEffectiveElasticBonus.</summary>
+    [Trait("対象", "実効エラスティックボーナスの計算")]
     public class CalculateEffectiveElasticBonus
     {
-        /// <summary>
-        /// effectiveBonus = scale × ln(1 + rawBonus / scale).
-        /// Zero raw → 0; zero scale → raw passthrough; negative raw passthrough.
-        /// Rulebook Container (scale=500) trigger examples: 1→91, 5→346, 10→549, 20→804.
-        /// </summary>
-        [Theory]
+        [Theory(DisplayName = "生の ElasticBonus と scale から、実効エラスティックボーナスを計算する")]
         [InlineData(0, 500, 0)]        // zero raw → 0
         [InlineData(100, 0, 100)]      // zero scale → raw passthrough
         [InlineData(-100, 500, -100)]  // negative raw passthrough
@@ -35,11 +30,10 @@ public class StatCalculatorTests
         }
     }
 
-    /// <summary>Tests for StatCalculator.CalculateIntrinsicStat (MC 用固有ステータス)。</summary>
+    [Trait("対象", "MC 用固有ステータスの計算")]
     public class CalculateIntrinsicStat
     {
-        /// <summary>固有ステータスにランク・Instance Family・逓減後 ElasticBonus が反映されることを検証します。</summary>
-        [Theory]
+        [Theory(DisplayName = "ランク・インスタンスファミリー・逓減後エラスティックボーナスを反映した固有ステータスを計算する")]
         [InlineData(Rank.Small, InstanceFamily.M, 0, 600)]      // base のみ
         [InlineData(Rank.Medium, InstanceFamily.M, 0, 1200)]    // medium ×2
         [InlineData(Rank.Large, InstanceFamily.M, 0, 1800)]     // large ×3
@@ -57,10 +51,10 @@ public class StatCalculatorTests
         }
     }
 
-    /// <summary>Tests for StatCalculator.CalculateEffectiveTP.</summary>
+    [Trait("対象", "実効スループットの計算")]
     public class CalculateEffectiveTP
     {
-        [Fact]
+        [Fact(DisplayName = "small ランクのコンピュート系リソースの実効スループットは基礎値 600 になる")]
         public void BasicCompute_SmallRank()
         {
             var cc = new TestCardCache();
@@ -72,10 +66,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(600);
         }
 
-        /// <summary>
-        /// Rulebook: えくぼ (TP 700) at medium rank → 700 × 2 = 1400
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "medium ランクでは実効スループットが基礎値の 2 倍 (700→1400) になる")]
         public void MediumRank_DoublesBase()
         {
             var cc = new TestCardCache();
@@ -87,10 +78,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1400);
         }
 
-        /// <summary>
-        /// Rulebook: large rank → base × 3
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "large ランクでは実効スループットが基礎値の 3 倍 (700→2100) になる")]
         public void LargeRank_TriplesBase()
         {
             var cc = new TestCardCache();
@@ -102,11 +90,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(2100);
         }
 
-        /// <summary>
-        /// Instance Family C: TP × 1.3
-        /// TP 600 at small with C family → 600 × 1 × 1.3 = 780
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "C系インスタンスファミリーでは実効スループットが ×1.3 (600→780) になる")]
         public void FamilyC_MultipliesTP()
         {
             var cc = new TestCardCache();
@@ -118,11 +102,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(780);
         }
 
-        /// <summary>
-        /// Instance Family R: TP × 0.7
-        /// TP 600 at small with R family → 600 × 0.7 = 420
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "R系インスタンスファミリーでは実効スループットが ×0.7 (600→420) になる")]
         public void FamilyR_ReducesTP()
         {
             var cc = new TestCardCache();
@@ -134,10 +114,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(420);
         }
 
-        /// <summary>
-        /// Family C + medium rank: TP 600 × 2 × 1.3 = 1560
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "medium ランクと C系ファミリーを併せると実効スループットが ×2×1.3 (600→1560) になる")]
         public void FamilyC_MediumRank()
         {
             var cc = new TestCardCache();
@@ -149,11 +126,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1560);
         }
 
-        /// <summary>
-        /// Elastic container: base 500, raw bonus 100, free_tier 500
-        /// effective bonus = 91, total TP = 500 + 91 = 591
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "エラスティックなリソースでは基礎スループットに実効エラスティックボーナス 91 が加わり 591 になる")]
         public void ElasticContainer_WithBonus()
         {
             var cc = new TestCardCache();
@@ -165,10 +138,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(591); // 500 + 91
         }
 
-        /// <summary>
-        /// Elastic container: 5 triggers → effective bonus 346, total = 846
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "エラスティックボーナスの生値 500 では逓減後 346 が加わり実効スループットが 846 になる")]
         public void ElasticContainer_5Triggers()
         {
             var cc = new TestCardCache();
@@ -180,10 +150,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(846);
         }
 
-        /// <summary>
-        /// Non-compute card → TP = 0
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "Data系リソースの実効スループットは 0 になる")]
         public void DataCard_ReturnsZero()
         {
             var cc = new TestCardCache();
@@ -195,10 +162,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(0);
         }
 
-        /// <summary>
-        /// Temporary buff_tp effect should be added to TP.
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "buff_tp の一時効果でスループットが 200 増えて 800 になる")]
         public void WithTempBuff()
         {
             var cc = new TestCardCache();
@@ -211,10 +175,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(800);
         }
 
-        /// <summary>
-        /// Temporary debuff_tp should reduce TP (but not below 0).
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "debuff_tp の一時効果でスループットが減っても 0 未満にはならず 0 になる")]
         public void WithTempDebuff_FlooredAtZero()
         {
             var cc = new TestCardCache();
@@ -227,7 +188,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(0);
         }
 
-        [Fact]
+        [Fact(DisplayName = "複数の一時効果 (buff/debuff) が累積してスループットが 720 になる")]
         public void MultipleTempEffects_Stack()
         {
             var cc = new TestCardCache();
@@ -244,10 +205,10 @@ public class StatCalculatorTests
         }
     }
 
-    /// <summary>Tests for StatCalculator.CalculateEffectiveInsight.</summary>
+    [Trait("対象", "実効インサイト生成量の計算")]
     public class CalculateEffectiveInsight
     {
-        [Fact]
+        [Fact(DisplayName = "Data系リソースの実効インサイト生成量は基礎イールド 400 になる")]
         public void BasicDB()
         {
             var cc = new TestCardCache();
@@ -259,7 +220,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(400);
         }
 
-        [Fact]
+        [Fact(DisplayName = "コンピュート系リソースの実効インサイト生成量は 0 になる")]
         public void ComputeCard_ReturnsZero()
         {
             var cc = new TestCardCache();
@@ -271,10 +232,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(0);
         }
 
-        /// <summary>
-        /// Rulebook: C系（攻撃特化）はスループット/Yield ×1.3、R系（耐久特化）は ×0.7
-        /// </summary>
-        [Theory]
+        [Theory(DisplayName = "インスタンスファミリーごとの係数 (C×1.3 / R×0.7) を適用したインサイト生成量を計算する")]
         [InlineData(InstanceFamily.M, 400)] // 400 * 1.0
         [InlineData(InstanceFamily.C, 520)] // 400 * 1.3
         [InlineData(InstanceFamily.R, 280)] // 400 * 0.7
@@ -290,7 +248,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(expected);
         }
 
-        [Fact]
+        [Fact(DisplayName = "エラスティックな Data系リソースでは基礎イールドに逓減後エラスティックボーナスが加わり 386 になる")]
         public void ElasticData_WithBonus()
         {
             var cc = new TestCardCache();
@@ -308,7 +266,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(386);
         }
 
-        [Fact]
+        [Fact(DisplayName = "buff_yield の一時効果でインサイト生成量が 100 増えて 500 になる")]
         public void WithTempBuff()
         {
             var cc = new TestCardCache();
@@ -324,7 +282,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(500);
         }
 
-        [Fact]
+        [Fact(DisplayName = "debuff_yield の一時効果でインサイト生成量が減っても 0 未満にはならず 0 になる")]
         public void WithTempDebuff_FlooredAtZero()
         {
             var cc = new TestCardCache();
@@ -341,14 +299,10 @@ public class StatCalculatorTests
         }
     }
 
-    /// <summary>Tests for StatCalculator.CalculateMaxAV.</summary>
+    [Trait("対象", "最大可用性の計算")]
     public class CalculateMaxAV
     {
-        /// <summary>
-        /// Rulebook: AV at small = base AV. medium = base × 2.
-        /// えくぼ (AV 1400): small=1400, medium=2800, large=4200
-        /// </summary>
-        [Theory]
+        [Theory(DisplayName = "ランク倍率 (small×1 / medium×2 / large×3) を適用した最大可用性を計算する")]
         [InlineData(Rank.Small, null, 1400)]
         [InlineData(Rank.Medium, null, 2800)]
         [InlineData(Rank.Large, null, 4200)]
@@ -362,10 +316,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateMaxAV(resource, TestFactory.MakeField(), cc).Should().Be(expected);
         }
 
-        /// <summary>
-        /// Family R: AV × 1.3 → 1400 × 1.3 = 1820
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "R系インスタンスファミリーでは最大可用性が ×1.3 (1400→1820) になる")]
         public void FamilyR_IncreasesAV()
         {
             var cc = new TestCardCache();
@@ -376,10 +327,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateMaxAV(resource, TestFactory.MakeField(), cc).Should().Be(1820);
         }
 
-        /// <summary>
-        /// Family C: AV × 0.7 → 1400 × 0.7 = 979 (truncated)
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "C系インスタンスファミリーでは最大可用性が ×0.7 され切り捨てで 979 になる")]
         public void FamilyC_DecreasesAV()
         {
             var cc = new TestCardCache();
@@ -390,10 +338,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateMaxAV(resource, TestFactory.MakeField(), cc).Should().Be(979);
         }
 
-        /// <summary>
-        /// Rulebook truncation: 1350 × 0.7 = 944 (floating-point truncation)
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "×0.7 の結果に端数が出るとき最大可用性は切り捨てで 944 (1350×0.7) になる")]
         public void Truncation()
         {
             var cc = new TestCardCache();
@@ -405,10 +350,10 @@ public class StatCalculatorTests
         }
     }
 
-    /// <summary>Tests for StatCalculator.ApplyElasticBonus.</summary>
+    [Trait("対象", "エラスティックボーナスの加算")]
     public class ApplyElasticBonus
     {
-        [Fact]
+        [Fact(DisplayName = "エラスティックなカードにボーナスを適用すると、生のエラスティックボーナスが増分 100 だけ増える")]
         public void IncrementsRawBonus()
         {
             var cc = new TestCardCache();
@@ -421,7 +366,7 @@ public class StatCalculatorTests
             resource.ElasticBonus.Should().Be(100);
         }
 
-        [Fact]
+        [Fact(DisplayName = "エラスティックでないカードにボーナスを適用しても、エラスティックボーナスは変わらない")]
         public void NonElastic_NoChange()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", elastic: false);
@@ -431,7 +376,7 @@ public class StatCalculatorTests
             resource.ElasticBonus.Should().Be(0);
         }
 
-        [Fact]
+        [Fact(DisplayName = "増分が 0 のエラスティックカードでは、エラスティックボーナスが変わらない")]
         public void ZeroIncrement_NoChange()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", elastic: true, elasticIncrement: 0);
@@ -442,10 +387,10 @@ public class StatCalculatorTests
         }
     }
 
-    /// <summary>Tests for StatCalculator.Truncate.</summary>
+    [Trait("対象", "0 方向への切り捨て")]
     public class Truncate
     {
-        [Theory]
+        [Theory(DisplayName = "小数を 0 方向に切り捨てて整数にする (1 未満切り捨て・負値も 0 方向)")]
         [InlineData(1012.5, 1012)]
         [InlineData(675.0, 675)]
         [InlineData(0.9, 0)]
@@ -456,10 +401,10 @@ public class StatCalculatorTests
         }
     }
 
-    /// <summary>Tests for StatCalculator.RecalculateMaxTP.</summary>
+    [Trait("対象", "最大スループットの再計算")]
     public class RecalculateMaxTP
     {
-        [Fact]
+        [Fact(DisplayName = "small ランクでは最大スループットが基礎値 600 になる")]
         public void SmallRank_ReturnsBase()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600);
@@ -468,7 +413,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxTP(resource, card).Should().Be(600);
         }
 
-        [Fact]
+        [Fact(DisplayName = "medium ランクでは最大スループットが基礎値の 2 倍 (600→1200) になる")]
         public void MediumRank_DoublesBase()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600);
@@ -477,7 +422,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxTP(resource, card).Should().Be(1200);
         }
 
-        [Fact]
+        [Fact(DisplayName = "large ランクでは最大スループットが基礎値の 3 倍 (600→1800) になる")]
         public void LargeRank_TriplesBase()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600);
@@ -486,7 +431,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxTP(resource, card).Should().Be(1800);
         }
 
-        [Fact]
+        [Fact(DisplayName = "C系ファミリーでは最大スループットが ×1.3 (600→780) になる")]
         public void WithFamilyC_AppliesMultiplier()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600);
@@ -496,7 +441,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxTP(resource, card).Should().Be(780);
         }
 
-        [Fact]
+        [Fact(DisplayName = "R系ファミリーでは最大スループットが ×0.7 (600→420) になる")]
         public void WithFamilyR_AppliesMultiplier()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600);
@@ -506,7 +451,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxTP(resource, card).Should().Be(420);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Data系リソースの最大スループットは 0 になる")]
         public void DataCard_ReturnsZero()
         {
             var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400);
@@ -515,7 +460,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxTP(resource, card).Should().Be(0);
         }
 
-        [Fact]
+        [Fact(DisplayName = "medium ランクと C系ファミリーを併せると最大スループットが ×2×1.3 (600→1560) になる")]
         public void MediumRank_FamilyC()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600);
@@ -526,10 +471,10 @@ public class StatCalculatorTests
         }
     }
 
-    /// <summary>Tests for StatCalculator.RecalculateMaxYield.</summary>
+    [Trait("対象", "最大イールドの再計算")]
     public class RecalculateMaxYield
     {
-        [Fact]
+        [Fact(DisplayName = "small ランクでは最大イールドが基礎値 400 になる")]
         public void SmallRank_ReturnsBase()
         {
             var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400);
@@ -538,7 +483,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxYield(resource, card).Should().Be(400);
         }
 
-        [Fact]
+        [Fact(DisplayName = "medium ランクでは最大イールドが基礎値の 2 倍 (400→800) になる")]
         public void MediumRank_DoublesBase()
         {
             var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400);
@@ -547,7 +492,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxYield(resource, card).Should().Be(800);
         }
 
-        [Fact]
+        [Fact(DisplayName = "large ランクでは最大イールドが基礎値の 3 倍 (400→1200) になる")]
         public void LargeRank_TriplesBase()
         {
             var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400);
@@ -556,10 +501,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxYield(resource, card).Should().Be(1200);
         }
 
-        /// <summary>
-        /// Rulebook: R系（耐久特化）はスループット/Yield ×0.7
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "R系ファミリーでは最大イールドが ×0.7 (400→280) になる")]
         public void WithFamilyR_ReducesYield()
         {
             var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400);
@@ -569,10 +511,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxYield(resource, card).Should().Be(280);
         }
 
-        /// <summary>
-        /// Rulebook: C系（攻撃特化）はスループット/Yield ×1.3
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "C系ファミリーでは最大イールドが ×1.3 (400→520) になる")]
         public void WithFamilyC_IncreasesYield()
         {
             var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400);
@@ -582,7 +521,7 @@ public class StatCalculatorTests
             StatCalculator.RecalculateMaxYield(resource, card).Should().Be(520);
         }
 
-        [Fact]
+        [Fact(DisplayName = "コンピュート系リソースの最大イールドは 0 になる")]
         public void ComputeCard_ReturnsZero()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600);

@@ -20,10 +20,10 @@ public class UseIgnitionProcessorTests
         }
     }
 
-    /// <summary>Tests for igniting a resource's effect.</summary>
+    [Trait("対象", "リソースの起動効果の使用")]
     public class ResourceEffect : Base
     {
-        [Fact]
+        [Fact(DisplayName = "リソースの起動効果を使用するとハンドラが実行され使用済みフラグが立つ")]
         public void Process_ResourceEffect_ExecutesHandlerAndSetsFlag()
         {
             bool handlerCalled = false;
@@ -45,7 +45,7 @@ public class UseIgnitionProcessorTests
             resource.EffectUsedThisTurn.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "リソースの起動効果の使用で CardId と SourceId を載せた起動効果の使用イベントが生成される")]
         public void Process_ResourceEffect_GeneratesUseIgnitionEvent()
         {
             var reg = new EffectRegistry();
@@ -63,7 +63,7 @@ public class UseIgnitionProcessorTests
             data.SourceId.Should().Be("r_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "対象を指定したリソースの起動効果の使用でイベントに TargetId が載る")]
         public void Process_ResourceEffect_EventCarriesTargetId()
         {
             var reg = new EffectRegistry();
@@ -81,7 +81,7 @@ public class UseIgnitionProcessorTests
                 .Which.TargetId.Should().Be("opp_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "起動効果が登録されていないリソースを起動すると例外になる")]
         public void Process_NoUseIgnition_Throws()
         {
             var reg = new EffectRegistry(); // nothing registered
@@ -95,7 +95,7 @@ public class UseIgnitionProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "休止状態のリソースの起動効果を使用すると例外になる")]
         public void Process_DormantResource_Throws()
         {
             var reg = new EffectRegistry();
@@ -112,7 +112,7 @@ public class UseIgnitionProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "このターン既に使用済みのリソースの起動効果を再使用すると例外になる")]
         public void Process_EffectAlreadyUsedThisTurn_Throws()
         {
             var reg = new EffectRegistry();
@@ -129,7 +129,7 @@ public class UseIgnitionProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*already used*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しないインスタンスを指定して起動効果を使用すると例外になる")]
         public void Process_ResourceNotFound_Throws()
         {
             var reg = new EffectRegistry();
@@ -145,10 +145,10 @@ public class UseIgnitionProcessorTests
         }
     }
 
-    /// <summary>Tests for resource effects that receive a target via the request.</summary>
+    [Trait("対象", "対象を伴うリソースの起動効果の使用")]
     public class ResourceEffectWithTarget : Base
     {
-        [Fact]
+        [Fact(DisplayName = "自分のフィールドのリソースを対象に指定するとハンドラへ対象が渡る")]
         public void Process_WithTargetOnOwnField_PassesTargetToHandler()
         {
             DeployedResource? capturedTarget = null;
@@ -172,7 +172,7 @@ public class UseIgnitionProcessorTests
             capturedTarget!.InstanceID.Should().Be("r_2");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のフィールドのリソースを対象に指定するとハンドラへ対象が渡る")]
         public void Process_WithTargetOnOpponentField_PassesTargetToHandler()
         {
             DeployedResource? capturedTarget = null;
@@ -196,10 +196,10 @@ public class UseIgnitionProcessorTests
         }
     }
 
-    /// <summary>Tests for igniting a support card's effect.</summary>
+    [Trait("対象", "サポートカードの起動効果の使用")]
     public class SupportEffect : Base
     {
-        [Fact]
+        [Fact(DisplayName = "サポートカードの起動効果を使用するとハンドラが実行され使用済みフラグが立つ")]
         public void Process_SupportEffect_ExecutesHandlerAndSetsFlag()
         {
             bool handlerCalled = false;
@@ -226,7 +226,7 @@ public class UseIgnitionProcessorTests
             support.EffectUsedThisTurn.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "起動効果が登録されていないサポートカードを起動すると例外になる")]
         public void Process_SupportNoUseIgnition_Throws()
         {
             var reg = new EffectRegistry(); // 200 not registered
@@ -245,7 +245,7 @@ public class UseIgnitionProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "サポートカードの起動効果の使用で CardId と SourceId を載せた起動効果の使用イベントが生成される")]
         public void Process_SupportEffect_GeneratesUseIgnitionEvent()
         {
             var reg = new EffectRegistry();

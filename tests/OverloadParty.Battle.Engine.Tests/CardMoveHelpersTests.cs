@@ -3,16 +3,12 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// Tests for CardMoveHelpers: drawing cards, searching repo,
-/// adding to hand/trash, discarding, and trash-to-hand recovery.
-/// </summary>
 public class CardMoveHelpersTests
 {
-    /// <summary>Tests for CardMoveHelpers.DrawCards.</summary>
+    [Trait("対象", "デッキからのドロー")]
     public class DrawCards
     {
-        [Fact]
+        [Fact(DisplayName = "デッキの上から順に 2 枚を引き、残り 1 枚がデッキに残る")]
         public void DrawsFromFrontOfRepo()
         {
             var state = TestFactory.MakeGameState();
@@ -32,7 +28,7 @@ public class CardMoveHelpersTests
             state.Player1Repository[0].CardID.Should().Be("TST-0003");
         }
 
-        [Fact]
+        [Fact(DisplayName = "デッキ 1 枚に対し 5 枚要求すると、1 枚だけ引いてデッキは空になる")]
         public void RepoSmallerThanCount_DrawsAll()
         {
             var state = TestFactory.MakeGameState();
@@ -45,7 +41,7 @@ public class CardMoveHelpersTests
             state.Player1Repository.Should().BeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "デッキが空のとき、0 枚しか引けず手札は空のまま")]
         public void EmptyRepo_DrawsZero()
         {
             var state = TestFactory.MakeGameState();
@@ -56,7 +52,7 @@ public class CardMoveHelpersTests
             state.Player1Hand.Should().BeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "引いたカードはデッキで割り当て済みの InstanceID を保持する")]
         public void PreservesDeckInstanceIDs()
         {
             var state = TestFactory.MakeGameState();
@@ -72,7 +68,7 @@ public class CardMoveHelpersTests
             ids.Should().Contain("r_2");
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 のドローはプレイヤー 2 の状態だけを更新する")]
         public void Player2_UsesPlayer2State()
         {
             var state = TestFactory.MakeGameState();
@@ -87,10 +83,10 @@ public class CardMoveHelpersTests
         }
     }
 
-    /// <summary>Tests for CardMoveHelpers.SearchRepo.</summary>
+    [Trait("対象", "デッキからのカード探索")]
     public class SearchRepo
     {
-        [Fact]
+        [Fact(DisplayName = "条件に一致するカードを見つけて手札へ移し、デッキから取り除く")]
         public void FindsMatchingCard_AddsToHand()
         {
             var state = TestFactory.MakeGameState();
@@ -109,7 +105,7 @@ public class CardMoveHelpersTests
             state.Player1Repository.Select(c => c.CardID).Should().NotContain("TST-0002");
         }
 
-        [Fact]
+        [Fact(DisplayName = "条件に一致するカードが無いとき、false を返し手札もデッキも変わらない")]
         public void NoMatch_ReturnsFalse()
         {
             var state = TestFactory.MakeGameState();
@@ -123,10 +119,10 @@ public class CardMoveHelpersTests
         }
     }
 
-    /// <summary>Tests for CardMoveHelpers.AddToHand.</summary>
+    [Trait("対象", "手札への追加")]
     public class AddToHand
     {
-        [Fact]
+        [Fact(DisplayName = "カードを新しい InstanceID で手札に加える")]
         public void AddsCardWithNewInstanceID()
         {
             var state = TestFactory.MakeGameState();
@@ -138,7 +134,7 @@ public class CardMoveHelpersTests
             state.Player1Hand[0].InstanceID.Should().NotBeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "複数回追加すると、そのすべてが手札に加わる")]
         public void MultipleCards_AllAdded()
         {
             var state = TestFactory.MakeGameState();
@@ -151,10 +147,10 @@ public class CardMoveHelpersTests
         }
     }
 
-    /// <summary>Tests for CardMoveHelpers.AddToTrash.</summary>
+    [Trait("対象", "トラッシュへの追加")]
     public class AddToTrash
     {
-        [Fact]
+        [Fact(DisplayName = "指定した CardID・InstanceID・ArtNo でトラッシュにカードを加える")]
         public void AddsCardToPlayerTrash()
         {
             var state = TestFactory.MakeGameState();
@@ -168,10 +164,10 @@ public class CardMoveHelpersTests
         }
     }
 
-    /// <summary>Tests for CardMoveHelpers.TrashToHand.</summary>
+    [Trait("対象", "トラッシュから手札への回収")]
     public class TrashToHand
     {
-        [Fact]
+        [Fact(DisplayName = "トラッシュのカードを手札へ移し、CardID と ArtNo を保ってトラッシュから取り除く")]
         public void MovesCardFromTrashToHand()
         {
             var state = TestFactory.MakeGameState();
@@ -186,7 +182,7 @@ public class CardMoveHelpersTests
             state.Player1Hand[0].ArtNo.Should().Be(3);
         }
 
-        [Fact]
+        [Fact(DisplayName = "指定 InstanceID がトラッシュに無いとき、false を返しトラッシュも手札も変わらない")]
         public void NotFound_ReturnsFalse()
         {
             var state = TestFactory.MakeGameState();
@@ -199,7 +195,7 @@ public class CardMoveHelpersTests
             state.Player1Hand.Should().BeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "回収したカードには新しい InstanceID を割り当てる")]
         public void AssignsNewInstanceID()
         {
             var state = TestFactory.MakeGameState();
@@ -211,10 +207,10 @@ public class CardMoveHelpersTests
         }
     }
 
-    /// <summary>Tests for CardMoveHelpers.DiscardCards.</summary>
+    [Trait("対象", "手札からトラッシュへの破棄")]
     public class DiscardCards
     {
-        [Fact]
+        [Fact(DisplayName = "指定したカードを手札から取り除き、トラッシュへ移す")]
         public void RemovesFromHandAndAddsToTrash()
         {
             var state = TestFactory.MakeGameState();
@@ -233,7 +229,7 @@ public class CardMoveHelpersTests
             state.Player1Trash.Select(c => c.CardID).Should().Contain(new[] { "TST-0001", "TST-0003" });
         }
 
-        [Fact]
+        [Fact(DisplayName = "手札に無いカードを指定すると、GameRuleException を投げる")]
         public void CardNotInHand_Throws()
         {
             var state = TestFactory.MakeGameState();
@@ -244,7 +240,7 @@ public class CardMoveHelpersTests
             act.Should().Throw<GameRuleException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "空リストを渡すと、何も破棄せず手札もトラッシュも変わらない")]
         public void EmptyList_DiscardsNothing()
         {
             var state = TestFactory.MakeGameState();
@@ -257,7 +253,7 @@ public class CardMoveHelpersTests
             state.Player1Trash.Should().BeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "手札の全カードを破棄すると、手札が空になりトラッシュへ移る")]
         public void AllCards_HandBecomesEmpty()
         {
             var state = TestFactory.MakeGameState();

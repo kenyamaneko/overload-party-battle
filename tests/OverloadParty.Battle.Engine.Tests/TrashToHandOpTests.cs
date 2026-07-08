@@ -10,6 +10,7 @@ namespace OverloadParty.Battle.Tests.Effects;
 /// trash_to_hand の op を起動効果として登録し、起動効果の使用 (use_ignition) 越しに
 /// トラッシュのカードが手札へ戻ることを検証する。op を直接叩かず、プレイヤーのアクションを起点にする。
 /// </summary>
+[Trait("対象", "トラッシュから手札へ戻す起動効果")]
 public class TrashToHandOpTests
 {
     private const string SourceCard = "TST-0009";
@@ -50,7 +51,7 @@ public class TrashToHandOpTests
             ChoiceData = instanceId is null ? null : new Dictionary<string, object> { ["instanceId"] = instanceId },
         };
 
-    [Fact]
+    [Fact(DisplayName = "カードを選ばずに起動すると例外になる")]
     public void Ignition_NoChoiceData_Throws()
     {
         var (cc, effects) = Env(new TrashToHandOp());
@@ -61,7 +62,7 @@ public class TrashToHandOpTests
         act.Should().Throw<GameRuleException>().WithMessage("*No card chosen*");
     }
 
-    [Fact]
+    [Fact(DisplayName = "トラッシュのカードを選んで起動するとそのカードがトラッシュから手札へ移る")]
     public void Ignition_ValidChoice_MovesCardFromTrashToHand()
     {
         var (cc, effects) = Env(new TrashToHandOp());
@@ -73,7 +74,7 @@ public class TrashToHandOpTests
         state.Player1Hand.Should().ContainSingle().Which.CardID.Should().Be("TST-0001");
     }
 
-    [Fact]
+    [Fact(DisplayName = "フィルタを満たすカードを選ぶと該当カードだけがトラッシュから手札へ移る")]
     public void Ignition_ChoicePassingFilter_MovesOnlyMatchingCard()
     {
         var (cc, effects) = Env(new TrashToHandOp { Filter = c => c.Faction == Factions.Tenki });
@@ -87,7 +88,7 @@ public class TrashToHandOpTests
         state.Player1Hand.Should().ContainSingle().Which.CardID.Should().Be("TST-0001");
     }
 
-    [Fact]
+    [Fact(DisplayName = "フィルタを満たさないカードを選ぶと例外になりトラッシュは変わらない")]
     public void Ignition_ChoiceFailingFilter_Throws()
     {
         var (cc, effects) = Env(new TrashToHandOp { Filter = c => c.Faction == Factions.Tenki });
@@ -101,7 +102,7 @@ public class TrashToHandOpTests
         state.Player1Trash.Should().HaveCount(2);
     }
 
-    [Fact]
+    [Fact(DisplayName = "トラッシュにないカードを選ぶと例外になる")]
     public void Ignition_ChoiceInstanceNotInTrash_Throws()
     {
         var (cc, effects) = Env(new TrashToHandOp());
@@ -113,9 +114,7 @@ public class TrashToHandOpTests
     }
 }
 
-/// <summary>
-/// Tests the Choice/ValidTargets emission for trash_to_hand effects in AvailableActions.
-/// </summary>
+[Trait("対象", "利用可能アクションでのトラッシュ回収候補")]
 public class TrashToHandAvailableActionsTests
 {
     private readonly TestCardCache _cc = new();
@@ -144,7 +143,7 @@ public class TrashToHandAvailableActionsTests
         return registry;
     }
 
-    [Fact]
+    [Fact(DisplayName = "フィルタが Tenki のときトラッシュの Tenki カード t_1 と t_3 だけが候補になる")]
     public void PlayCard_TrashToHandWithFilter_EmitsValidTargets()
     {
         var state = TestFactory.MakeGameState();
@@ -167,7 +166,7 @@ public class TrashToHandAvailableActionsTests
         playAction.ValidTargets.Should().BeEquivalentTo(["t_1", "t_3"]);
     }
 
-    [Fact]
+    [Fact(DisplayName = "フィルタに一致するカードがトラッシュにないとき PlayCard アクションが提示されない")]
     public void PlayCard_TrashToHandNoMatchingCard_OmitsAction()
     {
         var state = TestFactory.MakeGameState();
@@ -183,7 +182,7 @@ public class TrashToHandAvailableActionsTests
         actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
     }
 
-    [Fact]
+    [Fact(DisplayName = "トラッシュが空のとき PlayCard アクションが提示されない")]
     public void PlayCard_TrashToHandEmptyTrash_OmitsAction()
     {
         var state = TestFactory.MakeGameState();
@@ -199,7 +198,7 @@ public class TrashToHandAvailableActionsTests
         actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
     }
 
-    [Fact]
+    [Fact(DisplayName = "フィルタがないときトラッシュの全カード t_1 と t_2 が候補になる")]
     public void PlayCard_TrashToHandNoFilter_EmitsAllTrash()
     {
         var state = TestFactory.MakeGameState();

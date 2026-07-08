@@ -3,9 +3,7 @@ using OverloadParty.Battle.Engine.Effects.Ops;
 
 namespace OverloadParty.Battle.Tests.Effects;
 
-/// <summary>
-/// EffectComposer が ops 列を順序通り・各オーバーロードで EffectHandler に組み立てることを検証する。
-/// </summary>
+[Trait("対象", "効果 op の合成")]
 public class EffectComposerTests
 {
     /// <summary>ops の実行検証に十分な最小限の EffectContext を組み立てる。</summary>
@@ -20,7 +18,7 @@ public class EffectComposerTests
             Effects = new EffectRegistry(),
         };
 
-    [Fact]
+    [Fact(DisplayName = "複数の op を渡すと、合成したハンドラが登録順に実行する")]
     public void Compose_RunsOpsInOrder()
     {
         var order = new List<int>();
@@ -34,7 +32,7 @@ public class EffectComposerTests
         order.Should().Equal(1, 2, 3);
     }
 
-    [Fact]
+    [Fact(DisplayName = "op のリストを渡すと、合成したハンドラが全ての op を実行する")]
     public void Compose_FromList_RunsAllOps()
     {
         var order = new List<int>();

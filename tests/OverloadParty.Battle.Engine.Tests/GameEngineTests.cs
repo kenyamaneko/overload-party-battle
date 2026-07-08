@@ -31,10 +31,10 @@ public class GameEngineTests
         }
     }
 
-    /// <summary>Tests for creating a new game and initializing its state.</summary>
+    [Trait("対象", "新規ゲームの作成")]
     public class CreateNewGame : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ゲームを作成すると、ゲーム ID を返し初期ターン・フェーズ・バジェット・手札・デッキを初期化する")]
         public async Task CreateNewGame_ReturnsGameID_And_InitializesState()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -66,7 +66,7 @@ public class GameEngineTests
             state.Player1Hand.Should().AllSatisfy(h => h.CardID.Should().Be("TST-0001"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "先攻をプレイヤー 2 で作成すると、アクティブプレイヤーが 2 になる")]
         public async Task CreateNewGame_FirstPlayer2_SetsActivePlayer2()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -77,7 +77,7 @@ public class GameEngineTests
             state!.ActivePlayer.Should().Be(2);
         }
 
-        [Fact]
+        [Fact(DisplayName = "エンジンバージョンとカードデータバージョンがゲームに記録される")]
         public async Task CreateNewGame_RecordsVersions()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -90,10 +90,10 @@ public class GameEngineTests
         }
     }
 
-    /// <summary>Tests for auto-advancing phases.</summary>
+    [Trait("対象", "フェーズの自動進行")]
     public class RunAutoAdvance : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ドローフェーズで自動進行すると、1 枚引いてメインフェーズへ進む")]
         public async Task RunAutoAdvance_DrawPhase_DrawsCardAndAdvancesToMain()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -115,10 +115,10 @@ public class GameEngineTests
         }
     }
 
-    /// <summary>Tests for processing a play-card action.</summary>
+    [Trait("対象", "カードのデプロイ")]
     public class ProcessPlayCard : Base
     {
-        [Fact]
+        [Fact(DisplayName = "PlayCard アクションで手札のカードをフィールドに出し、PlayCard イベントを返す")]
         public async Task ProcessAction_PlayCard_PlaysCardAndReturnsEvents()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -155,10 +155,10 @@ public class GameEngineTests
         }
     }
 
-    /// <summary>Tests for processing an attack action.</summary>
+    [Trait("対象", "攻撃の処理")]
     public class ProcessAttack : Base
     {
-        [Fact]
+        [Fact(DisplayName = "Attack アクションで対象に 600 ダメージを与え、Attack イベントを返して永続化する")]
         public async Task ProcessAction_Attack_DealsDamageAndReturnsEvents()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -201,10 +201,10 @@ public class GameEngineTests
         }
     }
 
-    /// <summary>Tests for action validation, forfeit, and finished-game guards.</summary>
+    [Trait("対象", "アクションの検証と投了")]
     public class ProcessActionValidation : Base
     {
-        [Fact]
+        [Fact(DisplayName = "自分のターンでないプレイヤーがアクションすると、GameRuleException を投げる")]
         public async Task ProcessAction_WrongPlayer_Throws()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -229,7 +229,7 @@ public class GameEngineTests
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not your turn*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "GetNpcModel に不正なプレイヤー番号 0 を渡すと、ArgumentOutOfRangeException を投げる")]
         public async Task GetNpcModel_InvalidPlayer_Throws()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -242,7 +242,7 @@ public class GameEngineTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 が投了すると、相手を勝者・理由 Surrender としてゲームが即座に終了する")]
         public async Task Forfeit_EndsGameImmediately()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -261,7 +261,7 @@ public class GameEngineTests
             game.WinReason.Should().Be(WinReasons.Surrender);
         }
 
-        [Fact]
+        [Fact(DisplayName = "終了済みゲームにアクションすると、GameRuleException を投げる")]
         public async Task ProcessAction_FinishedGame_Throws()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -280,10 +280,10 @@ public class GameEngineTests
         }
     }
 
-    /// <summary>Tests that the preserved initial state survives later mutations.</summary>
+    [Trait("対象", "初期状態の保存")]
     public class InitialStatePreservation : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ゲーム進行で状態が変化しても、保存された初期状態は元のバジェットと手札枚数を保つ")]
         public async Task GetInitialState_ReturnsOriginalState_AfterMutations()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -307,10 +307,10 @@ public class GameEngineTests
         }
     }
 
-    /// <summary>Tests for the pending slot-select gate on actions.</summary>
+    [Trait("対象", "スロット選択待ちによるアクション制御")]
     public class PendingSlotSelectGate : Base
     {
-        [Fact]
+        [Fact(DisplayName = "スロット選択待ちのプレイヤーが別アクションをすると、GameRuleException を投げる")]
         public async Task ProcessAction_PendingSlotSelect_BlocksOtherActions()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -333,7 +333,7 @@ public class GameEngineTests
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*slot selection*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "スロット選択待ち中に SelectSlot すると、選択したスロットへ配置し待ちが解消される")]
         public async Task ProcessAction_PendingSlotSelect_AllowsSelectSlot()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -359,7 +359,7 @@ public class GameEngineTests
             state.Player1Field.Frontend[1].Should().NotBeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手がスロット選択待ちでも、ターンプレイヤーは通常どおりアクションできる")]
         public async Task ProcessAction_PendingSlotSelect_DoesNotBlockOtherPlayer()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -391,7 +391,7 @@ public class GameEngineTests
             result.Events.Should().Contain(e => e.EventType == ActionTypes.PlayCard);
         }
 
-        [Fact]
+        [Fact(DisplayName = "スロット選択待ちが生じた後の次アクションは、GameRuleException を投げる")]
         public async Task ProcessAction_WhilePendingSlotSelect_BlocksNextAction()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -433,7 +433,7 @@ public class GameEngineTests
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*slot selection*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "スロット選択待ちが 2 件あるとき、1 件目の解決では選択継続を示し 2 件目で解消される")]
         public async Task ProcessAction_SelectSlot_ResolvesAndReturnsNeedsSlotSelectTrue_WhenQueueRemains()
         {
             var deck = MakeSingleCardDeck("TST-0001");

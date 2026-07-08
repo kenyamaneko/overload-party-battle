@@ -4,6 +4,7 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
+[Trait("対象", "スロット選択")]
 public class SelectSlotProcessorTests
 {
     private readonly TestCardCache _cc = new();
@@ -26,7 +27,7 @@ public class SelectSlotProcessorTests
         return state;
     }
 
-    [Fact]
+    [Fact(DisplayName = "有効なスロットを選択するとリソースが配置され選択待ちが解消される")]
     public void Process_ValidSlot_PlacesResourceAndClearsPending()
     {
         var state = MakeStateWithPending("frontend", 0);
@@ -39,7 +40,7 @@ public class SelectSlotProcessorTests
         state.PendingSlotSelects.Should().BeEmpty();
     }
 
-    [Fact]
+    [Fact(DisplayName = "バックエンドのスロットを選択するとバックエンドに配置される")]
     public void Process_ValidBackendSlot_PlacesInBackend()
     {
         var state = MakeStateWithPending("backend", 1);
@@ -52,7 +53,7 @@ public class SelectSlotProcessorTests
         state.Player1Field.Backend[1]!.InstanceID.Should().Be("pending_1");
     }
 
-    [Fact]
+    [Fact(DisplayName = "スロットを選択するとゾーンとインデックスを載せたスロット選択イベントが発行される")]
     public void Process_EmitsSelectSlotEvent()
     {
         var state = MakeStateWithPending("frontend", 2);
@@ -71,7 +72,7 @@ public class SelectSlotProcessorTests
         data.InstanceId.Should().Be("pending_1");
     }
 
-    [Fact]
+    [Fact(DisplayName = "選択待ちがないのにスロット選択すると拒否される")]
     public void Process_NoPending_Throws()
     {
         var state = TestFactory.MakeGameState();
@@ -82,7 +83,7 @@ public class SelectSlotProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*pending*");
     }
 
-    [Fact]
+    [Fact(DisplayName = "選択待ちと異なるプレイヤーがスロット選択すると拒否される")]
     public void Process_WrongPlayer_Throws()
     {
         var state = MakeStateWithPending("frontend", 0);
@@ -93,7 +94,7 @@ public class SelectSlotProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*different player*");
     }
 
-    [Fact]
+    [Fact(DisplayName = "有効ゾーンに含まれないスロットを選択すると拒否される")]
     public void Process_SlotNotInValidZones_Throws()
     {
         var state = MakeStateWithPending("frontend", 0);
@@ -104,7 +105,7 @@ public class SelectSlotProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*Invalid slot*");
     }
 
-    [Fact]
+    [Fact(DisplayName = "既に埋まっているスロットを選択すると拒否される")]
     public void Process_OccupiedSlot_Throws()
     {
         var state = MakeStateWithPending("frontend", 0);
@@ -117,7 +118,7 @@ public class SelectSlotProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*occupied*");
     }
 
-    [Fact]
+    [Fact(DisplayName = "未知のゾーンを選択すると拒否される")]
     public void Process_UnknownZone_Throws()
     {
         var state = MakeStateWithPending("frontend", 0);
@@ -129,7 +130,7 @@ public class SelectSlotProcessorTests
         act.Should().Throw<GameRuleException>().WithMessage("*Unknown zone*");
     }
 
-    [Fact]
+    [Fact(DisplayName = "範囲外のインデックスを選択すると拒否される")]
     public void Process_OutOfBoundsIndex_Throws()
     {
         var state = MakeStateWithPending("frontend", 0);
@@ -141,7 +142,7 @@ public class SelectSlotProcessorTests
         act.Should().Throw<GameRuleException>();
     }
 
-    [Fact]
+    [Fact(DisplayName = "選択待ちが複数あるとき先頭を配置し残りのスロット選択を要求する")]
     public void Process_MultiplePending_ConsumesFirstAndKeepsNeedsSlotSelect()
     {
         var state = MakeStateWithPending("frontend", 0);
@@ -161,7 +162,7 @@ public class SelectSlotProcessorTests
         result.ShouldSelectSlot.Should().BeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "選択待ちが 1 件だけのとき配置後はスロット選択を要求しない")]
     public void Process_SinglePending_NeedsSlotSelectIsFalse()
     {
         var state = MakeStateWithPending("frontend", 0);
