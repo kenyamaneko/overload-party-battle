@@ -2,30 +2,26 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Models;
 
-/// <summary>
-/// Tests for BattleGameState accessor helpers. Validates that playerNum-based
-/// getters/setters correctly route to the underlying Player1/Player2 properties.
-/// </summary>
 public class GameStateTests
 {
-    /// <summary>Tests for the playerNum-based Field accessors.</summary>
+    [Trait("対象", "フィールドアクセサ")]
     public class FieldAccessor
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 を指定すると、プレイヤー 1 のフィールドを返す")]
         public void GetField_Player1_ReturnsPlayer1Field()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetField(1).Should().BeSameAs(gs.Player1Field);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 を指定すると、プレイヤー 2 のフィールドを返す")]
         public void GetField_Player2_ReturnsPlayer2Field()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetField(2).Should().BeSameAs(gs.Player2Field);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetField_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -33,7 +29,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 のフィールドが更新される")]
         public void SetField_Player1_UpdatesPlayer1Field()
         {
             var gs = TestFactory.MakeGameState();
@@ -42,7 +38,7 @@ public class GameStateTests
             gs.Player1Field.Should().BeSameAs(newField);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 のフィールドが更新される")]
         public void SetField_Player2_UpdatesPlayer2Field()
         {
             var gs = TestFactory.MakeGameState();
@@ -51,7 +47,7 @@ public class GameStateTests
             gs.Player2Field.Should().BeSameAs(newField);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetField_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -60,24 +56,24 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for the playerNum-based Hand accessors.</summary>
+    [Trait("対象", "手札アクセサ")]
     public class HandAccessor
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 を指定すると、プレイヤー 1 の手札を返す")]
         public void GetHand_Player1_ReturnsPlayer1Hand()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetHand(1).Should().BeSameAs(gs.Player1Hand);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 を指定すると、プレイヤー 2 の手札を返す")]
         public void GetHand_Player2_ReturnsPlayer2Hand()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetHand(2).Should().BeSameAs(gs.Player2Hand);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetHand_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -85,7 +81,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 の手札が更新される")]
         public void SetHand_Player1_UpdatesPlayer1Hand()
         {
             var gs = TestFactory.MakeGameState();
@@ -94,7 +90,7 @@ public class GameStateTests
             gs.Player1Hand.Should().BeSameAs(newHand);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 の手札が更新される")]
         public void SetHand_Player2_UpdatesPlayer2Hand()
         {
             var gs = TestFactory.MakeGameState();
@@ -103,7 +99,7 @@ public class GameStateTests
             gs.Player2Hand.Should().BeSameAs(newHand);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetHand_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -112,10 +108,10 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for the playerNum-based Budget accessors.</summary>
+    [Trait("対象", "バジェットアクセサ")]
     public class BudgetAccessor
     {
-        [Theory]
+        [Theory(DisplayName = "指定したプレイヤーのバジェットを返す")]
         [InlineData(1, 5000)]
         [InlineData(2, 5000)]
         public void GetBudget_ReturnsCorrectPlayerBudget(long playerNum, long expected)
@@ -124,7 +120,7 @@ public class GameStateTests
             gs.GetBudget(playerNum).Should().Be(expected);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetBudget_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -132,7 +128,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 のバジェットが更新される")]
         public void SetBudget_Player1_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -140,7 +136,7 @@ public class GameStateTests
             gs.Player1Budget.Should().Be(3000);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 のバジェットが更新される")]
         public void SetBudget_Player2_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -148,7 +144,7 @@ public class GameStateTests
             gs.Player2Budget.Should().Be(4000);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetBudget_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -157,10 +153,10 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for the playerNum-based InsightPool accessors.</summary>
+    [Trait("対象", "インサイトプールアクセサ")]
     public class InsightPoolAccessor
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 を指定すると、プレイヤー 1 のインサイトプールを返す")]
         public void GetInsightPool_Player1_ReturnsValue()
         {
             var gs = TestFactory.MakeGameState();
@@ -168,7 +164,7 @@ public class GameStateTests
             gs.GetInsightPool(1).Should().Be(10);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 を指定すると、プレイヤー 2 のインサイトプールを返す")]
         public void GetInsightPool_Player2_ReturnsValue()
         {
             var gs = TestFactory.MakeGameState();
@@ -176,7 +172,7 @@ public class GameStateTests
             gs.GetInsightPool(2).Should().Be(20);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetInsightPool_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -184,7 +180,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 のインサイトプールが更新される")]
         public void SetInsightPool_Player1_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -192,7 +188,7 @@ public class GameStateTests
             gs.Player1InsightPool.Should().Be(15);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 のインサイトプールが更新される")]
         public void SetInsightPool_Player2_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -200,7 +196,7 @@ public class GameStateTests
             gs.Player2InsightPool.Should().Be(25);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetInsightPool_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -209,24 +205,24 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for the playerNum-based Repository accessors.</summary>
+    [Trait("対象", "Repository アクセサ")]
     public class RepositoryAccessor
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 を指定すると、プレイヤー 1 の Repository を返す")]
         public void GetRepository_Player1_ReturnsPlayer1Repository()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetRepository(1).Should().BeSameAs(gs.Player1Repository);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 を指定すると、プレイヤー 2 の Repository を返す")]
         public void GetRepository_Player2_ReturnsPlayer2Repository()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetRepository(2).Should().BeSameAs(gs.Player2Repository);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetRepository_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -234,7 +230,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 の Repository が更新される")]
         public void SetRepository_Player1_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -243,7 +239,7 @@ public class GameStateTests
             gs.Player1Repository.Should().BeSameAs(repo);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 の Repository が更新される")]
         public void SetRepository_Player2_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -252,7 +248,7 @@ public class GameStateTests
             gs.Player2Repository.Should().BeSameAs(repo);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetRepository_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -261,24 +257,24 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for the playerNum-based Trash accessors.</summary>
+    [Trait("対象", "トラッシュアクセサ")]
     public class TrashAccessor
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 を指定すると、プレイヤー 1 のトラッシュを返す")]
         public void GetTrash_Player1_ReturnsPlayer1Trash()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetTrash(1).Should().BeSameAs(gs.Player1Trash);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 を指定すると、プレイヤー 2 のトラッシュを返す")]
         public void GetTrash_Player2_ReturnsPlayer2Trash()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetTrash(2).Should().BeSameAs(gs.Player2Trash);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetTrash_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -286,7 +282,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 のトラッシュが更新される")]
         public void SetTrash_Player1_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -295,7 +291,7 @@ public class GameStateTests
             gs.Player1Trash.Should().BeSameAs(trash);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 のトラッシュが更新される")]
         public void SetTrash_Player2_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -304,7 +300,7 @@ public class GameStateTests
             gs.Player2Trash.Should().BeSameAs(trash);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetTrash_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -313,24 +309,24 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for the playerNum-based TimeBank accessors.</summary>
+    [Trait("対象", "タイムバンクアクセサ")]
     public class TimeBankAccessor
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 を指定すると、プレイヤー 1 のタイムバンクを返す")]
         public void GetTimeBank_Player1_ReturnsValue()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetTimeBank(1).Should().Be(480);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 を指定すると、プレイヤー 2 のタイムバンクを返す")]
         public void GetTimeBank_Player2_ReturnsValue()
         {
             var gs = TestFactory.MakeGameState();
             gs.GetTimeBank(2).Should().Be(480);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetTimeBank_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -338,7 +334,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 のタイムバンクが更新される")]
         public void SetTimeBank_Player1_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -346,7 +342,7 @@ public class GameStateTests
             gs.Player1TimeBank.Should().Be(300);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 のタイムバンクが更新される")]
         public void SetTimeBank_Player2_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -354,7 +350,7 @@ public class GameStateTests
             gs.Player2TimeBank.Should().Be(200);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetTimeBank_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -363,10 +359,10 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for the playerNum-based IncidentPlayedThisTurn accessors.</summary>
+    [Trait("対象", "インシデント使用フラグアクセサ")]
     public class IncidentPlayedThisTurnAccessor
     {
-        [Fact]
+        [Fact(DisplayName = "初期状態では両プレイヤーのインシデント使用フラグが false になる")]
         public void GetIncidentPlayedThisTurn_DefaultsFalse()
         {
             var gs = TestFactory.MakeGameState();
@@ -374,7 +370,7 @@ public class GameStateTests
             gs.GetIncidentPlayedThisTurn(2).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 のインシデント使用フラグが更新される")]
         public void SetIncidentPlayedThisTurn_Player1_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -382,7 +378,7 @@ public class GameStateTests
             gs.Player1IncidentPlayedThisTurn.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 のインシデント使用フラグが更新される")]
         public void SetIncidentPlayedThisTurn_Player2_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -390,7 +386,7 @@ public class GameStateTests
             gs.Player2IncidentPlayedThisTurn.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetIncidentPlayedThisTurn_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -398,7 +394,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetIncidentPlayedThisTurn_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -407,10 +403,10 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for the playerNum-based HasOperated accessors.</summary>
+    [Trait("対象", "稼働実績フラグアクセサ")]
     public class HasOperatedAccessor
     {
-        [Fact]
+        [Fact(DisplayName = "初期状態では両プレイヤーの稼働実績フラグが false になる")]
         public void GetHasOperated_DefaultsFalse()
         {
             var gs = TestFactory.MakeGameState();
@@ -418,7 +414,7 @@ public class GameStateTests
             gs.GetHasOperated(2).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 に設定すると、プレイヤー 1 の稼働実績フラグが更新される")]
         public void SetHasOperated_Player1_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -426,7 +422,7 @@ public class GameStateTests
             gs.Player1HasOperated.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 に設定すると、プレイヤー 2 の稼働実績フラグが更新される")]
         public void SetHasOperated_Player2_Updates()
         {
             var gs = TestFactory.MakeGameState();
@@ -434,7 +430,7 @@ public class GameStateTests
             gs.Player2HasOperated.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void GetHasOperated_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -442,7 +438,7 @@ public class GameStateTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void SetHasOperated_InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -451,10 +447,10 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for BattleGameState.OpponentOf.</summary>
+    [Trait("対象", "相手プレイヤー算出")]
     public class OpponentOf
     {
-        [Theory]
+        [Theory(DisplayName = "指定したプレイヤーの相手プレイヤーを返す")]
         [InlineData(1, 2)]
         [InlineData(2, 1)]
         public void ReturnsOtherPlayer(long playerNum, long expected)
@@ -463,7 +459,7 @@ public class GameStateTests
             gs.OpponentOf(playerNum).Should().Be(expected);
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void InvalidPlayer_Throws()
         {
             var gs = TestFactory.MakeGameState();
@@ -472,10 +468,10 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for BattleGameState.NextInstanceID.</summary>
+    [Trait("対象", "インスタンス ID 採番")]
     public class NextInstanceID
     {
-        [Fact]
+        [Fact(DisplayName = "呼ぶたびに inst_0 から連番のインスタンス ID を採番しシーケンスを進める")]
         public void ReturnsSequentialIDs()
         {
             var gs = TestFactory.MakeGameState();
@@ -488,10 +484,10 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for BattleGameState.NextDeployOrder.</summary>
+    [Trait("対象", "デプロイ順採番")]
     public class NextDeployOrder
     {
-        [Fact]
+        [Fact(DisplayName = "呼ぶたびに 1 から増加するデプロイ順を採番しシーケンスを進める")]
         public void ReturnsIncreasingValues()
         {
             var gs = TestFactory.MakeGameState();
@@ -504,10 +500,10 @@ public class GameStateTests
         }
     }
 
-    /// <summary>Tests for Game.GetNpcModel.</summary>
+    [Trait("対象", "NPC モデル取得")]
     public class GetNpcModel
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 1 を指定すると、プレイヤー 1 の NPC モデルを返す")]
         public void Player1_ReturnsNpc1Model()
         {
             var game = TestFactory.MakeGame();
@@ -515,7 +511,7 @@ public class GameStateTests
             game.GetNpcModel(1).Should().Be("SHE");
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 を指定すると、プレイヤー 2 の NPC モデルを返す")]
         public void Player2_ReturnsNpc2Model()
         {
             var game = TestFactory.MakeGame();
@@ -523,7 +519,7 @@ public class GameStateTests
             game.GetNpcModel(2).Should().Be("NTT");
         }
 
-        [Fact]
+        [Fact(DisplayName = "不正なプレイヤー番号のとき、ArgumentOutOfRangeException を投げる")]
         public void InvalidPlayer_Throws()
         {
             var game = TestFactory.MakeGame();
