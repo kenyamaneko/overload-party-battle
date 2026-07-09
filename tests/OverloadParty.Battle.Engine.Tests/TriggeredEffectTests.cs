@@ -7,10 +7,7 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// デプロイ / 破壊 / エンドフェーズをトリガーとする誘発効果を、対応するアクション越しに発動して検証する。
-/// カスタム効果を直接叩かず、プレイヤーのアクション (デプロイ・攻撃・フェーズ終了) を起点にする。
-/// </summary>
+/// <summary>カスタム効果を直接叩かず、プレイヤーのアクション (デプロイ・攻撃・フェーズ終了) を起点に検証する。</summary>
 public class TriggeredEffectTests
 {
     /// <summary>指定カスタム効果を 1 つの op として包む。</summary>
@@ -19,10 +16,10 @@ public class TriggeredEffectTests
     private static IEffectOp Custom(string name) =>
         new CustomFnOp(new CustomEffectRegistry().Build(name, null)!);
 
-    /// <summary>高 スループット のコンピュート系リソースがデプロイされると 休止 を付与する誘発効果。</summary>
+    [Trait("対象", "高スループットデプロイの休止付与")]
     public class DisableHighTpDeploy
     {
-        [Fact]
+        [Fact(DisplayName = "スループット 1500 のコンピュート系リソースがデプロイされると、休止が付与される")]
         public void OnDeploy_AppliesDormantToHighTpDeploy()
         {
             var cc = new TestCardCache();
@@ -43,7 +40,7 @@ public class TriggeredEffectTests
             FieldHelpers.HasTemporaryEffect(deployed, BuffTypes.Dormant).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "スループット 600 のリソースがデプロイされても、休止は付与されない")]
         public void OnDeploy_NoDormant_BelowThreshold()
         {
             var cc = new TestCardCache();
@@ -63,10 +60,10 @@ public class TriggeredEffectTests
         }
     }
 
-    /// <summary>相手の 3 体目のデプロイをキャンセルする誘発効果。</summary>
+    [Trait("対象", "相手の 3 体目のデプロイキャンセル")]
     public class CancelNthDeploy
     {
-        [Fact]
+        [Fact(DisplayName = "同一ターンの 3 体目のデプロイはキャンセルされる")]
         public void OnDeploy_CancelsThirdDeploy()
         {
             var cc = new TestCardCache();
@@ -96,10 +93,10 @@ public class TriggeredEffectTests
         }
     }
 
-    /// <summary>破壊された リソース と同タイプのカードを 手札 からデプロイする誘発効果 (選択待ちへ遷移)。</summary>
+    [Trait("対象", "破壊時の同タイプデプロイ選択")]
     public class DeploySameTypeFromHand
     {
-        [Fact]
+        [Fact(DisplayName = "リソースが破壊されると、同タイプのカードを手札から選ぶ選択待ちへ遷移する")]
         public void OnDestroy_SuspendsForHandCardChoice()
         {
             var cc = new TestCardCache();
@@ -126,10 +123,10 @@ public class TriggeredEffectTests
         }
     }
 
-    /// <summary>デプロイから一定ターン後にエンドフェーズで自壊する誘発効果。</summary>
+    [Trait("対象", "エンドフェーズでの期限切れ自壊")]
     public class SpotExpiry
     {
-        [Fact]
+        [Fact(DisplayName = "デプロイから規定ターン経過後のエンドフェーズで、リソースが自壊する")]
         public void OnEndPhase_SelfDestructsAfterExpiry()
         {
             var cc = new TestCardCache();

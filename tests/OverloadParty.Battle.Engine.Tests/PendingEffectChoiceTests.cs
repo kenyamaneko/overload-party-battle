@@ -81,10 +81,10 @@ public class PendingEffectChoiceTests
         }
     }
 
-    /// <summary>Tests for suspending when a HandCard choice has candidates.</summary>
+    [Trait("対象", "候補ありの手札選択")]
     public class HandChoiceWithCandidates : Base
     {
-        [Fact]
+        [Fact(DisplayName = "リアクティブ経由で手札の候補があるとき手札選択の選択待ちで中断する")]
         public void DeployFromHandOp_ViaReactive_WithCandidates_SuspendsForHandChoice()
         {
             var state = TestFactory.MakeGameState();
@@ -108,10 +108,10 @@ public class PendingEffectChoiceTests
         }
     }
 
-    /// <summary>Tests for failing the guard when a HandCard choice has no candidates.</summary>
+    [Trait("対象", "候補なしの手札選択")]
     public class HandChoiceWithoutCandidates : Base
     {
-        [Fact]
+        [Fact(DisplayName = "リアクティブ経由で手札の候補がないとき発動条件を満たさず選択待ちにならない")]
         public void DeployFromHandOp_ViaReactive_WithoutCandidates_FailsGuard()
         {
             var state = TestFactory.MakeGameState();
@@ -126,10 +126,10 @@ public class PendingEffectChoiceTests
         }
     }
 
-    /// <summary>Tests for throwing when a choice op is called directly without a suspend source.</summary>
+    [Trait("対象", "選択元なしの直接呼び出し")]
     public class DirectCallWithoutChoice : Base
     {
-        [Fact]
+        [Fact(DisplayName = "選択元も選択データもない直接呼び出しは拒否される")]
         public void DeployFromHandOp_DirectCall_WithoutChoice_Throws()
         {
             var state = TestFactory.MakeGameState();
@@ -143,10 +143,10 @@ public class PendingEffectChoiceTests
         }
     }
 
-    /// <summary>Tests for suspending on a FieldTarget choice where the chooser differs from the owner.</summary>
+    [Trait("対象", "フィールド対象選択の選択者")]
     public class FieldTargetForeignChooser : Base
     {
-        [Fact]
+        [Fact(DisplayName = "フィールド対象選択ではオーナーと異なるプレイヤーを選択者にできる")]
         public void Suspend_WithFieldTargetKind_AllowsForeignChooser()
         {
             var state = TestFactory.MakeGameState(phase: Phase.Battle);
@@ -179,10 +179,10 @@ public class PendingEffectChoiceTests
         }
     }
 
-    /// <summary>Tests for resolving a pending choice and resuming the suspended handler.</summary>
+    [Trait("対象", "選択の解決")]
     public class Resolve : Base
     {
-        [Fact]
+        [Fact(DisplayName = "選択を解決すると選択データがハンドラに渡り選択待ちが解消される")]
         public void Resolve_AppliesChoiceData_HandlerCompletes()
         {
             var state = TestFactory.MakeGameState();
@@ -212,7 +212,7 @@ public class PendingEffectChoiceTests
             capturedChoice.Should().Be(HandDummyCardId);
         }
 
-        [Fact]
+        [Fact(DisplayName = "選択を解決すると中断時の効果元と対象が復元される")]
         public void Resolve_RestoresSourceAndTarget()
         {
             var state = TestFactory.MakeGameState();
@@ -249,7 +249,7 @@ public class PendingEffectChoiceTests
             capturedTarget.Should().BeSameAs(target);
         }
 
-        [Fact]
+        [Fact(DisplayName = "選択者と異なるプレイヤーが解決しようとすると拒否される")]
         public void Resolve_WithWrongChooser_Throws()
         {
             var state = TestFactory.MakeGameState();
@@ -261,7 +261,7 @@ public class PendingEffectChoiceTests
             act.Should().Throw<GameRuleException>().WithMessage("*different player*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "候補にない ID を選んで解決しようとすると拒否される")]
         public void Resolve_WithUnknownChoiceId_Throws()
         {
             var state = TestFactory.MakeGameState();

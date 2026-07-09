@@ -58,20 +58,20 @@ public class BuffTypeTests
     private static TemporaryEffect PercentReduction(long percent) =>
         new() { EffectType = BuffTypes.IncidentReduction, Value = percent, Mode = BuffModes.Percent };
 
-    /// <summary>incident_immune を持つリソースはインシデントのダメージを完全に免れることを検証する。</summary>
+    [Trait("対象", "インシデント免疫")]
     public class IncidentImmune
     {
-        [Fact]
+        [Fact(DisplayName = "インシデント免疫を持つリソースはインシデントのダメージを受けない")]
         public void Incident_ImmuneResource_TakesNoDamage()
         {
             PlayIncidentAgainst(Immune()).Should().Be(0);
         }
     }
 
-    /// <summary>incident_reduction がインシデントのダメージを軽減することを検証する (定額・割合)。</summary>
+    [Trait("対象", "インシデントダメージの軽減")]
     public class IncidentReduction
     {
-        [Theory]
+        [Theory(DisplayName = "定額軽減はインシデントのダメージ 500 から軽減量を引き 0 未満は 0 になる")]
         [InlineData(200, 300)]
         [InlineData(800, 0)]
         public void Incident_FlatReduction_SubtractsThenClampsAtZero(long reduction, long expected)
@@ -79,13 +79,13 @@ public class BuffTypeTests
             PlayIncidentAgainst(FlatReduction(reduction)).Should().Be(expected);
         }
 
-        [Fact]
+        [Fact(DisplayName = "50% の割合軽減でインシデントのダメージ 500 が 250 になる")]
         public void Incident_PercentReduction_ScalesDamage()
         {
             PlayIncidentAgainst(PercentReduction(50)).Should().Be(250);
         }
 
-        [Fact]
+        [Fact(DisplayName = "定額 100 を引いてから 50% を適用しインシデントのダメージが 200 になる")]
         public void Incident_FlatThenPercent_AppliedInOrder()
         {
             PlayIncidentAgainst(FlatReduction(100), PercentReduction(50)).Should().Be(200);
@@ -105,10 +105,10 @@ public class BuffTypeTests
         }
     }
 
-    /// <summary>Tests for the attack_damage_reduction buff reducing combat damage.</summary>
+    [Trait("対象", "攻撃ダメージの軽減")]
     public class AttackDamageReduction : Base
     {
-        [Fact]
+        [Fact(DisplayName = "攻撃ダメージ軽減により攻撃ダメージ 600 が 400 に減る")]
         public void AttackDamage_ReducedByAttackDamageReduction()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -133,7 +133,7 @@ public class BuffTypeTests
             defender.Damage.Should().Be(400, "600 TP - 200 reduction = 400 damage");
         }
 
-        [Fact]
+        [Fact(DisplayName = "軽減量がスループットを超えると攻撃ダメージが 0 になる")]
         public void AttackDamage_ClampedToZero_WhenReductionExceedsTP()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -159,10 +159,10 @@ public class BuffTypeTests
         }
     }
 
-    /// <summary>Tests for the sla_penalty_reduction buff reducing budget loss on destroy.</summary>
+    [Trait("対象", "SLA ペナルティの軽減")]
     public class SLAPenaltyReduction : Base
     {
-        [Fact]
+        [Fact(DisplayName = "SLA ペナルティ 400 が軽減 100 で 300 になりバジェットが 4700 になる")]
         public void SLAPenalty_ReducedBySLAPenaltyReduction()
         {
             var state = TestFactory.MakeGameState(p1Budget: 5000);
@@ -183,7 +183,7 @@ public class BuffTypeTests
             state.Player1Budget.Should().Be(4700, "5000 - (400 - 100) = 4700");
         }
 
-        [Fact]
+        [Fact(DisplayName = "軽減量が SLA ペナルティを超えると破壊してもバジェットが減らない")]
         public void SLAPenalty_ClampedToZero_WhenReductionExceedsPenalty()
         {
             var state = TestFactory.MakeGameState(p1Budget: 5000);

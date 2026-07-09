@@ -3,16 +3,12 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// Tests for FieldHelpers. Validates field search, zone eligibility,
-/// resource management per RULEBOOK.md §3 field layout.
-/// </summary>
 public class FieldHelpersTests
 {
-    /// <summary>Tests for FieldHelpers.FindResourceByID.</summary>
+    [Trait("対象", "リソースの ID 検索")]
     public class FindResourceByID
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドのリソースを ID 検索で見つけられる")]
         public void Frontend_Found()
         {
             var field = TestFactory.MakeField();
@@ -22,7 +18,7 @@ public class FieldHelpersTests
             FieldHelpers.FindResourceByID(field, "inst_1").Should().BeSameAs(res);
         }
 
-        [Fact]
+        [Fact(DisplayName = "バックエンドのリソースを ID 検索で見つけられる")]
         public void Backend_Found()
         {
             var field = TestFactory.MakeField();
@@ -32,7 +28,7 @@ public class FieldHelpersTests
             FieldHelpers.FindResourceByID(field, "inst_2").Should().BeSameAs(res);
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しない ID で検索すると null が返る")]
         public void NotFound_ReturnsNull()
         {
             var field = TestFactory.MakeField();
@@ -40,10 +36,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.FindResourceZone.</summary>
+    [Trait("対象", "リソースのゾーン判定")]
     public class FindResourceZone
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドにあるリソースのゾーンとして Frontend が返る")]
         public void Frontend()
         {
             var field = TestFactory.MakeField();
@@ -52,7 +48,7 @@ public class FieldHelpersTests
             FieldHelpers.FindResourceZone(field, "inst_1").Should().Be(Zone.Frontend);
         }
 
-        [Fact]
+        [Fact(DisplayName = "バックエンドにあるリソースのゾーンとして Backend が返る")]
         public void Backend()
         {
             var field = TestFactory.MakeField();
@@ -61,7 +57,7 @@ public class FieldHelpersTests
             FieldHelpers.FindResourceZone(field, "inst_2").Should().Be(Zone.Backend);
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しない ID のゾーンを問い合わせると null が返る")]
         public void NotFound_ReturnsNull()
         {
             var field = TestFactory.MakeField();
@@ -69,10 +65,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.FindSupportByID.</summary>
+    [Trait("対象", "サポートカードの ID 検索")]
     public class FindSupportByID
     {
-        [Fact]
+        [Fact(DisplayName = "サポートカードを ID 検索で見つけられる")]
         public void Found()
         {
             var field = TestFactory.MakeField();
@@ -83,7 +79,7 @@ public class FieldHelpersTests
             result!.InstanceID.Should().Be("sup_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しない ID でサポートを検索すると null が返る")]
         public void NotFound_ReturnsNull()
         {
             var field = TestFactory.MakeField();
@@ -91,14 +87,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.HasFrontendResources.</summary>
+    [Trait("対象", "フロントエンドのリソース有無判定")]
     public class HasFrontendResources
     {
-        /// <summary>
-        /// 裏向きカードは「いないものとみなす」
-        /// Face-down cards don't count as frontend resources.
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "フロントエンドに裏向きリソースしかないときは在席なしとみなし false を返す")]
         public void OnlyFaceDown_ReturnsFalse()
         {
             var field = TestFactory.MakeField();
@@ -107,7 +99,7 @@ public class FieldHelpersTests
             FieldHelpers.HasFrontendResources(field).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドに表向きリソースが 1 体あれば true を返す")]
         public void OneFaceUp_ReturnsTrue()
         {
             var field = TestFactory.MakeField();
@@ -117,7 +109,7 @@ public class FieldHelpersTests
             FieldHelpers.HasFrontendResources(field).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドが空なら false を返す")]
         public void Empty_ReturnsFalse()
         {
             var field = TestFactory.MakeField();
@@ -125,10 +117,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.HasAnyActiveResources.</summary>
+    [Trait("対象", "稼働リソースの有無判定")]
     public class HasAnyActiveResources
     {
-        [Fact]
+        [Fact(DisplayName = "バックエンドだけに表向きリソースがあっても true を返す")]
         public void BackendOnly_ReturnsTrue()
         {
             var field = TestFactory.MakeField();
@@ -137,7 +129,7 @@ public class FieldHelpersTests
             FieldHelpers.HasAnyActiveResources(field).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドもバックエンドも裏向きだけなら false を返す")]
         public void AllFaceDown_ReturnsFalse()
         {
             var field = TestFactory.MakeField();
@@ -148,10 +140,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.RemoveResourceFromField.</summary>
+    [Trait("対象", "フィールドからのリソース除去")]
     public class RemoveResourceFromField
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドのリソースを除去すると true が返りスロットが空になる")]
         public void RemovesFrontend()
         {
             var field = TestFactory.MakeField();
@@ -161,7 +153,7 @@ public class FieldHelpersTests
             field.Frontend[1].Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "バックエンドのリソースを除去すると true が返りスロットが空になる")]
         public void RemovesBackend()
         {
             var field = TestFactory.MakeField();
@@ -171,7 +163,7 @@ public class FieldHelpersTests
             field.Backend[2].Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しない ID の除去は false を返す")]
         public void NotFound_ReturnsFalse()
         {
             var field = TestFactory.MakeField();
@@ -179,10 +171,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.AllFaceUpResources.</summary>
+    [Trait("対象", "表向きリソースの列挙")]
     public class AllFaceUpResources
     {
-        [Fact]
+        [Fact(DisplayName = "表向きリソースだけを列挙し裏向きは除外する")]
         public void SkipsFaceDown()
         {
             var field = TestFactory.MakeField();
@@ -198,13 +190,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.IsFrontendEligible.</summary>
+    [Trait("対象", "フロントエンド配置可否の判定")]
     public class IsFrontendEligible
     {
-        /// <summary>
-        /// Frontend: Compute 全般 + Data の ObjectStorage subtype のみ
-        /// </summary>
-        [Theory]
+        [Theory(DisplayName = "フロントエンドにはCompute全般とDataのObjectStorageサブタイプだけが配置可能と判定される")]
         [InlineData("Compute", null, true)]
         [InlineData("DataResource", "ObjectStorage", true)]
         [InlineData("DataResource", "Database", false)]
@@ -216,13 +205,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.IsBackendEligible.</summary>
+    [Trait("対象", "バックエンド配置可否の判定")]
     public class IsBackendEligible
     {
-        /// <summary>
-        /// Backend: All resource types (compute + data).
-        /// </summary>
-        [Theory]
+        [Theory(DisplayName = "バックエンドにはComputeとDataResourceが配置可能でPlatformやStrategyは不可になる")]
         [InlineData("Compute", true)]
         [InlineData("DataResource", true)]
         [InlineData("Platform", false)]
@@ -233,10 +219,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.IsComputeType.</summary>
+    [Trait("対象", "Compute系タイプ判定")]
     public class IsComputeType
     {
-        [Theory]
+        [Theory(DisplayName = "Compute系タイプ判定は card_type が Compute のときだけ true になる")]
         [InlineData("Compute", true)]
         [InlineData("DataResource", false)]
         [InlineData("Platform", false)]
@@ -247,10 +233,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.IsDataResource.</summary>
+    [Trait("対象", "Data系リソースタイプ判定")]
     public class IsDataResource
     {
-        [Theory]
+        [Theory(DisplayName = "Data系リソースタイプ判定は card_type が DataResource のときだけ true になる")]
         [InlineData("DataResource", true)]
         [InlineData("Compute", false)]
         [InlineData("Database", false)] // 旧個別 subtype は category ではないため false
@@ -260,10 +246,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for FieldHelpers.IsImmediateType.</summary>
+    [Trait("対象", "即時使用タイプ判定")]
     public class IsImmediateType
     {
-        [Theory]
+        [Theory(DisplayName = "StrategyとIncidentは即時使用タイプと判定され、それ以外は false になる")]
         [InlineData("Strategy", true)]
         [InlineData("Incident", true)]
         [InlineData("Compute", false)]
@@ -274,13 +260,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for ResourceHelpers.CreateDeployedResource.</summary>
+    [Trait("対象", "リソースのデプロイ生成")]
     public class CreateDeployedResource
     {
-        /// <summary>
-        /// Serverless (deploy_turns=0) → immediate face-up.
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "デプロイターン 0 のサーバーレスは即座に表向きで生成される")]
         public void ZeroDeployTurns_FaceUp()
         {
             var card = TestFactory.ServerlessCard();
@@ -291,10 +274,7 @@ public class FieldHelpersTests
             res.Rank.Should().BeNull();
         }
 
-        /// <summary>
-        /// Compute (deploy_turns=1) → face-down with 1 turn left.
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "デプロイターン 1 のリソースは裏向きでデプロイターン残 1 として生成され、デプロイしたターンを記録する")]
         public void OneDeployTurn_FaceDown()
         {
             var card = TestFactory.ComputeCard(deployTurns: 1);
@@ -305,7 +285,7 @@ public class FieldHelpersTests
             res.DeployedOnTurn.Should().Be(3);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Compute系カードから生成したリソースにスループット 700 と可用性 1400 が設定される")]
         public void ComputeCard_SetsTpStats()
         {
             var card = TestFactory.ComputeCard(tp: 700, av: 1400);
@@ -317,7 +297,7 @@ public class FieldHelpersTests
             res.CurrentAV.Should().Be(1400);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Data系カードから生成したリソースにイールド 500 と可用性 800 が設定される")]
         public void DataCard_SetsYieldStats()
         {
             var card = TestFactory.DataCard(yield: 500, av: 800);
@@ -330,10 +310,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests for CardMoveHelpers.AddToTrash.</summary>
+    [Trait("対象", "トラッシュへの追加")]
     public class AddToTrash
     {
-        [Fact]
+        [Fact(DisplayName = "指定したプレイヤーのトラッシュにだけカードが追加され、相手のトラッシュは空のまま")]
         public void AddsToCorrectPlayerTrash()
         {
             var state = TestFactory.MakeGameState();
@@ -345,10 +325,10 @@ public class FieldHelpersTests
         }
     }
 
-    /// <summary>Tests that each field zone exposes three slots.</summary>
+    [Trait("対象", "フィールドのスロット数")]
     public class FieldSlots
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンド・バックエンド・サポートゾーンがそれぞれ 3 スロットを持つ")]
         public void HasThreeSlotsPerZone()
         {
             var field = TestFactory.MakeField();

@@ -81,48 +81,48 @@ public class GuardOpTests
             guard.Check(ctx).Should().BeFalse();
     }
 
-    /// <summary>Tests for the event-owner guard.</summary>
+    [Trait("対象", "イベントオーナーの発動条件")]
     public class EventOwnerCheck : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手のイベントを条件とする発動条件は、イベントオーナーが相手のとき満たす")]
         public void EventOwner_Opponent_PassesWhenEventOwnerIsOpponent()
             => ShouldPass(new EventOwnerGuard(isSelf: false), Ctx(playerNum: 1, eventOwnerNum: 2));
 
-        [Fact]
+        [Fact(DisplayName = "相手のイベントを条件とする発動条件は、イベントオーナーが自分のとき満たさない")]
         public void EventOwner_Opponent_FailsWhenEventOwnerIsSelf()
             => ShouldFail(new EventOwnerGuard(isSelf: false), Ctx(playerNum: 1, eventOwnerNum: 1));
 
-        [Fact]
+        [Fact(DisplayName = "自分のイベントを条件とする発動条件は、イベントオーナーが自分のとき満たす")]
         public void EventOwner_Self_PassesWhenEventOwnerIsSelf()
             => ShouldPass(new EventOwnerGuard(isSelf: true), Ctx(playerNum: 1, eventOwnerNum: 1));
     }
 
-    /// <summary>Tests for the match guard with the event-card selector.</summary>
+    [Trait("対象", "イベントカード一致の発動条件")]
     public class MatchEventCard : Base
     {
-        [Fact]
+        [Fact(DisplayName = "イベントカード ID が候補集合に含まれるとき満たす")]
         public void MatchEventCard_PassesWhenEventCardIdMatches()
             => ShouldPass(
                 new MatchGuard(MatchSelector.EventCard, cardIds: ["INC-A", "INC-B"]),
                 Ctx(incidentCard: _cc.MustGet("INC-A")));
 
-        [Fact]
+        [Fact(DisplayName = "イベントカード ID が候補集合に含まれないとき満たさない")]
         public void MatchEventCard_FailsWhenEventCardIdNotInSet()
             => ShouldFail(
                 new MatchGuard(MatchSelector.EventCard, cardIds: ["INC-B"]),
                 Ctx(incidentCard: _cc.MustGet("INC-A")));
 
-        [Fact]
+        [Fact(DisplayName = "コンテキストにイベントカードが無いとき満たさない")]
         public void MatchEventCard_FailsWhenNoEventCardInContext()
             => ShouldFail(
                 new MatchGuard(MatchSelector.EventCard, cardIds: ["INC-A"]),
                 Ctx());
     }
 
-    /// <summary>Tests for the match guard with the attacker selector.</summary>
+    [Trait("対象", "攻撃側一致の発動条件")]
     public class MatchAttacker : Base
     {
-        [Fact]
+        [Fact(DisplayName = "攻撃側の陣営が指定と一致するとき満たす")]
         public void MatchAttacker_FactionMatch_PassesWhenAttackerFactionMatches()
         {
             var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
@@ -131,7 +131,7 @@ public class GuardOpTests
                 Ctx(source: attacker));
         }
 
-        [Fact]
+        [Fact(DisplayName = "攻撃側の陣営が指定と異なるとき満たさない")]
         public void MatchAttacker_FactionMatch_FailsWhenAttackerFactionDiffers()
         {
             var attacker = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "atk");
@@ -140,7 +140,7 @@ public class GuardOpTests
                 Ctx(source: attacker));
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手所有を条件とすると、攻撃側が相手のとき満たす")]
         public void MatchAttacker_Owner_PassesWhenAttackerBelongsToOpponent()
         {
             var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
@@ -149,7 +149,7 @@ public class GuardOpTests
                 Ctx(playerNum: 1, source: attacker, eventOwnerNum: 2));
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手所有を条件とすると、攻撃側が自分のとき満たさない")]
         public void MatchAttacker_Owner_FailsWhenAttackerBelongsToSelf()
         {
             var attacker = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "atk");
@@ -159,10 +159,10 @@ public class GuardOpTests
         }
     }
 
-    /// <summary>Tests for the match guard with the target selector.</summary>
+    [Trait("対象", "対象一致の発動条件")]
     public class MatchTarget : Base
     {
-        [Fact]
+        [Fact(DisplayName = "対象の陣営が一致しカードタイプが候補のいずれかに一致するとき満たす")]
         public void MatchTarget_FactionAndCardTypeList_PassesWhenTargetMatchesAnyType()
         {
             var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
@@ -171,7 +171,7 @@ public class GuardOpTests
                 Ctx(target: target));
         }
 
-        [Fact]
+        [Fact(DisplayName = "対象のカードタイプが候補のいずれにも一致しないとき満たさない")]
         public void MatchTarget_FactionAndCardTypeList_FailsWhenTargetMatchesNoType()
         {
             var target = TestFactory.MakeResource(cardId: "SHE-DB", instanceId: "def");
@@ -180,7 +180,7 @@ public class GuardOpTests
                 Ctx(target: target));
         }
 
-        [Fact]
+        [Fact(DisplayName = "対象の陣営が指定と異なるとき満たさない")]
         public void MatchTarget_Faction_FailsWhenTargetFactionDiffers()
         {
             var target = TestFactory.MakeResource(cardId: "TENKI-VM", instanceId: "def");
@@ -190,17 +190,17 @@ public class GuardOpTests
         }
     }
 
-    /// <summary>Tests for the lethal guard.</summary>
+    [Trait("対象", "致死ダメージ判定の発動条件")]
     public class LethalCheck : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ダメージが対象の可用性 800 に等しいとき満たす")]
         public void Lethal_PassesWhenDamageAtOrAboveTargetAv()
         {
             var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "def", maxAV: 800, currentAV: 800);
             ShouldPass(LethalGuard.Instance, Ctx(target: target, eventDamage: 800));
         }
 
-        [Fact]
+        [Fact(DisplayName = "ダメージが対象の可用性 800 を下回る 799 のとき満たさない")]
         public void Lethal_FailsWhenDamageBelowTargetAv()
         {
             var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "def", maxAV: 800, currentAV: 800);
@@ -208,10 +208,10 @@ public class GuardOpTests
         }
     }
 
-    /// <summary>Tests for the same guard comparing target and equip host.</summary>
+    [Trait("対象", "対象と装備先の一致の発動条件")]
     public class SameTargetEquipHost : Base
     {
-        [Fact]
+        [Fact(DisplayName = "アタッチメントの装備先がイベントの対象と同じとき満たす")]
         public void Same_TargetAndEquipHost_PassesWhenAttachmentHostIsEventTarget()
         {
             var host = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "host");
@@ -221,7 +221,7 @@ public class GuardOpTests
                 Ctx(target: host, supSource: attachment));
         }
 
-        [Fact]
+        [Fact(DisplayName = "アタッチメントの装備先がイベントの対象と異なるとき満たさない")]
         public void Same_TargetAndEquipHost_FailsWhenAttachmentHostIsNotEventTarget()
         {
             var other = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "other");
@@ -231,7 +231,7 @@ public class GuardOpTests
                 Ctx(target: other, supSource: attachment));
         }
 
-        [Fact]
+        [Fact(DisplayName = "発動元がアタッチメントでないとき満たさない")]
         public void Same_FailsWhenSourceIsNotAnAttachment()
         {
             var host = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "host");
@@ -241,10 +241,10 @@ public class GuardOpTests
         }
     }
 
-    /// <summary>Tests for the not-same guard comparing source and target.</summary>
+    [Trait("対象", "発動元と対象の相違の発動条件")]
     public class NotSameSourceTarget : Base
     {
-        [Fact]
+        [Fact(DisplayName = "発動元と対象が異なるリソースのとき満たす")]
         public void NotSame_SourceAndTarget_PassesWhenDifferentResources()
         {
             var source = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "src");
@@ -254,7 +254,7 @@ public class GuardOpTests
                 Ctx(source: source, target: target));
         }
 
-        [Fact]
+        [Fact(DisplayName = "発動元と対象が同じリソースのとき満たさない")]
         public void NotSame_SourceAndTarget_FailsWhenSameResource()
         {
             var resource = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "myself");

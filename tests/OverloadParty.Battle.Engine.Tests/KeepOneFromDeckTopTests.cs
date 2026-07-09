@@ -70,10 +70,10 @@ public class KeepOneFromDeckTopTests
         public void Execute(OpContext ctx) => _action(ctx);
     }
 
-    /// <summary>プレイ時にデッキ上端を見て選択待ちへ遷移することを検証する。</summary>
+    [Trait("対象", "デッキトップ提示による選択待ち")]
     public class Play
     {
-        [Fact]
+        [Fact(DisplayName = "ストラテジーをプレイするとデッキ上端の2枚を候補に選択待ちへ遷移する")]
         public void SuspendsForChoice_PresentingDeckTopCards()
         {
             var (cc, registry) = MakeEnv();
@@ -91,10 +91,10 @@ public class KeepOneFromDeckTopTests
         }
     }
 
-    /// <summary>選択を解決すると選択 1 枚を手札・残りをトラッシュへ振り分けることを検証する。</summary>
+    [Trait("対象", "デッキトップ選択の解決")]
     public class Resolve
     {
-        [Fact]
+        [Fact(DisplayName = "選択を解決すると選んだカードがインスタンス ID を保って手札へ移る")]
         public void KeepsChosenCardToHand_PreservingId()
         {
             var (cc, registry) = MakeEnv();
@@ -109,7 +109,7 @@ public class KeepOneFromDeckTopTests
             state.Player1Repository.Select(c => c.InstanceID).Should().Equal("d_3");
         }
 
-        [Fact]
+        [Fact(DisplayName = "選択を解決すると選ばれなかった開示カードがトラッシュへ移る")]
         public void TrashesUnchosenRevealedCards()
         {
             var (cc, registry) = MakeEnv();
@@ -123,10 +123,10 @@ public class KeepOneFromDeckTopTests
         }
     }
 
-    /// <summary>プレイ後、選択肢と開示カードを持つ resolve アクションが availableActions に現れることを検証する。</summary>
+    [Trait("対象", "選択解決アクションの提示")]
     public class Surfacing
     {
-        [Fact]
+        [Fact(DisplayName = "プレイ後に利用可能アクションへ開示済みデッキ上端付きの選択解決アクションが現れる")]
         public void ResolveActionCarriesRevealedDeckTop()
         {
             var (cc, registry) = MakeEnv();

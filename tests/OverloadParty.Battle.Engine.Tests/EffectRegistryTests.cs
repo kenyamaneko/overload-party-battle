@@ -4,12 +4,10 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Effects;
 
-/// <summary>
-/// Tests for EffectRegistry — maps (cardId, triggerType) → handler.
-/// </summary>
+[Trait("対象", "効果レジストリ")]
 public class EffectRegistryTests
 {
-    [Fact]
+    [Fact(DisplayName = "登録した効果ハンドラを取得でき呼び出せる")]
     public void Register_AndGet_ReturnsHandler()
     {
         var registry = new EffectRegistry();
@@ -23,14 +21,14 @@ public class EffectRegistryTests
         called.Should().BeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "登録されていない効果を取得すると null が返る")]
     public void Get_Unregistered_ReturnsNull()
     {
         var registry = new EffectRegistry();
         registry.Get("TEST-0999", TriggerType.OnDeploy).Should().BeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "登録済みの効果があると判定される")]
     public void Has_Registered_ReturnsTrue()
     {
         var registry = new EffectRegistry();
@@ -39,14 +37,14 @@ public class EffectRegistryTests
         registry.Has("TST-0001", TriggerType.Ignition).Should().BeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "登録されていない効果はないと判定される")]
     public void Has_Unregistered_ReturnsFalse()
     {
         var registry = new EffectRegistry();
         registry.Has("TST-0001", TriggerType.Ignition).Should().BeFalse();
     }
 
-    [Fact]
+    [Fact(DisplayName = "合成登録した効果に op が保持される")]
     public void RegisterComposed_StoresOps_ForClassification()
     {
         var registry = new EffectRegistry();
@@ -59,7 +57,7 @@ public class EffectRegistryTests
         reg.Ops.Should().ContainSingle();
     }
 
-    [Fact]
+    [Fact(DisplayName = "合成した効果からバジェット獲得とドローの分類が得られる")]
     public void GetEffectInfo_ReturnsClassification()
     {
         var registry = new EffectRegistry();
@@ -73,7 +71,7 @@ public class EffectRegistryTests
         info.HasCategory(EffectCategory.Draw).Should().BeTrue();
     }
 
-    [Fact]
+    [Fact(DisplayName = "op を持たない効果の分類は null になる")]
     public void GetEffectInfo_NoOps_ReturnsNull()
     {
         var registry = new EffectRegistry();
@@ -82,7 +80,7 @@ public class EffectRegistryTests
         registry.GetEffectInfo("TST-0002", TriggerType.OnDeploy).Should().BeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "分岐効果から選択肢として use と redis が返る")]
     public void GetChoiceOptions_BranchOnChoice_ReturnsBranchKeys()
     {
         var registry = new EffectRegistry();
@@ -100,7 +98,7 @@ public class EffectRegistryTests
         options.Should().Contain("redis");
     }
 
-    [Fact]
+    [Fact(DisplayName = "分岐を持たない効果の選択肢は null になる")]
     public void GetChoiceOptions_NoBranch_ReturnsNull()
     {
         var registry = new EffectRegistry();
@@ -110,7 +108,7 @@ public class EffectRegistryTests
         registry.GetChoiceOptions("TST-0002", TriggerType.OnDeploy).Should().BeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "OnDeploy トリガーに登録された TST-0001 と TST-0004 が返る")]
     public void CardIdsForTrigger_ReturnsMatchingCards()
     {
         var registry = new EffectRegistry();
@@ -124,7 +122,7 @@ public class EffectRegistryTests
         nos.Should().Contain("TST-0004");
     }
 
-    [Fact]
+    [Fact(DisplayName = "効果を 2 件登録すると登録数が 2 になる")]
     public void RegistrationCount_TracksHandlers()
     {
         var registry = new EffectRegistry();
@@ -136,10 +134,7 @@ public class EffectRegistryTests
         registry.RegistrationCount.Should().Be(2);
     }
 
-    /// <summary>
-    /// Same key overwrites previous registration.
-    /// </summary>
-    [Fact]
+    [Fact(DisplayName = "同じキーで再登録すると後の効果で上書きされる")]
     public void Register_SameKey_Overwrites()
     {
         var registry = new EffectRegistry();

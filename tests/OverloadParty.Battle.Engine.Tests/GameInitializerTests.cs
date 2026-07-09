@@ -3,14 +3,7 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// Tests for GameInitializer based on RULEBOOK.md §2:
-/// - 30-card deck shuffled → repository
-/// - 5 initial hand cards
-/// - Initial budget = 5000
-/// - Initial insight pool = 0
-/// - Game starts at T1, Draw phase
-/// </summary>
+[Trait("対象", "ゲーム初期化")]
 public class GameInitializerTests
 {
     private TestCardCache SetupCardCache()
@@ -23,7 +16,7 @@ public class GameInitializerTests
         return cc;
     }
 
-    [Fact]
+    [Fact(DisplayName = "新規ゲームでは両プレイヤーのバジェットが 5000 になる")]
     public void CreateNewGame_InitialBudget_Is5000()
     {
         var cc = SetupCardCache();
@@ -36,7 +29,7 @@ public class GameInitializerTests
         state.Player1Budget.Should().Be(5000);
     }
 
-    [Fact]
+    [Fact(DisplayName = "新規ゲームでは両プレイヤーのインサイトプールが 0 になる")]
     public void CreateNewGame_InitialInsightPool_IsZero()
     {
         var cc = SetupCardCache();
@@ -48,10 +41,7 @@ public class GameInitializerTests
         state.Player2InsightPool.Should().Be(0);
     }
 
-    /// <summary>
-    /// 初期手札 5枚
-    /// </summary>
-    [Fact]
+    [Fact(DisplayName = "新規ゲームでは各プレイヤーに手札が 5 枚配られる")]
     public void CreateNewGame_Deals5Cards_PerPlayer()
     {
         var cc = SetupCardCache();
@@ -64,10 +54,7 @@ public class GameInitializerTests
         state.Player2Hand.Should().HaveCount(5);
     }
 
-    /// <summary>
-    /// 30枚 - 5枚手札 = 25枚リポジトリ
-    /// </summary>
-    [Fact]
+    [Fact(DisplayName = "新規ゲームでは手札 5 枚を除いた 25 枚がデッキに残る")]
     public void CreateNewGame_RemainingCards_GoToRepository()
     {
         var cc = SetupCardCache();
@@ -79,7 +66,7 @@ public class GameInitializerTests
         state.Player2Repository.Should().HaveCount(25);
     }
 
-    [Fact]
+    [Fact(DisplayName = "新規ゲームでは手札とデッキの合計が 30 枚になる")]
     public void CreateNewGame_TotalCards_Equals30()
     {
         var cc = SetupCardCache();
@@ -94,7 +81,7 @@ public class GameInitializerTests
         total2.Should().Be(InitialValues.DeckSize);
     }
 
-    [Fact]
+    [Fact(DisplayName = "新規ゲームはターン 1 のドローフェーズで始まる")]
     public void CreateNewGame_StartsAtTurn1_DrawPhase()
     {
         var cc = SetupCardCache();
@@ -106,7 +93,7 @@ public class GameInitializerTests
         state.CurrentPhase.Should().Be(Phase.Draw);
     }
 
-    [Fact]
+    [Fact(DisplayName = "アクティブプレイヤーが指定した先攻プレイヤーになる")]
     public void CreateNewGame_ActivePlayer_MatchesFirstPlayer()
     {
         var cc = SetupCardCache();
@@ -119,7 +106,7 @@ public class GameInitializerTests
         state2.ActivePlayer.Should().Be(2);
     }
 
-    [Fact]
+    [Fact(DisplayName = "新規ゲームのステータスが Playing になる")]
     public void CreateNewGame_GameStatus_IsPlaying()
     {
         var cc = SetupCardCache();
@@ -130,7 +117,7 @@ public class GameInitializerTests
         game.Status.Should().Be(GameStatus.Playing);
     }
 
-    [Fact]
+    [Fact(DisplayName = "新規ゲームに先攻プレイヤーが設定される")]
     public void CreateNewGame_FirstPlayer_IsSet()
     {
         var cc = SetupCardCache();
@@ -141,11 +128,7 @@ public class GameInitializerTests
         game.FirstPlayer.Should().Be(1);
     }
 
-    /// <summary>
-    /// Deck shuffling produces a random order — hand+repo should contain
-    /// the same card IDs as the input deck (just reordered).
-    /// </summary>
-    [Fact]
+    [Fact(DisplayName = "シャッフルしても手札とデッキにデッキの全カードが保存される")]
     public void CreateNewGame_ShufflePreservesAllCards()
     {
         var cc = SetupCardCache();
@@ -169,7 +152,7 @@ public class GameInitializerTests
         allP1CardIds.Should().Equal(expectedSorted);
     }
 
-    [Fact]
+    [Fact(DisplayName = "配られたカードのインスタンス ID が全て一意になる")]
     public void CreateNewGame_InstanceIDs_AreUnique()
     {
         var cc = SetupCardCache();
@@ -186,7 +169,7 @@ public class GameInitializerTests
         allIds.Should().OnlyHaveUniqueItems();
     }
 
-    [Fact]
+    [Fact(DisplayName = "新規ゲームでは両プレイヤーのタイムバンクが 480 になる")]
     public void CreateNewGame_TimeBank_IsInitialized()
     {
         var cc = SetupCardCache();
@@ -199,7 +182,7 @@ public class GameInitializerTests
         state.Player1TimeBank.Should().Be(480);
     }
 
-    [Fact]
+    [Fact(DisplayName = "新規ゲームではフィールドの全スロットが空になる")]
     public void CreateNewGame_EmptyField_NoDeployedResources()
     {
         var cc = SetupCardCache();

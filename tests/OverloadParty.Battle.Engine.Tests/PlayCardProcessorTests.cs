@@ -52,13 +52,13 @@ public class PlayCardProcessorTests
             };
     }
 
-    /// <summary>Tests for placing cards into zones and rejecting invalid placements.</summary>
+    [Trait("対象", "リソースのデプロイ配置")]
     public class Placement : Base
     {
         // RULEBOOK §3 / ARCHITECTURE §3: Compute カードは Frontend へデプロイ可能
         // deployTurns > 0 の間は裏向きで待機 (§4)
 
-        [Fact]
+        [Fact(DisplayName = "Compute カードをフロントエンドにデプロイすると手札から離れてフロントエンドに置かれる")]
         public void PlayCard_ComputeToFrontend_IsDeployed()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -71,7 +71,7 @@ public class PlayCardProcessorTests
             state.Player1Field.Frontend[0]!.CardID.Should().Be("TST-0001");
         }
 
-        [Fact]
+        [Fact(DisplayName = "Compute カードをフロントエンドにデプロイすると play_card イベントが1件発行される")]
         public void PlayCard_ComputeToFrontend_EmitsPlayCardEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -83,7 +83,7 @@ public class PlayCardProcessorTests
             result.Events.Should().ContainSingle(e => e.EventType == ActionTypes.PlayCard);
         }
 
-        [Fact]
+        [Fact(DisplayName = "デプロイターンが1のカードをデプロイすると裏向きになり残りデプロイターンが1になる")]
         public void PlayCard_WithDeployTurns_IsFaceDownDuringDeploy()
         {
             // TST-0001 has deployTurns=1 → must wait 1 turn face-down
@@ -97,7 +97,7 @@ public class PlayCardProcessorTests
             state.Player1Field.Frontend[0]!.DeployingTurnsLeft.Should().Be(1);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Compute カードをバックエンドにデプロイするとバックエンドに置かれる")]
         public void PlayCard_ComputeToBackend_IsDeployed()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -109,7 +109,7 @@ public class PlayCardProcessorTests
             state.Player1Field.Backend[0]!.CardID.Should().Be("TST-0001");
         }
 
-        [Fact]
+        [Fact(DisplayName = "デプロイターンが0のカードをデプロイすると即座に表向きになり稼働実績が立つ")]
         public void PlayCard_ZeroDeployTurns_IsImmediatelyFaceUp()
         {
             // Serverless (TST-0002) has deployTurns=0 → face-up immediately (RULEBOOK §4)
@@ -124,7 +124,7 @@ public class PlayCardProcessorTests
         }
 
         // RULEBOOK §3 / ARCHITECTURE §3: 手札に無いカードはプレイ不可
-        [Fact]
+        [Fact(DisplayName = "手札に無いカードをプレイすると拒否される")]
         public void PlayCard_CardNotInHand_IsRejected()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -136,7 +136,7 @@ public class PlayCardProcessorTests
         }
 
         // RULEBOOK §3: 既に埋まっているリソーススロットへは配置不可
-        [Fact]
+        [Fact(DisplayName = "既に埋まっているスロットにデプロイすると拒否される")]
         public void PlayCard_IntoOccupiedResourceSlot_IsRejected()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -150,7 +150,7 @@ public class PlayCardProcessorTests
         }
 
         // RULEBOOK §3: Data カード (Database) は Frontend へ配置不可
-        [Fact]
+        [Fact(DisplayName = "Database をフロントエンドにデプロイすると拒否される")]
         public void PlayCard_DatabaseToFrontend_IsRejected()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -163,7 +163,7 @@ public class PlayCardProcessorTests
         }
 
         // RULEBOOK §3: Compute カードは Support ゾーンへ配置不可
-        [Fact]
+        [Fact(DisplayName = "Compute カードをサポートゾーンにデプロイすると拒否される")]
         public void PlayCard_ComputeToSupport_IsRejected()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -176,7 +176,7 @@ public class PlayCardProcessorTests
         }
 
         // Frontend/Backend は SlotsPerZone スロットのみ (0..SlotsPerZone-1)
-        [Theory]
+        [Theory(DisplayName = "範囲外のスロットインデックスにデプロイすると拒否される")]
         [InlineData(-1)]
         [InlineData(3)]
         public void PlayCard_OutOfRangeSlotIndex_IsRejected(int index)
@@ -191,10 +191,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>Tests for attachment cards attaching to a target or rejecting a missing target.</summary>
+    [Trait("対象", "アタッチメントのアタッチ")]
     public class Attachment : Base
     {
-        [Fact]
+        [Fact(DisplayName = "対象を指定してアタッチメントをアタッチするとサポートゾーンに置かれ装備先が設定される")]
         public void Process_AttachmentCard_AttachesToTarget()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -210,7 +210,7 @@ public class PlayCardProcessorTests
             state.Player1Field.Support[0]!.TargetInstanceID.Should().Be("target_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "対象を指定せずにアタッチメントをアタッチすると拒否される")]
         public void Process_AttachmentCard_NoTargetId_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -223,11 +223,11 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>Tests for incident cards being once-per-turn and not occupying a slot.</summary>
+    [Trait("対象", "インシデントの使用")]
     public class Incident : Base
     {
         // RULEBOOK §3: Incident はターンに1回のみプレイ可 (フラグ管理)
-        [Fact]
+        [Fact(DisplayName = "インシデントを使用するとそのターンの使用済みフラグが立つ")]
         public void PlayCard_Incident_MarksIncidentPlayedThisTurn()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -239,7 +239,7 @@ public class PlayCardProcessorTests
             state.GetIncidentPlayedThisTurn(1).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "インシデントを使用してもサポートゾーンのスロットを占有しない")]
         public void Process_IncidentCard_DoesNotOccupySupportSlot()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -252,7 +252,7 @@ public class PlayCardProcessorTests
         }
 
         // RULEBOOK §3: 同一ターン内の2枚目 Incident は拒否
-        [Fact]
+        [Fact(DisplayName = "同一ターンに2枚目のインシデントを使用すると拒否される")]
         public void PlayCard_SecondIncidentSameTurn_IsRejected()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -269,7 +269,7 @@ public class PlayCardProcessorTests
         }
 
         // RULEBOOK §9: 先攻 T1 では Incident を使用できない (先攻1キル防止)
-        [Fact]
+        [Fact(DisplayName = "1ターン目にインシデントを使用すると拒否される")]
         public void PlayCard_IncidentOnFirstTurn_IsRejected()
         {
             var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main, activePlayer: 1);
@@ -282,10 +282,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>Tests for reactive cards being placed face-down.</summary>
+    [Trait("対象", "リアクティブの伏せ配置")]
     public class Reactive : Base
     {
-        [Fact]
+        [Fact(DisplayName = "リアクティブをサポートゾーンに置くと裏向きで伏せられる")]
         public void Process_ReactiveCard_SetsFaceDown()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -299,10 +299,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>Tests for platform cards being placed face-up with deploy turns.</summary>
+    [Trait("対象", "プラットフォームのデプロイ")]
     public class Platform : Base
     {
-        [Fact]
+        [Fact(DisplayName = "プラットフォームをデプロイすると表向きで残りデプロイターンが2になる")]
         public void Process_PlatformCard_SetsFaceUpWithDeployTurns()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -317,10 +317,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>Tests for replacing an existing support/attachment and trashing the old one.</summary>
+    [Trait("対象", "サポートカードの置き換え")]
     public class SupportReplacement : Base
     {
-        [Fact]
+        [Fact(DisplayName = "既存のサポートカードを置き換えると古いカードがトラッシュへ送られる")]
         public void Process_SupportReplacement_OldSupportTrashed()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -341,7 +341,7 @@ public class PlayCardProcessorTests
             state.Player1Trash.Should().Contain(c => c.InstanceID == "old_sup");
         }
 
-        [Fact]
+        [Fact(DisplayName = "既存のアタッチメントを置き換えると古いカードがトラッシュへ送られる")]
         public void Process_AttachmentReplacement_OldSupportTrashed()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -393,10 +393,10 @@ public class PlayCardProcessorTests
     private static PlayCardRequest ReqZoneless(string instanceId) =>
         new() { CardInstanceID = instanceId, Zone = "", Index = 0 };
 
-    /// <summary>アタッチメント装備時に対象付きの attach_card イベントを発行することを検証する。</summary>
+    [Trait("対象", "アタッチ時のイベント発行")]
     public class AttachCardEvent
     {
-        [Fact]
+        [Fact(DisplayName = "アタッチメントをアタッチすると対象付きの attach_card イベントが発行される")]
         public void PlayCard_Attachment_EmitsAttachCardEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -413,10 +413,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>アタッチメントが装備時に自身のデプロイ時効果を発動することを検証する。</summary>
+    [Trait("対象", "アタッチメントのデプロイ時効果")]
     public class AttachmentDeployEffect
     {
-        [Fact]
+        [Fact(DisplayName = "アタッチメントをアタッチすると自身のデプロイ時効果が発動する")]
         public void PlayCard_Attachment_FiresOwnOnDeploy()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -434,10 +434,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>インシデントがトラッシュへ移り、ゾーンなしの play_card イベントを出すことを検証する。</summary>
+    [Trait("対象", "インシデントのトラッシュ移動")]
     public class IncidentPlay
     {
-        [Fact]
+        [Fact(DisplayName = "インシデントを使用するとトラッシュへ移りゾーン無しの play_card イベントが発行される")]
         public void PlayCard_Incident_MovedToTrashWithZonelessEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -454,10 +454,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>ストラテジーが手札から起動効果を適用しトラッシュへ移ることを検証する。</summary>
+    [Trait("対象", "ストラテジーの使用")]
     public class StrategyPlay
     {
-        [Fact]
+        [Fact(DisplayName = "ストラテジーを使用すると手札から起動効果が発動しトラッシュへ移る")]
         public void PlayCard_Strategy_RunsIgnitionEffectAndTrashes()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -479,10 +479,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>リソースの play_card イベントがカード ID と配置を載せることを検証する。</summary>
+    [Trait("対象", "リソースデプロイ時のイベント発行")]
     public class ResourcePlayEvent
     {
-        [Fact]
+        [Fact(DisplayName = "リソースをデプロイすると play_card イベントにカード ID と配置先が載る")]
         public void PlayCard_Resource_EventCarriesCardAndPosition()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -499,10 +499,10 @@ public class PlayCardProcessorTests
         }
     }
 
-    /// <summary>サポートカード配置が slot 付きの play_card イベントを出すことを検証する。</summary>
+    [Trait("対象", "サポートカード配置時のイベント発行")]
     public class SupportPlayEvent
     {
-        [Fact]
+        [Fact(DisplayName = "サポートカードを配置すると play_card イベントにカード ID と配置先が載る")]
         public void PlayCard_Support_EmitsPlayCardEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
