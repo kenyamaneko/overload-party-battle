@@ -2,9 +2,10 @@ using OverloadParty.Battle.Npc;
 
 namespace OverloadParty.Battle.Tests.Npc;
 
+[Trait("対象", "AI config の読み込み")]
 public class AiConfigLoaderTests
 {
-    [Fact]
+    [Fact(DisplayName = "最小構成の config から model と faction を読み込む")]
     public void LoadFromString_MinimalConfig_DeserializesModel()
     {
         var yaml = """
@@ -18,7 +19,7 @@ public class AiConfigLoaderTests
         config.Faction.Should().Be("SHE");
     }
 
-    [Fact]
+    [Fact(DisplayName = "構造化形式の deck を card_id と copies に読み込む")]
     public void LoadFromString_Deck_StructuredFormat()
     {
         var yaml = """
@@ -40,7 +41,7 @@ public class AiConfigLoaderTests
         config.Deck[1].Copies.Should().Be(1);
     }
 
-    [Fact]
+    [Fact(DisplayName = "effect_priorities のスカラー値を優先度として読み込む")]
     public void LoadFromString_EffectPriority_ScalarInt()
     {
         var yaml = """
@@ -57,7 +58,7 @@ public class AiConfigLoaderTests
         config.EffectPriorities["single_damage"].Priority.Should().Be(60);
     }
 
-    [Fact]
+    [Fact(DisplayName = "effect_priorities のオブジェクト値を priority・low_priority・threshold に読み込む")]
     public void LoadFromString_EffectPriority_ObjectWithThreshold()
     {
         var yaml = """
@@ -78,7 +79,7 @@ public class AiConfigLoaderTests
         entry.Threshold.Should().Be(1500);
     }
 
-    [Fact]
+    [Fact(DisplayName = "effect_priorities の condition を selector と min に読み込む")]
     public void LoadFromString_EffectPriority_ObjectWithCondition()
     {
         var yaml = """
@@ -101,7 +102,7 @@ public class AiConfigLoaderTests
         entry.Condition.Min.Should().Be(1);
     }
 
-    [Fact]
+    [Fact(DisplayName = "deploy の priorities・zone_preferences と branch_choices を読み込む")]
     public void LoadFromString_DeployConfig_Priorities()
     {
         var yaml = """
@@ -130,7 +131,7 @@ public class AiConfigLoaderTests
         config.Deploy.ZonePreferences!["Compute"].Should().Equal("frontend", "backend");
     }
 
-    [Fact]
+    [Fact(DisplayName = "deploy の conditional_priorities を condition と fallback_priority ごと読み込む")]
     public void LoadFromString_ConditionalPriorities()
     {
         var yaml = """
@@ -158,7 +159,7 @@ public class AiConfigLoaderTests
         cp.Condition.Min.Should().Be(1);
     }
 
-    [Fact]
+    [Fact(DisplayName = "game_phases の condition・target_selection・effect_priorities を読み込む")]
     public void LoadFromString_GamePhases()
     {
         var yaml = """
@@ -190,7 +191,7 @@ public class AiConfigLoaderTests
         late.EffectPriorities!["single_damage"].Priority.Should().Be(80);
     }
 
-    [Fact]
+    [Fact(DisplayName = "scale_up の instance_family・conditional_family・max_maintenance_ratio を読み込む")]
     public void LoadFromString_ScaleUp()
     {
         var yaml = """
@@ -217,7 +218,7 @@ public class AiConfigLoaderTests
         cf.Condition.Selector!.CardType.Should().Be("DataResource");
     }
 
-    [Fact]
+    [Fact(DisplayName = "reactive の max_slots と priorities を読み込む")]
     public void LoadFromString_Reactive()
     {
         var yaml = """
@@ -237,7 +238,7 @@ public class AiConfigLoaderTests
         config.Reactive.Priorities["TST-0007"].Should().Be(70);
     }
 
-    [Fact]
+    [Fact(DisplayName = "スカラーとオブジェクトが混在する effect_priorities を両方読み込む")]
     public void LoadFromString_MixedEffectPriorities_ScalarAndObject()
     {
         var yaml = """
@@ -266,7 +267,7 @@ public class AiConfigLoaderTests
         config.EffectPriorities["draw"].HandThreshold.Should().Be(3);
     }
 
-    [Fact]
+    [Fact(DisplayName = "ディレクトリ内の全 YAML を読み込み、8 件の config を得る")]
     public void LoadAll_LoadsAllYamlFiles()
     {
         var dir = Path.Combine(
