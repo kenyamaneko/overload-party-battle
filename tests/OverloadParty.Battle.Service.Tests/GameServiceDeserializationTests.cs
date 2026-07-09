@@ -3,11 +3,7 @@ using OverloadParty.Battle.Engine.Processors;
 
 namespace OverloadParty.Battle.Tests.Service;
 
-/// <summary>
-/// Tests the NPC action data deserialization pipeline.
-/// Mirrors the pattern used by GameService.DeserializeNpcActionData:
-/// Dictionary&lt;string, object&gt; → JsonElement → typed request.
-/// </summary>
+/// <summary>GameService.DeserializeNpcActionData と同じ変換経路 (Dictionary&lt;string, object&gt; → JsonElement → 型付きリクエスト) をたどって検証する。</summary>
 public class GameServiceDeserializationTests
 {
     /// <summary>Shared setup for NPC action data deserialization tests (serializer options and round-trip helper).</summary>
@@ -26,10 +22,10 @@ public class GameServiceDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing play_card with a nested position.</summary>
+    [Trait("対象", "play_card のデシリアライズ")]
     public class PlayCard : Base
     {
-        [Fact]
+        [Fact(DisplayName = "入れ子 position を持つ play_card がゾーン frontend・index 0 の PlayCardRequest になる")]
         public void WithNestedPosition_DeserializesToPlayCardRequest()
         {
             var data = new Dictionary<string, object>
@@ -45,7 +41,7 @@ public class GameServiceDeserializationTests
             result.Index.Should().Be(0);
         }
 
-        [Fact]
+        [Fact(DisplayName = "入れ子 position を持つ play_card がゾーン backend・index 2 の PlayCardRequest になる")]
         public void WithNestedPosition_BackendIndex2()
         {
             var data = new Dictionary<string, object>
@@ -61,10 +57,10 @@ public class GameServiceDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing attack action data.</summary>
+    [Trait("対象", "attack のデシリアライズ")]
     public class Attack : Base
     {
-        [Fact]
+        [Fact(DisplayName = "attack データが attacker・target の instance id を持つ AttackRequest になる")]
         public void DeserializesToAttackRequest()
         {
             var data = new Dictionary<string, object>
@@ -80,10 +76,10 @@ public class GameServiceDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing scale_up action data.</summary>
+    [Trait("対象", "scale_up のデシリアライズ")]
     public class ScaleUp : Base
     {
-        [Fact]
+        [Fact(DisplayName = "scale_up の componentInstanceId が ScaleUpRequest の InstanceID にマップされる")]
         public void WithComponentInstanceId_MapsToInstanceID()
         {
             var data = new Dictionary<string, object>
@@ -98,7 +94,7 @@ public class GameServiceDeserializationTests
             result.TargetRank.Should().Be("medium");
         }
 
-        [Fact]
+        [Fact(DisplayName = "instanceFamily を持つ scale_up が InstanceFamily を含めて ScaleUpRequest になる")]
         public void WithInstanceFamily()
         {
             var data = new Dictionary<string, object>
@@ -116,10 +112,10 @@ public class GameServiceDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing monetize action data.</summary>
+    [Trait("対象", "monetize のデシリアライズ")]
     public class Monetize : Base
     {
-        [Fact]
+        [Fact(DisplayName = "monetize の distributions が componentInstanceId を InstanceID にマップして変換される")]
         public void WithComponentInstanceId_MapsToInstanceID()
         {
             var data = new Dictionary<string, object>
@@ -141,10 +137,10 @@ public class GameServiceDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing use_ignition action data.</summary>
+    [Trait("対象", "use_ignition のデシリアライズ")]
     public class UseIgnition : Base
     {
-        [Fact]
+        [Fact(DisplayName = "instanceId を持つ use_ignition が UseIgnitionRequest にデシリアライズされる")]
         public void DeserializesToUseIgnitionRequest()
         {
             var data = new Dictionary<string, object>
@@ -157,7 +153,7 @@ public class GameServiceDeserializationTests
             result.InstanceID.Should().Be("e1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "targetInstanceId を持つ use_ignition が TargetInstanceID を含めて変換される")]
         public void WithTargetInstanceId()
         {
             var data = new Dictionary<string, object>
@@ -173,10 +169,10 @@ public class GameServiceDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing discard_hand action data.</summary>
+    [Trait("対象", "discard_hand のデシリアライズ")]
     public class DiscardHand : Base
     {
-        [Fact]
+        [Fact(DisplayName = "複数の cardInstanceIds を持つ discard_hand が全 ID を含めて変換される")]
         public void DeserializesToDiscardHandRequest()
         {
             var data = new Dictionary<string, object>
@@ -191,7 +187,7 @@ public class GameServiceDeserializationTests
             result.CardInstanceIDs.Should().Contain("c2");
         }
 
-        [Fact]
+        [Fact(DisplayName = "単一の cardInstanceIds を持つ discard_hand が 1 件で変換される")]
         public void SingleCard()
         {
             var data = new Dictionary<string, object>
