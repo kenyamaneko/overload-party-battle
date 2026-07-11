@@ -1,5 +1,6 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
@@ -81,6 +82,27 @@ public class AttackProcessorTests
                 .Which.SlaPenalty.Should().NotBeNull();
 
             // Budget decreased by SLA penalty
+            state.Player2Budget.Should().Be(budgetBefore - 400);
+        }
+
+        [Fact(DisplayName = "攻撃で可用性がちょうど0になったとき、リソースは破壊されSLAペナルティが1回だけ減算される")]
+        public void AppliesSlaPenaltyOnce_WhenDamageExactlyMatchesAvailability()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0006", tp: 1400, av: 1400, slaPenalty: 400, name: "ExactLethal"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+
+            var attacker = TestFactory.MakeResource(cardId: "TST-0006", instanceId: "atk_1", faceUp: true, maxTP: 1400, currentTP: 1400);
+            state.Player1Field.Frontend[0] = attacker;
+
+            var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+            state.Player2Field.Frontend[0] = defender;
+
+            long budgetBefore = state.Player2Budget;
+
+            AttackProcessor.Process(state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def_1").Should().BeNull();
+            state.Player2Trash.Should().Contain(c => c.InstanceID == "def_1");
             state.Player2Budget.Should().Be(budgetBefore - 400);
         }
     }
@@ -842,6 +864,47 @@ public class AttackProcessorTests
             FieldHelpers.FindResourceByID(state.Player2Field, "def_1").Should().BeNull("装備先が破壊される");
             state.Player2Field.Support.Select(s => s.InstanceID).Should().NotContain("att_1", "アタッチメントも破壊される");
             state.Player2Trash.Should().Contain(c => c.InstanceID == "att_1", "破壊されたアタッチメントはトラッシュへ送られる");
+        }
+    }
+
+    /// <summary>被ダメージ時効果が攻撃ダメージの適用直後に防御側を先に破壊するケースの二重破壊防止を検証する。</summary>
+    [Trait("対象", "被ダメージ時効果による早期破壊")]
+    public class EarlyDestroyByOnDamaged
+    {
+        private static (TestCardCache Cc, EffectRegistry Effects, BattleGameState State, Game Game) Setup()
+        {
+            var cc = StandardCc();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0001", TriggerType.OnDamaged, new DestroyCheckOp());
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+
+            return (cc, effects, state, TestFactory.MakeGame());
+        }
+
+        [Fact(DisplayName = "被ダメージ時効果が防御側を先に破壊したとき、SLAペナルティは1回だけ減算される")]
+        public void AppliesSlaPenaltyOnce()
+        {
+            var (cc, effects, state, game) = Setup();
+            long budgetBefore = state.Player2Budget;
+
+            AttackProcessor.Process(state, game, 1, Atk("atk_1", "def_1"), cc, effects);
+
+            state.Player2Budget.Should().Be(budgetBefore - 400);
+        }
+
+        [Fact(DisplayName = "被ダメージ時効果が防御側を先に破壊したとき、トラッシュには1枚だけ置かれる")]
+        public void TrashesExactlyOnce()
+        {
+            var (cc, effects, state, game) = Setup();
+
+            AttackProcessor.Process(state, game, 1, Atk("atk_1", "def_1"), cc, effects);
+
+            state.Player2Trash.Count(c => c.InstanceID == "def_1").Should().Be(1);
         }
     }
 }

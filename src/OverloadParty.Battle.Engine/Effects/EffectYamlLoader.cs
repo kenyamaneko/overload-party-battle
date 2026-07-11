@@ -253,8 +253,7 @@ public static class EffectYamlLoader
                 BuildSelector(p.GetProperty("selector")),
                 BuildAmount(p.GetProperty("amount"))),
 
-            EffectOps.DestroyCheck => new DestroyCheckOp(
-                ParsePlayerRef(p.GetProperty("target").GetString()!)),
+            EffectOps.DestroyCheck => BuildDestroyCheck(p),
 
             EffectOps.SurviveDestruction => new SurviveDestructionOp(
                 p.GetProperty("av").GetInt64()),
@@ -302,6 +301,13 @@ public static class EffectYamlLoader
 
             _ => throw new InvalidOperationException($"Unknown op: {opName}"),
         };
+    }
+
+    private static IEffectOp BuildDestroyCheck(JsonElement p)
+    {
+        // target は破壊の一元化で挙動に使わなくなったが、typo 検知のため値の妥当性検証だけは続ける。
+        ParsePlayerRef(p.GetProperty("target").GetString()!);
+        return new DestroyCheckOp();
     }
 
     private static IEffectOp BuildDealDamage(JsonElement p)

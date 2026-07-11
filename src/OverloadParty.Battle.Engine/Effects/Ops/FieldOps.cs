@@ -3,34 +3,17 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Checks for and destroys any resources whose effective AV has reached zero or below.
+/// Checks for and destroys any resources whose effective AV has reached zero or below,
+/// following the turn-player-first destruction order.
 /// </summary>
-public class DestroyCheckOp(PlayerRef player) : IEffectOp
+public class DestroyCheckOp : IEffectOp
 {
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        if (player == PlayerRef.Both)
+        foreach (var evt in DestructionSweep.Run(ctx.State, ctx.Game, ctx.CardCache, ctx.Effects))
         {
-            DestroyZeroed(ctx, ctx.PlayerNum);
-            DestroyZeroed(ctx, ctx.OpponentNum);
-            return;
-        }
-
-        long playerNum = player == PlayerRef.Myself ? ctx.PlayerNum : ctx.OpponentNum;
-        DestroyZeroed(ctx, playerNum);
-    }
-
-    private static void DestroyZeroed(OpContext ctx, long playerNum)
-    {
-        var field = ctx.GetField(playerNum);
-        var toDestroy = FieldHelpers.AllResources(field)
-            .Where(res => res.EffectiveAV <= 0)
-            .ToList();
-
-        foreach (var res in toDestroy)
-        {
-            ResourceHelpers.DestroyResource(ctx.State, playerNum, field, res, ctx.CardCache);
+            ctx.AddEvent(evt);
         }
     }
 }
@@ -109,7 +92,7 @@ public class DestroyPlatformOp : IEffectOp
             throw new GameRuleException($"Selected support {instanceId} is not a Platform");
         }
 
-        FieldHelpers.DestroySupport(ctx.State, ctx.OpponentNum, oppField, target.InstanceID);
+        FieldHelpers.DestroySupport(ctx.State, ctx.Game, ctx.OpponentNum, oppField, target.InstanceID, ctx.CardCache, ctx.Effects);
     }
 }
 

@@ -212,15 +212,22 @@ public static class ResourceHelpers
     }
 
     /// <summary>
-    /// リソースを破壊する（SLAペナルティ適用、マイグレーションリンククリア、トラッシュ移動、フィールド除去）。
+    /// リソースを破壊する（SLAペナルティ適用、while_on_field バフ除去、トラッシュ移動、フィールド除去）。
+    /// 対象が既にフィールドに存在しなければ何もせず false を返す。
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
     /// <param name="ownerNum">リソースの所有プレイヤー番号。</param>
     /// <param name="field">破壊対象が置かれているフィールド。</param>
     /// <param name="resource">破壊するリソース。</param>
     /// <param name="cc">カード定義キャッシュ。</param>
-    public static void DestroyResource(BattleGameState state, long ownerNum, Field field, DeployedResource resource, ICardCache cc)
+    /// <returns>破壊を実行すれば true、対象が既にフィールドに存在しなければ false。</returns>
+    public static bool DestroyResource(BattleGameState state, long ownerNum, Field field, DeployedResource resource, ICardCache cc)
     {
+        if (FieldHelpers.FindResourceByID(field, resource.InstanceID) is null)
+        {
+            return false;
+        }
+
         var card = cc.MustGet(resource.CardID);
 
         // SLAペナルティを所有者のバジェットから差し引く（sla_penalty_reduction で軽減）
@@ -247,6 +254,7 @@ public static class ResourceHelpers
 
         // フィールドから除去
         FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
+        return true;
     }
 
     /// <summary>

@@ -353,7 +353,9 @@ public class CustomEffectRegistry
 
             if (octx.SupSource is not null)
             {
-                FieldHelpers.DestroySupport(octx.State, octx.PlayerNum, octx.MyField, octx.SupSource.InstanceID);
+                FieldHelpers.DestroySupport(
+                    octx.State, octx.Game, octx.PlayerNum, octx.MyField, octx.SupSource.InstanceID,
+                    octx.CardCache, octx.Effects);
             }
         };
     }
@@ -378,8 +380,11 @@ public class CustomEffectRegistry
 
             if (deployedOn > 0 && currentTurn - deployedOn >= expiryTurns)
             {
-                var field = octx.MyField;
-                ResourceHelpers.DestroyResource(octx.State, octx.PlayerNum, field, octx.Source, octx.CardCache);
+                foreach (var evt in DestructionSweep.DestroyNow(
+                    octx.State, octx.Game, octx.PlayerNum, octx.Source, octx.CardCache, octx.Effects))
+                {
+                    octx.AddEvent(evt);
+                }
             }
         };
     }

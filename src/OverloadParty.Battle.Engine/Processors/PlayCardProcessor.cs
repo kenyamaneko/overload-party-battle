@@ -171,7 +171,8 @@ public static class PlayCardProcessor
     {
         if (field.Support[req.Index] is not null)
         {
-            FieldHelpers.DestroySupport(ctx.State, ctx.PlayerNum, field, field.Support[req.Index]!.InstanceID);
+            FieldHelpers.DestroySupport(
+                ctx.State, ctx.Game, ctx.PlayerNum, field, field.Support[req.Index]!.InstanceID, ctx.CC, ctx.Effects);
         }
 
         var support = new DeployedSupport
@@ -261,7 +262,8 @@ public static class PlayCardProcessor
         }
         if (field.Support[req.Index] is not null)
         {
-            FieldHelpers.DestroySupport(ctx.State, ctx.PlayerNum, field, field.Support[req.Index]!.InstanceID);
+            FieldHelpers.DestroySupport(
+                ctx.State, ctx.Game, ctx.PlayerNum, field, field.Support[req.Index]!.InstanceID, ctx.CC, ctx.Effects);
         }
 
         var attachInstanceID = ctx.State.NextInstanceID();

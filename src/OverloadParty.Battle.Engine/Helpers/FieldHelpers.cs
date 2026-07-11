@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Helpers;
 
@@ -203,14 +204,19 @@ public static class FieldHelpers
     }
 
     /// <summary>
-    /// サポートカードを破壊してトラッシュに移動する。
+    /// サポートカードを破壊してトラッシュに移動し、盤面変化に伴う常時効果を再計算する。
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
     /// <param name="ownerNum">サポートカードの所有プレイヤー番号。</param>
     /// <param name="field">対象フィールド。</param>
     /// <param name="instanceID">破壊するサポートのインスタンス ID。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <returns>破壊に成功すれば true。</returns>
-    public static bool DestroySupport(BattleGameState state, long ownerNum, Field field, string instanceID)
+    public static bool DestroySupport(
+        BattleGameState state, Game game, long ownerNum, Field field, string instanceID,
+        ICardCache cc, IEffectRegistry effects)
     {
         var support = field.Support.FirstOrDefault(s => s.InstanceID == instanceID);
         if (support is null)
@@ -221,6 +227,8 @@ public static class FieldHelpers
         RemoveWhileOnFieldBuffs(field, support.InstanceID);
         CardMoveHelpers.AddToTrash(state, ownerNum, support.CardID, support.InstanceID, support.ArtNo);
         field.Support.Remove(s => s.InstanceID == instanceID);
+
+        FieldChangeTrigger.Fire(state, game, cc, effects);
         return true;
     }
 
