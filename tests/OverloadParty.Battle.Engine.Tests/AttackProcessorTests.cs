@@ -84,6 +84,27 @@ public class AttackProcessorTests
             // Budget decreased by SLA penalty
             state.Player2Budget.Should().Be(budgetBefore - 400);
         }
+
+        [Fact(DisplayName = "攻撃で可用性がちょうど0になったとき、リソースは破壊されSLAペナルティが1回だけ減算される")]
+        public void AppliesSlaPenaltyOnce_WhenDamageExactlyMatchesAvailability()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0006", tp: 1400, av: 1400, slaPenalty: 400, name: "ExactLethal"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+
+            var attacker = TestFactory.MakeResource(cardId: "TST-0006", instanceId: "atk_1", faceUp: true, maxTP: 1400, currentTP: 1400);
+            state.Player1Field.Frontend[0] = attacker;
+
+            var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
+            state.Player2Field.Frontend[0] = defender;
+
+            long budgetBefore = state.Player2Budget;
+
+            AttackProcessor.Process(state, _game, 1, MakeReq("atk_1", "def_1"), _cc, new EffectRegistry());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def_1").Should().BeNull();
+            state.Player2Trash.Should().Contain(c => c.InstanceID == "def_1");
+            state.Player2Budget.Should().Be(budgetBefore - 400);
+        }
     }
 
     [Trait("対象", "フロントエンド以外からの攻撃拒否")]

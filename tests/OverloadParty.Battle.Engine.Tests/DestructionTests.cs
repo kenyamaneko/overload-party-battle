@@ -291,7 +291,10 @@ public class DestructionTests
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
             state.Player2Field.Support[0] = new DeployedSupport
             {
-                InstanceID = "att_1", CardID = "TST-0301", TargetInstanceID = "def_1", FaceUp = true,
+                InstanceID = "att_1",
+                CardID = "TST-0301",
+                TargetInstanceID = "def_1",
+                FaceUp = true,
             };
 
             var result = AttackProcessor.Process(state, TestFactory.MakeGame(), 1,
@@ -316,11 +319,17 @@ public class DestructionTests
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
             state.Player2Field.Support[0] = new DeployedSupport
             {
-                InstanceID = "att_1", CardID = "TST-0301", TargetInstanceID = "def_1", FaceUp = true,
+                InstanceID = "att_1",
+                CardID = "TST-0301",
+                TargetInstanceID = "def_1",
+                FaceUp = true,
             };
             state.Player2Field.Support[1] = new DeployedSupport
             {
-                InstanceID = "att_2", CardID = "TST-0302", TargetInstanceID = "def_1", FaceUp = true,
+                InstanceID = "att_2",
+                CardID = "TST-0302",
+                TargetInstanceID = "def_1",
+                FaceUp = true,
             };
 
             AttackProcessor.Process(state, TestFactory.MakeGame(), 1,
