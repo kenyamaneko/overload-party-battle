@@ -100,19 +100,28 @@ public class IgnitionEffectTests
     [Trait("対象", "destroy_check の起動効果")]
     public class DestroyCheck
     {
-        [Fact(DisplayName = "destroy_check を起動効果で発動すると実効可用性が 0 以下のリソースだけが破壊される")]
+        [Fact(DisplayName = "destroy_check を起動効果で発動すると実効可用性が 0 以下のリソースが破壊され、SLA ペナルティ減算・on_destroy 発火・トラッシュ移動を伴う")]
         public void Ignition_DestroysZeroedResource()
         {
-            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new DestroyCheckOp(PlayerRef.Myself));
+            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001", slaPenalty: 400), new DestroyCheckOp());
+            effects.Register("TST-0001", TriggerType.OnDestroy, ctx => new EffectResult
+            {
+                Events = [new GameEvent { EventType = "on_destroy_triggered", GameID = ctx.Game.GameID }]
+            });
+
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
             state.Player1Field.Frontend[1] = TestFactory.MakeResource(
                 cardId: "TST-0001", instanceId: "dead", maxAV: 1000, damage: 1000, faceUp: true);
+            long budgetBefore = state.Player1Budget;
 
-            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+            var result = UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
 
             FieldHelpers.FindResourceByID(state.Player1Field, "dead").Should().BeNull();
             FieldHelpers.FindResourceByID(state.Player1Field, "src").Should().NotBeNull();
+            state.Player1Trash.Should().Contain(c => c.InstanceID == "dead");
+            state.Player1Budget.Should().Be(budgetBefore - 400);
+            result.Events.Should().Contain(e => e.EventType == "on_destroy_triggered");
         }
     }
 
@@ -148,6 +157,25 @@ public class IgnitionEffectTests
             UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
 
             state.Player2Field.Support.Select(s => s.InstanceID).Should().NotContain("plat_1");
+        }
+
+        [Fact(DisplayName = "destroy_platform でプラットフォームが破壊されたとき、盤面変化を条件とする常時効果が再計算される")]
+        public void Ignition_DestroyingPlatform_FiresOnFieldChange()
+        {
+            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new DestroyPlatformOp());
+            cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", name: "Watcher"));
+            int fieldChangeFires = 0;
+            effects.Register("TST-0005", TriggerType.OnFieldChange, _ => { fieldChangeFires++; return new EffectResult(); });
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
+            state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0005", instanceId: "watcher", faceUp: true);
+            state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "plat_1", CardID = "TST-0200", FaceUp = true };
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+
+            fieldChangeFires.Should().Be(1, "プラットフォーム破壊で盤面が変化しOnFieldChangeが発動する");
         }
     }
 

@@ -20,6 +20,11 @@ public class DealDamageOp(ISelector sel, IAmountResolver value) : IEffectOp
         {
             DamageApplication.Apply(ctx, target, amount);
         }
+
+        foreach (var evt in DestructionSweep.Run(ctx.State, ctx.Game, ctx.CardCache, ctx.Effects))
+        {
+            ctx.AddEvent(evt);
+        }
     }
 }
 
@@ -36,15 +41,11 @@ internal static class DamageApplication
     /// <param name="amount">適用するダメージ量。</param>
     public static void Apply(OpContext ctx, DeployedResource target, long amount)
     {
-        long? owner = ctx.OwnerOf(target);
-        if (owner is null)
-        {
-            target.Damage += amount;
-            return;
-        }
+        long owner = ctx.OwnerOf(target)
+            ?? throw new GameRuleException($"Damage target {target.InstanceID} is on neither field");
 
         var events = ResourceHelpers.ApplyDamage(
-            ctx.State, ctx.Game, ctx.CardCache, ctx.Effects, target, owner.Value, amount);
+            ctx.State, ctx.Game, ctx.CardCache, ctx.Effects, target, owner, amount);
         foreach (var evt in events)
         {
             ctx.AddEvent(evt);
@@ -77,6 +78,11 @@ public class IncidentDamageOp(ISelector sel, IAmountResolver value, IAmountResol
                 target.TemporaryEffects, BuffTypes.IncidentReduction, damage);
 
             DamageApplication.Apply(ctx, target, effectiveDamage);
+        }
+
+        foreach (var evt in DestructionSweep.Run(ctx.State, ctx.Game, ctx.CardCache, ctx.Effects))
+        {
+            ctx.AddEvent(evt);
         }
 
         if (budgetPenalty is null) { return; }

@@ -146,5 +146,53 @@ public class TriggeredEffectTests
 
             FieldHelpers.FindResourceByID(state.Player1Field, "spot").Should().BeNull("自壊する");
         }
+
+        [Fact(DisplayName = "デプロイから規定ターン経過後のエンドフェーズでの自壊は、SLAペナルティ減算とon_destroy発火を伴う")]
+        public void OnEndPhase_ExpiryAppliesSlaPenaltyAndFiresOnDestroy()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", slaPenalty: 400));
+            var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>("""{"turns":2}""");
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0001", TriggerType.OnEndPhase,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.SpotExpiry, meta)!));
+            bool onDestroyFired = false;
+            effects.Register("TST-0001", TriggerType.OnDestroy, _ => { onDestroyFired = true; return new EffectResult(); });
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, activePlayer: 1);
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "spot", faceUp: true);
+            res.DeployedOnTurn = 1; // 経過 2 ターン == turns
+            state.Player1Field.Frontend[0] = res;
+            long budgetBefore = state.Player1Budget;
+
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects);
+
+            state.Player1Budget.Should().Be(budgetBefore - 400, "SLA ペナルティが減算される");
+            onDestroyFired.Should().BeTrue("自壊した本体の on_destroy が発火する");
+        }
+
+        [Fact(DisplayName = "デプロイから規定ターン経過後のエンドフェーズでの自壊で、盤面変化を条件とする常時効果が再計算される")]
+        public void OnEndPhase_ExpiryFiresOnFieldChange()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", name: "Watcher"));
+            var meta = JsonSerializer.Deserialize<Dictionary<string, JsonElement>>("""{"turns":2}""");
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0001", TriggerType.OnEndPhase,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.SpotExpiry, meta)!));
+            int fieldChangeFires = 0;
+            effects.Register("TST-0005", TriggerType.OnFieldChange, _ => { fieldChangeFires++; return new EffectResult(); });
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, activePlayer: 1);
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "spot", faceUp: true);
+            res.DeployedOnTurn = 1; // 経過 2 ターン == turns
+            state.Player1Field.Frontend[0] = res;
+            state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0005", instanceId: "watcher", faceUp: true);
+
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects);
+
+            fieldChangeFires.Should().Be(1, "スポット失効の自壊で盤面が変化しOnFieldChangeが発動する");
+        }
     }
 }

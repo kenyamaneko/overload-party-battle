@@ -80,9 +80,13 @@ public static class ResolvePendingChoiceProcessor
         // 再実行した効果がさらに選択を要求する多段選択を捨てずに繋ぐため、新たな選択待ちを伝播する。
         state.PendingEffectChoice = result.PendingChoice;
 
+        // 中断していた on_destroy から再開したケースで、残っていた破壊対象を回収する。
+        var events = new List<GameEvent>(result.Events);
+        events.AddRange(DestructionSweep.Run(state, game, cc, effects));
+
         return new ActionResult
         {
-            Events = result.Events,
+            Events = events,
         };
     }
 }

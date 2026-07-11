@@ -89,25 +89,17 @@ public static class AttackProcessor
         var onHitEvents = FireOnHit(state, game, opponentNum, defender, cc, effects);
         events.AddRange(onHitEvents);
 
-        bool destroyed = defender.EffectiveAV <= 0;
-        long slaPenalty = 0;
+        var defCard = cc.MustGet(defender.CardID);
 
-        if (destroyed)
+        // 実効可用性 0 以下のリソースを状態ベースで破壊する (防御側に限らず盤面全体が対象)。
+        events.AddRange(DestructionSweep.Run(state, game, cc, effects));
+
+        bool destroyed = FieldHelpers.FindResourceByID(oppField, defender.InstanceID) is null;
+        long slaPenalty = destroyed ? defCard.SLAPenalty : 0;
+
+        if (!destroyed)
         {
-            var defCard = cc.MustGet(defender.CardID);
-            slaPenalty = defCard.SLAPenalty;
-
-            // OnDestroy トリガーを発動
-            var destroyEvents = FireOnDestroy(state, game, opponentNum, defender, oppField, cc, effects);
-            events.AddRange(destroyEvents);
-
-            ResourceHelpers.DestroyResource(state, opponentNum, oppField, defender, cc);
-            FieldChangeTrigger.Fire(state, game, cc, effects);
-        }
-        else
-        {
-            // 攻撃を受けたときの Elastic スケーリング (RULEBOOK §6: フロントエンドのコンピュート系リソースのみ)
-            var defCard = cc.MustGet(defender.CardID);
+            // 攻撃を受けて生存したときの Elastic スケーリング (RULEBOOK §6: フロントエンドのコンピュート系リソースのみ)
             bool isFrontend = FieldHelpers.FindResourceZone(oppField, defender.InstanceID) == Zone.Frontend;
             if (defCard.Elastic && defCard.IsComputeType && isFrontend)
             {
@@ -221,52 +213,6 @@ public static class AttackProcessor
                 CardCache = cc,
                 Effects = effects,
             });
-    }
-
-    /// <summary>
-    /// 所有者のフィールドリソースとサポートゾーンの on_destroy を発火します
-    /// </summary>
-    private static List<GameEvent> FireOnDestroy(
-        BattleGameState state, Game game, long ownerNum,
-        DeployedResource destroyed, Field ownerField,
-        ICardCache cc, IEffectRegistry effects)
-    {
-
-        var candidates = new List<EventTriggerCandidate>();
-
-        if (effects.Has(destroyed.CardID, TriggerType.OnDestroy))
-        {
-            candidates.Add(EventTriggerCandidate.ForResource(destroyed, ownerNum));
-        }
-
-        foreach (var res in FieldHelpers.AllFaceUpResources(ownerField))
-        {
-            if (res.InstanceID == destroyed.InstanceID) { continue; }
-            candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum));
-        }
-
-        // サポートゾーンの伏せ Reactive も on_destroy の走査対象。
-        foreach (var sup in FieldHelpers.AllSupports(ownerField))
-        {
-            candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum));
-        }
-
-        var (_, events) = EventTriggerFiring.Fire(
-            state, effects, cc, TriggerType.OnDestroy, candidates,
-            candidate => new EffectContext
-            {
-                State = state,
-                Game = game,
-                PlayerNum = ownerNum,
-                Source = candidate.Resource,
-                SupSource = candidate.Support,
-                Target = destroyed,
-                EventOwnerNum = ownerNum,
-                CardCache = cc,
-                Effects = effects,
-            });
-
-        return events;
     }
 
     private static List<GameEvent> FireOnHit(
