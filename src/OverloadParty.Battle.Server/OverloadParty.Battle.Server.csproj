@@ -16,4 +16,8 @@
     <ProjectReference Include="..\..\packages\api-battle-rpc-dotnet\OverloadParty.ApiBattleRpc.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Google.Cloud.Logging.Console" Version="1.6.0" />
+  </ItemGroup>
+
 </Project>

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Google.Cloud.Logging.Console;
 using Microsoft.AspNetCore.Diagnostics;
 using Npgsql;
 using OverloadParty.Battle.Data;
@@ -21,7 +22,17 @@ var builder = WebApplication.CreateBuilder(args);
 // ローカル開発モード判定。クラウド環境 (dev/stg/prod) は ASPNETCORE_ENVIRONMENT 未設定 = Production で動くため false。
 var isLocalDev = builder.Environment.IsDevelopment();
 
-builder.Services.AddLogging();
+// 既定の Console ロガーは severity フィールドを出さず GKE が全行を同一 severity と
+// 判定するため、本番は Cloud Logging 互換フォーマッタに差し替える。ローカルは可読性優先でテキスト。
+builder.Logging.ClearProviders();
+if (isLocalDev)
+{
+    builder.Logging.AddConsole();
+}
+else
+{
+    builder.Logging.AddGoogleCloudConsole();
+}
 
 // Serialize enums as camelCase strings (e.g. Rank.Small → "small") so that
 // downstream consumers (Gateway, client) receive strings instead of numeric values.
