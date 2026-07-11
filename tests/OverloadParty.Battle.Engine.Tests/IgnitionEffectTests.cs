@@ -40,10 +40,10 @@ public class IgnitionEffectTests
         string instanceId, string? targetInstanceId = null, Dictionary<string, object>? choiceData = null) =>
         new() { InstanceID = instanceId, TargetInstanceID = targetInstanceId, ChoiceData = choiceData };
 
-    /// <summary>deal_damage を起動効果で発動すると対象がダメージを受けることを検証する。</summary>
+    [Trait("対象", "deal_damage の起動効果")]
     public class DealDamage
     {
-        [Fact]
+        [Fact(DisplayName = "deal_damage を起動効果で発動すると対象が 300 のダメージを受ける")]
         public void Ignition_DealsDamageToTarget()
         {
             var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"),
@@ -59,10 +59,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>gain_insight を起動効果で発動すると自分の インサイトプール が増えることを検証する。</summary>
+    [Trait("対象", "gain_insight の起動効果")]
     public class GainInsight
     {
-        [Fact]
+        [Fact(DisplayName = "gain_insight を起動効果で発動すると自分のインサイトプールが 300 増える")]
         public void Ignition_AddsToOwnPool()
         {
             var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new GainInsightOp(new StaticAmount(300)));
@@ -76,10 +76,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>absorb_insight を起動効果で発動すると相手の インサイト を保有量上限で吸収することを検証する。</summary>
+    [Trait("対象", "absorb_insight の起動効果")]
     public class AbsorbInsight
     {
-        [Theory]
+        [Theory(DisplayName = "absorb_insight を起動効果で発動すると相手のインサイトを吸収量と相手の保有量の小さい方まで吸収する")]
         [InlineData(120, 120, 0)]
         [InlineData(500, 300, 200)]
         public void Ignition_TransfersClampedToOpponentPool(long oppPool, long expectedGained, long expectedOppLeft)
@@ -97,10 +97,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>destroy_check を起動効果で発動すると実効 可用性 0 以下のリソースが破壊されることを検証する。</summary>
+    [Trait("対象", "destroy_check の起動効果")]
     public class DestroyCheck
     {
-        [Fact]
+        [Fact(DisplayName = "destroy_check を起動効果で発動すると実効可用性が 0 以下のリソースだけが破壊される")]
         public void Ignition_DestroysZeroedResource()
         {
             var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new DestroyCheckOp(PlayerRef.Myself));
@@ -116,10 +116,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>reveal_reactive を起動効果で発動すると相手の伏せ リアクティブ が表向きに開示されることを検証する。</summary>
+    [Trait("対象", "reveal_reactive の起動効果")]
     public class RevealReactive
     {
-        [Fact]
+        [Fact(DisplayName = "reveal_reactive を起動効果で発動すると相手の伏せたリアクティブが表向きに開示される")]
         public void Ignition_RevealsHiddenReactive()
         {
             var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new RevealReactiveOp());
@@ -133,10 +133,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>destroy_platform を起動効果で発動すると相手の プラットフォーム が破壊されることを検証する。</summary>
+    [Trait("対象", "destroy_platform の起動効果")]
     public class DestroyPlatform
     {
-        [Fact]
+        [Fact(DisplayName = "destroy_platform を起動効果で発動すると相手のプラットフォームが破壊される")]
         public void Ignition_DestroysOpponentPlatform()
         {
             var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new DestroyPlatformOp());
@@ -151,10 +151,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>scale_to_zero を起動効果で発動すると待機中の Elastic リソースに 維持コスト 軽減が付与されることを検証する。</summary>
+    [Trait("対象", "scale_to_zero の起動効果")]
     public class ScaleToZero
     {
-        [Fact]
+        [Fact(DisplayName = "scale_to_zero を起動効果で発動するとエラスティックリソースに維持コスト軽減 60 が付与される")]
         public void Ignition_AddsMaintenanceReduction()
         {
             var (cc, effects) = Env(TestFactory.ElasticContainerCard(cardId: "TST-0003"), Custom(CustomEffects.ScaleToZero));
@@ -170,10 +170,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>reattach を起動効果で発動するとアタッチメントが別の対象へ付け替わることを検証する。</summary>
+    [Trait("対象", "reattach の起動効果")]
     public class Reattach
     {
-        [Fact]
+        [Fact(DisplayName = "reattach を起動効果で発動するとアタッチメントが選んだ対象へ付け替わる")]
         public void Ignition_MovesAttachmentToChosenTarget()
         {
             var cc = new TestCardCache();
@@ -195,10 +195,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>cloud_shift を起動効果で発動すると手札からデプロイ要求が出て発動元が自壊することを検証する。</summary>
+    [Trait("対象", "cloud_shift の起動効果")]
     public class CloudShift
     {
-        [Fact]
+        [Fact(DisplayName = "cloud_shift を起動効果で発動すると手札からデプロイ要求が出て発動元が自壊する")]
         public void Ignition_DeploysFromHandAndSelfDestructs()
         {
             var cc = new TestCardCache();
@@ -223,10 +223,10 @@ public class IgnitionEffectTests
         }
     }
 
-    /// <summary>peek_reactive を起動効果で発動すると相手の伏せ リアクティブ を表向きにせず覗き見ることを検証する。</summary>
+    [Trait("対象", "peek_reactive の起動効果")]
     public class PeekReactive
     {
-        [Fact]
+        [Fact(DisplayName = "peek_reactive を起動効果で発動すると相手の伏せたリアクティブを表向きにせず覗き見る")]
         public void Ignition_PeeksHiddenReactiveWithoutFlipping()
         {
             var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new PeekReactiveOp());

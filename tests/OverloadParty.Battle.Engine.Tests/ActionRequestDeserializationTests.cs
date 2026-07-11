@@ -15,10 +15,10 @@ public class ActionRequestDeserializationTests
         };
     }
 
-    /// <summary>Tests for deserializing PlayCardRequest in nested and flat formats.</summary>
+    [Trait("対象", "PlayCardRequest のデシリアライズ")]
     public class PlayCardRequestDeserialization : Base
     {
-        [Fact]
+        [Fact(DisplayName = "position をネストした JSON から zone frontend と index 0 を読み取る")]
         public void PlayCardRequest_NestedPosition_DeserializesCorrectly()
         {
             var json = """{ "cardInstanceId": "h1", "position": { "zone": "frontend", "index": 0 } }""";
@@ -30,7 +30,7 @@ public class ActionRequestDeserializationTests
             req.Index.Should().Be(0);
         }
 
-        [Fact]
+        [Fact(DisplayName = "zone と index を直接置いた平坦な JSON から zone frontend と index 0 を読み取る")]
         public void PlayCardRequest_FlatFormat_DeserializesCorrectly()
         {
             var json = """{ "cardInstanceId": "h1", "zone": "frontend", "index": 0 }""";
@@ -42,7 +42,7 @@ public class ActionRequestDeserializationTests
             req.Index.Should().Be(0);
         }
 
-        [Fact]
+        [Fact(DisplayName = "JsonElement 経由でも position をネストした JSON から zone backend と index 2 を読み取る")]
         public void PlayCardRequest_NestedPosition_ViaJsonElement()
         {
             var json = """{ "cardInstanceId": "h1", "position": { "zone": "backend", "index": 2 } }""";
@@ -55,10 +55,10 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing ScaleUpRequest from component or direct instance id.</summary>
+    [Trait("対象", "ScaleUpRequest のデシリアライズ")]
     public class ScaleUpRequestDeserialization : Base
     {
-        [Fact]
+        [Fact(DisplayName = "componentInstanceId を InstanceID にマッピングする")]
         public void ScaleUpRequest_ComponentInstanceId_MapsToInstanceID()
         {
             var json = """{ "componentInstanceId": "inst_1", "targetRank": "medium" }""";
@@ -69,7 +69,7 @@ public class ActionRequestDeserializationTests
             req.TargetRank.Should().Be("medium");
         }
 
-        [Fact]
+        [Fact(DisplayName = "instanceId を InstanceID にマッピングする")]
         public void ScaleUpRequest_DirectInstanceId_MapsToInstanceID()
         {
             var json = """{ "instanceId": "inst_1", "targetRank": "medium" }""";
@@ -80,7 +80,7 @@ public class ActionRequestDeserializationTests
             req.TargetRank.Should().Be("medium");
         }
 
-        [Fact]
+        [Fact(DisplayName = "JsonElement 経由で componentInstanceId を InstanceID にマッピングする")]
         public void ScaleUpRequest_ViaJsonElement()
         {
             var json = """{ "componentInstanceId": "inst_2", "targetRank": "large" }""";
@@ -92,10 +92,10 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing MonetizeRequest distributions.</summary>
+    [Trait("対象", "MonetizeRequest のデシリアライズ")]
     public class MonetizeRequestDeserialization : Base
     {
-        [Fact]
+        [Fact(DisplayName = "distributions の componentInstanceId と amount を順序どおり読み取る")]
         public void MonetizeRequest_WithComponentInstanceId_DeserializesCorrectly()
         {
             var json = """
@@ -114,7 +114,7 @@ public class ActionRequestDeserializationTests
             req.Distributions.Select(d => d.Amount).Should().ContainInOrder(200L, 300L);
         }
 
-        [Fact]
+        [Fact(DisplayName = "JsonElement 経由で distributions の componentInstanceId を読み取る")]
         public void MonetizeRequest_ViaJsonElement()
         {
             var json = """
@@ -132,10 +132,10 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing AttackRequest.</summary>
+    [Trait("対象", "AttackRequest のデシリアライズ")]
     public class AttackRequestDeserialization : Base
     {
-        [Fact]
+        [Fact(DisplayName = "attackerInstanceId と targetInstanceId を読み取る")]
         public void AttackRequest_DeserializesCorrectly()
         {
             var json = """{ "attackerInstanceId": "a1", "targetInstanceId": "t1" }""";
@@ -146,7 +146,7 @@ public class ActionRequestDeserializationTests
             req.TargetInstanceID.Should().Be("t1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "JsonElement 経由で attackerInstanceId と targetInstanceId を読み取る")]
         public void AttackRequest_ViaJsonElement()
         {
             var json = """{ "attackerInstanceId": "a1", "targetInstanceId": "t1" }""";
@@ -158,10 +158,10 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing UseIgnitionRequest.</summary>
+    [Trait("対象", "UseIgnitionRequest のデシリアライズ")]
     public class UseIgnitionRequestDeserialization : Base
     {
-        [Fact]
+        [Fact(DisplayName = "instanceId を読み取る")]
         public void UseIgnitionRequest_DeserializesCorrectly()
         {
             var json = """{ "instanceId": "e1" }""";
@@ -171,7 +171,7 @@ public class ActionRequestDeserializationTests
             req.InstanceID.Should().Be("e1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "JsonElement 経由で instanceId と targetInstanceId を読み取る")]
         public void UseIgnitionRequest_ViaJsonElement()
         {
             var json = """{ "instanceId": "e1", "targetInstanceId": "t1" }""";
@@ -183,10 +183,10 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    /// <summary>Tests for deserializing DiscardHandRequest card id lists.</summary>
+    [Trait("対象", "DiscardHandRequest のデシリアライズ")]
     public class DiscardHandRequestDeserialization : Base
     {
-        [Fact]
+        [Fact(DisplayName = "cardInstanceIds の配列を読み取る")]
         public void DiscardHandRequest_DeserializesCorrectly()
         {
             var json = """{ "cardInstanceIds": ["c1", "c2"] }""";
@@ -196,7 +196,7 @@ public class ActionRequestDeserializationTests
             req.CardInstanceIDs.Should().Equal("c1", "c2");
         }
 
-        [Fact]
+        [Fact(DisplayName = "JsonElement 経由で cardInstanceIds の配列を読み取る")]
         public void DiscardHandRequest_ViaJsonElement()
         {
             var json = """{ "cardInstanceIds": ["c1", "c2", "c3"] }""";

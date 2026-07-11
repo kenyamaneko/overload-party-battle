@@ -7,10 +7,10 @@ namespace OverloadParty.Battle.Tests.Engine;
 
 public class TurnTimerTests
 {
-    /// <summary>Tests for GameEngine.DeductElapsedTime.</summary>
+    [Trait("対象", "タイムバンクからの経過時間の減算")]
     public class DeductElapsedTime
     {
-        [Fact]
+        [Fact(DisplayName = "経過 10 秒でアクティブプレイヤーのタイムバンクからおよそ 10 秒差し引く")]
         public void SubtractsElapsedSeconds()
         {
             var state = TestFactory.MakeGameState(activePlayer: 1);
@@ -23,7 +23,7 @@ public class TurnTimerTests
             state.TurnStartedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
         }
 
-        [Fact]
+        [Fact(DisplayName = "非アクティブプレイヤーのタイムバンクは変えずアクティブプレイヤーからのみ差し引く")]
         public void OnlyDeductsActivePlayer()
         {
             var state = TestFactory.MakeGameState(activePlayer: 2);
@@ -37,7 +37,7 @@ public class TurnTimerTests
             state.Player2TimeBank.Should().BeInRange(294, 296);
         }
 
-        [Fact]
+        [Fact(DisplayName = "経過時間が 0 のときタイムバンクは変わらない")]
         public void ZeroElapsed_NoChange()
         {
             var state = TestFactory.MakeGameState(activePlayer: 1);
@@ -49,7 +49,7 @@ public class TurnTimerTests
             state.Player1TimeBank.Should().Be(480);
         }
 
-        [Fact]
+        [Fact(DisplayName = "経過時間がタイムバンクを超えるとタイムバンクは負になる")]
         public void CanGoNegative()
         {
             var state = TestFactory.MakeGameState(activePlayer: 1);
@@ -62,10 +62,10 @@ public class TurnTimerTests
         }
     }
 
-    /// <summary>Tests for WinConditionChecker.CheckTimeout.</summary>
+    [Trait("対象", "タイムアウト判定")]
     public class CheckTimeout
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー1のタイムバンクが 0 のときプレイヤー2が turn_timeout で勝つ")]
         public void Player1TimeBankZero_Player2Wins()
         {
             var state = TestFactory.MakeGameState();
@@ -79,7 +79,7 @@ public class TurnTimerTests
             result.Reason.Should().Be("turn_timeout");
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー2のタイムバンクが -5 のときプレイヤー1が turn_timeout で勝つ")]
         public void Player2TimeBankNegative_Player1Wins()
         {
             var state = TestFactory.MakeGameState();
@@ -93,7 +93,7 @@ public class TurnTimerTests
             result.Reason.Should().Be("turn_timeout");
         }
 
-        [Fact]
+        [Fact(DisplayName = "両者のタイムバンクが正のときタイムアウトにならない")]
         public void BothPositive_NoTimeout()
         {
             var state = TestFactory.MakeGameState();
@@ -106,10 +106,10 @@ public class TurnTimerTests
         }
     }
 
-    /// <summary>Tests for TurnManager.SwitchActivePlayer.</summary>
+    [Trait("対象", "ターン切り替え時のタイマーリセット")]
     public class SwitchActivePlayer
     {
-        [Fact]
+        [Fact(DisplayName = "アクティブプレイヤーを切り替えるとターン開始時刻がリセットされる")]
         public void ResetsTurnStartedAt()
         {
             var state = TestFactory.MakeGameState(activePlayer: 1);
@@ -122,10 +122,10 @@ public class TurnTimerTests
         }
     }
 
-    /// <summary>Tests for GameInitializer.CreateNewGame.</summary>
+    [Trait("対象", "新規ゲームのタイマー初期化")]
     public class CreateNewGame
     {
-        [Fact]
+        [Fact(DisplayName = "新規ゲーム作成時にターン開始時刻が設定され両者のタイムバンクが初期値になる")]
         public void SetsTurnStartedAt()
         {
             var cc = new TestCardCache();
@@ -140,10 +140,10 @@ public class TurnTimerTests
         }
     }
 
-    /// <summary>Tests for GameEngine.ProcessAction turn-timeout handling.</summary>
+    [Trait("対象", "アクション処理時のタイムアウト")]
     public class ProcessAction
     {
-        [Fact]
+        [Fact(DisplayName = "タイムバンクを使い切った状態でアクションするとゲームが turn_timeout で終了し相手が勝つ")]
         public async Task TimeBankExpired_ReturnsTimeout()
         {
             var cc = new TestCardCache();
@@ -181,7 +181,7 @@ public class TurnTimerTests
             game!.Status.Should().Be(GameStatus.Finished);
         }
 
-        [Fact]
+        [Fact(DisplayName = "タイムバンクに余裕がある状態でアクションするとゲームは終了せずおよそ 10 秒差し引かれる")]
         public async Task SufficientTimeBank_Succeeds()
         {
             var cc = new TestCardCache();
@@ -214,10 +214,10 @@ public class TurnTimerTests
         }
     }
 
-    /// <summary>Tests for WinConditionChecker.Check timeout inclusion.</summary>
+    [Trait("対象", "勝敗判定へのタイムアウト包含")]
     public class Check
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー1のタイムバンクが -1 のとき総合勝敗判定が turn_timeout を返す")]
         public void TimeBankZero_ReturnsTimeout()
         {
             var state = TestFactory.MakeGameState();

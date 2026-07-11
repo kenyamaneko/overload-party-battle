@@ -6,10 +6,10 @@ namespace OverloadParty.Battle.Tests.Npc;
 
 public class ActionFilterTests
 {
-    /// <summary>Tests for ActionFilter.ParseZoneStr.</summary>
+    [Trait("対象", "ゾーン文字列の解析")]
     public class ParseZoneStr
     {
-        [Theory]
+        [Theory(DisplayName = "有効なゾーン文字列を解析すると、ゾーン名とスロット位置を返す")]
         [InlineData("frontend_0", "frontend", 0)]
         [InlineData("frontend_2", "frontend", 2)]
         [InlineData("backend_0", "backend", 0)]
@@ -24,7 +24,7 @@ public class ActionFilterTests
             result.Index.Should().Be(expectedIndex);
         }
 
-        [Theory]
+        [Theory(DisplayName = "スロット番号を含まないゾーン文字列を解析すると、null を返す")]
         [InlineData("")]
         [InlineData("frontend")]
         [InlineData("abc")]
@@ -34,7 +34,7 @@ public class ActionFilterTests
             ActionFilter.ParseZoneStr(input).Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "アンダースコアが複数あるとき、末尾の数字をスロット位置に使う")]
         public void MultipleUnderscores_UsesLastSegment()
         {
             var result = ActionFilter.ParseZoneStr("some_zone_3");
@@ -45,17 +45,17 @@ public class ActionFilterTests
         }
     }
 
-    /// <summary>Tests for ActionFilter.PickBestZone.</summary>
+    [Trait("対象", "デプロイゾーンの選択")]
     public class PickBestZone
     {
-        [Fact]
+        [Fact(DisplayName = "有効ゾーンが null のとき、null を返す")]
         public void NullValidZones_ReturnsNull()
         {
             var card = TestFactory.ComputeCard();
             ActionFilter.PickBestZone(null, card, []).Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "Compute系リソースはフロントエンドを優先する")]
         public void ComputeCard_PrefersFrontend()
         {
             var card = TestFactory.ComputeCard();
@@ -66,7 +66,7 @@ public class ActionFilterTests
             result.Should().Be("frontend_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "Compute系リソースはフロントエンドが無いとき、バックエンドに置く")]
         public void ComputeCard_FallsBackToBackend()
         {
             var card = TestFactory.ComputeCard();
@@ -77,7 +77,7 @@ public class ActionFilterTests
             result.Should().Be("backend_0");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ObjectStorage はバックエンドを優先する")]
         public void ObjectStorageCard_PrefersBackend()
         {
             var card = TestFactory.DataCard(subtype: "ObjectStorage");
@@ -88,7 +88,7 @@ public class ActionFilterTests
             result.Should().Be("backend_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "Compute系リソースに置けるゾーンが無いとき、例外を投げる")]
         public void ComputeCard_NoMatchingZone_Throws()
         {
             var card = TestFactory.ComputeCard();
@@ -99,7 +99,7 @@ public class ActionFilterTests
             act.Should().Throw<InvalidOperationException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "ObjectStorage に置けるゾーンが無いとき、例外を投げる")]
         public void ObjectStorageCard_NoMatchingZone_Throws()
         {
             var card = TestFactory.DataCard(subtype: "ObjectStorage");
@@ -110,7 +110,7 @@ public class ActionFilterTests
             act.Should().Throw<InvalidOperationException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "使用済みのゾーンを避けて選ぶ")]
         public void SkipsUsedZones()
         {
             var card = TestFactory.ComputeCard();
@@ -122,7 +122,7 @@ public class ActionFilterTests
             result.Should().Be("frontend_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "候補ゾーンが全て使用済みのとき、null を返す")]
         public void AllZonesUsed_ReturnsNull()
         {
             var card = TestFactory.ComputeCard();
@@ -133,16 +133,16 @@ public class ActionFilterTests
         }
     }
 
-    /// <summary>Tests for ActionFilter.PickSupportZone.</summary>
+    [Trait("対象", "サポートゾーンの選択")]
     public class PickSupportZone
     {
-        [Fact]
+        [Fact(DisplayName = "有効ゾーンが null のとき、null を返す")]
         public void NullValidZones_ReturnsNull()
         {
             ActionFilter.PickSupportZone(null, []).Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "未使用のサポートゾーンを返す")]
         public void ReturnsSupportZoneNotUsed()
         {
             var zones = new List<string> { "support_0", "support_1" };
@@ -151,7 +151,7 @@ public class ActionFilterTests
             ActionFilter.PickSupportZone(zones, used).Should().Be("support_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "サポート以外のゾーンしか無いとき、null を返す")]
         public void SkipsNonSupportZones()
         {
             var zones = new List<string> { "frontend_0", "backend_1" };
@@ -160,10 +160,10 @@ public class ActionFilterTests
         }
     }
 
-    /// <summary>Tests for ActionFilter.ResolveCardIdForInstance.</summary>
+    [Trait("対象", "インスタンスの CardID 解決")]
     public class ResolveCardIdForInstance
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドのリソースのインスタンスから CardID を解決する")]
         public void FindsResourceInFrontend()
         {
             var field = TestFactory.MakeWireField();
@@ -172,7 +172,7 @@ public class ActionFilterTests
             ActionFilter.ResolveCardIdForInstance("inst_42", field).Should().Be("TST-0001");
         }
 
-        [Fact]
+        [Fact(DisplayName = "デプロイ済みサポートのインスタンスから CardID を解決する")]
         public void FindsDeployedSupport()
         {
             var field = TestFactory.MakeWireField();
@@ -181,7 +181,7 @@ public class ActionFilterTests
             ActionFilter.ResolveCardIdForInstance("sup_1", field).Should().Be("TST-0002");
         }
 
-        [Fact]
+        [Fact(DisplayName = "インスタンスが見つからないとき、例外を投げる")]
         public void NotFound_Throws()
         {
             var field = TestFactory.MakeWireField();

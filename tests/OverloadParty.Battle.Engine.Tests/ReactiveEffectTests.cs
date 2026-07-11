@@ -26,10 +26,10 @@ public class ReactiveEffectTests
     private static void PlaceReactive(BattleGameState state, string cardId) =>
         state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "react", CardID = cardId, FaceUp = false, DeployOrder = 1 };
 
-    /// <summary>cancel_action リアクティブが攻撃宣言をキャンセルすることを検証する。</summary>
+    [Trait("対象", "cancel_action リアクティブ")]
     public class CancelAction
     {
-        [Fact]
+        [Fact(DisplayName = "cancel_action リアクティブが攻撃宣言をキャンセルし対象にダメージが入らない")]
         public void Reactive_CancelsAttack()
         {
             var cc = new TestCardCache();
@@ -50,10 +50,10 @@ public class ReactiveEffectTests
         }
     }
 
-    /// <summary>survive_destruction リアクティブが破壊を免れさせ surviveAV で残すことを検証する。</summary>
+    [Trait("対象", "survive_destruction リアクティブ")]
     public class SurviveDestruction
     {
-        [Fact]
+        [Fact(DisplayName = "survive_destruction リアクティブが対象の破壊を免れさせ実効可用性 200 で残す")]
         public void Reactive_LeavesDefenderAtSurviveAvailability()
         {
             var cc = new TestCardCache();
@@ -77,10 +77,10 @@ public class ReactiveEffectTests
         }
     }
 
-    /// <summary>redirect_attack リアクティブが再ダメージ先の選択待ちへ遷移することを検証する。</summary>
+    [Trait("対象", "redirect_attack リアクティブ")]
     public class RedirectAttack
     {
-        [Fact]
+        [Fact(DisplayName = "redirect_attack リアクティブが再ダメージ先を選ぶ選択待ちへ遷移する")]
         public void Reactive_SuspendsForRedirectTargetChoice()
         {
             var cc = new TestCardCache();
@@ -105,10 +105,10 @@ public class ReactiveEffectTests
         }
     }
 
-    /// <summary>chain_attack_bonus が しゅがーらぼ Compute系リソース の並びで追加ダメージを与えることを検証する。</summary>
+    [Trait("対象", "chain_attack_bonus 誘発効果")]
     public class ChainAttackBonus
     {
-        [Fact]
+        [Fact(DisplayName = "しゅがーらぼの Compute系リソース が並んでいると攻撃ダメージに 200 加算され合計 800 になる")]
         public void OnAttack_AddsBonusDamage_WhenSugarComputeAllyPresent()
         {
             var cc = new TestCardCache();
@@ -130,7 +130,7 @@ public class ReactiveEffectTests
             defender.Damage.Should().Be(800, "攻撃 600 + チェイン追加 200");
         }
 
-        [Fact]
+        [Fact(DisplayName = "しゅがーらぼの Compute系リソース が並んでいないと追加ダメージは乗らず 600 のままになる")]
         public void OnAttack_NoBonus_WhenNoSugarComputeAlly()
         {
             var cc = new TestCardCache();

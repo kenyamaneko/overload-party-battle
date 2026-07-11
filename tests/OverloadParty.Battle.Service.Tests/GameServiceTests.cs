@@ -64,10 +64,10 @@ public class GameServiceTests
         }
     }
 
-    /// <summary>Tests for creating a game from a PvP match.</summary>
+    [Trait("対象", "PvP マッチからのゲーム生成")]
     public class CreateGameFromMatch : Base
     {
-        [Fact]
+        [Fact(DisplayName = "PvP マッチからゲームを生成するとステータスが Playing になる")]
         public async Task CreatesGame_WithCorrectStatus()
         {
             var cards = MakePlayerCards();
@@ -78,7 +78,7 @@ public class GameServiceTests
             game.GameID.Should().NotBeNullOrEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "PvP マッチからのゲーム生成でプレイヤーサマリが永続化される")]
         public async Task PersistsPlayerSummaries()
         {
             var cards = MakePlayerCards();
@@ -96,7 +96,7 @@ public class GameServiceTests
             persisted.Should().Contain(s => s.PlayerNum == 2 && s.Name == "bob" && s.Level == 12);
         }
 
-        [Fact]
+        [Fact(DisplayName = "PvP マッチからのゲーム生成後、状態がターン 1・メインフェーズで初期化される")]
         public async Task InitializesState_InMainPhase()
         {
             var cards = MakePlayerCards();
@@ -109,7 +109,7 @@ public class GameServiceTests
             state.CurrentTurn.Should().Be(1);
         }
 
-        [Fact]
+        [Fact(DisplayName = "PvP マッチからのゲーム生成で両プレイヤーが初期バジェットを持つ")]
         public async Task PlayersHaveInitialBudget()
         {
             var cards = MakePlayerCards();
@@ -121,10 +121,10 @@ public class GameServiceTests
         }
     }
 
-    /// <summary>Tests for starting an NPC battle.</summary>
+    [Trait("対象", "NPC バトルの開始")]
     public class StartNPCBattle : Base
     {
-        [Fact]
+        [Fact(DisplayName = "NPC バトルを開始すると NPC プレイヤー付きのゲームが生成される")]
         public async Task CreatesGame_WithNpcPlayer()
         {
             var cards = MakePlayerCards();
@@ -135,7 +135,7 @@ public class GameServiceTests
             game.Status.Should().Be(GameStatus.Playing);
         }
 
-        [Fact]
+        [Fact(DisplayName = "空のデッキで NPC バトルを開始すると例外になる")]
         public async Task EmptyDeck_Throws()
         {
             var act = () => _svc.StartNPCBattle([], "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
@@ -144,7 +144,7 @@ public class GameServiceTests
                 .WithMessage("*empty*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "未知の陣営で NPC バトルを開始すると例外になる")]
         public async Task UnknownFaction_Throws()
         {
             var cards = MakePlayerCards();
@@ -155,10 +155,10 @@ public class GameServiceTests
         }
     }
 
-    /// <summary>Tests for processing player actions.</summary>
+    [Trait("対象", "プレイヤーアクションの処理")]
     public class ProcessAction : Base
     {
-        [Fact]
+        [Fact(DisplayName = "カードをプレイするアクションを処理すると状態を含む結果が返り決着しない")]
         public async Task PlayCard_ReturnsStateWithResult()
         {
             var cards = MakePlayerCards();
@@ -181,7 +181,7 @@ public class GameServiceTests
             result.GameOver.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "投了のアクションを処理すると決着結果が返る")]
         public async Task Forfeit_ReturnsGameOver()
         {
             var cards = MakePlayerCards();
@@ -196,7 +196,7 @@ public class GameServiceTests
             result.State.Should().NotBeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "フェーズ終了のアクションを処理すると有効な状態が返り決着しない")]
         public async Task EndPhase_ReturnsValidState()
         {
             var cards = MakePlayerCards();
@@ -212,7 +212,7 @@ public class GameServiceTests
             result.GameOver.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "PvP ゲームではアクション処理後に NPC 待ちが常に false になる")]
         public async Task PvpGame_NpcPendingAlwaysFalse()
         {
             var cards = MakePlayerCards();
@@ -226,7 +226,7 @@ public class GameServiceTests
             result.IsNpcPending.Should().BeFalse("PvP games never have NPC pending");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ターン切り替え時に発行される turn_start イベントの IsMyTurn が false になる")]
         public async Task TurnStartEvent_ContainsIsMyTurn()
         {
             var cards = MakePlayerCards();
@@ -246,10 +246,10 @@ public class GameServiceTests
         }
     }
 
-    /// <summary>Tests for retrieving the client-facing game state for a player.</summary>
+    [Trait("対象", "プレイヤー向けゲーム状態の取得")]
     public class GetGameStateForPlayer : Base
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー向けゲーム状態を取得すると自分ビューと相手ビューが返る")]
         public async Task ReturnsClientState()
         {
             var cards = MakePlayerCards();
@@ -263,7 +263,7 @@ public class GameServiceTests
             clientState.OppView.Should().NotBeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しないゲームのプレイヤー向け状態取得は例外になる")]
         public async Task UnknownGame_Throws()
         {
             var act = () => _svc.GetGameStateForPlayer("nonexistent", 1);
@@ -272,10 +272,10 @@ public class GameServiceTests
         }
     }
 
-    /// <summary>Tests for retrieving turn controls for a player.</summary>
+    [Trait("対象", "プレイヤーのターンコントロール取得")]
     public class GetTurnControlsForPlayer : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ターンプレイヤーはターンコントロールを取得できる")]
         public async Task ActivePlayer_ReturnsControls()
         {
             var cards = MakePlayerCards();
@@ -289,7 +289,7 @@ public class GameServiceTests
             controls!.CanEndPhase.Should().BeTrue("main phase allows ending");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ターンプレイヤーでないプレイヤーのターンコントロールは null になる")]
         public async Task InactivePlayer_ReturnsNull()
         {
             var cards = MakePlayerCards();
@@ -303,7 +303,7 @@ public class GameServiceTests
             controls.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しないゲームのターンコントロール取得は例外になる")]
         public async Task UnknownGame_Throws()
         {
             var act = () => _svc.GetTurnControlsForPlayer("nonexistent", 1);

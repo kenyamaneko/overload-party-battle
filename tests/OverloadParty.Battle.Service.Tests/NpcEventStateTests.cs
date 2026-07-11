@@ -9,9 +9,6 @@ using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Service;
 
-/// <summary>
-/// Verifies that each NPC action event carries the state reflecting that action's result.
-/// </summary>
 public class NpcEventStateTests
 {
     /// <summary>Shared setup for NPC event-state tests (repository, NPC-capable service, and turn-driving helpers).</summary>
@@ -148,10 +145,10 @@ public class NpcEventStateTests
         }
     }
 
-    /// <summary>Tests for the state carried by the NPC's end_phase event.</summary>
+    [Trait("対象", "NPC の end_phase イベントの状態")]
     public class EndPhaseEvent : Base
     {
-        [Fact]
+        [Fact(DisplayName = "NPC の end_phase イベントの状態が人間プレイヤーへのターン切り替えを反映する")]
         public async Task StateReflectsTurnSwitch()
         {
             var result = await RunNpcTurn();
@@ -169,10 +166,10 @@ public class NpcEventStateTests
         }
     }
 
-    /// <summary>Tests for one-action-per-call NPC yielding and event redaction.</summary>
+    [Trait("対象", "NPC の逐次アクション譲渡とカード秘匿")]
     public class YieldMode : Base
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤーの end_phase 応答には NPC の play_card イベントが含まれず NPC 待ちになる")]
         public async Task ProcessAction_PlayerEndPhase_DoesNotBatchNpcEvents()
         {
             var (game, playerNum) = await StartGameWithNpcNext();
@@ -186,7 +183,7 @@ public class NpcEventStateTests
                 "after the player's end_phase the NPC is active, so the gateway needs to loop");
         }
 
-        [Fact]
+        [Fact(DisplayName = "AdvanceNpcTurn は 1 回につき 1 アクションを返し、NPC ターン終了後にプレイヤーへ制御が戻る")]
         public async Task AdvanceNpcTurn_ReturnsOneActionAtATime_ThenPlayerRegainsTurn()
         {
             var (game, playerNum) = await StartGameWithNpcNext();
@@ -217,7 +214,7 @@ public class NpcEventStateTests
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤーがメインフェーズでカードをプレイし手番が続くとき NPC 待ちが false になる")]
         public async Task ProcessAction_WhenNextActorIsPlayer_NpcPendingIsFalse()
         {
             var (game, playerNum) = await StartGameWithPlayerActive();
@@ -241,7 +238,7 @@ public class NpcEventStateTests
                 "player is still the active player after playing a card in main phase");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手の play_card イベントは裏向きカードの cardId を秘匿し表向きカードでは残す")]
         public async Task AdvanceNpcTurn_PlayCardEvent_RedactsFaceDownCardId()
         {
             // From the player's viewpoint, opponent play_card events must redact
@@ -276,7 +273,7 @@ public class NpcEventStateTests
                 "SHE-easy deck contains cards with DeployTurns>0; at least one should have been redacted");
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー自身の play_card イベントは cardId を秘匿しない")]
         public async Task ProcessAction_PlayerOwnPlayCard_DoesNotRedact()
         {
             var (game, playerNum) = await StartGameWithPlayerActive();

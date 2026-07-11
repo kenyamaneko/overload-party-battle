@@ -80,10 +80,10 @@ public class UseInitiativeProcessorTests
         }
     }
 
-    /// <summary>Tests for rule enforcement when using initiatives (turn, kind, cost, and once-per limits).</summary>
+    [Trait("対象", "施策の使用ルール")]
     public class RuleEnforcement : Base
     {
-        [Fact]
+        [Fact(DisplayName = "初回ターンに施策を使用しようとすると拒否される")]
         public void FirstTurn_Throws()
         {
             var (effects, catalog) = Setup(StandardInitiatives());
@@ -94,7 +94,7 @@ public class UseInitiativeProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*first turn*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しない施策 ID を使用しようとすると拒否される")]
         public void UnknownInitiative_Throws()
         {
             var (effects, catalog) = Setup(StandardInitiatives());
@@ -106,7 +106,7 @@ public class UseInitiativeProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*not found*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ルーチン枠にスペシャルの施策がセットされていると拒否される")]
         public void InitiativeKindMismatch_Throws()
         {
             // routine スロットにスペシャル施策の ID がセットされている場合は弾く。
@@ -119,7 +119,7 @@ public class UseInitiativeProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*is not a routine*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ルーチンを同一ターンに 2 回使用しようとすると拒否される")]
         public void Routine_OncePerTurn_Throws()
         {
             var (effects, catalog) = Setup(StandardInitiatives());
@@ -131,7 +131,7 @@ public class UseInitiativeProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*routine already used*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "スペシャルを 1 ゲームに 2 回使用しようとすると拒否される")]
         public void Special_OncePerGame_Throws()
         {
             var (effects, catalog) = Setup(StandardInitiatives());
@@ -143,7 +143,7 @@ public class UseInitiativeProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*special already used*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "インサイトが施策コストに満たないとき拒否されインサイトプールが消費されない")]
         public void InsufficientInsight_Throws()
         {
             var (effects, catalog) = Setup(StandardInitiatives());
@@ -155,7 +155,7 @@ public class UseInitiativeProcessorTests
             state.Player1InsightPool.Should().Be(50, "failed initiative must not consume insight");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ルーチンを使用するとコスト 100 が引かれインサイトプールが 900 になる")]
         public void InsightCost_Deducted()
         {
             var (effects, catalog) = Setup(StandardInitiatives());
@@ -166,7 +166,7 @@ public class UseInitiativeProcessorTests
             state.Player1InsightPool.Should().Be(900);
         }
 
-        [Fact]
+        [Fact(DisplayName = "施策を使用すると施策の使用イベントに種別とプロダクトと施策情報が載る")]
         public void Use_EmitsInitiativeEvent()
         {
             var (effects, catalog) = Setup(StandardInitiatives());
@@ -184,10 +184,10 @@ public class UseInitiativeProcessorTests
         }
     }
 
-    /// <summary>Tests for the gameplay effects produced by routine and special initiatives.</summary>
+    [Trait("対象", "施策の効果")]
     public class Effects : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手の表向きリソース 1 体につき相手のバジェットが 100 減り裏向きは数えない")]
         public void Routine_LoseBudgetPerOpponentFaceUpCount()
         {
             // 物欲刺激: 相手の表向きリソース 1 体につき相手 Budget -100。
@@ -208,7 +208,7 @@ public class UseInitiativeProcessorTests
             state.Player2Budget.Should().Be(5000 - 200);
         }
 
-        [Fact]
+        [Fact(DisplayName = "インサイトプール全量を 1.5 倍のバジェットに変換しプールが 0 になる")]
         public void Special_ConvertAllInsight()
         {
             // 大感謝セール: Insight プール全量を 1.5 倍の Budget に変換しプールを 0 に。
@@ -226,7 +226,7 @@ public class UseInitiativeProcessorTests
             state.Player1InsightPool.Should().Be(0);
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手の表向きリソース全体を休止にし裏向きは対象外になる")]
         public void Special_DormantAllOpponentFaceUp()
         {
             // お裾分け: 相手の表向きリソース全体を休止に。
@@ -249,7 +249,7 @@ public class UseInitiativeProcessorTests
             FieldHelpers.HasTemporaryEffect(faceDown, BuffTypes.Dormant).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "選んだ味方リソース 1 体のダメージを 300 回復する")]
         public void Routine_HealChosenAlly()
         {
             // 焼きたてのお菓子: 味方 1 体の可用性を 300 回復。
@@ -270,7 +270,7 @@ public class UseInitiativeProcessorTests
             ally.Damage.Should().Be(300);
         }
 
-        [Fact]
+        [Fact(DisplayName = "自分の表向きリソース 1 体につきバジェットが 150 増える")]
         public void Special_GainBudgetPerOwnFaceUpCount()
         {
             // フェス開催: 自分の表向きリソース 1 体につき Budget +150。

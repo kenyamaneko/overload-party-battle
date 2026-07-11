@@ -3,16 +3,12 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// Tests for ResourceHelpers: resource creation, field placement,
-/// deploy from hand/repo, destruction, and rank changes.
-/// </summary>
 public class ResourceHelpersTests
 {
-    /// <summary>Tests for ResourceHelpers.CreateDeployedResource.</summary>
+    [Trait("対象", "リソースの生成")]
     public class CreateDeployedResource
     {
-        [Fact]
+        [Fact(DisplayName = "Compute カードからリソースを生成するとスループットと可用性が設定される")]
         public void ComputeCard_SetsTPAndAV()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400);
@@ -28,7 +24,7 @@ public class ResourceHelpersTests
             resource.DeployedOnTurn.Should().Be(3);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Data カードからリソースを生成するとイールドと可用性が設定されスループットを持たない")]
         public void DataCard_SetsYieldAndAV()
         {
             var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400, av: 800);
@@ -42,7 +38,7 @@ public class ResourceHelpersTests
             resource.MaxTP.Should().BeNull();
         }
 
-        [Theory]
+        [Theory(DisplayName = "Resizable が true のときランクが small になり false のときランクを持たない")]
         [InlineData(true)]
         [InlineData(false)]
         public void ResizableFlag_SetsRank(bool resizable)
@@ -61,7 +57,7 @@ public class ResourceHelpersTests
             }
         }
 
-        [Theory]
+        [Theory(DisplayName = "デプロイターンに応じて表向き状態と残りデプロイターンが決まる")]
         [InlineData(2, false, 2)]
         [InlineData(0, true, 0)]
         public void DeployTurns_SetsFaceUpAndTurnsLeft(
@@ -75,7 +71,7 @@ public class ResourceHelpersTests
             resource.DeployingTurnsLeft.Should().Be(expectedTurnsLeft);
         }
 
-        [Fact]
+        [Fact(DisplayName = "artNo を指定して生成するとリソースに ArtNo が設定される")]
         public void SetsArtNo()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001");
@@ -86,10 +82,10 @@ public class ResourceHelpersTests
         }
     }
 
-    /// <summary>Tests for ResourceHelpers.PlaceResourceOnField.</summary>
+    [Trait("対象", "リソースのフィールド配置")]
     public class PlaceResourceOnField
     {
-        [Fact]
+        [Fact(DisplayName = "Compute リソースはまずフロントエンドに配置される")]
         public void ComputeType_PlacedInFrontendFirst()
         {
             var field = TestFactory.MakeField();
@@ -100,7 +96,7 @@ public class ResourceHelpersTests
             field.Frontend.Any(r => r.InstanceID == "inst_1").Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドが満杯なら Compute リソースはバックエンドに配置される")]
         public void ComputeType_FrontendFull_PlacedInBackend()
         {
             var field = TestFactory.MakeField();
@@ -116,7 +112,7 @@ public class ResourceHelpersTests
             field.Backend.Any(r => r.InstanceID == "inst_new").Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドもバックエンドも満杯なら Compute リソースの配置は拒否される")]
         public void ComputeType_AllFull_Throws()
         {
             var field = TestFactory.MakeField();
@@ -135,7 +131,7 @@ public class ResourceHelpersTests
             act.Should().Throw<GameRuleException>();
         }
 
-        [Theory]
+        [Theory(DisplayName = "Data 系リソースはバックエンドに配置される")]
         [InlineData("Database")]
         [InlineData("ObjectStorage")]
         public void BackendType_PlacedInBackend(string subtype)
@@ -148,7 +144,7 @@ public class ResourceHelpersTests
             field.Backend.Any(r => r.InstanceID == "be_1").Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "バックエンドが満杯なら Database の配置は拒否される")]
         public void Database_BackendFull_Throws()
         {
             var field = TestFactory.MakeField();
@@ -163,7 +159,7 @@ public class ResourceHelpersTests
             act.Should().Throw<GameRuleException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "バックエンドが満杯なら ObjectStorage はフロントエンドに配置される")]
         public void ObjectStorage_BackendFull_FallsToFrontend()
         {
             var field = TestFactory.MakeField();
@@ -178,7 +174,7 @@ public class ResourceHelpersTests
             field.Frontend.Any(r => r.InstanceID == "os_fallback").Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "未知のカードタイプの配置は拒否される")]
         public void UnknownCardType_Throws()
         {
             var field = TestFactory.MakeField();
@@ -190,10 +186,10 @@ public class ResourceHelpersTests
         }
     }
 
-    /// <summary>Tests for ResourceHelpers.DeployFromHand.</summary>
+    [Trait("対象", "手札からのデプロイ")]
     public class DeployFromHand
     {
-        [Fact]
+        [Fact(DisplayName = "手札からデプロイすると手札から取り除かれてフィールドに置かれる")]
         public void RemovesFromHandAndPlacesOnField()
         {
             var cc = new TestCardCache();
@@ -209,7 +205,7 @@ public class ResourceHelpersTests
             FieldHelpers.AllResources(field).Any(r => r.CardID == "TST-0003").Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "手札に無いカードをデプロイしようとすると拒否される")]
         public void CardNotInHand_Throws()
         {
             var cc = new TestCardCache();
@@ -223,10 +219,10 @@ public class ResourceHelpersTests
         }
     }
 
-    /// <summary>Tests for ResourceHelpers.DeployFromRepo.</summary>
+    [Trait("対象", "デッキからのデプロイ")]
     public class DeployFromRepo
     {
-        [Fact]
+        [Fact(DisplayName = "デッキからデプロイするとデッキから取り除かれてフィールドに置かれる")]
         public void RemovesFromRepoAndPlaces()
         {
             var cc = new TestCardCache();
@@ -243,7 +239,7 @@ public class ResourceHelpersTests
             FieldHelpers.AllResources(field).Any(r => r.CardID == "TST-0004").Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "可用性の上書き値を指定してデッキからデプロイすると最大可用性がその値になる")]
         public void WithOverrideAV_SetsMaxAV()
         {
             var cc = new TestCardCache();
@@ -262,10 +258,10 @@ public class ResourceHelpersTests
         }
     }
 
-    /// <summary>Tests for ResourceHelpers.DestroyResource.</summary>
+    [Trait("対象", "リソースの破壊")]
     public class DestroyResource
     {
-        [Fact]
+        [Fact(DisplayName = "リソースを破壊するとオーナーのバジェットから SLA ペナルティが減算される")]
         public void AppliesSLAPenalty()
         {
             var cc = new TestCardCache();
@@ -281,7 +277,7 @@ public class ResourceHelpersTests
             state.Player1Budget.Should().Be(4600);
         }
 
-        [Fact]
+        [Fact(DisplayName = "リソースを破壊するとトラッシュへ移る")]
         public void MovesToTrash()
         {
             var cc = new TestCardCache();
@@ -297,7 +293,7 @@ public class ResourceHelpersTests
             state.Player1Trash.Should().Contain(c => c.CardID == "TST-0003");
         }
 
-        [Fact]
+        [Fact(DisplayName = "リソースを破壊するとフィールドから取り除かれる")]
         public void RemovesFromField()
         {
             var cc = new TestCardCache();
@@ -313,7 +309,7 @@ public class ResourceHelpersTests
             FieldHelpers.FindResourceByID(field, "inst_1").Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "リソースを破壊するとアタッチされたカードも一緒にトラッシュへ移る")]
         public void AttachmentsAlsoTrashed()
         {
             var cc = new TestCardCache();
@@ -332,10 +328,10 @@ public class ResourceHelpersTests
         }
     }
 
-    /// <summary>Tests for ResourceHelpers.ChangeRank.</summary>
+    [Trait("対象", "リソースのランク変更")]
     public class ChangeRank
     {
-        [Fact]
+        [Fact(DisplayName = "ランクを medium に上げると最大可用性が 2800 になる")]
         public void UpdatesRankAndMaxAV()
         {
             var cc = new TestCardCache();
@@ -349,7 +345,7 @@ public class ResourceHelpersTests
             resource.MaxAV.Should().Be(2800); // 1400 * 2
         }
 
-        [Fact]
+        [Fact(DisplayName = "非 Elastic の Compute リソースをランク large にするとスループットが 1800 に再計算される")]
         public void NonElasticCompute_RecalculatesTP()
         {
             var cc = new TestCardCache();
@@ -363,7 +359,7 @@ public class ResourceHelpersTests
             resource.CurrentTP.Should().Be(1800);
         }
 
-        [Fact]
+        [Fact(DisplayName = "非 Elastic の Data リソースをランク medium にするとイールドが 800 に再計算される")]
         public void NonElasticData_RecalculatesYield()
         {
             var cc = new TestCardCache();
@@ -377,7 +373,7 @@ public class ResourceHelpersTests
             resource.CurrentYield.Should().Be(800);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Elastic のリソースはランクを上げてもスループットが再計算されない")]
         public void ElasticCard_DoesNotRecalculateTP()
         {
             var cc = new TestCardCache();

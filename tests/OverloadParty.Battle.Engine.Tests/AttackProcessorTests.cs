@@ -31,10 +31,10 @@ public class AttackProcessorTests
             new() { AttackerInstanceID = attackerId, TargetInstanceID = targetId };
     }
 
-    /// <summary>Tests for AttackProcessor.Process — basic attack deals damage.</summary>
+    [Trait("対象", "攻撃のダメージ適用")]
     public class BasicAttack : Base
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドの Compute系リソースで攻撃すると、対象に 600 ダメージを与え攻撃済みになる")]
         public void DealsDamageToDefender()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -53,10 +53,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attack destroys defender with SLA penalty.</summary>
+    [Trait("対象", "破壊時の SLA ペナルティ")]
     public class DestroysDefender : Base
     {
-        [Fact]
+        [Fact(DisplayName = "可用性を超えるダメージで対象を破壊すると、盤面から除去され所有者のバジェットが SLA ペナルティ 400 だけ減る")]
         public void AppliesSlaPenalty()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -85,10 +85,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attacker not on frontend.</summary>
+    [Trait("対象", "フロントエンド以外からの攻撃拒否")]
     public class AttackerNotOnFrontend : Base
     {
-        [Fact]
+        [Fact(DisplayName = "バックエンドのリソースで攻撃しようとすると、GameRuleException になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -106,10 +106,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attacker not compute type.</summary>
+    [Trait("対象", "Compute系以外の攻撃拒否")]
     public class AttackerNotComputeType : Base
     {
-        [Fact]
+        [Fact(DisplayName = "Compute系以外のリソースで攻撃しようとすると、GameRuleException になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -127,10 +127,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attacker already attacked.</summary>
+    [Trait("対象", "攻撃済みリソースの再攻撃拒否")]
     public class AttackerAlreadyAttacked : Base
     {
-        [Fact]
+        [Fact(DisplayName = "既に攻撃済みのリソースで再度攻撃しようとすると、GameRuleException になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -149,10 +149,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — dormant attacker.</summary>
+    [Trait("対象", "休止リソースの攻撃拒否")]
     public class AttackerDormant : Base
     {
-        [Fact]
+        [Fact(DisplayName = "休止状態のリソースで攻撃しようとすると、GameRuleException になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -177,10 +177,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — cannot_attack attacker.</summary>
+    [Trait("対象", "攻撃不可リソースの攻撃拒否")]
     public class AttackerCannotAttack : Base
     {
-        [Fact]
+        [Fact(DisplayName = "攻撃不可状態のリソースで攻撃しようとすると、GameRuleException になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -205,10 +205,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attacker or defender face-down.</summary>
+    [Trait("対象", "裏向きリソースの攻撃拒否")]
     public class FaceDown : Base
     {
-        [Theory]
+        [Theory(DisplayName = "攻撃者か対象のどちらかが裏向きのとき、GameRuleException になる")]
         [InlineData(false, true)]   // attacker face-down
         [InlineData(true, false)]  // defender face-down
         public void Throws(bool atkFaceUp, bool defFaceUp)
@@ -228,10 +228,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — backend target while frontend present.</summary>
+    [Trait("対象", "フロントエンド存在時のバックエンド攻撃拒否")]
     public class BackendTargetWithFrontend : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手にフロントエンドが残っているときバックエンドを攻撃しようとすると、GameRuleException になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -253,10 +253,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — backend target with no frontend.</summary>
+    [Trait("対象", "フロントエンド不在時のバックエンド貫通攻撃")]
     public class BackendTargetNoFrontend : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手のフロントエンドが空のときはバックエンドを直接攻撃でき、600 ダメージを与える")]
         public void Succeeds()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -276,10 +276,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — elastic defender that survives.</summary>
+    [Trait("対象", "被攻撃生存時のエラスティックボーナス")]
     public class ElasticDefender : Base
     {
-        [Fact]
+        [Fact(DisplayName = "エラスティックなフロントエンドのリソースが被攻撃で生存すると、エラスティックボーナスが増える")]
         public void GainsBonus()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -304,7 +304,7 @@ public class AttackProcessorTests
 
         // RULEBOOK §6: 被攻撃生存の Elastic 増分はフロントエンドの Compute / AI/ML 限定。
         // 貫通で攻撃されたバックエンドの Elastic Database は Yield ボーナスを得ない。
-        [Fact]
+        [Fact(DisplayName = "貫通で攻撃されたバックエンドのエラスティックな Data系リソースは、生存してもエラスティックボーナスを得ない")]
         public void BackendElasticDataResource_NoBonusOnSurvive()
         {
             _cc.Add(TestFactory.DataCard(
@@ -327,10 +327,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attack event payload contents.</summary>
+    [Trait("対象", "攻撃イベントの内容")]
     public class AttackEventContent : Base
     {
-        [Fact]
+        [Fact(DisplayName = "攻撃すると、攻撃イベントに攻撃者 ID・対象 ID・ダメージ 600・破壊フラグ false が載る")]
         public void ContainsCorrectData()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -353,10 +353,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — attacker not found on field.</summary>
+    [Trait("対象", "存在しない攻撃者の指定拒否")]
     public class AttackerNotFound : Base
     {
-        [Fact]
+        [Fact(DisplayName = "存在しないインスタンス ID を攻撃者に指定すると、GameRuleException になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -371,10 +371,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — defender not found on field.</summary>
+    [Trait("対象", "存在しない対象の指定拒否")]
     public class DefenderNotFound : Base
     {
-        [Fact]
+        [Fact(DisplayName = "存在しないインスタンス ID を対象に指定すると、GameRuleException になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -389,10 +389,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — non-elastic defender that survives.</summary>
+    [Trait("対象", "非エラスティック防御者の被攻撃生存")]
     public class NonElasticDefender : Base
     {
-        [Fact]
+        [Fact(DisplayName = "非エラスティックなリソースが被攻撃で生存しても、エラスティックボーナスは 0 のままになる")]
         public void NoElasticBonus()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -412,10 +412,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — OnAttack trigger on the attacker.</summary>
+    [Trait("対象", "攻撃時の誘発効果 (OnAttack)")]
     public class OnAttackEffect : Base
     {
-        [Fact]
+        [Fact(DisplayName = "攻撃者の OnAttack 誘発効果が発動し、on_attack_triggered イベントが結果に加わる")]
         public void FiresAndAddsEvents()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -445,10 +445,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — reactive cancels the attack.</summary>
+    [Trait("対象", "リアクティブによる攻撃キャンセル")]
     public class ReactiveCancelsAttack : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手の裏向きリアクティブが攻撃宣言に反応して攻撃をキャンセルすると、対象へのダメージが 0 になりリアクティブがトラッシュへ送られる")]
         public void DamageIsZero()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -494,10 +494,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — OnDestroy trigger when defender destroyed.</summary>
+    [Trait("対象", "対象破壊時の誘発効果 (OnDestroy)")]
     public class OnDestroyEffect : Base
     {
-        [Fact]
+        [Fact(DisplayName = "攻撃で対象が破壊されると、対象の OnDestroy 誘発効果が発動し on_destroy_triggered イベントが加わる")]
         public void FiresWhenDefenderDestroyed()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -527,10 +527,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — allied OnDestroy fires for other resources.</summary>
+    [Trait("対象", "味方リソースの破壊時誘発効果 (OnDestroy)")]
     public class AlliedOnDestroy : Base
     {
-        [Fact]
+        [Fact(DisplayName = "対象が破壊されると、同じ盤面の味方リソースの OnDestroy 誘発効果が発動し allied_on_destroy イベントが加わる")]
         public void FiresForOtherResources()
         {
             // Card 3 = an allied resource with OnDestroy
@@ -569,10 +569,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — elastic defender that is destroyed.</summary>
+    [Trait("対象", "エラスティック防御者の破壊")]
     public class ElasticDefenderDestroyed : Base
     {
-        [Fact]
+        [Fact(DisplayName = "エラスティックな防御者が破壊されると、盤面から除去される")]
         public void NoElasticBonus()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -595,10 +595,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — slaPenalty=0 when defender survives.</summary>
+    [Trait("対象", "生存時の SLA ペナルティ")]
     public class NotDestroyed : Base
     {
-        [Fact]
+        [Fact(DisplayName = "対象が破壊されずに生存すると、攻撃イベントの SLA ペナルティが 0 になる")]
         public void SlaPenaltyZero()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -618,10 +618,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — no effects registry means no reactive cancel.</summary>
+    [Trait("対象", "リアクティブ未登録時の通常攻撃")]
     public class NullEffects : Base
     {
-        [Fact]
+        [Fact(DisplayName = "リアクティブが登録されていないと、裏向きサポートがあっても攻撃はキャンセルされず 600 ダメージを与える")]
         public void NoReactiveTriggered()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -649,10 +649,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>Tests for AttackProcessor.Process — player 2 attacks player 1.</summary>
+    [Trait("対象", "プレイヤー 2 の攻撃")]
     public class Player2Attacks : Base
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 が攻撃すると、プレイヤー 1 の対象に 600 ダメージを与え攻撃イベントの手番が 2 になる")]
         public void DealsDamageToPlayer1()
         {
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, activePlayer: 2);
@@ -689,10 +689,10 @@ public class AttackProcessorTests
     private static AttackRequest Atk(string attacker, string target) =>
         new() { AttackerInstanceID = attacker, TargetInstanceID = target };
 
-    /// <summary>攻撃者が最後に攻撃したターンを記録することを検証する。</summary>
+    [Trait("対象", "攻撃者の最終攻撃ターン記録")]
     public class AttackerState
     {
-        [Fact]
+        [Fact(DisplayName = "ターン 5 に攻撃すると、攻撃者の最終攻撃ターンが 5 に記録される")]
         public void RecordsLastAttackTurn()
         {
             var cc = StandardCc();
@@ -707,10 +707,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>attack_damage_reduction バフが適用 ダメージ を軽減することを検証する。</summary>
+    [Trait("対象", "被ダメージ軽減バフ")]
     public class DamageReduction
     {
-        [Theory]
+        [Theory(DisplayName = "被ダメージ軽減バフの値だけ 600 のダメージが減り、0 未満にはならず 0 で下げ止まる")]
         [InlineData(200, 400)]
         [InlineData(600, 0)]
         [InlineData(800, 0)]
@@ -733,10 +733,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>攻撃を受けた防御者の OnHit 誘発効果が発動することを検証する。</summary>
+    [Trait("対象", "被攻撃時の誘発効果 (OnHit)")]
     public class OnHitEffect
     {
-        [Fact]
+        [Fact(DisplayName = "攻撃を受けた対象の OnHit 誘発効果が発動し、on_hit_triggered イベントが加わる")]
         public void FiresOnDefenderWhenAttacked()
         {
             var cc = StandardCc();
@@ -762,10 +762,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>破壊で盤面が変化した後に OnFieldChange が発動することを検証する。</summary>
+    [Trait("対象", "盤面変化時の誘発効果 (OnFieldChange)")]
     public class OnFieldChangeAfterDestroy
     {
-        [Fact]
+        [Fact(DisplayName = "攻撃で対象が破壊され盤面が変化すると、OnFieldChange 誘発効果が 1 回発動する")]
         public void FiresAfterDefenderDestroyed()
         {
             var cc = StandardCc();
@@ -785,10 +785,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>target_shield で保護された防御者を攻撃できないことを検証する。</summary>
+    [Trait("対象", "target_shield で保護された対象の攻撃拒否")]
     public class TargetShieldProtection
     {
-        [Fact]
+        [Fact(DisplayName = "target_shield で保護された対象を攻撃しようとすると、GameRuleException になる")]
         public void Process_ShieldedDefender_Throws()
         {
             var cc = StandardCc();
@@ -815,10 +815,10 @@ public class AttackProcessorTests
         }
     }
 
-    /// <summary>装備先リソースが破壊されると、そのアタッチメントも破壊されトラッシュへ送られることを検証する。</summary>
+    [Trait("対象", "装備先破壊時のアタッチメント破壊")]
     public class AttachmentDestroyedWithHost
     {
-        [Fact]
+        [Fact(DisplayName = "装備先のリソースが破壊されると、そのアタッチメントも破壊されトラッシュへ送られる")]
         public void DestroyingHost_AlsoDestroysItsAttachment()
         {
             var cc = StandardCc();

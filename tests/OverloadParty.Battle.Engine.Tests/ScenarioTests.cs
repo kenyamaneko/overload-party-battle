@@ -11,7 +11,7 @@ namespace OverloadParty.Battle.Tests.Engine;
 /// </summary>
 public class ScenarioTests
 {
-    /// <summary>デプロイターン 2 のリソースが、所有者の 2 回目のドローフェーズで稼働することを検証する。</summary>
+    [Trait("対象", "デプロイターンの経過と稼働")]
     public class TwoTurnDeploy
     {
         private readonly FakeGameRepository _repo = new();
@@ -29,7 +29,7 @@ public class ScenarioTests
             _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]));
         }
 
-        [Fact]
+        [Fact(DisplayName = "デプロイターン 2 のリソースは所有者の 2 回目のドローフェーズで表向きになり、デプロイ時効果が発動する")]
         public async Task BecomesOperational_AfterOwnersSecondDrawPhase()
         {
             var gameID = await _engine.CreateNewGame(

@@ -67,11 +67,11 @@ public class PgGameRepositoryTests
         }
     }
 
-    /// <summary>Tests for CreateGame persisting a game that GetGame can read back.</summary>
     [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
     public class CreateGameAndGetGame(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact]
+        [Fact(DisplayName = "CreateGame で保存したゲームを GetGame で読み戻せる")]
         public async Task CreateGame_and_GetGame_roundtrip()
         {
             var repo = CreateRepo();
@@ -88,7 +88,7 @@ public class PgGameRepositoryTests
             got.FinishedAt.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "NPC モデル付きゲームを保存すると game_npcs 結合から NPC モデルが復元される")]
         public async Task CreateGame_with_npc_restores_npc_model_via_game_npcs_join()
         {
             var repo = CreateRepo();
@@ -103,7 +103,7 @@ public class PgGameRepositoryTests
             got.Npc2Model.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しないゲーム ID を GetGame すると null を返す")]
         public async Task GetGame_returns_null_when_not_found()
         {
             var repo = CreateRepo();
@@ -113,11 +113,11 @@ public class PgGameRepositoryTests
         }
     }
 
-    /// <summary>Tests for GetGameState reading back the persisted battle state.</summary>
     [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
     public class GetGameState(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact]
+        [Fact(DisplayName = "CreateGame で保存したゲーム状態を GetGameState で読み戻せる")]
         public async Task GetGameState_roundtrip()
         {
             var repo = CreateRepo();
@@ -139,7 +139,7 @@ public class PgGameRepositoryTests
             got.NextInstanceSeq.Should().Be(1);
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しないゲーム ID を GetGameState すると null を返す")]
         public async Task GetGameState_returns_null_when_not_found()
         {
             var repo = CreateRepo();
@@ -149,11 +149,11 @@ public class PgGameRepositoryTests
         }
     }
 
-    /// <summary>Tests for UpdateGameState mutating, versioning, and round-tripping engine progress.</summary>
     [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
     public class UpdateGameState(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact]
+        [Fact(DisplayName = "UpdateGameState で状態を書き換えるとバージョンが加算され変更が保存される")]
         public async Task UpdateGameState_modifies_state_and_increments_version()
         {
             var repo = CreateRepo();
@@ -179,7 +179,7 @@ public class PgGameRepositoryTests
             got.Player2Budget.Should().Be(4800);
         }
 
-        [Fact]
+        [Fact(DisplayName = "存在しないゲームを UpdateGameState すると InvalidOperationException を投げる")]
         public async Task UpdateGameState_throws_when_game_not_found()
         {
             var repo = CreateRepo();
@@ -188,10 +188,7 @@ public class PgGameRepositoryTests
             await act.Should().ThrowAsync<InvalidOperationException>();
         }
 
-        /// <summary>
-        /// ターン進行・選択待ちなどエンジンが書き換える進行状態が、リロード後も保持されることを検証する。
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "UpdateGameState で書き換えたエンジン進行状態がリロード後も保持される")]
         public async Task UpdateGameState_engine_progress_fields_roundtrip()
         {
             var repo = CreateRepo();
@@ -250,10 +247,7 @@ public class PgGameRepositoryTests
             got.PendingEffectChoice.Candidates.Should().Equal("inst_1", "inst_2");
         }
 
-        /// <summary>
-        /// 選択待ちが解消されたとき、null / 空に戻した状態が保存されることを検証する。
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "UpdateGameState で選択待ちを null・空に戻すとその状態が保存される")]
         public async Task UpdateGameState_clears_pending_choice_state()
         {
             var repo = CreateRepo();
@@ -284,15 +278,11 @@ public class PgGameRepositoryTests
         }
     }
 
-    /// <summary>Tests for event persistence and sequence-number assignment via UpdateGameState.</summary>
     [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
     public class EventPersistence(PgTestFixture fixture) : Base(fixture)
     {
-        /// <summary>
-        /// fn が返したイベントが state 更新と同一トランザクションで保存され、
-        /// sequence_number が DB 採番されてイベントへ書き戻されることを検証する。
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "UpdateGameState が返したイベントを保存し sequence_number を採番して各イベントへ書き戻す")]
         public async Task UpdateGameState_persists_events_and_assigns_sequence_numbers()
         {
             var repo = CreateRepo();
@@ -339,10 +329,7 @@ public class PgGameRepositoryTests
                 .Which.Turn.Should().Be(1);
         }
 
-        /// <summary>
-        /// 複数回の UpdateGameState をまたいで sequence_number が連番で継続することを検証する。
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "複数回の UpdateGameState をまたいで sequence_number が連番で継続する")]
         public async Task UpdateGameState_continues_sequence_numbers_across_calls()
         {
             var repo = CreateRepo();
@@ -378,11 +365,11 @@ public class PgGameRepositoryTests
         }
     }
 
-    /// <summary>Tests for FinishGame recording status, winner, and reason.</summary>
     [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
     public class FinishGame(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact]
+        [Fact(DisplayName = "FinishGame でステータスが Finished になり勝者・勝因が記録される")]
         public async Task FinishGame_updates_status_and_winner()
         {
             var repo = CreateRepo();
@@ -399,11 +386,11 @@ public class PgGameRepositoryTests
         }
     }
 
-    /// <summary>Tests for field resources round-tripping through JSONB persistence.</summary>
     [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
     public class JsonbFieldRoundtrip(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact]
+        [Fact(DisplayName = "フィールドに配置したリソースが JSONB 永続化を経て読み戻される")]
         public async Task GameState_with_field_resources_roundtrips_through_JSONB()
         {
             var repo = CreateRepo();

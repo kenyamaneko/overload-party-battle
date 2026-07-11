@@ -34,10 +34,10 @@ public class UseLimitTests
         }
     }
 
-    /// <summary>Tests for the per-turn use-limit check rejecting a second use this turn.</summary>
+    [Trait("対象", "1 ターン 1 回の使用制限チェック")]
     public class CheckUseLimitPerTurn : Base
     {
-        [Fact]
+        [Fact(DisplayName = "このターン既に使用済みのリソースを再使用しようとすると例外になる")]
         public void CheckUseLimitOp_Throws_WhenEffectAlreadyUsedThisTurn()
         {
             var state = TestFactory.MakeGameState();
@@ -52,7 +52,7 @@ public class UseLimitTests
             act.Should().Throw<GameRuleException>().WithMessage("*turn*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "このターンまだ使用していないリソースは使用できる")]
         public void CheckUseLimitOp_Passes_WhenEffectNotYetUsed()
         {
             var state = TestFactory.MakeGameState();
@@ -67,7 +67,7 @@ public class UseLimitTests
             act.Should().NotThrow();
         }
 
-        [Fact]
+        [Fact(DisplayName = "このターン既に使用済みのサポートカードを再使用しようとすると例外になる")]
         public void CheckUseLimitOp_Throws_WhenSupSourceUsedThisTurn()
         {
             var state = TestFactory.MakeGameState();
@@ -88,10 +88,10 @@ public class UseLimitTests
         }
     }
 
-    /// <summary>Tests for the per-turn use-limit mark setting the used-this-turn flag.</summary>
+    [Trait("対象", "1 ターン 1 回の使用制限マーク")]
     public class MarkUseLimitPerTurn : Base
     {
-        [Fact]
+        [Fact(DisplayName = "リソースを使用済みにマークするとこのターンの使用済みフラグが立つ")]
         public void MarkUseLimitOp_SetsEffectUsedFlag()
         {
             var state = TestFactory.MakeGameState();
@@ -106,7 +106,7 @@ public class UseLimitTests
             source.EffectUsedThisTurn.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "サポートカードを使用済みにマークするとこのターンの使用済みフラグが立つ")]
         public void MarkUseLimitOp_SetsSupSourceFlag()
         {
             var state = TestFactory.MakeGameState();
@@ -127,10 +127,10 @@ public class UseLimitTests
         }
     }
 
-    /// <summary>Tests for the per-game use-limit check rejecting a second use this game.</summary>
+    [Trait("対象", "1 ゲーム 1 回の使用制限チェック")]
     public class CheckUseLimitPerGame : Base
     {
-        [Fact]
+        [Fact(DisplayName = "このゲームで既に使用済みのリソースを再使用しようとすると例外になる")]
         public void CheckUseLimitOp_PerGame_Throws_WhenAlreadyUsed()
         {
             var state = TestFactory.MakeGameState();
@@ -145,7 +145,7 @@ public class UseLimitTests
             act.Should().Throw<GameRuleException>().WithMessage("*game*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "このゲームでまだ使用していないリソースは使用できる")]
         public void CheckUseLimitOp_PerGame_Passes_WhenNotYetUsed()
         {
             var state = TestFactory.MakeGameState();
@@ -161,10 +161,10 @@ public class UseLimitTests
         }
     }
 
-    /// <summary>Tests for the per-game use-limit mark setting the used-this-game flag.</summary>
+    [Trait("対象", "1 ゲーム 1 回の使用制限マーク")]
     public class MarkUseLimitPerGame : Base
     {
-        [Fact]
+        [Fact(DisplayName = "リソースを使用済みにマークするとこのゲームの使用済みフラグが立つ")]
         public void MarkUseLimitOp_PerGame_SetsGameFlag()
         {
             var state = TestFactory.MakeGameState();
@@ -179,7 +179,7 @@ public class UseLimitTests
             source.EffectUsedThisGame.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "サポートカードを使用済みにマークするとこのゲームの使用済みフラグが立つ")]
         public void MarkUseLimitOp_PerGame_SetsSupSourceGameFlag()
         {
             var state = TestFactory.MakeGameState();

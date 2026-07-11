@@ -31,10 +31,10 @@ public class MonetizeProcessorTests
             new() { InstanceID = instanceId, Amount = amount };
     }
 
-    /// <summary>Tests for rejecting monetize on a dormant resource.</summary>
+    [Trait("対象", "休止リソースの収益化")]
     public class DormantResource : Base
     {
-        [Fact]
+        [Fact(DisplayName = "休止中のリソースを収益化しようとすると拒否される")]
         public void Process_DormantResource_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -50,10 +50,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for a basic monetize transferring insight to budget.</summary>
+    [Trait("対象", "収益化")]
     public class BasicMonetize : Base
     {
-        [Fact]
+        [Fact(DisplayName = "インサイト 300 を収益化するとプールが 200 に減りバジェットが 5300 になる")]
         public void Process_BasicMonetize_TransfersInsightToBudget()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -70,10 +70,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for rejecting monetize on the first turn.</summary>
+    [Trait("対象", "初回ターンの収益化制限")]
     public class FirstTurn : Base
     {
-        [Fact]
+        [Fact(DisplayName = "初回ターンに収益化しようとすると拒否される")]
         public void Process_FirstTurn_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 1);
@@ -87,10 +87,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for rejecting a request with no distributions.</summary>
+    [Trait("対象", "配分なしの収益化")]
     public class EmptyDistributions : Base
     {
-        [Fact]
+        [Fact(DisplayName = "配分が空の収益化リクエストは拒否される")]
         public void Process_EmptyDistributions_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -103,10 +103,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for rejecting monetize on a frontend compute.</summary>
+    [Trait("対象", "フロントエンドコンピュートの収益化")]
     public class FrontendCompute : Base
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドのコンピュート系リソースを収益化しようとすると拒否される")]
         public void Process_FrontendCompute_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -121,10 +121,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for rejecting monetize on a non-compute resource.</summary>
+    [Trait("対象", "非コンピュートリソースの収益化")]
     public class NonComputeType : Base
     {
-        [Fact]
+        [Fact(DisplayName = "コンピュート系でないリソースを収益化しようとすると拒否される")]
         public void Process_NonComputeType_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -139,10 +139,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for rejecting a request that exceeds the insight pool.</summary>
+    [Trait("対象", "インサイトプールを超える収益化")]
     public class ExceedsInsightPool : Base
     {
-        [Fact]
+        [Fact(DisplayName = "インサイトプールを超える量を収益化しようとすると拒否される")]
         public void Process_ExceedsInsightPool_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -157,10 +157,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for rejecting a request that exceeds a resource's throughput capacity.</summary>
+    [Trait("対象", "スループット上限を超える収益化")]
     public class ExceedsThroughputCapacity : Base
     {
-        [Fact]
+        [Fact(DisplayName = "スループット上限 600 を超える 700 を収益化しようとすると拒否される")]
         public void Process_ExceedsThroughputCapacity_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -176,10 +176,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for rejecting a negative monetize amount.</summary>
+    [Trait("対象", "負の量の収益化")]
     public class NegativeAmount : Base
     {
-        [Fact]
+        [Fact(DisplayName = "負の量を収益化しようとすると拒否される")]
         public void Process_NegativeAmount_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -194,10 +194,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Tests for applying all distributions in a multi-resource request.</summary>
+    [Trait("対象", "複数リソースへの収益化配分")]
     public class MultipleDistributions : Base
     {
-        [Fact]
+        [Fact(DisplayName = "複数リソースへ 300 と 200 を配分すると両方に適用されバジェットが 5500 になる")]
         public void Process_MultipleDistributions_AllApplied()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -240,10 +240,10 @@ public class MonetizeProcessorTests
     /// <returns>収益化配分。</returns>
     private static MonetizeDistribution Dist(string id, long amount) => new() { InstanceID = id, Amount = amount };
 
-    /// <summary>収益化イベントが配分した インサイト 合計を載せることを検証する。</summary>
+    [Trait("対象", "収益化イベント")]
     public class MonetizeEvent
     {
-        [Fact]
+        [Fact(DisplayName = "収益化イベントに配分したインサイト合計 450 が載る")]
         public void Process_EventIncludesTotalAmount()
         {
             var cc = ComputeCc();
@@ -261,10 +261,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>Elastic リソースの収益化で エラスティックボーナス が加算されることを検証する。</summary>
+    [Trait("対象", "Elastic リソースの収益化")]
     public class ElasticMonetize
     {
-        [Fact]
+        [Fact(DisplayName = "Elastic リソースを収益化するとエラスティックボーナスが加算される")]
         public void Process_AppliesElasticBonus()
         {
             var cc = new TestCardCache();
@@ -280,10 +280,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    /// <summary>インサイト が 0 のときに収益化しようとすると拒否されることを検証する。</summary>
+    [Trait("対象", "インサイト 0 での収益化")]
     public class ZeroInsight
     {
-        [Fact]
+        [Fact(DisplayName = "インサイトプールが 0 のとき収益化しようとすると拒否される")]
         public void Process_ZeroInsightPool_Throws()
         {
             var cc = ComputeCc();

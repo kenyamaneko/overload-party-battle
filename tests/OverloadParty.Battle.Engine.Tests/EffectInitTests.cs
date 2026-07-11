@@ -5,9 +5,6 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Effects;
 
-/// <summary>
-/// Tests that the EffectRegistry is populated with all expected card effect handlers.
-/// </summary>
 public class EffectRegistrationTests
 {
     /// <summary>Shared setup for effect-registration tests (a populated registry, card cache, and game).</summary>
@@ -59,10 +56,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that the registry is populated with many handlers at startup.</summary>
+    [Trait("対象", "レジストリの登録件数")]
     public class RegistrationCount : Base
     {
-        [Fact]
+        [Fact(DisplayName = "起動時にレジストリへ 40 件を超えるハンドラが登録される")]
         public void PopulatesRegistry_WithManyHandlers()
         {
             _registry.RegistrationCount.Should().BeGreaterThan(40,
@@ -70,12 +67,12 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that SHE faction cards are registered.</summary>
+    [Trait("対象", "SHE 陣営カードの登録")]
     public class SheFactionRegistration : Base
     {
         // 各 TriggerType 種別の代表 1 件のみを残す (load の動線確認が目的、
         // カード固有挙動は別途 Card{NN}_* / SH{NN}_* Fact で検証)
-        [Theory]
+        [Theory(DisplayName = "SHE 陣営のカードが指定トリガーのハンドラを登録済みである")]
         [InlineData("SH-0006", TriggerType.OnDeploy)]
         [InlineData("SH-0008", TriggerType.OnDestroy)]
         [InlineData("SH-0009", TriggerType.Ignition)]
@@ -90,10 +87,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that Tenki faction cards are registered.</summary>
+    [Trait("対象", "天気使い 陣営カードの登録")]
     public class TenkiFactionRegistration : Base
     {
-        [Theory]
+        [Theory(DisplayName = "天気使い 陣営のカードが指定トリガーのハンドラを登録済みである")]
         [InlineData("TK-0008", TriggerType.OnDestroy)]
         [InlineData("TK-0010", TriggerType.OnDeploy)]
         [InlineData("TK-0014", TriggerType.OnIncident)]
@@ -107,10 +104,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that Sugar faction cards are registered.</summary>
+    [Trait("対象", "しゅがーらぼ 陣営カードの登録")]
     public class SugarFactionRegistration : Base
     {
-        [Theory]
+        [Theory(DisplayName = "しゅがーらぼ 陣営のカードが指定トリガーのハンドラを登録済みである")]
         [InlineData("SL-0004", TriggerType.OnDeploy)]
         [InlineData("SL-0006", TriggerType.OnAttack)]
         [InlineData("SL-0007", TriggerType.OnDestroy)]
@@ -125,10 +122,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that Tuners faction cards are registered.</summary>
+    [Trait("対象", "調律部 陣営カードの登録")]
     public class TunersFactionRegistration : Base
     {
-        [Theory]
+        [Theory(DisplayName = "調律部 陣営のカードが指定トリガーのハンドラを登録済みである")]
         [InlineData("TN-0002", TriggerType.OnAttack)]
         [InlineData("TN-0013", TriggerType.OnIncident)]
         [InlineData("TN-0014", TriggerType.OnDestroy)]
@@ -142,10 +139,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that neutral cards are registered.</summary>
+    [Trait("対象", "ニュートラルカードの登録")]
     public class NeutralCardRegistration : Base
     {
-        [Theory]
+        [Theory(DisplayName = "ニュートラルカードが指定トリガーのハンドラを登録済みである")]
         [InlineData("NT-0007", TriggerType.Ignition)]
         [InlineData("NT-0002", TriggerType.OnHit)]
         [InlineData("NT-0005", TriggerType.OnDeploy)]
@@ -158,10 +155,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that incident cards are registered.</summary>
+    [Trait("対象", "インシデントカードの登録")]
     public class IncidentCardRegistration : Base
     {
-        [Theory]
+        [Theory(DisplayName = "インシデントカードが指定トリガーのハンドラを登録済みである")]
         [InlineData("NT-0013", TriggerType.Ignition)]
         [InlineData("NT-0022", TriggerType.OnDeploy)]
         public void Cards_AreRegistered(string cardId, TriggerType trigger)
@@ -172,10 +169,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that reactive cards are registered.</summary>
+    [Trait("対象", "リアクティブカードの登録")]
     public class ReactiveCardRegistration : Base
     {
-        [Theory]
+        [Theory(DisplayName = "リアクティブカードが指定トリガーのハンドラを登録済みである")]
         [InlineData("NT-0023", TriggerType.OnDestroy)]
         [InlineData("NT-0024", TriggerType.OnAttackDeclared)]
         public void Cards_AreRegistered(string cardId, TriggerType trigger)
@@ -186,10 +183,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that lookups for unregistered cards return null.</summary>
+    [Trait("対象", "未登録カードの照会")]
     public class UnregisteredCardLookup : Base
     {
-        [Fact]
+        [Fact(DisplayName = "未登録カードを照会すると Get は null、Has は false を返す")]
         public void ReturnsNull()
         {
             _registry.Get("TEST-9999", TriggerType.Ignition).Should().BeNull();
@@ -197,10 +194,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that choice-based cards expose their expected branch options.</summary>
+    [Trait("対象", "分岐選択肢の公開")]
     public class ChoiceBranchOptions : Base
     {
-        [Theory]
+        [Theory(DisplayName = "分岐を持つカードが期待どおりの分岐選択肢キーを返す")]
         [InlineData("SH-0006", TriggerType.OnDeploy, new[] { "use", "skip" })]
         [InlineData("SH-0010", TriggerType.OnDeploy, new[] { "memcached", "redis" })]
         [InlineData("SL-0012", TriggerType.OnDeploy, new[] { "memcached", "redis" })]
@@ -213,10 +210,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that budget requirements are extracted from card definitions.</summary>
+    [Trait("対象", "バジェット要件の抽出")]
     public class BudgetRequirementExtraction : Base
     {
-        [Fact]
+        [Fact(DisplayName = "SH-0009 の起動効果からバジェット下限 400 が抽出される")]
         public void Card10_RequiresBudget400()
         {
             var req = _registry.GetBudgetRequirement("SH-0009", TriggerType.Ignition);
@@ -224,7 +221,7 @@ public class EffectRegistrationTests
             req!.MinBudget.Should().Be(400);
         }
 
-        [Fact]
+        [Fact(DisplayName = "NT-0026 の起動効果からバジェット上限 1000 が抽出される")]
         public void Card120_RequiresMaxBudget1000()
         {
             var req = _registry.GetBudgetRequirement("NT-0026", TriggerType.Ignition);
@@ -232,7 +229,7 @@ public class EffectRegistrationTests
             req!.MaxBudget.Should().Be(1000);
         }
 
-        [Fact]
+        [Fact(DisplayName = "NT-0007 の起動効果にはバジェット要件がなく null が返る")]
         public void Card98_HasNoBudgetRequirement()
         {
             var req = _registry.GetBudgetRequirement("NT-0007", TriggerType.Ignition);
@@ -240,10 +237,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that effect info / classification is exposed for cards.</summary>
+    [Trait("対象", "効果情報の公開")]
     public class EffectInfoClassification : Base
     {
-        [Theory]
+        [Theory(DisplayName = "起動効果の効果情報が期待どおりの効果カテゴリを持つ")]
         [InlineData("NT-0013", EffectCategory.SingleDamage)]
         [InlineData("NT-0010", EffectCategory.BudgetGain)]
         public void EffectInfo_HasExpectedCategory(string cardId, EffectCategory expected)
@@ -255,10 +252,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests the runtime behavior of budget-granting and budget-guarded effects.</summary>
+    [Trait("対象", "バジェット効果の実行")]
     public class BudgetEffectBehavior : Base
     {
-        [Fact]
+        [Fact(DisplayName = "NT-0010 の起動効果を実行するとバジェットが 400 増える")]
         public void NT0010_Ignite_GainsBudget400()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000);
@@ -268,7 +265,7 @@ public class EffectRegistrationTests
             state.Player1Budget.Should().Be(1400, "NT-0010 grants +400 budget");
         }
 
-        [Fact]
+        [Fact(DisplayName = "NT-0026 はバジェットが 1000 を超えると発動条件を満たさず、バジェットが変わらない")]
         public void NT0026_Ignite_FailsIfBudgetOver1000()
         {
             var state = TestFactory.MakeGameState(p1Budget: 2000);
@@ -279,7 +276,7 @@ public class EffectRegistrationTests
             state.Player1Budget.Should().Be(2000, "budget should not change when guard fails");
         }
 
-        [Fact]
+        [Fact(DisplayName = "SH-0019 はフィールドの SHE カードが 3 体未満だと発動条件を満たさず、バジェットが変わらない")]
         public void SH0019_Ignite_FailsIfFewerThan3SHE()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000);
@@ -294,10 +291,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests the runtime behavior of choice-based effects.</summary>
+    [Trait("対象", "選択効果の実行")]
     public class ChoiceEffectBehavior : Base
     {
-        [Fact]
+        [Fact(DisplayName = "SH-0010 のデプロイ時効果で memcached を選択するとバジェットが 400 増える")]
         public void SH0010_Deploy_MemcachedChoice_GainsBudget400()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000);
@@ -322,45 +319,45 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests that CardIdsForTrigger returns the cards registered for each trigger.</summary>
+    [Trait("対象", "トリガー別カード ID の照会")]
     public class CardIdsForTriggerLookup : Base
     {
-        [Fact]
+        [Fact(DisplayName = "OnAttackDeclared トリガーのカード一覧に登録済みカードが含まれる")]
         public void OnAttackDeclared_ContainsExpectedCards()
         {
             var cards = _registry.CardIdsForTrigger(TriggerType.OnAttackDeclared);
             cards.Should().Contain(new string[] { "SL-0024", "NT-0024", "NT-0027", "NT-0028" });
         }
 
-        [Fact]
+        [Fact(DisplayName = "OnIncident トリガーのカード一覧に登録済みカードが含まれる")]
         public void OnIncident_ContainsExpectedCards()
         {
             var cards = _registry.CardIdsForTrigger(TriggerType.OnIncident);
             cards.Should().Contain(new string[] { "SH-0014", "SH-0017", "TK-0014", "TK-0017", "TK-0023", "TN-0013" });
         }
 
-        [Fact]
+        [Fact(DisplayName = "OnDestroy トリガーのカード一覧にリアクティブカードが含まれる")]
         public void OnDestroy_ContainsExpectedReactiveCards()
         {
             var cards = _registry.CardIdsForTrigger(TriggerType.OnDestroy);
             cards.Should().Contain(new string[] { "TK-0024", "TN-0018", "NT-0023" });
         }
 
-        [Fact]
+        [Fact(DisplayName = "OnDamaged トリガーのカード一覧に SH-0021 が含まれる")]
         public void OnDamaged_ContainsExpectedCards()
         {
             var cards = _registry.CardIdsForTrigger(TriggerType.OnDamaged);
             cards.Should().Contain("SH-0021");
         }
 
-        [Fact]
+        [Fact(DisplayName = "OnAttack トリガーのカード一覧に登録済みカードが含まれる")]
         public void OnAttack_ContainsExpectedCards()
         {
             var onAttackCards = _registry.CardIdsForTrigger(TriggerType.OnAttack);
             onAttackCards.Should().Contain(new string[] { "SL-0006", "SL-0007", "SL-0011", "SL-0018", "TN-0002" });
         }
 
-        [Fact]
+        [Fact(DisplayName = "OnEndPhase トリガーのカード一覧に SL-0016 が含まれる")]
         public void OnEndPhase_ContainsCard61()
         {
             var endPhaseCards = _registry.CardIdsForTrigger(TriggerType.OnEndPhase);
@@ -368,10 +365,10 @@ public class EffectRegistrationTests
         }
     }
 
-    /// <summary>Tests TK-0025's peek_reactive plus incident_reduction (while_on_field) behavior.</summary>
+    [Trait("対象", "TK-0025 のリアクティブのぞき見とインシデント軽減")]
     public class Tk0025PeekAndIncidentReduction : Base
     {
-        [Fact]
+        [Fact(DisplayName = "TK-0025 のデプロイ時効果は相手の裏向きリアクティブを裏向きのままのぞき見し、自分のリソースに incident_reduction を付与する")]
         public void Deploy_PeeksHiddenReactive_AndAppliesIncidentReduction()
         {
             var state = TestFactory.MakeGameState(p1Budget: 3000);
@@ -412,7 +409,7 @@ public class EffectRegistrationTests
                 && e.Duration == "while_on_field");
         }
 
-        [Fact]
+        [Fact(DisplayName = "incident_reduction を持つリソースはインシデントの 500 ダメージが 300 軽減され 200 になる")]
         public void IncidentReduction_ReducesDamageBy300()
         {
             var state = TestFactory.MakeGameState(p1Budget: 3000);

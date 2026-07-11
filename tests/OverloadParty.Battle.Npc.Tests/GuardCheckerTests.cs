@@ -31,10 +31,10 @@ public class GuardCheckerTests
         }
     }
 
-    /// <summary>Tests for Check treating a null condition as satisfied.</summary>
+    [Trait("対象", "条件未指定の判定")]
     public class NullCondition : Base
     {
-        [Fact]
+        [Fact(DisplayName = "条件が null のとき、満たしているとみなす")]
         public void Check_NullCondition_ReturnsTrue()
         {
             var ctx = MakeCtx();
@@ -42,10 +42,10 @@ public class GuardCheckerTests
         }
     }
 
-    /// <summary>Tests for Check evaluating stat-based conditions.</summary>
+    [Trait("対象", "ステータス条件の判定")]
     public class StatConditions : Base
     {
-        [Fact]
+        [Fact(DisplayName = "バジェットが 2000 で min 1500 のとき、満たす")]
         public void Check_BudgetMin_Met()
         {
             var ctx = MakeCtx(budget: 2000);
@@ -54,7 +54,7 @@ public class GuardCheckerTests
             GuardChecker.Check(cond, ctx, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "バジェットが 1000 で min 1500 のとき、満たさない")]
         public void Check_BudgetMin_NotMet()
         {
             var ctx = MakeCtx(budget: 1000);
@@ -63,7 +63,7 @@ public class GuardCheckerTests
             GuardChecker.Check(cond, ctx, _cc).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "バジェットが 1000 で max 1500 のとき、満たす")]
         public void Check_BudgetMax_Met()
         {
             var ctx = MakeCtx(budget: 1000);
@@ -72,7 +72,7 @@ public class GuardCheckerTests
             GuardChecker.Check(cond, ctx, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "バジェットが 2000 で max 1500 のとき、満たさない")]
         public void Check_BudgetMax_NotMet()
         {
             var ctx = MakeCtx(budget: 2000);
@@ -81,7 +81,7 @@ public class GuardCheckerTests
             GuardChecker.Check(cond, ctx, _cc).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "damage 条件は自分の全リソースのダメージを合計して判定する")]
         public void Check_DamageStat_CountsAllOwnDamage()
         {
             var field = TestFactory.MakeWireField();
@@ -97,10 +97,10 @@ public class GuardCheckerTests
         }
     }
 
-    /// <summary>Tests for Check evaluating resource-count conditions.</summary>
+    [Trait("対象", "リソース数条件の判定")]
     public class CountConditions : Base
     {
-        [Fact]
+        [Fact(DisplayName = "自分のリソース数が min 以上のとき満たし、未満のとき満たさない")]
         public void Check_CountSelf_Min()
         {
             var field = TestFactory.MakeWireField();
@@ -115,7 +115,7 @@ public class GuardCheckerTests
             GuardChecker.Check(condHigh, ctx, _cc).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のリソース数が min 以上のとき、満たす")]
         public void Check_CountOpponent_Min()
         {
             var oppField = TestFactory.MakeWireOpponentField();
@@ -126,7 +126,7 @@ public class GuardCheckerTests
             GuardChecker.Check(cond, ctx, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "backend ゾーンのリソース数で判定する")]
         public void Check_CountWithZone_Backend()
         {
             var field = TestFactory.MakeWireField();
@@ -143,7 +143,7 @@ public class GuardCheckerTests
             GuardChecker.Check(cond, ctx, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "指定した faction のリソース数で判定する")]
         public void Check_CountWithFaction()
         {
             var field = TestFactory.MakeWireField();
@@ -166,7 +166,7 @@ public class GuardCheckerTests
             GuardChecker.Check(condThree, ctx, _cc).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "指定した card_id のリソース数で判定する")]
         public void Check_CountWithCardId()
         {
             var field = TestFactory.MakeWireField();
@@ -183,10 +183,10 @@ public class GuardCheckerTests
         }
     }
 
-    /// <summary>Tests for CheckAll requiring every condition to hold.</summary>
+    [Trait("対象", "全条件の判定")]
     public class CheckAll : Base
     {
-        [Fact]
+        [Fact(DisplayName = "条件が null または空のとき、満たしているとみなす")]
         public void CheckAll_NullOrEmpty_ReturnsTrue()
         {
             var ctx = MakeCtx();
@@ -194,7 +194,7 @@ public class GuardCheckerTests
             GuardChecker.CheckAll([], ctx, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "全ての条件を満たすとき、true を返す")]
         public void CheckAll_AllMet_ReturnsTrue()
         {
             var ctx = MakeCtx(budget: 2000);
@@ -207,7 +207,7 @@ public class GuardCheckerTests
             GuardChecker.CheckAll(conds, ctx, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "一つでも条件を満たさないとき、false を返す")]
         public void CheckAll_OneFails_ReturnsFalse()
         {
             var ctx = MakeCtx(budget: 2000);
@@ -221,10 +221,10 @@ public class GuardCheckerTests
         }
     }
 
-    /// <summary>Tests for CheckPhaseCondition combining turn and count gates.</summary>
+    [Trait("対象", "フェーズ条件の判定")]
     public class PhaseConditionCheck : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ターンが 7 で turn_min 6 のとき、満たす")]
         public void CheckPhaseCondition_TurnMin_Met()
         {
             var ctx = MakeCtx(turn: 7);
@@ -233,7 +233,7 @@ public class GuardCheckerTests
             GuardChecker.CheckPhaseCondition(cond, ctx, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "ターンが 3 で turn_min 6 のとき、満たさない")]
         public void CheckPhaseCondition_TurnMin_NotMet()
         {
             var ctx = MakeCtx(turn: 3);
@@ -242,7 +242,7 @@ public class GuardCheckerTests
             GuardChecker.CheckPhaseCondition(cond, ctx, _cc).Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "turn_min と count の両方を満たすとき、満たす")]
         public void CheckPhaseCondition_TurnMinAndCount_BothMet()
         {
             var field = TestFactory.MakeWireField();
@@ -260,7 +260,7 @@ public class GuardCheckerTests
             GuardChecker.CheckPhaseCondition(cond, ctx, _cc).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "turn_min は満たすが count が不足のとき、満たさない")]
         public void CheckPhaseCondition_TurnMetButCountNotMet()
         {
             var field = TestFactory.MakeWireField();

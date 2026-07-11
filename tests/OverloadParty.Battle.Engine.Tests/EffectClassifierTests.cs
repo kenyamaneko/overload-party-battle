@@ -4,16 +4,12 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Effects;
 
-/// <summary>
-/// Tests for EffectClassifier — classifies IEffectOp pipelines into
-/// EffectCategory values used by the NPC AI.
-/// </summary>
 public class EffectClassifierTests
 {
-    /// <summary>Tests classification of budget ops.</summary>
+    [Trait("対象", "バジェット効果の分類")]
     public class BudgetOps
     {
-        [Fact]
+        [Fact(DisplayName = "GainBudgetOp は BudgetGain カテゴリだけに分類される")]
         public void GainBudget()
         {
             var ops = new IEffectOp[] { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
@@ -23,7 +19,7 @@ public class EffectClassifierTests
             info.Categories.Should().ContainSingle();
         }
 
-        [Fact]
+        [Fact(DisplayName = "LoseBudgetOp は BudgetPenalty に分類される")]
         public void LoseBudget()
         {
             var ops = new IEffectOp[] { new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(300)) };
@@ -33,10 +29,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification of insight ops.</summary>
+    [Trait("対象", "インサイト効果の分類")]
     public class InsightOps
     {
-        [Fact]
+        [Fact(DisplayName = "GainInsightOp は InsightGain に分類される")]
         public void GainInsight()
         {
             var ops = new IEffectOp[] { new GainInsightOp(new StaticAmount(200)) };
@@ -45,7 +41,7 @@ public class EffectClassifierTests
             info.HasCategory(EffectCategory.InsightGain).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "AbsorbInsightOp は InsightAbsorb に分類される")]
         public void AbsorbInsight()
         {
             var ops = new IEffectOp[] { new AbsorbInsightOp(new StaticAmount(150)) };
@@ -55,10 +51,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification of damage ops.</summary>
+    [Trait("対象", "ダメージ効果の分類")]
     public class DamageOps
     {
-        [Fact]
+        [Fact(DisplayName = "選択による単体ダメージは SingleDamage に分類され、対象種別 Choice・対象ゾーンはフロントエンドになる")]
         public void ByChoice_SingleDamage()
         {
             var sel = new ByChoiceSelector { Zone = Zones.Frontend, Owner = "opponent" };
@@ -70,7 +66,7 @@ public class EffectClassifierTests
             info.TargetZone.Should().Be(Zones.Frontend);
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手全体へのダメージは AoEDamage に分類され、対象種別が AllOpp になる")]
         public void AllOpponent_AoE()
         {
             var sel = new AllOpponentSelector();
@@ -81,7 +77,7 @@ public class EffectClassifierTests
             info.TargetType.Should().Be(EffectTargetType.AllOpp);
         }
 
-        [Fact]
+        [Fact(DisplayName = "発動元自身を対象にしたダメージは対象種別が Myself になる")]
         public void SourceSelector_Self()
         {
             var ops = new IEffectOp[] { new DealDamageOp(SourceSelector.Instance, new StaticAmount(100)) };
@@ -91,10 +87,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification of buff and debuff ops.</summary>
+    [Trait("対象", "バフ・デバフ効果の分類")]
     public class BuffDebuffOps
     {
-        [Fact]
+        [Fact(DisplayName = "発動元自身へのバフは Buff に分類され、対象種別が Myself になる")]
         public void Buff_SourceSelector()
         {
             var ops = new IEffectOp[] { new ApplyBuffOp(SourceSelector.Instance, "buff_tp", new StaticAmount(200), "this_turn") };
@@ -104,7 +100,7 @@ public class EffectClassifierTests
             info.TargetType.Should().Be(EffectTargetType.Myself);
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手を選択するデバフは Debuff に分類され、対象種別が Choice になる")]
         public void Debuff_OpponentChoice()
         {
             var sel = new ByChoiceSelector { Owner = "opponent" };
@@ -115,7 +111,7 @@ public class EffectClassifierTests
             info.TargetType.Should().Be(EffectTargetType.Choice);
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手全体へのデバフは Debuff に分類され、対象種別が AllOpp になる")]
         public void Debuff_AllOpponent()
         {
             var ops = new IEffectOp[] { new ApplyBuffOp(new AllOpponentSelector(), "debuff_tp", new StaticAmount(50), "this_turn") };
@@ -126,10 +122,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification of heal ops.</summary>
+    [Trait("対象", "回復効果の分類")]
     public class HealOps
     {
-        [Fact]
+        [Fact(DisplayName = "HealDamageOp は Heal に分類される")]
         public void HealDamage()
         {
             var ops = new IEffectOp[] { new HealDamageOp(SourceSelector.Instance, new StaticAmount(500)) };
@@ -139,10 +135,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification of single card-movement, field, and reactive-control ops.</summary>
+    [Trait("対象", "単一 op のカテゴリ分類")]
     public class SingleOps
     {
-        [Theory]
+        [Theory(DisplayName = "各 op は対応する EffectCategory に分類される")]
         [InlineData("draw", EffectCategory.Draw)]
         [InlineData("search", EffectCategory.Search)]
         [InlineData("deployrepo", EffectCategory.DeployFree)]
@@ -170,10 +166,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification of guard conditions on a BuiltBlock.</summary>
+    [Trait("対象", "発動条件の分類")]
     public class Conditions
     {
-        [Fact]
+        [Fact(DisplayName = "MinBudgetGuard は値 1000 の min_budget 条件として分類される")]
         public void RequireBudget_AddsCondition()
         {
             var block = new BuiltBlock
@@ -189,7 +185,7 @@ public class EffectClassifierTests
             info.HasCategory(EffectCategory.BudgetGain).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "MaxBudgetGuard は値 2000 の max_budget 条件として分類される")]
         public void RequireMaxBudget_AddsCondition()
         {
             var block = new BuiltBlock { Guards = [new MaxBudgetGuard(2000)] };
@@ -200,7 +196,7 @@ public class EffectClassifierTests
             info.Conditions[0].Value.Should().Be(2000);
         }
 
-        [Fact]
+        [Fact(DisplayName = "ResourceCountGuard は owner myself・faction SHE・min 3 を持つ resource_count 条件になる")]
         public void ResourceCountGuard_AddsCondition()
         {
             var block = new BuiltBlock
@@ -222,7 +218,7 @@ public class EffectClassifierTests
             info.Conditions[0].Max.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "max のみ指定した ResourceCountGuard は min null・max 3 の resource_count 条件になる")]
         public void ResourceCountGuard_MaxOnly_PreservesShape()
         {
             var block = new BuiltBlock
@@ -243,10 +239,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification of branching ops.</summary>
+    [Trait("対象", "分岐 op の分類")]
     public class Branching
     {
-        [Fact]
+        [Fact(DisplayName = "BranchOnChoiceOp は分岐と判定され、分岐先の Heal カテゴリを取り込む")]
         public void BranchOnChoice_MergesCategories()
         {
             var branches = new Dictionary<string, List<IEffectOp>>
@@ -261,7 +257,7 @@ public class EffectClassifierTests
             info.HasCategory(EffectCategory.Heal).Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "IfConditionOp は then 分岐のカテゴリを取り込む")]
         public void IfCondition_MergesThenBranch()
         {
             var then = new List<IEffectOp> { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };
@@ -272,10 +268,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification of CustomFnTagged ops via their metadata.</summary>
+    [Trait("対象", "CustomFnTaggedOp のメタデータ分類")]
     public class CustomFnTaggedOps
     {
-        [Fact]
+        [Fact(DisplayName = "CustomFnTaggedOp のカテゴリ・対象種別・対象ゾーンはメタデータから決まる")]
         public void UsesMetadata()
         {
             var ops = new IEffectOp[]
@@ -296,10 +292,10 @@ public class EffectClassifierTests
         }
     }
 
-    /// <summary>Tests classification across multiple ops in a pipeline.</summary>
+    [Trait("対象", "複数 op の分類")]
     public class MultipleOps
     {
-        [Fact]
+        [Fact(DisplayName = "複数 op のカテゴリはすべて集約される")]
         public void CombinesCategories()
         {
             var ops = new IEffectOp[]
@@ -316,10 +312,7 @@ public class EffectClassifierTests
             info.HasCategory(EffectCategory.Heal).Should().BeTrue();
         }
 
-        /// <summary>
-        /// Same category should not be duplicated.
-        /// </summary>
-        [Fact]
+        [Fact(DisplayName = "同じカテゴリの op を重ねてもカテゴリは 1 つになる")]
         public void NoDuplicateCategories()
         {
             var ops = new IEffectOp[]

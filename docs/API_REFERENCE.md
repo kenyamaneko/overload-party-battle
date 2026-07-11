@@ -101,15 +101,17 @@ PvP 戦を作成する。マッチメイキング後に Gateway が呼び出す�
 
 | action_type | data 内容 | 説明 |
 |---|---|---|
-| `play_card` | `{instanceID, zone, slotIndex?, targetInstanceID?, choice?}` | カードをフィールドに配置 |
-| `attack` | `{sourceInstanceID, targetInstanceID}` | リソースで攻撃 |
-| `scale_up` | `{sourceInstanceID, targetRank, instanceFamily?}` | リソースをスケールアップ |
-| `monetize` | `{sourceInstanceID}` | データリソースを収益化 |
-| `use_effect` | `{sourceInstanceID, targetInstanceIDs?}` | カード効果を発動 |
+| `play_card` | `{cardInstanceId, zone, index, targetInstanceId?, choiceData?}` | カードをフィールドに配置（`position: {zone, index}` のネスト形式も受理） |
+| `attack` | `{attackerInstanceId, targetInstanceId}` | リソースで攻撃 |
+| `scale_up` | `{instanceId, targetRank, instanceFamily?}` | リソースをスケールアップ |
+| `monetize` | `{distributions: [{instanceId, amount}]}` | Insight をバックエンドのコンピュートへ配分して収益化 |
+| `use_ignition` | `{instanceId, targetInstanceId?, choiceData?}` | カードの起動効果を発動 |
 | `use_initiative` | `{kind, choiceData?}` | プロダクトの施策（ルーチン / スペシャル）を発動 |
-| `discard_hand` | `{instanceIDs}` | 手札を破棄（end フェーズ、手札 > 6 枚時） |
+| `discard_hand` | `{cardInstanceIds}` | 手札を破棄（end フェーズ、手札 > 6 枚時） |
 | `end_phase` | `{}` | フェーズを終了 |
-| `forfeit` | `{reason?}` | 降参 |
+| `forfeit` | `{reason}` | 降参 |
+| `select_slot` | `{zone, index}` | 効果デプロイのスロット選択に応答 |
+| `resolve_pending_choice` | `{chosen_id}` | 効果処理中の選択を解決 |
 
 **レスポンス:** `ActionResult`
 

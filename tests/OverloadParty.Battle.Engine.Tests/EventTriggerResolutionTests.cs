@@ -6,9 +6,6 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// イベント駆動トリガーの解決モデルが仕様どおり動くことを検証します
-/// </summary>
 public class EventTriggerResolutionTests
 {
     /// <summary>イベント駆動トリガー解決テスト共通の card cache・game・リクエスト生成 helper を保持します。</summary>
@@ -51,10 +48,10 @@ public class EventTriggerResolutionTests
             new() { CardInstanceID = instanceId, Zone = zone, Index = index };
     }
 
-    /// <summary>on_attack_declared の single-Reactive 解決ルールを検証します。</summary>
+    [Trait("対象", "on_attack_declared のリアクティブ解決")]
     public class OnAttackDeclaredResolution : Base
     {
-        [Fact]
+        [Fact(DisplayName = "on_attack_declared では、最も早く伏せたリアクティブ 1 枚だけが発動する")]
         public void OnlyEarliestReactiveFires()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -75,7 +72,7 @@ public class EventTriggerResolutionTests
             lateFires.Should().Be(0, "only one Reactive fires per event");
         }
 
-        [Fact]
+        [Fact(DisplayName = "発動条件を満たさないリアクティブは消費されず、次のリアクティブへ発動権を譲る")]
         public void GuardFailedReactive_DoesNotConsumeAndYieldsToNext()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -99,10 +96,10 @@ public class EventTriggerResolutionTests
         }
     }
 
-    /// <summary>FireOnDestroy の support ゾーン scan を検証します。</summary>
+    [Trait("対象", "on_destroy のサポートゾーン走査")]
     public class OnDestroyResolution : Base
     {
-        [Fact]
+        [Fact(DisplayName = "on_destroy はサポートゾーンの裏向きリアクティブを走査して発動する")]
         public void ScansSupportZoneFaceDownReactive()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -128,10 +125,10 @@ public class EventTriggerResolutionTests
         }
     }
 
-    /// <summary>on_deploy の two-stage 解決を検証します。</summary>
+    [Trait("対象", "on_deploy の二段階解決")]
     public class OnDeployResolution : Base
     {
-        [Fact]
+        [Fact(DisplayName = "on_deploy では、伏せたリアクティブがデプロイしたカード自身の効果より先に解決される")]
         public void WatcherResolvesBeforeEtb()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -153,7 +150,7 @@ public class EventTriggerResolutionTests
             order.Should().Equal("watcher", "deploy-self");
         }
 
-        [Fact]
+        [Fact(DisplayName = "リアクティブにデプロイをキャンセルされると、そのカード自身のデプロイ時効果は動かずリソースがトラッシュへ送られる")]
         public void CancelledByWatcher_SkipsDeployEffectAndTrashesResource()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -178,10 +175,10 @@ public class EventTriggerResolutionTests
         }
     }
 
-    /// <summary>on_incident の support ゾーン + フィールドリソース scan を検証します。</summary>
+    [Trait("対象", "on_incident のフィールド走査")]
     public class OnIncidentResolution : Base
     {
-        [Fact]
+        [Fact(DisplayName = "on_incident はサポートゾーンだけでなくフィールドのリソースも走査して発動する")]
         public void FiresForComputeResourceWatcher()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -199,7 +196,7 @@ public class EventTriggerResolutionTests
             fired.Should().BeTrue("on_incident scans field resources, not just the support zone");
         }
 
-        [Fact]
+        [Fact(DisplayName = "リアクティブにインシデントをキャンセルされると、インシデント自身の効果は動かない")]
         public void CancelledByWatcher_SkipsIncidentBody()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -226,10 +223,10 @@ public class EventTriggerResolutionTests
         }
     }
 
-    /// <summary>on_damaged が攻撃ダメージ適用後に発火することを検証します。</summary>
+    [Trait("対象", "on_damaged の発動タイミング")]
     public class OnDamagedResolution : Base
     {
-        [Fact]
+        [Fact(DisplayName = "on_damaged は攻撃ダメージが適用された後に発動し、適用後のダメージ 600 を観測する")]
         public void FiresAfterAttackDamageApplied()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
