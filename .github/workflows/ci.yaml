@@ -54,9 +54,15 @@ jobs:
           role: reader
           formats: "nuget"
       - name: Run tests
-        run: dotnet test OverloadParty.Battle.slnx
+        run: dotnet test OverloadParty.Battle.slnx --logger "trx;LogFileName=test-results.trx"
         env:
           CARDS_JSON_PATH: ${{ github.workspace }}/packages/game-state-dotnet/cache/cards_gen.json
+      - name: Report test results
+        if: ${{ !cancelled() }}
+        uses: kenyamaneko/overload-party-common/.github/actions/csharp-test-report@main
+        with:
+          search-root: tests
+          title: 単体テスト結果
 
   codegen-sync:
     runs-on: ubicloud-standard-2
