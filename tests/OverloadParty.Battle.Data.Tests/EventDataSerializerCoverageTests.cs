@@ -10,6 +10,7 @@ namespace OverloadParty.Battle.Tests.Data;
 /// that turn red when the discriminator map is out of sync with either the EventTypes/
 /// ActionTypes constants or the set of IEventData implementations.
 /// </summary>
+[Trait("対象", "イベントデータシリアライザ")]
 public class EventDataSerializerCoverageTests
 {
     /// <summary>
@@ -40,7 +41,7 @@ public class EventDataSerializerCoverageTests
                     .Select(f => (string)f.GetValue(null)!))
             .Distinct();
 
-    [Fact]
+    [Fact(DisplayName = "ペイロードを持たない ActionType を除く全 EventTypes/ActionTypes 定数に対応する型が登録されている")]
     public void EventDataSerializer_HandlesAllExpectedEventTypes()
     {
         var missing = AllEventTypeStrings()
@@ -54,7 +55,7 @@ public class EventDataSerializerCoverageTests
             $"with a comment explaining why. Missing: [{string.Join(", ", missing)}]");
     }
 
-    [Fact]
+    [Fact(DisplayName = "viewer 専用の TurnStartEventData を除く全 IEventData 実装が登録されている")]
     public void EventDataSerializer_AllIEventDataTypesAreReachable()
     {
         var assemblies = new[]
@@ -110,7 +111,7 @@ public class EventDataSerializerCoverageTests
         [typeof(SelectSlotEventData)] = new SelectSlotEventData { CardId = "c", InstanceId = "i", Zone = "frontend", Index = 0 },
     };
 
-    [Fact]
+    [Fact(DisplayName = "登録済み全 IEventData 型にラウンドトリップ用サンプルが過不足なく対応する")]
     public void RoundTripSamples_CoverAllRegisteredTypes()
     {
         var reachable = EventDataSerializer.GetAllRegisteredTypes().ToHashSet();
@@ -126,7 +127,7 @@ public class EventDataSerializerCoverageTests
     public static IEnumerable<object[]> RegisteredEventTypes() =>
         EventDataSerializer.GetAllRegisteredEventTypes().Select(et => new object[] { et });
 
-    [Theory]
+    [Theory(DisplayName = "登録済みイベント型をシリアライズ後にデシリアライズすると同じ実行時型に戻る")]
     [MemberData(nameof(RegisteredEventTypes))]
     public void EventDataSerializer_RoundTrip_ProducesSameRuntimeType(string eventType)
     {
@@ -140,7 +141,7 @@ public class EventDataSerializerCoverageTests
         restored.GetType().Should().Be(expectedType);
     }
 
-    [Fact]
+    [Fact(DisplayName = "未登録のイベント型をデシリアライズすると InvalidOperationException を投げる")]
     public void EventDataSerializer_Deserialize_UnknownEventType_Throws()
     {
         var act = () => EventDataSerializer.Deserialize("not_a_real_event_type", "{}");
@@ -148,14 +149,14 @@ public class EventDataSerializerCoverageTests
             .WithMessage("*Unknown event type*");
     }
 
-    [Fact]
+    [Fact(DisplayName = "null を SerializeToElement に渡すと JSON null になる")]
     public void EventDataSerializer_SerializeToElement_Null_ProducesJsonNull()
     {
         var elem = EventDataSerializer.SerializeToElement(null);
         elem.ValueKind.Should().Be(System.Text.Json.JsonValueKind.Null);
     }
 
-    [Fact]
+    [Fact(DisplayName = "シリアライズした JSON のキーが camelCase (cardId/zone/index) になる")]
     public void EventDataSerializer_Serialize_UsesCamelCaseKeys()
     {
         // Guards the wire/JSONB format against an accidental naming-policy change.

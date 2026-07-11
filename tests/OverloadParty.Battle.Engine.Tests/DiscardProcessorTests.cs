@@ -51,10 +51,10 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>Tests for DiscardProcessor.Process — discards excess cards down to the hand limit.</summary>
+    [Trait("対象", "手札上限までの破棄")]
     public class DiscardsExcessCards : Base
     {
-        [Fact]
+        [Fact(DisplayName = "手札 8 枚で 2 枚を破棄すると破棄イベントの枚数が 2 になる")]
         public void ReducesHandToLimit()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
@@ -74,10 +74,10 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>Tests for DiscardProcessor.Process — discard requested when none is needed.</summary>
+    [Trait("対象", "破棄不要時の破棄要求")]
     public class NoDiscardNeeded : Base
     {
-        [Fact]
+        [Fact(DisplayName = "手札が上限以下のときに破棄を要求すると例外になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
@@ -90,10 +90,10 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>Tests for DiscardProcessor.Process — wrong number of cards discarded.</summary>
+    [Trait("対象", "破棄枚数の不一致")]
     public class WrongDiscardCount : Base
     {
-        [Fact]
+        [Fact(DisplayName = "破棄が必要な枚数と異なる枚数を破棄すると例外になる")]
         public void Throws()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
@@ -106,10 +106,10 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>Tests for DiscardProcessor.Process — switches active player and advances the turn.</summary>
+    [Trait("対象", "破棄後のターン進行")]
     public class SwitchActivePlayer : Base
     {
-        [Fact]
+        [Fact(DisplayName = "手札破棄後にターンプレイヤーが 2 に切り替わりターンが 3 に進む")]
         public void SwitchesActivePlayerAndAdvances()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
@@ -124,10 +124,10 @@ public class DiscardProcessorTests
         }
     }
 
-    /// <summary>Tests for DiscardProcessor.Process — emits a discard event with the discarded count.</summary>
+    [Trait("対象", "破棄イベントの生成")]
     public class DiscardEvent : Base
     {
-        [Fact]
+        [Fact(DisplayName = "手札 7 枚で 1 枚を破棄すると破棄イベントの枚数が 1 になる")]
         public void GeneratesDiscardEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
@@ -169,10 +169,10 @@ public class DiscardProcessorTests
     private static List<UndeployedCard> Repo(int count) =>
         [.. Enumerable.Range(0, count).Select(i => new UndeployedCard { InstanceID = $"r_{i}", CardID = "TST-0001" })];
 
-    /// <summary>破棄したカードが手札から取り除かれ、イベントに ID が載ることを検証する。</summary>
+    [Trait("対象", "破棄カードの手札からの除去")]
     public class HandReduction
     {
-        [Fact]
+        [Fact(DisplayName = "破棄した h_6 と h_7 が手札から取り除かれ手札が 6 枚になる")]
         public void RemovesDiscardedCardsFromHand()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);
@@ -185,7 +185,7 @@ public class DiscardProcessorTests
             state.Player1Hand.Should().NotContain(c => c.InstanceID == "h_6" || c.InstanceID == "h_7");
         }
 
-        [Fact]
+        [Fact(DisplayName = "破棄イベントに破棄したカードの ID h_6 と h_7 が載る")]
         public void EventIncludesDiscardedIds()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.End, activePlayer: 1);

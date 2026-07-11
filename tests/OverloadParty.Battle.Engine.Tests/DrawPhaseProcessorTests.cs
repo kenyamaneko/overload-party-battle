@@ -18,10 +18,10 @@ public class DrawPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for DrawPhaseProcessor.Process — normal draw advances to Main.</summary>
+    [Trait("対象", "通常ドローからメインフェーズへの進行")]
     public class NormalDraw : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ドローフェーズでカードを 1 枚引き手札に加えてメインフェーズへ進む")]
         public void DrawsCardAndAdvancesToMain()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
@@ -36,10 +36,10 @@ public class DrawPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for DrawPhaseProcessor.Process — no-op when not in the draw phase.</summary>
+    [Trait("対象", "ドローフェーズ以外での無処理")]
     public class NotDrawPhase : Base
     {
-        [Fact]
+        [Fact(DisplayName = "メインフェーズではドロー処理を行わず手札が空のままになる")]
         public void ReturnsNull_NoStateChange()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
@@ -53,10 +53,10 @@ public class DrawPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for DrawPhaseProcessor.Process — empty repository ends the game.</summary>
+    [Trait("対象", "デッキアウトによる決着")]
     public class EmptyRepository : Base
     {
-        [Fact]
+        [Fact(DisplayName = "デッキが空のときドローフェーズで deck_out により相手が勝つ")]
         public void ReturnsGameOver()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
@@ -70,10 +70,10 @@ public class DrawPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for DrawPhaseProcessor.Process — deploy countdown decrements and flips on completion.</summary>
+    [Trait("対象", "デプロイカウントダウンの進行")]
     public class DeployCountdown : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ドローフェーズでデプロイターンが 2 から 1 に減り裏向きのままになる")]
         public void Decrements()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
@@ -87,7 +87,7 @@ public class DrawPhaseProcessorTests
             resource.FaceUp.Should().BeFalse();
         }
 
-        [Fact]
+        [Fact(DisplayName = "デプロイターンが 1 から 0 になると表向きに反転し稼働実績フラグが立つ")]
         public void ReachesZero_FlipsFaceUp()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
@@ -112,10 +112,10 @@ public class DrawPhaseProcessorTests
         return cc;
     }
 
-    /// <summary>デプロイのカウントダウン完了でデプロイ時効果が発動することを検証する。</summary>
+    [Trait("対象", "デプロイ完了時のデプロイ時効果の発動")]
     public class DeployCompletionTriggers
     {
-        [Fact]
+        [Fact(DisplayName = "デプロイターン 1 のリソースは 1 回のドローフェーズで稼働しデプロイ時効果が発動する")]
         public void Resource_OneTurnDeploy_FlipsAndFiresAfterOneDrawPhase()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
@@ -134,7 +134,7 @@ public class DrawPhaseProcessorTests
             fired.Should().BeTrue("デプロイターン 1 のリソースは 1 回のドローフェーズ通過で稼働しデプロイ時効果が発動する");
         }
 
-        [Fact]
+        [Fact(DisplayName = "デプロイターン 2 のリソースは 1 回目のドローフェーズでは稼働せずデプロイ時効果は発動しない")]
         public void Resource_TwoTurnDeploy_StaysDeployingAfterFirstDrawPhase()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
@@ -153,7 +153,7 @@ public class DrawPhaseProcessorTests
             fired.Should().BeFalse("デプロイターン 2 のリソースは 1 回目のドローフェーズ通過では稼働せず発動しない");
         }
 
-        [Fact]
+        [Fact(DisplayName = "カウントダウンが 0 になったサポートカードのデプロイ時効果が発動する")]
         public void Support_FiresOnDeploy_WhenCountdownReachesZero()
         {
             var cc = DrawCc();
@@ -178,10 +178,10 @@ public class DrawPhaseProcessorTests
         }
     }
 
-    /// <summary>ドロー後に勝敗判定が評価されることを検証する。</summary>
+    [Trait("対象", "ドロー後の勝敗判定")]
     public class WinCheckAfterDraw
     {
-        [Fact]
+        [Fact(DisplayName = "ドロー後にバジェットが 0 のときバジェットゼロで相手が勝つ")]
         public void ReturnsGameOver_WhenWinConditionMetAfterDraw()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1, p1Budget: 0);

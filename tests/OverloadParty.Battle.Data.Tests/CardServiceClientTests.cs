@@ -5,6 +5,7 @@ using OverloadParty.Battle.Data;
 
 namespace OverloadParty.Battle.Tests.Data;
 
+[Trait("対象", "カードサービスクライアント")]
 public class CardServiceClientTests
 {
     private sealed class StubHandler : HttpMessageHandler
@@ -29,7 +30,7 @@ public class CardServiceClientTests
         }
     }
 
-    [Fact]
+    [Fact(DisplayName = "snake_case の payload を受けたとき、カード一覧にデシリアライズする")]
     public async Task ListAllCardsAsync_deserializes_snake_case_payload()
     {
         const string body = """
@@ -63,7 +64,7 @@ public class CardServiceClientTests
         handler.LastRequestUri!.AbsoluteUri.Should().Be("http://card:9003/internal/v1/cards");
     }
 
-    [Fact]
+    [Fact(DisplayName = "非成功ステータスのとき、HttpRequestException を投げる")]
     public async Task ListAllCardsAsync_throws_on_non_success_status()
     {
         var handler = new StubHandler(HttpStatusCode.InternalServerError, "{\"error\":\"boom\"}");
@@ -74,7 +75,7 @@ public class CardServiceClientTests
             .Should().ThrowAsync<HttpRequestException>();
     }
 
-    [Fact]
+    [Fact(DisplayName = "body が null リテラルのとき、InvalidOperationException を投げる")]
     public async Task ListAllCardsAsync_throws_when_body_is_null_literal()
     {
         var handler = new StubHandler(HttpStatusCode.OK, "null");

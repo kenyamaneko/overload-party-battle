@@ -29,10 +29,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — dormant resource behavior at end phase.</summary>
+    [Trait("対象", "休止リソースの処理")]
     public class Dormant : Base
     {
-        [Fact]
+        [Fact(DisplayName = "休止中のデータベースはイールドを生成せずインサイトプールが 0 のままになる")]
         public void DormantDb_SkipsYieldGeneration()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -48,7 +48,7 @@ public class EndPhaseProcessorTests
             state.Player1InsightPool.Should().Be(0, "dormant DB does not generate yield");
         }
 
-        [Fact]
+        [Fact(DisplayName = "until_next_turn_end の休止効果がエンドフェーズ処理で解除される")]
         public void UntilNextTurnEndDormant_Expires()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -67,10 +67,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — Main phase advances one step to Battle.</summary>
+    [Trait("対象", "メインフェーズからバトルフェーズへの遷移")]
     public class MainToBattle : Base
     {
-        [Fact]
+        [Fact(DisplayName = "メインフェーズでエンドフェーズ処理するとバトルフェーズへ進みゲームは終了しない")]
         public void AdvancesToBattle_NotToEnd()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
@@ -81,7 +81,7 @@ public class EndPhaseProcessorTests
             result.GameOver.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "メインフェーズからバトルフェーズへ進むときはターンプレイヤーも現在ターンも変わらない")]
         public void DoesNotSwitchPlayer()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
@@ -92,7 +92,7 @@ public class EndPhaseProcessorTests
             state.CurrentTurn.Should().Be(2);
         }
 
-        [Fact]
+        [Fact(DisplayName = "メインフェーズのエンドフェーズ処理が previous=main・current=battle の PhaseChange イベントを 1 件発行する")]
         public void EmitsPhaseChangeEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
@@ -107,10 +107,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — first turn skips Battle and goes to End.</summary>
+    [Trait("対象", "初回ターンのフェーズ遷移")]
     public class MainToEndFirstTurn : Base
     {
-        [Fact]
+        [Fact(DisplayName = "初回ターンのメインフェーズはバトルフェーズを飛ばし、ターンが相手へ移ってメインフェーズになる")]
         public void FirstTurn_SkipsBattleGoesToEnd()
         {
             var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main, activePlayer: 1);
@@ -125,10 +125,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — Battle phase advances to End then switches turn.</summary>
+    [Trait("対象", "バトルフェーズからエンドフェーズへの遷移")]
     public class BattleToEnd : Base
     {
-        [Fact]
+        [Fact(DisplayName = "バトルフェーズでエンドフェーズ処理するとターンが相手へ移り、次ターンのメインフェーズになる")]
         public void AdvancesToEnd_ThenSwitchesTurn()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -143,10 +143,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — two consecutive end phases run the full sequence.</summary>
+    [Trait("対象", "連続するエンドフェーズ処理")]
     public class TwoEndPhases : Base
     {
-        [Fact]
+        [Fact(DisplayName = "エンドフェーズ処理を 2 回続けるとメインフェーズからバトルフェーズを経てターンが相手へ移る")]
         public void MainToBattleToEnd_FullSequence()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
@@ -166,10 +166,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — hand size relative to limit drives discard.</summary>
+    [Trait("対象", "手札上限による破棄要求")]
     public class DiscardRequired : Base
     {
-        [Fact]
+        [Fact(DisplayName = "手札が 7 枚で上限 6 を超えると破棄が要求され、エンドフェーズで止まりターンが移らない")]
         public void HandOverLimit_NeedsDiscard()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -192,7 +192,7 @@ public class EndPhaseProcessorTests
             state.CurrentTurn.Should().Be(2);
         }
 
-        [Fact]
+        [Fact(DisplayName = "手札が上限どおり 6 枚なら破棄は不要でターンが相手へ移る")]
         public void HandWithinLimit_NoDiscard()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -215,10 +215,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — maintenance cost collection at end phase.</summary>
+    [Trait("対象", "維持コストの徴収")]
     public class MaintenanceCost : Base
     {
-        [Fact]
+        [Fact(DisplayName = "表向きリソースの維持コスト 150 がエンドフェーズにバジェットから差し引かれる")]
         public void CollectsMaintenanceCost()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
@@ -235,10 +235,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — elastic resource maintenance cost scales per request.</summary>
+    [Trait("対象", "エラスティックリソースの維持コスト")]
     public class ElasticMaintenanceCost : Base
     {
-        [Fact]
+        [Fact(DisplayName = "エラスティックリソースの固有ステータスが free_tier と同じなら維持コストが 0 になる")]
         public void ElasticResource_CostPerRequest()
         {
             _cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0002"));
@@ -258,7 +258,7 @@ public class EndPhaseProcessorTests
             state.Player1Budget.Should().Be(5000);
         }
 
-        [Fact]
+        [Fact(DisplayName = "エラスティックボーナスで固有ステータスが free_tier を超えると維持コスト 23 がバジェットから引かれる")]
         public void ElasticResource_WithBonus_CostsMore()
         {
             _cc.Add(TestFactory.ElasticContainerCard(cardId: "TST-0002"));
@@ -280,7 +280,7 @@ public class EndPhaseProcessorTests
             state.Player1Budget.Should().Be(5000 - 23);
         }
 
-        [Fact]
+        [Fact(DisplayName = "維持コストの算出にランクとインスタンスファミリーの係数が反映され 96 が引かれる")]
         public void ElasticResource_FamilyMultiplierIncludedInMC()
         {
             _cc.Add(TestFactory.OrchestratorCard(cardId: "TST-0004"));
@@ -301,7 +301,7 @@ public class EndPhaseProcessorTests
             state.Player1Budget.Should().Be(5000 - 96);
         }
 
-        [Fact]
+        [Fact(DisplayName = "cost_per_request が 0 のサーバーレスは固有ステータスが free_tier を超えても維持コストが 0 になる")]
         public void ServerlessElastic_AlwaysFreeMaintenanceCost()
         {
             _cc.Add(TestFactory.ServerlessCard(cardId: "TST-0005"));
@@ -320,10 +320,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — insight generation from backend data resources.</summary>
+    [Trait("対象", "バックエンドのインサイト生成")]
     public class InsightGeneration : Base
     {
-        [Fact]
+        [Fact(DisplayName = "バックエンドの表向きData系リソースがエンドフェーズにイールド 400 分のインサイトを生成する")]
         public void GeneratesInsightFromBackendData()
         {
             _cc.Add(TestFactory.DataCard(cardId: "TST-0003", yield: 400));
@@ -343,7 +343,7 @@ public class EndPhaseProcessorTests
             state.Player1InsightPool.Should().Be(insightBefore + 400);
         }
 
-        [Fact]
+        [Fact(DisplayName = "バックエンドの裏向きData系リソースはインサイトを生成しない")]
         public void FaceDownBackendData_NoInsight()
         {
             _cc.Add(TestFactory.DataCard(cardId: "TST-0003", yield: 400));
@@ -363,7 +363,7 @@ public class EndPhaseProcessorTests
             state.Player1InsightPool.Should().Be(insightBefore);
         }
 
-        [Fact]
+        [Fact(DisplayName = "エラスティックなData系リソースはエンドフェーズにエラスティック増分 50 だけエラスティックボーナスが増える")]
         public void ElasticDataResource_GainsElasticIncrement()
         {
             _cc.Add(TestFactory.DataCard(
@@ -382,10 +382,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — this_turn temporary effects expire.</summary>
+    [Trait("対象", "this_turn 効果の解除")]
     public class TemporaryEffectsExpired : Base
     {
-        [Fact]
+        [Fact(DisplayName = "this_turn の一時効果がエンドフェーズで解除される")]
         public void ExpiresThisTurnTemporaryEffects()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -407,10 +407,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — per-turn flags reset on resources.</summary>
+    [Trait("対象", "ターン内フラグのリセット")]
     public class PerTurnFlagsReset : Base
     {
-        [Fact]
+        [Fact(DisplayName = "エンドフェーズにリソースの攻撃済み・効果使用済み・収益化量とインシデント使用のターン内フラグがリセットされる")]
         public void ResetsPerTurnFlags()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -433,10 +433,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — support effect-used flag resets.</summary>
+    [Trait("対象", "サポートの効果使用フラグのリセット")]
     public class SupportFlagsReset : Base
     {
-        [Fact]
+        [Fact(DisplayName = "エンドフェーズにサポートカードの効果使用フラグがリセットされる")]
         public void ResetsSupportEffectUsedFlag()
         {
             _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
@@ -457,11 +457,11 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — launch failure ends the game.</summary>
+    [Trait("対象", "ローンチ失敗による敗北")]
     public class LaunchFailure : Base
     {
         // 手札破棄が不要な場合: EndPhase がその場でローンチ失敗判定を行い敗北する。
-        [Fact]
+        [Fact(DisplayName = "稼働実績のないまま 3 ターン目のエンドフェーズを迎えるとローンチ失敗で敗北し相手が勝者になる")]
         public void LaunchFailure_GameOver()
         {
             // Turn 5 → personalTurn = (5+1)/2 = 3, which >= LaunchFailureTurn=3
@@ -476,7 +476,7 @@ public class EndPhaseProcessorTests
         }
 
         // 手札破棄が必要な場合: EndPhase は判定を保留して破棄を要求し、破棄解決時に同じ判定が走り敗北する。
-        [Fact]
+        [Fact(DisplayName = "手札超過のときローンチ失敗判定は破棄まで保留され、破棄を解決するとローンチ失敗で敗北する")]
         public void LaunchFailure_DeferredToDiscardWhenHandOverLimit()
         {
             var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle, activePlayer: 1);
@@ -500,10 +500,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — TurnEnd event emitted.</summary>
+    [Trait("対象", "ターン終了イベントの発行")]
     public class TurnEndEvent : Base
     {
-        [Fact]
+        [Fact(DisplayName = "エンドフェーズ処理で TurnEnd イベントが発行される")]
         public void EmitsTurnEndEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -515,10 +515,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.Process — empty repository on next draw ends the game.</summary>
+    [Trait("対象", "デッキアウトによる敗北")]
     public class EmptyRepository : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ターン交代後のプレイヤーがドローできずデッキアウトで敗北し、もう一方が勝者になる")]
         public void EmptyRepository_GameOver()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -535,10 +535,10 @@ public class EndPhaseProcessorTests
         }
     }
 
-    /// <summary>Tests for EndPhaseProcessor.MakeTurnStartEvent — internal TurnStart event data.</summary>
+    [Trait("対象", "ターン開始イベントの生成")]
     public class TurnStartEvent : Base
     {
-        [Fact]
+        [Fact(DisplayName = "MakeTurnStartEvent が現在ターン 3 とアクティブプレイヤー 2 を持つ TurnStart イベントを生成する")]
         public void ContainsActivePlayerForViewMapping()
         {
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, activePlayer: 2);
@@ -572,10 +572,10 @@ public class EndPhaseProcessorTests
         repo.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "TST-0001" });
     }
 
-    /// <summary>エンドフェーズに エンドフェーズ効果 / パッシブ効果 が発動することを検証する。</summary>
+    [Trait("対象", "エンドフェーズ効果とパッシブ効果の発動")]
     public class EndPhaseTriggers
     {
-        [Fact]
+        [Fact(DisplayName = "エンドフェーズにリソースのエンドフェーズ効果ハンドラが 1 回発動する")]
         public void FiresOnEndPhaseHandler()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -591,7 +591,7 @@ public class EndPhaseProcessorTests
             fired.Should().Be(1, "エンドフェーズに エンドフェーズ効果 が発動する");
         }
 
-        [Fact]
+        [Fact(DisplayName = "エンドフェーズにリソースのパッシブ効果ハンドラが 1 回発動する")]
         public void FiresPassiveHandlerAtEndPhase()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);

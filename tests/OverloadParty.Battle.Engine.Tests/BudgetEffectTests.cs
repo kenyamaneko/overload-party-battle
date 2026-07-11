@@ -5,10 +5,8 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Effects;
 
-/// <summary>
-/// gain_budget / lose_budget の op を起動効果として登録し、起動効果の使用 (use_ignition) 越しに
-/// バジェットが増減することを検証する。op を直接叩かず、プレイヤーのアクションを起点にする。
-/// </summary>
+/// <summary>op を直接叩かず、プレイヤーのアクション (起動効果の使用) を起点に検証する。</summary>
+[Trait("対象", "起動効果によるバジェット増減")]
 public class BudgetEffectTests
 {
     /// <summary>op 列を起動効果として登録したカードキャッシュとレジストリを作る。</summary>
@@ -34,7 +32,7 @@ public class BudgetEffectTests
         return state;
     }
 
-    [Fact]
+    [Fact(DisplayName = "起動効果の gain_budget で自分のバジェットが 5000 から 5500 に増える")]
     public void Ignition_GainBudget_AddsToOwnBudget()
     {
         var (cc, effects) = Env(new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)));
@@ -45,7 +43,7 @@ public class BudgetEffectTests
         state.GetBudget(1).Should().Be(5500);
     }
 
-    [Fact]
+    [Fact(DisplayName = "起動効果の lose_budget で相手のバジェットが 3000 から 2200 に減る")]
     public void Ignition_LoseBudget_SubtractsFromOpponentBudget()
     {
         var (cc, effects) = Env(new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(800)));
@@ -56,7 +54,7 @@ public class BudgetEffectTests
         state.GetBudget(2).Should().Be(2200);
     }
 
-    [Fact]
+    [Fact(DisplayName = "起動効果の lose_budget は相手のバジェットを負の値 (300 から -500) まで減らせる")]
     public void Ignition_LoseBudget_AllowsNegativeOpponentBudget()
     {
         var (cc, effects) = Env(new LoseBudgetOp(PlayerRef.Opponent, new StaticAmount(800)));
@@ -67,7 +65,7 @@ public class BudgetEffectTests
         state.GetBudget(2).Should().Be(-500);
     }
 
-    [Fact]
+    [Fact(DisplayName = "複数の gain_budget を持つ起動効果で、自分のバジェットに合算して 5500 になる")]
     public void Ignition_MultipleGainBudget_AccumulatesOnOwnBudget()
     {
         var (cc, effects) = Env(

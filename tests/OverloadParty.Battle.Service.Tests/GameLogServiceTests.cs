@@ -87,17 +87,17 @@ public class GameLogServiceTests
         }
     }
 
-    /// <summary>Tests for GetGameLog returning the structured JSON log.</summary>
+    [Trait("対象", "構造化ログ")]
     public class GetGameLog : Base
     {
-        [Fact]
+        [Fact(DisplayName = "存在しないゲーム ID の構造化ログは null になる")]
         public async Task ReturnsNull_WhenGameNotFound()
         {
             var result = await _svc.GetGameLog("nonexistent");
             result.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "終了済みゲームの構造化ログに勝者・総ターン数・最終バジェット・エントリが載る")]
         public async Task ReturnsCorrectStructure()
         {
             var gameId = await SeedFinishedGame();
@@ -113,7 +113,7 @@ public class GameLogServiceTests
             log.Entries.Should().HaveCount(4);
         }
 
-        [Fact]
+        [Fact(DisplayName = "構造化ログの各エントリが対応するイベントのデータを含む")]
         public async Task EntriesConveyEventData()
         {
             var gameId = await SeedFinishedGame();
@@ -130,17 +130,17 @@ public class GameLogServiceTests
         }
     }
 
-    /// <summary>Tests for GetGameLogText returning the human-readable text log.</summary>
+    [Trait("対象", "テキストログ")]
     public class GetGameLogText : Base
     {
-        [Fact]
+        [Fact(DisplayName = "存在しないゲーム ID のテキストログは null になる")]
         public async Task ReturnsNull_WhenGameNotFound()
         {
             var result = await _svc.GetGameLogText("nonexistent");
             result.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "テキストログにゲーム ID・NPC モデル・最終バジェット・勝因が載る")]
         public async Task ConveysGameMetadata()
         {
             var gameId = await SeedFinishedGame();
@@ -154,7 +154,7 @@ public class GameLogServiceTests
             text.Should().Contain(WinReasons.BudgetZero);
         }
 
-        [Fact]
+        [Fact(DisplayName = "テキストログに各イベントのデータが載る")]
         public async Task ConveysEventData()
         {
             var gameId = await SeedFinishedGame();
@@ -166,10 +166,10 @@ public class GameLogServiceTests
         }
     }
 
-    /// <summary>Tests for descriptions produced from various event types.</summary>
+    [Trait("対象", "イベント説明文")]
     public class EventDescriptions : Base
     {
-        [Theory]
+        [Theory(DisplayName = "各イベント種別の説明文が自身のペイロードのデータを含む")]
         [InlineData(ActionTypes.ScaleUp, "medium")]
         [InlineData(ActionTypes.Monetize, "300")]
         [InlineData(ActionTypes.DiscardHand, "2")]
@@ -216,10 +216,10 @@ public class GameLogServiceTests
         }
     }
 
-    /// <summary>Tests for serializing the game log to JSON bytes.</summary>
+    [Trait("対象", "ログの JSON 直列化")]
     public class JsonSerialization : Base
     {
-        [Fact]
+        [Fact(DisplayName = "構造化ログの JSON 直列化結果に game_id と entries が含まれる")]
         public async Task SerializeToJson_ProducesValidJson()
         {
             var gameId = await SeedFinishedGame();

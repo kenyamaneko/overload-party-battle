@@ -48,10 +48,10 @@ public class SlotRequestOpsTests
         UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
             new UseIgnitionRequest { InstanceID = "src", ChoiceData = choiceData }, cc, effects);
 
-    /// <summary>RequestSlotFromRepoOp をデッキからのデプロイ要求として検証する。</summary>
+    [Trait("対象", "デッキからのデプロイ要求")]
     public class FromRepo
     {
-        [Fact]
+        [Fact(DisplayName = "デッキからのデプロイ要求でスロット選択待ちが 1 件積まれる")]
         public void Ignition_EnqueuesPendingSlotSelect()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp());
@@ -66,7 +66,7 @@ public class SlotRequestOpsTests
             pending.ValidZones.Should().NotBeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "デッキからのデプロイ要求で対象カードがデッキから取り除かれる")]
         public void Ignition_RemovesCardFromRepo()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp());
@@ -78,7 +78,7 @@ public class SlotRequestOpsTests
             state.Player1Repository.Should().BeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "OverrideAV を 200 に指定するとデプロイするリソースの最大可用性が 200 になる")]
         public void Ignition_OverrideAV_AppliedToDeployedResource()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp { OverrideAV = 200 });
@@ -90,7 +90,7 @@ public class SlotRequestOpsTests
             state.PendingSlotSelects[0].Resource.MaxAV.Should().Be(200);
         }
 
-        [Fact]
+        [Fact(DisplayName = "条件に合うカードがデッキにないとき選択待ちが積まれずデッキは変わらない")]
         public void Ignition_NoMatchingCard_LeavesRepoUntouched()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp { Filter = card => card.CardId == "NONEXISTENT" });
@@ -103,7 +103,7 @@ public class SlotRequestOpsTests
             state.Player1Repository.Should().HaveCount(1);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Compute系リソースはフロントエンドとバックエンドの両ゾーンが候補になる")]
         public void Ignition_ComputeCard_OffersFrontendAndBackendZones()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp());
@@ -117,7 +117,7 @@ public class SlotRequestOpsTests
             zones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "データベースリソースはバックエンドのゾーンだけが候補になる")]
         public void Ignition_DatabaseCard_OffersOnlyBackendZones()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp());
@@ -130,7 +130,7 @@ public class SlotRequestOpsTests
             zones.Should().AllSatisfy(z => z.Should().StartWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "空きスロットがないとき選択待ちが積まれずデッキは変わらない")]
         public void Ignition_NoEmptySlots_LeavesRepoUntouched()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp());
@@ -148,7 +148,7 @@ public class SlotRequestOpsTests
         }
     }
 
-    /// <summary>RequestSlotFromHandOp を手札からのデプロイ要求として検証する。</summary>
+    [Trait("対象", "手札からのデプロイ要求")]
     public class FromHand
     {
         /// <summary>デプロイするカードを指定する選択データを作る。</summary>
@@ -157,7 +157,7 @@ public class SlotRequestOpsTests
         private static Dictionary<string, object> Choose(string cardId) =>
             new() { ["cardId"] = cardId };
 
-        [Fact]
+        [Fact(DisplayName = "手札からのデプロイ要求でスロット選択待ちが 1 件積まれる")]
         public void Ignition_EnqueuesPendingSlotSelect()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromHandOp());
@@ -170,7 +170,7 @@ public class SlotRequestOpsTests
                 .Which.Resource.CardID.Should().Be("TST-0001");
         }
 
-        [Fact]
+        [Fact(DisplayName = "手札からのデプロイ要求で対象カードが手札から取り除かれる")]
         public void Ignition_RemovesCardFromHand()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromHandOp());
@@ -182,7 +182,7 @@ public class SlotRequestOpsTests
             state.Player1Hand.Should().BeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "手札のカードを選ばずにデプロイ要求すると拒否される")]
         public void Ignition_NoChoice_Throws()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromHandOp());
@@ -194,7 +194,7 @@ public class SlotRequestOpsTests
             act.Should().Throw<GameRuleException>();
         }
 
-        [Fact]
+        [Fact(DisplayName = "条件に合わないカードを選ぶと拒否され手札はそのまま残る")]
         public void Ignition_FilterRejectsCard_Throws()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromHandOp { Filter = _ => false });
@@ -208,7 +208,7 @@ public class SlotRequestOpsTests
         }
     }
 
-    /// <summary>RequestSlotFromRepoSameCardOp を破壊時の同名カードデプロイ要求として検証する。</summary>
+    [Trait("対象", "破壊時の同名カードのデプロイ要求")]
     public class FromRepoSameCard
     {
         /// <summary>攻撃リクエストを作る。</summary>
@@ -218,7 +218,7 @@ public class SlotRequestOpsTests
         private static AttackRequest Atk(string attacker, string target) =>
             new() { AttackerInstanceID = attacker, TargetInstanceID = target };
 
-        [Fact]
+        [Fact(DisplayName = "リソースが破壊されるとデッキから同名カードのデプロイ要求が積まれる")]
         public void OnDestroy_DeploysSameCardFromRepo()
         {
             var cc = new TestCardCache();

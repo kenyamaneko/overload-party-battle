@@ -3,17 +3,12 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// Additional TurnManager tests for uncovered branches:
-/// - IsActionAllowedInPhase (all action × phase combinations)
-/// - AdvancePhase edge cases
-/// </summary>
 public class TurnManagerExtendedTests
 {
-    /// <summary>Tests for TurnManager.IsActionAllowedInPhase across each phase.</summary>
+    [Trait("対象", "フェーズごとに許可されるアクション")]
     public class IsActionAllowedInPhase
     {
-        [Theory]
+        [Theory(DisplayName = "メインフェーズで各アクションが許可されるか判定する")]
         [InlineData(ActionType.PlayCard, true)]
         [InlineData(ActionType.ScaleUp, true)]
         [InlineData(ActionType.Monetize, true)]
@@ -27,7 +22,7 @@ public class TurnManagerExtendedTests
             TurnManager.IsActionAllowedInPhase(Phase.Main, action).Should().Be(expected);
         }
 
-        [Theory]
+        [Theory(DisplayName = "バトルフェーズで各アクションが許可されるか判定する")]
         [InlineData(ActionType.Attack, true)]
         [InlineData(ActionType.UseIgnition, true)]
         [InlineData(ActionType.EndPhase, true)]
@@ -40,7 +35,7 @@ public class TurnManagerExtendedTests
             TurnManager.IsActionAllowedInPhase(Phase.Battle, action).Should().Be(expected);
         }
 
-        [Theory]
+        [Theory(DisplayName = "エンドフェーズで各アクションが許可されるか判定する")]
         [InlineData(ActionType.DiscardHand, true)]
         [InlineData(ActionType.PlayCard, false)]
         [InlineData(ActionType.Attack, false)]
@@ -50,7 +45,7 @@ public class TurnManagerExtendedTests
             TurnManager.IsActionAllowedInPhase(Phase.End, action).Should().Be(expected);
         }
 
-        [Theory]
+        [Theory(DisplayName = "ドローフェーズではどのアクションも許可されない")]
         [InlineData(ActionType.PlayCard)]
         [InlineData(ActionType.Attack)]
         [InlineData(ActionType.DiscardHand)]
@@ -62,10 +57,10 @@ public class TurnManagerExtendedTests
         }
     }
 
-    /// <summary>Tests for TurnManager.AdvancePhase.</summary>
+    [Trait("対象", "フェーズの進行")]
     public class AdvancePhase
     {
-        [Theory]
+        [Theory(DisplayName = "フェーズを進めると直前のフェーズを返し次のフェーズへ遷移する")]
         [InlineData(Phase.Draw, Phase.Main)]
         [InlineData(Phase.Battle, Phase.End)]
         public void ReturnsPreviousPhase(Phase startPhase, Phase expectedNew)
@@ -78,7 +73,7 @@ public class TurnManagerExtendedTests
             state.CurrentPhase.Should().Be(expectedNew);
         }
 
-        [Theory]
+        [Theory(DisplayName = "メインフェーズの次フェーズはターンによって決まり初回はバトルフェーズを飛ばす")]
         [InlineData(1, Phase.End)]
         [InlineData(2, Phase.Battle)]
         public void MainPhase_NextPhaseDependsOnTurn(long turn, Phase expectedPhase)
@@ -91,10 +86,10 @@ public class TurnManagerExtendedTests
         }
     }
 
-    /// <summary>Tests for TurnManager.SwitchActivePlayer.</summary>
+    [Trait("対象", "ターンプレイヤーの切り替え")]
     public class SwitchActivePlayer
     {
-        [Fact]
+        [Fact(DisplayName = "アクティブプレイヤーを切り替えるとターンが 5 から 6 に進む")]
         public void IncrementsTurn()
         {
             var state = TestFactory.MakeGameState(turn: 5, activePlayer: 1);
@@ -104,7 +99,7 @@ public class TurnManagerExtendedTests
             state.CurrentTurn.Should().Be(6);
         }
 
-        [Fact]
+        [Fact(DisplayName = "アクティブプレイヤーを切り替えるとドローフェーズになる")]
         public void SetsDrawPhase()
         {
             var state = TestFactory.MakeGameState(turn: 5, phase: Phase.End, activePlayer: 1);

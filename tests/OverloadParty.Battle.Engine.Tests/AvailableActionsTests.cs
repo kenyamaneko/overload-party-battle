@@ -13,10 +13,10 @@ public class AvailableActionsTests
     {
     }
 
-    /// <summary>Tests for which action types are offered per phase (Main vs Battle).</summary>
+    [Trait("対象", "フェーズによる利用可能アクションの絞り込み")]
     public class PhaseGating : Base
     {
-        [Fact]
+        [Fact(DisplayName = "メインフェーズではカードのプレイ・スケールアップ・収益化が候補になり、攻撃は候補にならない")]
         public void MainPhase_ReturnsPlayScaleDistributeIgniteActions()
         {
             var cc = new TestCardCache();
@@ -41,7 +41,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact]
+        [Fact(DisplayName = "バトルフェーズでは攻撃が候補になり、カードのプレイ・スケールアップ・収益化は候補にならない")]
         public void BattlePhase_ReturnsAttackAndIgniteOnly()
         {
             var cc = new TestCardCache();
@@ -65,7 +65,7 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for enumerating UseInitiative actions (routine/special) per affordability and usage rules.</summary>
+    [Trait("対象", "施策の使用の列挙")]
     public class UseInitiativeEnumeration : Base
     {
         private const string TestRoutineId = "IN-TST-R";
@@ -86,7 +86,7 @@ public class AvailableActionsTests
             return state;
         }
 
-        [Fact]
+        [Fact(DisplayName = "インサイトプールが 1000 で未使用のとき、コスト 100 のルーチンとコスト 300 のスペシャルが候補になる")]
         public void UseInitiative_EnumeratesRoutineAndSpecial_WhenAffordableAndUnused()
         {
             var state = MakeInitiativeState();
@@ -100,7 +100,7 @@ public class AvailableActionsTests
             inits.Should().Contain(a => a.Kind == InitiativeKinds.Special && a.CardID == TestSpecialId && a.Cost == 300);
         }
 
-        [Fact]
+        [Fact(DisplayName = "インサイトプールが 150 のとき、コスト 100 のルーチンは候補になりコスト 300 のスペシャルは候補にならない")]
         public void UseInitiative_ExcludesUnaffordableKind()
         {
             var state = MakeInitiativeState();
@@ -114,7 +114,7 @@ public class AvailableActionsTests
             inits.Should().NotContain(a => a.Kind == InitiativeKinds.Special); // 300 > 150
         }
 
-        [Fact]
+        [Fact(DisplayName = "ルーチンをこのターン使用済み・スペシャルをこのゲーム使用済みのとき、施策の使用は候補にならない")]
         public void UseInitiative_ExcludesAlreadyUsed()
         {
             var state = MakeInitiativeState();
@@ -128,7 +128,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
         }
 
-        [Fact]
+        [Fact(DisplayName = "ターン 1 では施策の使用は候補にならない")]
         public void UseInitiative_NotEnumeratedOnFirstTurn()
         {
             var state = MakeInitiativeState(turn: 1);
@@ -140,7 +140,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
         }
 
-        [Fact]
+        [Fact(DisplayName = "InitiativeCatalog を渡さないとき、施策の使用は候補にならない")]
         public void UseInitiative_NotEnumeratedWhenCatalogOmitted()
         {
             var state = MakeInitiativeState();
@@ -152,7 +152,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
         }
 
-        [Fact]
+        [Fact(DisplayName = "セットした施策 ID がカタログに無いとき、GameRuleException を投げる")]
         public void UseInitiative_Throws_WhenSlotInitiativeNotInCatalog()
         {
             var state = MakeInitiativeState();
@@ -166,10 +166,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for which zones a played card may occupy by card type/subtype.</summary>
+    [Trait("対象", "カードタイプ別の配置可能ゾーン")]
     public class PlayCardZonePlacement : Base
     {
-        [Fact]
+        [Fact(DisplayName = "Compute系リソースはフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ComputeCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -186,7 +186,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "Database はバックエンドにのみ配置できる")]
         public void PlayCard_DatabaseCanOnlyGoToBackend()
         {
             // Database は Backend のみ
@@ -204,7 +204,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "CacheDB はバックエンドにのみ配置できる")]
         public void PlayCard_CacheDBCanOnlyGoToBackend()
         {
             var cc = new TestCardCache();
@@ -221,7 +221,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "ObjectStorage はフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ObjectStorageCanGoToFrontendAndBackend()
         {
             // ObjectStorage は Frontend / Backend 両方
@@ -239,7 +239,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "AI/ML はフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_AiMlCanGoToFrontendAndBackend()
         {
             // AI/ML は Frontend / Backend 両方
@@ -257,7 +257,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "ストラテジーは配置ゾーンを必要としない")]
         public void PlayCard_StrategyDoesNotRequireZone()
         {
             var cc = new TestCardCache();
@@ -273,7 +273,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().BeNullOrEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "リアクティブはサポートゾーンに配置される")]
         public void PlayCard_ReactiveGoesToSupportZone()
         {
             var cc = new TestCardCache();
@@ -289,7 +289,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "プラットフォームはサポートゾーンに配置される")]
         public void PlayCard_PlatformGoesToSupportZone()
         {
             var cc = new TestCardCache();
@@ -306,10 +306,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for PlayCard availability based on slot capacity.</summary>
+    [Trait("対象", "スロット空き状況による配置可否")]
     public class PlayCardSlotCapacity : Base
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドとバックエンドが全て埋まっているとき、リソースのプレイは候補にならない")]
         public void PlayCard_ExcludedWhenAllSlotsOccupied()
         {
             // 各ゾーン上限3体、スロットが埋まっていれば配置不可
@@ -334,7 +334,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "サポートゾーンが全て埋まっていてもストラテジーはプレイできる")]
         public void PlayCard_StrategyAvailableEvenWhenAllSupportSlotsOccupied()
         {
             var cc = new TestCardCache();
@@ -355,7 +355,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_s");
         }
 
-        [Fact]
+        [Fact(DisplayName = "frontend_0 が埋まっているとき、配置候補は空きスロット (frontend_1・frontend_2) だけになる")]
         public void PlayCard_OnlyOffersEmptySlots()
         {
             var cc = new TestCardCache();
@@ -378,10 +378,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for Incident play restrictions (first turn and once-per-turn).</summary>
+    [Trait("対象", "インシデントのプレイ制限")]
     public class PlayCardIncident : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ターン 1 ではインシデントはプレイできない")]
         public void PlayCard_IncidentExcludedOnFirstTurn()
         {
             // 先攻T1ではインシデント使用不可
@@ -397,7 +397,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_i");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ターン 3 ではインシデントをプレイできる")]
         public void PlayCard_IncidentAllowedOnLaterTurns()
         {
             var cc = new TestCardCache();
@@ -412,7 +412,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_i");
         }
 
-        [Fact]
+        [Fact(DisplayName = "このターンに既にインシデントをプレイ済みのとき、インシデントはプレイできない")]
         public void PlayCard_IncidentExcludedWhenAlreadyPlayedThisTurn()
         {
             // インシデントは1ターン1枚まで
@@ -432,10 +432,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for Attachment targeting and placement rules.</summary>
+    [Trait("対象", "アタッチメントの対象と配置")]
     public class PlayCardAttachment : Base
     {
-        [Fact]
+        [Fact(DisplayName = "アタッチメントは表向きリソースを対象にでき、配置先はサポートゾーンになる")]
         public void PlayCard_AttachmentTargetsFaceUpResources()
         {
             // Attachment はリソースに装備。ValidTargets を返す
@@ -458,7 +458,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "サポートゾーンが満杯でもアタッチメントは張り替えでプレイできる")]
         public void PlayCard_AttachmentAvailableWhenSupportZoneFull()
         {
             // サポートゾーンが満杯でも張り替えで配置可能
@@ -481,7 +481,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
         }
 
-        [Fact]
+        [Fact(DisplayName = "対象が裏向きリソースだけのとき、アタッチメントはプレイできない")]
         public void PlayCard_AttachmentExcludesFaceDownResources()
         {
             var cc = new TestCardCache();
@@ -500,7 +500,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
         }
 
-        [Fact]
+        [Fact(DisplayName = "表向きリソースが複数あるとき、アタッチメントは全ての表向きリソース (fe_1・fe_2) を対象にできる")]
         public void PlayCard_AttachmentTargetsAllFaceUpResources()
         {
             var cc = new TestCardCache();
@@ -529,10 +529,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for PlayCard with an empty hand.</summary>
+    [Trait("対象", "手札が空のときのプレイ")]
     public class PlayCardEmptyHand : Base
     {
-        [Fact]
+        [Fact(DisplayName = "手札が空のとき、カードのプレイは候補にならない")]
         public void PlayCard_EmptyHandReturnsNoPlayActions()
         {
             var cc = new TestCardCache();
@@ -545,10 +545,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for budget-gated availability of Strategy/Incident plays.</summary>
+    [Trait("対象", "バジェットによるプレイ可否")]
     public class PlayCardBudgetFiltering : Base
     {
-        [Fact]
+        [Fact(DisplayName = "MinBudgetGuard 500 に対しバジェットが 200 のとき、ストラテジーはプレイできない")]
         public void PlayStrategy_ExcludedWhenBudgetInsufficient()
         {
             var cc = new TestCardCache();
@@ -568,7 +568,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_50");
         }
 
-        [Fact]
+        [Fact(DisplayName = "MinBudgetGuard 500 に対しバジェットが 600 のとき、ストラテジーをプレイできる")]
         public void PlayStrategy_IncludedWhenBudgetSufficient()
         {
             var cc = new TestCardCache();
@@ -588,7 +588,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_50");
         }
 
-        [Fact]
+        [Fact(DisplayName = "MinBudgetGuard 300 に対しバジェットが 100 のとき、インシデントはプレイできない")]
         public void PlayIncident_ExcludedWhenBudgetInsufficient()
         {
             var cc = new TestCardCache();
@@ -609,10 +609,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for PlayCard availability when frontend/backend zones are full.</summary>
+    [Trait("対象", "ゾーン占有状況によるプレイ可否")]
     public class PlayCardFieldOccupancy : Base
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドが満杯のとき、Compute系リソースはバックエンドにのみ配置できる")]
         public void PlayCard_ComputeOnlyBackendWhenFrontendFull()
         {
             // フロントが3枠埋まっていてもバックエンドに空きがあればCompute配置可能
@@ -635,7 +635,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドが満杯でも Database はプレイできる")]
         public void PlayCard_DatabaseStillPlayableWhenFrontendFull()
         {
             // Database はそもそも Backend のみ。フロントが満杯でも関係ない
@@ -657,7 +657,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_db");
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドとバックエンドが両方満杯のとき、Compute系リソースはプレイできない")]
         public void PlayCard_ComputeExcludedWhenBothZonesFull()
         {
             var cc = new TestCardCache();
@@ -680,10 +680,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for zone placement of additional resource subtypes (Container/Serverless/Orchestrator).</summary>
+    [Trait("対象", "リソースサブタイプ別の配置可能ゾーン")]
     public class PlayCardResourceTypePlacement : Base
     {
-        [Fact]
+        [Fact(DisplayName = "Container はフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ContainerCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -700,7 +700,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "Serverless はフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ServerlessCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -717,7 +717,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact]
+        [Fact(DisplayName = "Orchestrator はフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_OrchestratorCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -735,10 +735,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for ScaleUp rank-up options and exclusions.</summary>
+    [Trait("対象", "スケールアップの候補")]
     public class ScaleUpRules : Base
     {
-        [Fact]
+        [Fact(DisplayName = "Resizable な small リソースは medium・large × M/C/R の 6 通りがスケールアップ候補になる")]
         public void ScaleUp_ResizableSmallOffersAllOptions()
         {
             var cc = new TestCardCache();
@@ -762,7 +762,7 @@ public class AvailableActionsTests
             scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "R");
         }
 
-        [Fact]
+        [Fact(DisplayName = "Resizable な medium(M) リソースは同ファミリーの large 1 通りだけがスケールアップ候補になる")]
         public void ScaleUp_ResizableMediumOffersAllOptions()
         {
             var cc = new TestCardCache();
@@ -782,7 +782,7 @@ public class AvailableActionsTests
             scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
         }
 
-        [Fact]
+        [Fact(DisplayName = "Resizable な large リソースはスケールアップ候補がない")]
         public void ScaleUp_ResizableLargeHasNoOptions()
         {
             var cc = new TestCardCache();
@@ -801,7 +801,7 @@ public class AvailableActionsTests
             scaleActions.Should().BeEmpty();
         }
 
-        [Fact]
+        [Fact(DisplayName = "Resizable でないリソースはスケールアップ候補にならない")]
         public void ScaleUp_NonResizableExcluded()
         {
             // Resizable でないカードはスケールアップ不可
@@ -818,7 +818,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
 
-        [Fact]
+        [Fact(DisplayName = "休止リソースはスケールアップ候補にならない")]
         public void ScaleUp_DormantExcluded()
         {
             // 休止リソースはスケールアップ不可
@@ -837,7 +837,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Elastic のみ (Resizable でない) リソースはスケールアップ候補にならない")]
         public void ScaleUp_ElasticOnlyExcluded()
         {
             // Elastic-only カード（Resizable=false）は手動スケールアップ不可
@@ -854,7 +854,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
 
-        [Fact]
+        [Fact(DisplayName = "裏向きリソースはスケールアップ候補にならない")]
         public void ScaleUp_FaceDownResourceExcluded()
         {
             // 裏向きカードは「いないものとみなす」
@@ -871,7 +871,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
 
-        [Fact]
+        [Fact(DisplayName = "Resizable かつ Elastic のリソースはスケールアップ候補になる")]
         public void ScaleUp_ResizableElasticCanScaleUp()
         {
             // R+E カードは手動スケールアップも可能
@@ -888,7 +888,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "orch_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "Resizable な Database はスケールアップ候補になる")]
         public void ScaleUp_DataCardResizableCanScaleUp()
         {
             // Resizable な Database もスケールアップ可能
@@ -907,10 +907,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for Attack eligibility and valid targets in the battle phase.</summary>
+    [Trait("対象", "攻撃の可否と対象")]
     public class AttackRules : Base
     {
-        [Fact]
+        [Fact(DisplayName = "フロントエンドの Compute系リソースは攻撃でき、相手のフロントエンドを対象にできる")]
         public void Attack_FrontendComputeCanAttack()
         {
             var cc = new TestCardCache();
@@ -931,7 +931,7 @@ public class AvailableActionsTests
             attack.ValidTargets.Should().Contain(t => t == "opp_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "バックエンドのリソースは攻撃できない")]
         public void Attack_BackendResourceCannotAttack()
         {
             // バックエンドのリソースは攻撃できない
@@ -951,7 +951,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドの ObjectStorage は攻撃できない")]
         public void Attack_FrontendObjectStorageCannotAttack()
         {
             // Object Storage をフロントエンドに置いた場合、攻撃できない
@@ -973,7 +973,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "os_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "このターン攻撃済みのリソースは攻撃できない")]
         public void Attack_AlreadyAttackedExcluded()
         {
             // 1ターンに1回攻撃
@@ -995,7 +995,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact]
+        [Fact(DisplayName = "休止リソースは攻撃できない")]
         public void Attack_DormantExcluded()
         {
             var cc = new TestCardCache();
@@ -1016,7 +1016,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact]
+        [Fact(DisplayName = "CannotAttack 状態のリソースは攻撃できない")]
         public void Attack_CannotAttackExcluded()
         {
             var cc = new TestCardCache();
@@ -1037,7 +1037,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のフロントエンドが裏向きだけのとき、攻撃は候補にならない")]
         public void Attack_FaceDownTargetsExcluded()
         {
             // 裏向きカードは攻撃対象にできない
@@ -1058,7 +1058,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のフロントエンドに表向きリソースがいないとき、バックエンドを攻撃対象にできる")]
         public void Attack_CanTargetBackendWhenNoFrontendFaceUp()
         {
             // フロントエンドに表向きリソースが0体ならバックエンドを攻撃可能
@@ -1082,7 +1082,7 @@ public class AvailableActionsTests
             attack.ValidTargets.Should().NotContain(t => t == "opp_fe");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のフロントエンドに表向きリソースがいるとき、バックエンドは攻撃対象にならない")]
         public void Attack_CannotTargetBackendWhenFrontendHasFaceUp()
         {
             // フロントエンドに表向きリソースがいればバックエンドは攻撃不可
@@ -1105,7 +1105,7 @@ public class AvailableActionsTests
             attack.ValidTargets.Should().NotContain(t => t == "opp_be");
         }
 
-        [Fact]
+        [Fact(DisplayName = "裏向きリソースは攻撃できない")]
         public void Attack_FaceDownAttackerExcluded()
         {
             // 裏向きカードは攻撃できない
@@ -1125,7 +1125,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact]
+        [Fact(DisplayName = "複数の攻撃可能リソースがいるとき、それぞれに攻撃アクションが生成される")]
         public void Attack_MultipleAttackersEachGetOwnAction()
         {
             var cc = new TestCardCache();
@@ -1147,7 +1147,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "my_2");
         }
 
-        [Fact]
+        [Fact(DisplayName = "target_shield で保護された対象は攻撃候補から外れ、他の表向きリソースは対象になる")]
         public void Attack_TargetShieldedDefenderExcludedFromTargets()
         {
             var cc = new TestCardCache();
@@ -1181,10 +1181,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for Monetize eligibility and remaining-capacity computation.</summary>
+    [Trait("対象", "収益化の可否と残変換容量")]
     public class MonetizeRules : Base
     {
-        [Fact]
+        [Fact(DisplayName = "バックエンドの Compute系リソースは収益化の候補になる")]
         public void Monetize_BackendComputeIncluded()
         {
             var cc = new TestCardCache();
@@ -1200,7 +1200,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.Monetize && a.SourceInstanceID == "be_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "フロントエンドの Compute系リソースは収益化できない")]
         public void Monetize_FrontendComputeExcluded()
         {
             // フロントエンドの Compute は収益化できない
@@ -1217,7 +1217,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact]
+        [Fact(DisplayName = "バックエンドの Database は収益化できない")]
         public void Monetize_BackendDatabaseExcluded()
         {
             // 収益化はComputeのみ。DatabaseはInsight生成源だがBudget変換はしない
@@ -1235,7 +1235,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact]
+        [Fact(DisplayName = "ターン 1 では収益化できない")]
         public void Monetize_ExcludedOnFirstTurn()
         {
             // 先攻T1では収益化をスキップ
@@ -1252,7 +1252,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact]
+        [Fact(DisplayName = "インサイトプールが 0 のとき、収益化できない")]
         public void Monetize_ExcludedWhenInsightPoolZero()
         {
             // InsightプールからInsightを消費して変換。0なら変換不可
@@ -1269,7 +1269,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact]
+        [Fact(DisplayName = "スループット 600 で 200 収益化済みのとき、残変換容量は 400 になる")]
         public void Monetize_RemainingCapacityBasedOnTP()
         {
             // 各カードの変換上限 = スループット値
@@ -1289,7 +1289,7 @@ public class AvailableActionsTests
             yieldAction.RemainingCapacity.Should().Be(400); // 600 - 200 = 400
         }
 
-        [Fact]
+        [Fact(DisplayName = "スループット 600 を全て収益化済みのとき、収益化できない")]
         public void Monetize_ExcludedWhenCapacityFull()
         {
             var cc = new TestCardCache();
@@ -1307,7 +1307,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact]
+        [Fact(DisplayName = "裏向きのバックエンド Compute系リソースは収益化できない")]
         public void Monetize_FaceDownBackendComputeExcluded()
         {
             // 裏向きリソースは収益化できない（稼働していない）
@@ -1324,7 +1324,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact]
+        [Fact(DisplayName = "複数のバックエンド Compute系リソースがあるとき、それぞれに残変換容量付きの収益化アクションが生成される")]
         public void Monetize_MultipleBackendComputeEachGetAction()
         {
             // 複数のバックエンドComputeがある場合、それぞれにmonetizeが生成される
@@ -1347,7 +1347,7 @@ public class AvailableActionsTests
             a2.RemainingCapacity.Should().Be(500);
         }
 
-        [Fact]
+        [Fact(DisplayName = "休止のバックエンド Compute系リソースは収益化できない")]
         public void Monetize_DormantBackendComputeExcluded()
         {
             var cc = new TestCardCache();
@@ -1366,10 +1366,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for UseIgnition availability by resource/support state and effect registration.</summary>
+    [Trait("対象", "起動効果の使用の可否")]
     public class UseIgnitionRules : Base
     {
-        [Fact]
+        [Fact(DisplayName = "起動効果を持つリソースは起動効果の使用が候補になる")]
         public void UseIgnition_ResourceWithEffectIncluded()
         {
             var cc = new TestCardCache();
@@ -1389,7 +1389,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
-        [Fact]
+        [Fact(DisplayName = "起動効果を持たないリソースは起動効果の使用が候補にならない")]
         public void UseIgnition_ResourceWithoutEffectExcluded()
         {
             var cc = new TestCardCache();
@@ -1408,7 +1408,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
-        [Fact]
+        [Fact(DisplayName = "休止リソースは起動効果を使用できない")]
         public void UseIgnition_DormantExcluded()
         {
             // 休止リソースは起動効果を使用不可
@@ -1431,7 +1431,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
-        [Fact]
+        [Fact(DisplayName = "このターン起動効果を使用済みのリソースは起動効果の使用が候補にならない")]
         public void UseIgnition_EffectUsedThisTurnExcluded()
         {
             var cc = new TestCardCache();
@@ -1453,7 +1453,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
-        [Fact]
+        [Fact(DisplayName = "起動効果を持つ稼働中のサポートカードは起動効果の使用が候補になる")]
         public void UseIgnition_SupportWithEffectIncluded()
         {
             var cc = new TestCardCache();
@@ -1478,7 +1478,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "sup_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "デプロイ中のサポートカードは起動効果を使用できない")]
         public void UseIgnition_DeployingSupportExcluded()
         {
             // デプロイ中のカードは稼働していない
@@ -1504,7 +1504,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
-        [Fact]
+        [Fact(DisplayName = "このターン起動効果を使用済みのサポートカードは起動効果の使用が候補にならない")]
         public void UseIgnition_SupportEffectUsedThisTurnExcluded()
         {
             var cc = new TestCardCache();
@@ -1530,7 +1530,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
-        [Fact]
+        [Fact(DisplayName = "バトルフェーズでも起動効果の使用が候補になる")]
         public void UseIgnition_AvailableInBattlePhase()
         {
             // 効果発動はバトルフェーズでも可能
@@ -1551,7 +1551,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
-        [Fact]
+        [Fact(DisplayName = "裏向きリソースは起動効果を使用できない")]
         public void UseIgnition_FaceDownResourceExcluded()
         {
             var cc = new TestCardCache();
@@ -1572,10 +1572,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for budget-gated UseIgnition availability via min/max budget guards.</summary>
+    [Trait("対象", "バジェットによる起動効果の使用可否")]
     public class UseIgnitionBudgetFiltering : Base
     {
-        [Fact]
+        [Fact(DisplayName = "MinBudgetGuard 400 に対しバジェットが 300 のとき、起動効果の使用は候補にならない")]
         public void UseIgnition_ExcludedWhenBudgetBelowMinimum()
         {
             var cc = new TestCardCache();
@@ -1596,7 +1596,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
-        [Fact]
+        [Fact(DisplayName = "MinBudgetGuard 400 に対しバジェットが 500 のとき、起動効果の使用が候補になる")]
         public void UseIgnition_IncludedWhenBudgetMeetsMinimum()
         {
             var cc = new TestCardCache();
@@ -1617,7 +1617,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
-        [Fact]
+        [Fact(DisplayName = "MaxBudgetGuard 1000 に対しバジェットが 1500 のとき、起動効果の使用は候補にならない")]
         public void UseIgnition_ExcludedWhenBudgetExceedsMaximum()
         {
             var cc = new TestCardCache();
@@ -1638,7 +1638,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_120");
         }
 
-        [Fact]
+        [Fact(DisplayName = "MaxBudgetGuard 1000 に対しバジェットが 800 のとき、起動効果の使用が候補になる")]
         public void UseIgnition_IncludedWhenBudgetWithinMaximum()
         {
             var cc = new TestCardCache();
@@ -1659,7 +1659,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_120");
         }
 
-        [Fact]
+        [Fact(DisplayName = "バジェット条件がないとき、バジェットが 0 でも起動効果の使用が候補になる")]
         public void UseIgnition_IncludedWhenNoBudgetRequirement()
         {
             var cc = new TestCardCache();
@@ -1680,10 +1680,10 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>Tests for turn-control information (phase ending and required discards).</summary>
+    [Trait("対象", "ターン操作情報 (フェーズ終了・要破棄枚数)")]
     public class TurnControls : Base
     {
-        [Fact]
+        [Fact(DisplayName = "メインフェーズではフェーズを終了でき、要破棄枚数は 0 になる")]
         public void TurnControls_MainPhaseCanEndPhase()
         {
             var state = TestFactory.MakeGameState(phase: Phase.Main);
@@ -1692,7 +1692,7 @@ public class AvailableActionsTests
             controls.DiscardRequired.Should().Be(0);
         }
 
-        [Fact]
+        [Fact(DisplayName = "バトルフェーズではフェーズを終了できる")]
         public void TurnControls_BattlePhaseCanEndPhase()
         {
             var state = TestFactory.MakeGameState(phase: Phase.Battle);
@@ -1700,7 +1700,7 @@ public class AvailableActionsTests
             controls.CanEndPhase.Should().BeTrue();
         }
 
-        [Fact]
+        [Fact(DisplayName = "エンドフェーズで手札が 8 枚のとき、要破棄枚数は 2 になる")]
         public void TurnControls_EndPhaseRequiresDiscardWhenOverLimit()
         {
             // 手札上限6枚、超過分を捨てる
@@ -1713,7 +1713,7 @@ public class AvailableActionsTests
             controls.DiscardRequired.Should().Be(2); // 8 - 6 = 2
         }
 
-        [Fact]
+        [Fact(DisplayName = "エンドフェーズで手札が 5 枚のとき、要破棄枚数は 0 になる")]
         public void TurnControls_EndPhaseNoDiscardWhenWithinLimit()
         {
             var state = TestFactory.MakeGameState(phase: Phase.End);
@@ -1725,7 +1725,7 @@ public class AvailableActionsTests
             controls.DiscardRequired.Should().Be(0);
         }
 
-        [Theory]
+        [Theory(DisplayName = "メイン・バトル以外のフェーズではフェーズを終了できない")]
         [InlineData(Phase.Draw)]
         [InlineData(Phase.End)]
         public void TurnControls_CannotEndPhaseOutsideMainAndBattle(Phase phase)
@@ -1736,7 +1736,7 @@ public class AvailableActionsTests
         }
     }
 
-    /// <summary>選択待ち中の ResolvePendingChoice アクション列挙を検証する。</summary>
+    [Trait("対象", "選択待ちアクションの列挙")]
     public class ResolvePendingChoiceEnumeration
     {
         private static PendingEffectChoice Pending(string choiceKind, params string[] candidates) =>
@@ -1752,7 +1752,7 @@ public class AvailableActionsTests
                 Candidates = [.. candidates],
             };
 
-        [Fact]
+        [Fact(DisplayName = "候補が 3 件の選択待ちのとき、効果カード ID と候補ごとの選択肢を持つ ResolvePendingChoice アクションが 1 つだけ生成される")]
         public void PendingChoice_EmitsSingleActionWithOptionPerCandidate()
         {
             var cc = new TestCardCache();
@@ -1768,7 +1768,7 @@ public class AvailableActionsTests
             action.ChoiceOptions!.Select(o => o.Key).Should().Equal("c1", "c2", "c3");
         }
 
-        [Fact]
+        [Fact(DisplayName = "選択待ちの種別が ChoiceKinds.HandCard のとき、アクションが同じ ChoiceKind と候補を持つ")]
         public void PendingChoice_CarriesChoiceKind()
         {
             var cc = new TestCardCache();
@@ -1783,7 +1783,7 @@ public class AvailableActionsTests
             action.ChoiceOptions!.Select(o => o.Key).Should().Equal("hand_card_1");
         }
 
-        [Fact]
+        [Fact(DisplayName = "選択待ちがあるとき、他のアクションは列挙されず ResolvePendingChoice だけになる")]
         public void PendingChoice_ShortCircuitsOtherActions()
         {
             var cc = new TestCardCache();

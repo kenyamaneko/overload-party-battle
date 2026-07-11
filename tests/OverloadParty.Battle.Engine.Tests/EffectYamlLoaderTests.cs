@@ -5,9 +5,7 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// EffectYamlLoader が yaml schema を期待通り解釈することを検証する。
-/// </summary>
+[Trait("対象", "count 発動条件の min/max 解釈")]
 public class EffectYamlLoaderTests
 {
     private readonly TestCardCache _cc = new();
@@ -45,7 +43,7 @@ public class EffectYamlLoaderTests
             ?? throw new InvalidOperationException("handler not registered");
     }
 
-    [Fact]
+    [Fact(DisplayName = "max のみ指定した count 発動条件は対象が 0 体でも成立し効果が実行される")]
     public void CountGuard_MaxOnly_AcceptsZeroResources()
     {
         // 「Tuners 3 体以下」(min 省略, max=3) のとき、Tuners が 0 体でも guard 通過することを検証
@@ -79,7 +77,7 @@ public class EffectYamlLoaderTests
         state.Player1Budget.Should().Be(1100);
     }
 
-    [Fact]
+    [Fact(DisplayName = "max のみ指定した count 発動条件は対象が max を超えると不成立で効果が実行されない")]
     public void CountGuard_MaxOnly_RejectsCountOverMax()
     {
         var handler = LoadAndGetHandler(
@@ -116,7 +114,7 @@ public class EffectYamlLoaderTests
         state.Player1Budget.Should().Be(1000);
     }
 
-    [Fact]
+    [Fact(DisplayName = "min のみ指定した count 発動条件は対象が min 未満だと不成立で効果が実行されない")]
     public void CountGuard_MinOnly_RequiresAtLeastMin()
     {
         // min 指定だけの count guard は従来通り min 以上必要 (0 体なら失敗)

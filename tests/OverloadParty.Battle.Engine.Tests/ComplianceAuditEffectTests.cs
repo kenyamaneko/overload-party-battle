@@ -95,10 +95,10 @@ public class ComplianceAuditEffectTests
         }
     }
 
-    /// <summary>Tests the base activation cost of the Compliance Audit effect.</summary>
+    [Trait("対象", "コンプライアンス監査の起動コスト")]
     public class ActivationCost : Base
     {
-        [Fact]
+        [Fact(DisplayName = "起動すると自分のバジェットから 200 を支払う")]
         public void Ignite_PaysCost200_FromSelfBudget()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
@@ -109,7 +109,7 @@ public class ComplianceAuditEffectTests
             state.Player1Budget.Should().Be(800, "myself pays 200");
         }
 
-        [Fact]
+        [Fact(DisplayName = "バジェットが 100 で 200 を支払えないとき発動条件を満たさずバジェットは変わらない")]
         public void Ignite_InsufficientBudget_GuardFails()
         {
             var state = TestFactory.MakeGameState(p1Budget: 100, p2Budget: 2000);
@@ -122,10 +122,10 @@ public class ComplianceAuditEffectTests
         }
     }
 
-    /// <summary>Tests how much budget the opponent loses depending on compliance platforms.</summary>
+    [Trait("対象", "相手のバジェット減少量")]
     public class OpponentBudgetLoss : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手に ISMS も SOC2 もないとき相手のバジェットが 800 減る")]
         public void Ignite_WithoutCompliancePlatform_OpponentLoses800()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
@@ -137,7 +137,7 @@ public class ComplianceAuditEffectTests
             state.Player2Budget.Should().Be(1200, "opponent loses 400 base + 400 extra = 800");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手に ISMS があるとき相手のバジェットは 400 だけ減る")]
         public void Ignite_WithIsmsPlatform_OpponentLoses400Only()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
@@ -149,7 +149,7 @@ public class ComplianceAuditEffectTests
             state.Player2Budget.Should().Be(1600, "opponent has ISMS so loses only base 400");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手に SOC2 があるとき相手のバジェットは 400 だけ減る")]
         public void Ignite_WithSoc2Platform_OpponentLoses400Only()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
@@ -161,7 +161,7 @@ public class ComplianceAuditEffectTests
             state.Player2Budget.Should().Be(1600, "opponent has SOC2 so loses only base 400");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手に ISMS と SOC2 の両方があるとき相手のバジェットは 400 だけ減る")]
         public void Ignite_WithBothPlatforms_OpponentLoses400Only()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
@@ -175,10 +175,10 @@ public class ComplianceAuditEffectTests
         }
     }
 
-    /// <summary>Tests that face-down or still-deploying platforms do not count as active compliance.</summary>
+    [Trait("対象", "稼働していないプラットフォームの扱い")]
     public class InactivePlatform : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手の ISMS が裏向きのとき稼働中とみなされず相手のバジェットが 800 減る")]
         public void Ignite_WithFaceDownIsmsPlatform_OpponentLoses800()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
@@ -191,7 +191,7 @@ public class ComplianceAuditEffectTests
             state.Player2Budget.Should().Be(1200, "face-down ISMS does not count as active compliance platform");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手の ISMS がデプロイ中のとき稼働中とみなされず相手のバジェットが 800 減る")]
         public void Ignite_WithDeployingIsmsPlatform_OpponentLoses800()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
@@ -205,10 +205,10 @@ public class ComplianceAuditEffectTests
         }
     }
 
-    /// <summary>Tests the effect when player 2 is the one activating it.</summary>
+    [Trait("対象", "プレイヤー2による起動")]
     public class ActivatedByPlayer2 : Base
     {
-        [Fact]
+        [Fact(DisplayName = "プレイヤー2が起動すると自分が 200 を支払いプレイヤー1のバジェットが 800 減る")]
         public void Ignite_AsPlayer2_ReducesPlayer1Budget()
         {
             var state = TestFactory.MakeGameState(activePlayer: 2, p1Budget: 2000, p2Budget: 1000);

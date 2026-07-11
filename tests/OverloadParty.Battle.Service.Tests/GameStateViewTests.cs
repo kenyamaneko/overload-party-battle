@@ -19,10 +19,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for the viewing player's own field being fully visible.</summary>
+    [Trait("対象", "自分のビュー")]
     public class PlayerView : Base
     {
-        [Fact]
+        [Fact(DisplayName = "自分のビューにフィールドと手札の全内容が載る")]
         public void ContainsFullFieldAndHand()
         {
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, activePlayer: 1,
@@ -56,10 +56,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for opponent field information hiding.</summary>
+    [Trait("対象", "相手のビュー")]
     public class OpponentView : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手のビューは手札の枚数だけを見せ中身は見せない")]
         public void ShowsHandCountNotCards()
         {
             var state = TestFactory.MakeGameState();
@@ -72,7 +72,7 @@ public class GameStateViewTests
             result.OppView.PlayerNum.Should().Be(2);
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のビューは裏向きリソースの CardID とステータスを隠す")]
         public void HidesFaceDownResourceDetails()
         {
             var state = TestFactory.MakeGameState();
@@ -94,7 +94,7 @@ public class GameStateViewTests
             oppSlot.MaxTP.Should().BeNull();
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のビューは表向きリソースを完全に見せる")]
         public void ShowsFaceUpResourceFully()
         {
             var state = TestFactory.MakeGameState();
@@ -112,7 +112,7 @@ public class GameStateViewTests
             oppSlot.MaxAV.Should().Be(1400);
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のビューは裏向きサポートの CardID と ArtNo を隠す")]
         public void HidesCardIDForFaceDownSupport()
         {
             var state = TestFactory.MakeGameState();
@@ -134,7 +134,7 @@ public class GameStateViewTests
             oppSup.ArtNo.Should().Be(0, "face-down support should hide ArtNo");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のビューはのぞき見済みサポートの CardID と ArtNo をそのプレイヤーに見せる")]
         public void RevealsPeekedSupportCardID()
         {
             var state = TestFactory.MakeGameState();
@@ -157,7 +157,7 @@ public class GameStateViewTests
             oppSup.ArtNo.Should().Be(2, "peeked card reveals ArtNo to the peeking player");
         }
 
-        [Fact]
+        [Fact(DisplayName = "相手のビューは表向きサポートの CardID と ArtNo を見せる")]
         public void ShowsFaceUpSupportCardID()
         {
             var state = TestFactory.MakeGameState();
@@ -179,10 +179,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for whether the view reflects the active player as the viewer's turn.</summary>
+    [Trait("対象", "自分のターン判定")]
     public class IsMyTurn : Base
     {
-        [Theory]
+        [Theory(DisplayName = "ビューの IsMyTurn がアクティブプレイヤーと閲覧プレイヤーの一致を反映する")]
         [InlineData(1, 1, true)]
         [InlineData(1, 2, false)]
         [InlineData(2, 2, true)]
@@ -198,7 +198,7 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>deck_top 選択時、resolve アクションが選択するプレイヤーのビューにのみ具象化カード付きで現れることを検証する。</summary>
+    [Trait("対象", "deck_top 選択の公開")]
     public class DeckTopChoiceReveal : Base
     {
         /// <summary>選択するプレイヤー (Player1) のデッキ上端 2 枚を候補にした deck_top 選択待ちを作る。</summary>
@@ -215,7 +215,7 @@ public class GameStateViewTests
             Candidates = ["r_1", "r_2"],
         };
 
-        [Fact]
+        [Fact(DisplayName = "deck_top 選択待ちで選択するプレイヤーのビューに公開デッキ上端付きの resolve アクションが現れる")]
         public void Chooser_GetsResolveActionWithRevealedDeckTop()
         {
             var state = TestFactory.MakeGameState();
@@ -232,7 +232,7 @@ public class GameStateViewTests
             resolve.RevealedDeckTop!.Select(c => c.InstanceID).Should().Equal("r_1", "r_2");
         }
 
-        [Fact]
+        [Fact(DisplayName = "deck_top 選択待ちで選択しない相手のビューには resolve アクションが現れない")]
         public void Opponent_GetsNoResolveAction()
         {
             var state = TestFactory.MakeGameState();
@@ -246,10 +246,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for budget and insight pool reporting for both players.</summary>
+    [Trait("対象", "バジェットとインサイトプールの表示")]
     public class BudgetAndInsightPool : Base
     {
-        [Fact]
+        [Fact(DisplayName = "両プレイヤーのバジェットとインサイトプールが表示される")]
         public void ReportedForBothPlayers()
         {
             var state = TestFactory.MakeGameState(p1Budget: 3500, p2Budget: 4200);
@@ -264,7 +264,7 @@ public class GameStateViewTests
             result.OppView.InsightPool.Should().Be(300);
         }
 
-        [Fact]
+        [Fact(DisplayName = "プレイヤー 2 視点では自分ビューと相手ビューが入れ替わる")]
         public void AsPlayer2_SwapsMyViewAndOppView()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000, p2Budget: 2000);
@@ -282,10 +282,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for game metadata on the view.</summary>
+    [Trait("対象", "ゲームメタデータの表示")]
     public class GameMetadata : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ビューにゲーム ID・現在ターン・現在フェーズ・アクティブプレイヤーが設定される")]
         public void SetsGameMetadata()
         {
             var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle, activePlayer: 2);
@@ -299,10 +299,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for opponent repository and trash counts.</summary>
+    [Trait("対象", "相手のデッキ・トラッシュ枚数")]
     public class OpponentCounts : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手のデッキとトラッシュの枚数が表示される")]
         public void ReportsRepoAndTrashCounts()
         {
             var state = TestFactory.MakeGameState();
@@ -317,10 +317,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for available actions being exposed only to the active player.</summary>
+    [Trait("対象", "利用可能アクションの公開")]
     public class AvailableActions : Base
     {
-        [Theory]
+        [Theory(DisplayName = "利用可能アクションはビューの閲覧プレイヤーがアクティブなときだけ載る")]
         [InlineData(1, true)]
         [InlineData(2, false)]
         public void DependsOnActivePlayer(long activePlayer, bool expectActions)
@@ -339,7 +339,7 @@ public class GameStateViewTests
             }
         }
 
-        [Fact]
+        [Fact(DisplayName = "終了済みゲームでは利用可能アクションが載らない")]
         public void FinishedGame_DoesNotGetAvailableActions()
         {
             var game = TestFactory.MakeGame();
@@ -352,10 +352,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for time bank reporting.</summary>
+    [Trait("対象", "タイムバンクの表示")]
     public class TimeBank : Base
     {
-        [Fact]
+        [Fact(DisplayName = "両プレイヤーのタイムバンクが表示される")]
         public void ReportedForBothPlayers()
         {
             var state = TestFactory.MakeGameState();
@@ -369,10 +369,10 @@ public class GameStateViewTests
         }
     }
 
-    /// <summary>Tests for empty opponent field slots being null.</summary>
+    [Trait("対象", "空スロットの表示")]
     public class EmptySlots : Base
     {
-        [Fact]
+        [Fact(DisplayName = "相手のビューの空フィールドスロットは全て null になる")]
         public void OpponentView_AreNull()
         {
             var state = TestFactory.MakeGameState();

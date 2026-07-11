@@ -29,10 +29,10 @@ public class ScaleUpProcessorTests
             new() { InstanceID = instanceId, TargetRank = targetRank, InstanceFamily = family };
     }
 
-    /// <summary>Tests for the rank transition produced by a successful scale-up.</summary>
+    [Trait("対象", "スケールアップによるランク変化")]
     public class RankChange : Base
     {
-        [Theory]
+        [Theory(DisplayName = "スケールアップで要求したランクへ変化する")]
         [InlineData(Rank.Small, null, "medium", "M", Rank.Medium)]
         [InlineData(Rank.Medium, InstanceFamily.M, "large", "M", Rank.Large)]
         public void Process_ChangesRank(Rank initialRank, InstanceFamily? initFamily, string reqRank, string reqFamily, Rank expectedRank)
@@ -48,10 +48,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>Tests that a non-resizable resource cannot be scaled up.</summary>
+    [Trait("対象", "非リサイザブルリソースの拒否")]
     public class NotResizable : Base
     {
-        [Fact]
+        [Fact(DisplayName = "リサイザブルでないリソースをスケールアップすると、GameRuleException を投げる")]
         public void Process_NotResizable_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -66,10 +66,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>Tests that a dormant resource cannot be scaled up.</summary>
+    [Trait("対象", "休止リソースの拒否")]
     public class DormantResource : Base
     {
-        [Fact]
+        [Fact(DisplayName = "休止状態のリソースをスケールアップすると、GameRuleException を投げる")]
         public void Process_DormantResource_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -85,10 +85,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>Tests that scaling up is allowed on the deploy turn.</summary>
+    [Trait("対象", "デプロイ当ターンのスケールアップ")]
     public class DeployTurn : Base
     {
-        [Fact]
+        [Fact(DisplayName = "デプロイした当ターンでもスケールアップできる")]
         public void Process_DeployTurn_Succeeds()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -103,10 +103,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>Tests that scaling up twice in the same turn is allowed.</summary>
+    [Trait("対象", "同一ターン内の連続スケールアップ")]
     public class TwiceInSameTurn : Base
     {
-        [Fact]
+        [Fact(DisplayName = "同じターンに続けて 2 回スケールアップできる")]
         public void Process_TwiceInSameTurn_Succeeds()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -123,10 +123,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>Tests instance-family validation when scaling to Medium or changing family.</summary>
+    [Trait("対象", "インスタンスファミリーの検証")]
     public class FamilyValidation : Base
     {
-        [Fact]
+        [Fact(DisplayName = "ファミリー未指定で medium へスケールアップすると、GameRuleException を投げる")]
         public void Process_MediumWithoutFamily_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -141,7 +141,7 @@ public class ScaleUpProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*family required*");
         }
 
-        [Fact]
+        [Fact(DisplayName = "既存と異なるインスタンスファミリーへスケールアップすると、GameRuleException を投げる")]
         public void Process_MediumToDifferentFamily_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -156,10 +156,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>Tests that scaling to the same or a lower rank is rejected.</summary>
+    [Trait("対象", "同ランクへのスケールアップ拒否")]
     public class SameRank : Base
     {
-        [Fact]
+        [Fact(DisplayName = "同じランクへスケールアップすると、GameRuleException を投げる")]
         public void Process_SameRank_Throws()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -174,10 +174,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>Tests that a successful scale-up emits a scale-up event.</summary>
+    [Trait("対象", "スケールアップイベントの生成")]
     public class ScaleUpEvent : Base
     {
-        [Fact]
+        [Fact(DisplayName = "スケールアップすると、instanceId と targetRank medium を含む ScaleUp イベントを生成する")]
         public void Process_GeneratesScaleUpEvent()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -194,7 +194,7 @@ public class ScaleUpProcessorTests
             data.TargetRank.Should().Be("medium");
         }
 
-        [Fact]
+        [Fact(DisplayName = "ScaleUp イベントに要求したインスタンスファミリー C が含まれる")]
         public void Process_ScaleUpEvent_IncludesInstanceFamily()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -228,10 +228,10 @@ public class ScaleUpProcessorTests
     private static ScaleUpRequest Req(string instanceId, string targetRank, string? family = null) =>
         new() { InstanceID = instanceId, TargetRank = targetRank, InstanceFamily = family };
 
-    /// <summary>スモールからの昇格で選んだインスタンスファミリーが付与されることを検証する。</summary>
+    [Trait("対象", "インスタンスファミリーの付与")]
     public class FamilyChange
     {
-        [Fact]
+        [Fact(DisplayName = "small から昇格すると、選んだインスタンスファミリー C が付与される")]
         public void Process_AssignsInstanceFamily_WhenScalingFromSmall()
         {
             var cc = ResizableCc();
@@ -246,10 +246,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>高ランクほど 可用性 / スループット が再計算で増えることを検証する。</summary>
+    [Trait("対象", "ランク上昇によるステータス再計算")]
     public class StatRecalculation
     {
-        [Fact]
+        [Fact(DisplayName = "高いランクほど、可用性とスループットが再計算で増える")]
         public void Process_RecalculatesMaxAvAndMaxTp_ForHigherRank()
         {
             var cc = ResizableCc();
@@ -269,10 +269,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>スケールアップで自身と装備アタッチメントの OnScaleUp 誘発効果が発動することを検証する。</summary>
+    [Trait("対象", "スケールアップの OnScaleUp 誘発効果")]
     public class OnScaleUpTrigger
     {
-        [Fact]
+        [Fact(DisplayName = "スケールアップすると、リソース自身の OnScaleUp 誘発効果が発動する")]
         public void Process_FiresOnScaleUpForResource()
         {
             var cc = ResizableCc();
@@ -290,7 +290,7 @@ public class ScaleUpProcessorTests
             fired.Should().Be(1, "スケールアップで自身の OnScaleUp 誘発効果が発動する");
         }
 
-        [Fact]
+        [Fact(DisplayName = "スケールアップすると、装備したアタッチメントの OnScaleUp 誘発効果も発動する")]
         public void Process_FiresOnScaleUpForAttachment()
         {
             var cc = ResizableCc();
@@ -316,10 +316,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>フィールドに存在しないリソースのスケールアップが拒否されることを検証する。</summary>
+    [Trait("対象", "存在しないリソースの拒否")]
     public class ResourceNotFound
     {
-        [Fact]
+        [Fact(DisplayName = "フィールドに存在しないリソースをスケールアップすると、GameRuleException を投げる")]
         public void Process_ResourceNotFound_Throws()
         {
             var cc = ResizableCc();
@@ -332,10 +332,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    /// <summary>スケールダウン (高ランクから低ランク) が拒否されることを検証する。</summary>
+    [Trait("対象", "スケールダウンの拒否")]
     public class ScaleDown
     {
-        [Theory]
+        [Theory(DisplayName = "large から低いランクへスケールダウンすると、GameRuleException を投げる")]
         [InlineData("medium")]
         [InlineData("small")]
         public void Process_ScaleDownFromLarge_Throws(string targetRank)

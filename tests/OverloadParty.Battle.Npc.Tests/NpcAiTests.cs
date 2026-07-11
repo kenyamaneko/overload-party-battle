@@ -7,6 +7,7 @@ using GD = OverloadParty.GameState;
 
 namespace OverloadParty.Battle.Tests.Npc;
 
+[Trait("対象", "NPC の意思決定")]
 public class NpcAiTests
 {
     private readonly TestCardCache _cc = new();
@@ -200,7 +201,7 @@ public class NpcAiTests
     //  手札調整
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "手札調整では維持コストが小さいカードから捨てる")]
     public void DecideDiscard_CheapestMaintenance_DiscardsCheapest()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -222,7 +223,7 @@ public class NpcAiTests
     //  バトルフェーズ
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "av_asc のとき、可用性が最も低い相手リソースを攻撃する")]
     public void Battle_WeakestAV_AttacksLowestAV()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -246,7 +247,7 @@ public class NpcAiTests
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("weak");
     }
 
-    [Fact]
+    [Fact(DisplayName = "tp_desc のとき、スループットが最も高い相手リソースを攻撃する")]
     public void Battle_StrongestTP_AttacksHighestValue()
     {
         var config = AiConfigLoader.LoadFromString("""
@@ -285,7 +286,7 @@ public class NpcAiTests
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
     }
 
-    [Fact]
+    [Fact(DisplayName = "攻撃アクションが無いとき、EndPhase だけを返す")]
     public void Battle_NoAttackActions_OnlyEndPhase()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -297,7 +298,7 @@ public class NpcAiTests
         actions[0].ActionType.Should().Be(ActionTypes.EndPhase);
     }
 
-    [Fact]
+    [Fact(DisplayName = "複数の攻撃可能リソースがあるとき、全てで攻撃する")]
     public void Battle_MultipleAttackers_AllAttack()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -322,7 +323,7 @@ public class NpcAiTests
     //  スロット選択
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "スロット選択待ちのとき、先頭の有効ゾーンを選ぶ")]
     public void SlotSelect_ReturnsFirstValidZone()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -340,14 +341,14 @@ public class NpcAiTests
         ((SelectSlotRequest)action.Data).Index.Should().Be(0);
     }
 
-    [Fact]
+    [Fact(DisplayName = "スロット選択待ちが無いとき、null を返す")]
     public void SlotSelect_NoPending_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
         ai.DecideSlotSelect(BuildState()).Should().BeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "有効ゾーンが空のとき、null を返す")]
     public void SlotSelect_EmptyValidZones_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -365,7 +366,7 @@ public class NpcAiTests
     //  効果中のプレイヤー選択
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "効果中の選択で、先頭の候補を選ぶ")]
     public void PendingEffectChoice_PicksFirstCandidate()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -399,7 +400,7 @@ public class NpcAiTests
         ((ResolvePendingChoiceRequest)action.Data).ChosenId.Should().Be("TST-0001");
     }
 
-    [Fact]
+    [Fact(DisplayName = "選択者が自分でないとき、null を返す")]
     public void PendingEffectChoice_WrongChooser_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -415,7 +416,7 @@ public class NpcAiTests
         ai.DecidePendingEffectChoice(state).Should().BeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "resolve アクションが無いとき、null を返す")]
     public void PendingEffectChoice_NoResolveActions_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -435,7 +436,7 @@ public class NpcAiTests
     //  デプロイ: priority 解決
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "card_id 優先度が card_type 優先度より優先される")]
     public void Deploy_CardIdPriority_TakesPrecedenceOverCardType()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -459,7 +460,7 @@ public class NpcAiTests
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
     }
 
-    [Fact]
+    [Fact(DisplayName = "未知のカードは優先度 0 として扱う")]
     public void Deploy_UnknownCard_Priority0()
     {
         _cc.Add(TestFactory.ComputeCard(cardId: "UNKNOWN-001", tp: 100, av: 200, mc: 50));
@@ -485,7 +486,7 @@ public class NpcAiTests
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_sh1");
     }
 
-    [Fact]
+    [Fact(DisplayName = "条件付き優先度は条件を満たすとき、primary の優先度を使う")]
     public void Deploy_ConditionalPriority_ConditionMet_UsesPrimary()
     {
         var ai = new NpcAi(MakeConditionalPriorityConfig(), _cc, _effects);
@@ -513,7 +514,7 @@ public class NpcAiTests
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("hand_tk5");
     }
 
-    [Fact]
+    [Fact(DisplayName = "条件付き優先度は条件を満たさないとき、fallback の優先度を使う")]
     public void Deploy_ConditionalPriority_ConditionNotMet_UsesFallback()
     {
         var ai = new NpcAi(MakeConditionalPriorityConfig(), _cc, _effects);
@@ -541,11 +542,10 @@ public class NpcAiTests
     //  デプロイ: choice 解決
     // ═══════════════════════════════════════════════════════════════
 
-    /// <summary>NPC が config の分岐回答に基づいて分岐選択を解決する振る舞いを検証する。</summary>
+    [Trait("対象", "分岐選択の解決")]
     public class BranchChoiceResolution
     {
-        /// <summary>config に分岐回答があるとき、その値で分岐選択を解決することを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "config に分岐回答があるとき、その値で分岐選択を解決する")]
         public void UsesConfiguredChoice()
         {
             var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
@@ -577,8 +577,7 @@ public class NpcAiTests
             ((ResolvePendingChoiceRequest)action!.Data).ChosenId.Should().Be("use");
         }
 
-        /// <summary>config に該当カードの分岐回答がないとき、解決が例外を投げることを検証する。</summary>
-        [Fact]
+        [Fact(DisplayName = "config に該当カードの分岐回答が無いとき、例外を投げる")]
         public void NotConfigured_Throws()
         {
             var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
@@ -615,7 +614,7 @@ public class NpcAiTests
     //  デプロイ: zone preferences
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "Compute系リソースはフロントエンドにデプロイする")]
     public void Deploy_ZonePreference_ComputePrefersFrontend()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -637,7 +636,7 @@ public class NpcAiTests
         req.Zone.Should().Be("frontend");
     }
 
-    [Fact]
+    [Fact(DisplayName = "Data系リソースはバックエンドにデプロイする")]
     public void Deploy_ZonePreference_DataPrefersBackend()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -663,7 +662,7 @@ public class NpcAiTests
     //  スケールアップ: conditional family
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "条件付きファミリーは条件を満たすとき、上書きの M を使う")]
     public void ScaleUp_ConditionalFamily_ConditionMet_UsesOverride()
     {
         var ai = new NpcAi(MakeConditionalFamilyConfig(), _cc, _effects);
@@ -688,7 +687,7 @@ public class NpcAiTests
         ((ScaleUpRequest)scaleUp.Data).InstanceFamily.Should().Be("M");
     }
 
-    [Fact]
+    [Fact(DisplayName = "条件付きファミリーは条件を満たさないとき、既定の R を使う")]
     public void ScaleUp_ConditionalFamily_ConditionNotMet_UsesDefault()
     {
         var ai = new NpcAi(MakeConditionalFamilyConfig(), _cc, _effects);
@@ -713,7 +712,7 @@ public class NpcAiTests
     //  収益化
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "reserve_ratio 0.5 のとき、収益化の分配合計が 500 になる")]
     public void Monetize_ReserveRatio_LimitsDistribution()
     {
         var yaml = """
@@ -768,7 +767,7 @@ public class NpcAiTests
         total.Should().Be(500);
     }
 
-    [Fact]
+    [Fact(DisplayName = "インサイトプールが 0 のとき、収益化アクションを出さない")]
     public void Monetize_ZeroInsightPool_NoMonetizeAction()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -784,7 +783,7 @@ public class NpcAiTests
         actions.Should().NotContain(a => a.ActionType == ActionTypes.Monetize);
     }
 
-    [Fact]
+    [Fact(DisplayName = "スループットが最も高いリソースから先に分配する")]
     public void Monetize_HighestTP_DistributesToHighestTPFirst()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -812,7 +811,7 @@ public class NpcAiTests
         dists[0].InstanceID.Should().Be("res_high");
     }
 
-    [Fact]
+    [Fact(DisplayName = "reserve_ratio 0.3 のとき、複数リソースへの分配合計が 700 になる")]
     public void Monetize_ReserveRatio_WithMultipleResources()
     {
         var yaml = """
@@ -875,7 +874,7 @@ public class NpcAiTests
         total.Should().Be(700);
     }
 
-    [Fact]
+    [Fact(DisplayName = "収益化アクションが無いとき、収益化を出さない")]
     public void Monetize_NoMonetizeActions_NoAction()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -895,7 +894,7 @@ public class NpcAiTests
     //  即時効果カード
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "効果を持つストラテジーは優先度に従ってプレイされる")]
     public void Immediate_StrategyCard_PlayedWithPriority()
     {
         _cc.Add(new CardDefinition { CardId = "TST-STRAT", CardName = "TestStrategy", CardType = "Strategy" });
@@ -924,7 +923,7 @@ public class NpcAiTests
         play.Should().NotBeNull();
     }
 
-    [Fact]
+    [Fact(DisplayName = "効果情報が無いカードはプレイされない")]
     public void Immediate_NoEffectInfo_NotPlayed()
     {
         _cc.Add(new CardDefinition { CardId = "TST-NOEFF", CardName = "NoEffect", CardType = "Strategy" });
@@ -952,7 +951,7 @@ public class NpcAiTests
     //  ゲーム進行フェーズ overlay
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "late フェーズ条件を満たすとき、ターゲット選択を上書きする")]
     public void LateGame_OverridesTargetSelection()
     {
         var yaml = """
@@ -1018,7 +1017,7 @@ public class NpcAiTests
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
     }
 
-    [Fact]
+    [Fact(DisplayName = "late フェーズ条件を満たさないとき、基本 config のターゲット選択を使う")]
     public void LateGame_ConditionNotMet_UsesBaseConfig()
     {
         var yaml = """
@@ -1084,7 +1083,7 @@ public class NpcAiTests
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("low_tp");
     }
 
-    [Fact]
+    [Fact(DisplayName = "late フェーズは turn_min と count の両方を満たすとき適用される")]
     public void LateGame_WithCountCondition_BothMustBeMet()
     {
         var yaml = """
@@ -1159,7 +1158,7 @@ public class NpcAiTests
     //  メインフェーズは常に EndPhase で終わる
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "利用可能アクションが空でも、メインフェーズは EndPhase で終わる")]
     public void MainPhase_EmptyAvailable_StillEndsWithEndPhase()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -1175,7 +1174,7 @@ public class NpcAiTests
     //  デプロイ: アタッチメント
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact]
+    [Fact(DisplayName = "attachments 設定があるとき、アタッチメントをリソースと分けてデプロイする")]
     public void Deploy_AttachmentsConfig_AttachmentsSeparatedFromResources()
     {
         var yaml = """
@@ -1248,7 +1247,7 @@ public class NpcAiTests
         ((PlayCardRequest)deploys[1].Data).TargetInstanceID.Should().Be("res1");
     }
 
-    [Fact]
+    [Fact(DisplayName = "アタッチメントは優先度が高いものから先にデプロイする")]
     public void Deploy_AttachmentPriority_HigherPriorityFirst()
     {
         _cc.Add(TestFactory.AttachmentCard(cardId: "TST-0008", name: "TestAttachment2"));
@@ -1320,7 +1319,7 @@ public class NpcAiTests
         ((PlayCardRequest)deploys[1].Data).CardInstanceID.Should().Be("h_att1");
     }
 
-    [Fact]
+    [Fact(DisplayName = "attachments 設定が無いとき、アタッチメントをデプロイしない")]
     public void Deploy_NoAttachmentsConfig_AttachmentSkipped()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -1424,7 +1423,7 @@ public class NpcAiTests
             """);
     }
 
-    [Fact]
+    [Fact(DisplayName = "ルーチン施策は条件を満たすとき使用される")]
     public void Initiative_RoutineConditionMet_Emitted()
     {
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
@@ -1443,7 +1442,7 @@ public class NpcAiTests
             && ((UseInitiativeRequest)a.Data).Kind == InitiativeKinds.Routine);
     }
 
-    [Fact]
+    [Fact(DisplayName = "ルーチン施策は条件を満たさないとき使用されない")]
     public void Initiative_RoutineConditionUnmet_NotEmitted()
     {
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
@@ -1458,7 +1457,7 @@ public class NpcAiTests
         actions.Should().NotContain(a => a.ActionType == ActionTypes.UseInitiative);
     }
 
-    [Fact]
+    [Fact(DisplayName = "initiative 設定が無いとき、施策を使用しない")]
     public void Initiative_NoInitiativeConfig_NotEmitted()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects, MakeInitiativeCatalog());
@@ -1475,7 +1474,7 @@ public class NpcAiTests
         actions.Should().NotContain(a => a.ActionType == ActionTypes.UseInitiative);
     }
 
-    [Fact]
+    [Fact(DisplayName = "施策カタログが無いとき、施策を使用しない")]
     public void Initiative_NoCatalog_NotEmitted()
     {
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects);
@@ -1492,7 +1491,7 @@ public class NpcAiTests
         actions.Should().NotContain(a => a.ActionType == ActionTypes.UseInitiative);
     }
 
-    [Theory]
+    [Theory(DisplayName = "スペシャル施策は min_insight 500 を満たすインサイトプールのときだけ使用される")]
     [InlineData(400, false)]
     [InlineData(600, true)]
     public void Initiative_SpecialMinInsight_GatesUsage(long insightPool, bool expectedUsed)
@@ -1509,7 +1508,7 @@ public class NpcAiTests
         actions.Any(a => a.ActionType == ActionTypes.UseInitiative).Should().Be(expectedUsed);
     }
 
-    [Fact]
+    [Fact(DisplayName = "選択効果を持つ施策はターゲットを解決して使用される")]
     public void Initiative_ChoiceEffect_ResolvesTarget()
     {
         _effects.SetEffectInfo(
@@ -1530,7 +1529,7 @@ public class NpcAiTests
         ((UseInitiativeRequest)initiative.Data).ChoiceData!["instanceId"].Should().Be("dmg1");
     }
 
-    [Fact]
+    [Fact(DisplayName = "選択効果の対象が無いとき、施策を使用しない")]
     public void Initiative_ChoiceEffect_NoTarget_NotEmitted()
     {
         _effects.SetEffectInfo(
@@ -1548,7 +1547,7 @@ public class NpcAiTests
         actions.Should().NotContain(a => a.ActionType == ActionTypes.UseInitiative);
     }
 
-    [Fact]
+    [Fact(DisplayName = "ルーチンとスペシャルの両方があるとき、優先度順でスペシャルが先に並ぶ")]
     public void Initiative_BothKinds_SpecialOrderedFirstByPriority()
     {
         var ai = new NpcAi(MakeRoutineSpecialConfig(), _cc, _effects, MakeInitiativeCatalog());
