@@ -148,3 +148,111 @@ public class EffectYamlLoaderTests
         state.Player1Budget.Should().Be(1000);
     }
 }
+
+[Trait("対象", "パッシブ効果の分類とfail-fast検証")]
+public class PassiveClassificationTests
+{
+    private readonly TestCardCache _cc = new();
+    private readonly Game _game = TestFactory.MakeGame();
+
+    private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement;
+
+    [Fact(DisplayName = "on_field_change に apply_buff 以外の op を併記した定義は読み込みが失敗する")]
+    public void OnFieldChangeWithNonApplyBuffOp_ThrowsOnLoad()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9101");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "on_field_change",
+                Ops = [Parse("""{ "gain_budget": { "target": "myself", "amount": 100 } }""")],
+            },
+        ];
+
+        var act = () => EffectYamlLoader.LoadEffectSources([card], new EffectRegistry(), new CustomEffectRegistry());
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact(DisplayName = "apply_buff の duration に continuous と書いた定義は読み込みが失敗する")]
+    public void ApplyBuffWithContinuousDuration_ThrowsOnLoad()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9102");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "ignition",
+                Ops = [Parse("""{"apply_buff":{"selector":"source","buff":"tp","amount":200,"duration":"continuous"}}""")],
+            },
+        ];
+
+        var act = () => EffectYamlLoader.LoadEffectSources([card], new EffectRegistry(), new CustomEffectRegistry());
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact(DisplayName = "イベント系 while_on_field で selector が source でない定義は読み込みが失敗する")]
+    public void EventWhileOnFieldWithNonSourceSelector_ThrowsOnLoad()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9103");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "on_deploy",
+                Choice = new Dictionary<string, List<JsonElement>>
+                {
+                    ["standard"] =
+                    [
+                        Parse("""{"apply_buff":{"selector":{"owner":"myself"},"buff":"maintenance_reduction","amount":200,"duration":"while_on_field"}}"""),
+                    ],
+                },
+            },
+        ];
+
+        var act = () => EffectYamlLoader.LoadEffectSources([card], new EffectRegistry(), new CustomEffectRegistry());
+
+        act.Should().Throw<InvalidOperationException>();
+    }
+
+    [Fact(DisplayName = "on_deploy の while_on_field 専用 def と他 op の def が並ぶカードは、前者だけがパッシブ効果として登録され後者はイベントとして残る")]
+    public void MixedOnDeployDefs_OnlyWhileOnFieldDefBecomesPassive()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9104");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "on_deploy",
+                Ops = [Parse("""{"apply_buff":{"selector":"source","buff":"count_multiplier","amount":2,"duration":"while_on_field"}}""")],
+            },
+            new EffectDef
+            {
+                Trigger = "on_deploy",
+                Ops = [Parse("""{ "draw": { "count": 1 } }""")],
+            },
+        ];
+        var registry = new EffectRegistry();
+
+        EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+
+        registry.GetPassives("TST-9104").Should().ContainSingle();
+        registry.Has("TST-9104", TriggerType.OnDeploy).Should().BeTrue();
+
+        var state = TestFactory.MakeGameState();
+        state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-9104" });
+        var handler = registry.Get("TST-9104", TriggerType.OnDeploy)!;
+        handler(new EffectContext
+        {
+            State = state,
+            Game = _game,
+            PlayerNum = 1,
+            CardCache = _cc,
+            Effects = registry,
+        });
+
+        state.Player1Hand.Should().ContainSingle(c => c.InstanceID == "repo_1");
+    }
+}

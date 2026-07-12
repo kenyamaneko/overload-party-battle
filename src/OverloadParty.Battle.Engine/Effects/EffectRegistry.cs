@@ -33,6 +33,7 @@ public class EffectRegistration
 public class EffectRegistry : IEffectRegistry
 {
     private readonly Dictionary<(string CardId, TriggerType Trigger), EffectRegistration> _handlers = new();
+    private readonly Dictionary<string, List<PassiveEffectDef>> _passives = new();
 
     /// <summary>
     /// Registers a custom effect handler for a card and trigger.
@@ -208,5 +209,22 @@ public class EffectRegistry : IEffectRegistry
             .Where(key => key.Trigger == trigger)
             .Select(key => key.CardId)
             .ToList();
+    }
+
+    /// <inheritdoc />
+    public void RegisterPassive(string cardId, PassiveEffectDef def)
+    {
+        if (!_passives.TryGetValue(cardId, out var defs))
+        {
+            defs = [];
+            _passives[cardId] = defs;
+        }
+        defs.Add(def);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyList<PassiveEffectDef> GetPassives(string cardId)
+    {
+        return _passives.GetValueOrDefault(cardId, []);
     }
 }

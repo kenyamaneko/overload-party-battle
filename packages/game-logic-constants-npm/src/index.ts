@@ -15,7 +15,7 @@ export type GameActionType = (typeof ACTION_TYPES)[number];
 export const EVENT_TYPES = ["play_card", "attach_card", "attack", "scale_up", "monetize", "discard_hand", "use_ignition", "use_initiative", "reactive_revealed", "phase_change", "phase_end", "turn_end", "turn_start", "game_over", "battle_start"] as const;
 export type EventType = (typeof EVENT_TYPES)[number];
 
-export const EFFECT_DURATIONS = ["this_turn", "until_next_turn_end", "until_next_own_turn_end", "while_on_field", "permanent", "next_turn"] as const;
+export const EFFECT_DURATIONS = ["this_turn", "until_next_turn_end", "until_next_own_turn_end", "while_on_field", "permanent", "next_turn", "continuous"] as const;
 export type EffectDuration = (typeof EFFECT_DURATIONS)[number];
 
 export const TRIGGER_TYPES = ["ignition", "passive", "on_deploy", "on_end_phase", "on_field_change", "on_scale_up", "on_attack", "on_attack_declared", "on_hit", "on_destroy", "on_damaged", "on_incident"] as const;

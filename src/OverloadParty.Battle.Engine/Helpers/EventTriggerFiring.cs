@@ -64,6 +64,7 @@ public static class EventTriggerFiring
     /// 発動し、発動後はトラッシュへ送られます。
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <param name="cc">カード定義キャッシュ。</param>
     /// <param name="trigger">発動させるトリガーの種別。</param>
@@ -72,6 +73,7 @@ public static class EventTriggerFiring
     /// <returns>アクションが無効化されたかと、収集したイベント。</returns>
     public static (bool Cancelled, List<GameEvent> Events) Fire(
         BattleGameState state,
+        Game game,
         IEffectRegistry effects,
         ICardCache cc,
         TriggerType trigger,
@@ -109,7 +111,7 @@ public static class EventTriggerFiring
             if (reactive is not null)
             {
                 reactiveActivated = true;
-                ReactiveCard.Consume(state, reactive, candidate.OwnerNum);
+                ReactiveCard.Consume(state, game, cc, effects, reactive, candidate.OwnerNum);
             }
 
             // choice op が ChoiceData 不足で suspend したら state に保存して後続を止める。

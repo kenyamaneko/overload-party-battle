@@ -47,7 +47,28 @@ public static class EffectYamlLoader
         EffectRegistry registry,
         CustomEffectRegistry customRegistry)
     {
-        var byTrigger = effects.GroupBy(e => ParseTrigger(e.Trigger));
+        var eventDefs = new List<EffectDef>();
+
+        foreach (var def in effects)
+        {
+            var trigger = ParseTrigger(def.Trigger);
+
+            if (trigger == TriggerType.OnFieldChange)
+            {
+                registry.RegisterPassive(sourceId, BuildPassiveDef(def));
+                continue;
+            }
+
+            if (trigger == TriggerType.OnDeploy && IsOnDeployPassiveDef(def))
+            {
+                registry.RegisterPassive(sourceId, BuildPassiveDef(def));
+                continue;
+            }
+
+            eventDefs.Add(def);
+        }
+
+        var byTrigger = eventDefs.GroupBy(e => ParseTrigger(e.Trigger));
 
         foreach (var group in byTrigger)
         {
@@ -58,6 +79,124 @@ public static class EffectYamlLoader
                 registry.RegisterComposed(sourceId, group.Key, block);
             }
         }
+    }
+
+    // ================================================================
+    // パッシブ効果 (常時再計算されるバフ) の分類・構築
+    // ================================================================
+
+    /// <summary>duration が this_turn / while_on_field の apply_buff だけで構成される on_deploy def か判定する。</summary>
+    private static bool IsOnDeployPassiveDef(EffectDef def)
+    {
+        if (def.Custom is not null || def.Choice is not null) { return false; }
+        if (def.Ops is not { Count: > 0 } ops) { return false; }
+
+        foreach (var opElement in ops)
+        {
+            if (!TryGetSoleOp(opElement, out string opName, out var body)) { return false; }
+            if (opName != EffectOps.ApplyBuff) { return false; }
+            if (body.GetStringOr("duration", EffectDurations.Permanent) != EffectDurations.WhileOnField)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static readonly HashSet<string> PassiveApplyBuffDurations =
+    [
+        EffectDurations.ThisTurn,
+        EffectDurations.WhileOnField,
+    ];
+
+    /// <summary>on_field_change / on_deploy+while_on_field と分類された def をパッシブ効果として構築する。</summary>
+    private static PassiveEffectDef BuildPassiveDef(EffectDef def)
+    {
+        if (def.Custom is not null)
+        {
+            throw new InvalidOperationException($"passive effect def cannot use custom: {def.Custom}");
+        }
+        if (def.Choice is not null)
+        {
+            throw new InvalidOperationException("passive effect def cannot use choice");
+        }
+        if (def.Ops is not { Count: > 0 } ops)
+        {
+            throw new InvalidOperationException("passive effect def requires at least one apply_buff op");
+        }
+
+        var guards = (def.Guard ?? []).Select(BuildGuard).ToArray();
+        var applications = ops.Select(BuildPassiveApplication).ToArray();
+
+        bool hasCountMultiplier = applications.Any(a => a.EffectType == BuffTypes.CountMultiplier);
+        if (hasCountMultiplier && guards.Length > 0)
+        {
+            throw new InvalidOperationException(
+                "a passive def with a count_multiplier application cannot also have guards");
+        }
+
+        return new PassiveEffectDef { Guards = guards, Applications = applications };
+    }
+
+    private static PassiveBuffApplication BuildPassiveApplication(JsonElement opElement)
+    {
+        if (!TryGetSoleOp(opElement, out string opName, out var body) || opName != EffectOps.ApplyBuff)
+        {
+            throw new InvalidOperationException($"passive effect def ops must all be apply_buff, got: {opName}");
+        }
+
+        string duration = body.GetStringOr("duration", EffectDurations.Permanent);
+        if (!PassiveApplyBuffDurations.Contains(duration))
+        {
+            throw new InvalidOperationException($"unsupported duration for a passive apply_buff: {duration}");
+        }
+
+        var selector = BuildSelector(body.GetProperty("selector"));
+        if (selector is ByChoiceSelector)
+        {
+            throw new InvalidOperationException("passive apply_buff selector cannot use pick: choice");
+        }
+
+        string buff = MapBuffName(body.GetProperty("buff").GetString()!);
+
+        var amountElement = body.GetProperty("amount");
+        if (amountElement.ValueKind == JsonValueKind.Object && amountElement.TryGetProperty("ref", out _))
+        {
+            throw new InvalidOperationException("passive apply_buff amount cannot use ref");
+        }
+        var amount = BuildAmount(amountElement);
+
+        if (buff == BuffTypes.CountMultiplier && amount is not StaticAmount)
+        {
+            throw new InvalidOperationException("count_multiplier passive application amount must be static");
+        }
+
+        string mode = body.GetStringOr("mode", "");
+
+        return new PassiveBuffApplication
+        {
+            Selector = selector,
+            EffectType = buff,
+            Amount = amount,
+            Mode = mode,
+        };
+    }
+
+    /// <summary>op オブジェクト (単一キーの JSON object) からオペレーション名と中身を取り出す。</summary>
+    private static bool TryGetSoleOp(JsonElement element, out string opName, out JsonElement body)
+    {
+        using var enumerator = element.EnumerateObject();
+        if (!enumerator.MoveNext())
+        {
+            opName = "";
+            body = default;
+            return false;
+        }
+
+        var prop = enumerator.Current;
+        opName = prop.Name;
+        body = prop.Value;
+        return true;
     }
 
     // ================================================================
@@ -332,6 +471,17 @@ public static class EffectYamlLoader
         string duration = p.GetStringOr("duration", EffectDurations.Permanent);
         string? sourceId = p.GetStringOrNull("source_id");
         string mode = p.GetStringOr("mode", "");
+
+        if (duration == EffectDurations.Continuous)
+        {
+            throw new InvalidOperationException(
+                "duration 'continuous' is engine-managed and cannot appear in card data");
+        }
+        if (duration == EffectDurations.WhileOnField && selector is not SourceSelector)
+        {
+            throw new InvalidOperationException(
+                "apply_buff outside a passive effect definition with duration 'while_on_field' must use selector: source");
+        }
 
         return new ApplyBuffOp(selector, buff, amount, duration, sourceId, mode);
     }

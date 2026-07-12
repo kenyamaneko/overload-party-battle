@@ -165,17 +165,35 @@ public class IgnitionEffectTests
             var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new DestroyPlatformOp());
             cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", name: "Watcher"));
-            int fieldChangeFires = 0;
-            effects.Register("TST-0005", TriggerType.OnFieldChange, _ => { fieldChangeFires++; return new EffectResult(); });
+            effects.RegisterPassive("TST-0005", new PassiveEffectDef
+            {
+                Guards = [new ResourceCountGuard("opponent", Zones.Support, null, null, null, ["TST-0200"], 1, null)],
+                Applications =
+                [
+                    new PassiveBuffApplication
+                    {
+                        Selector = SourceSelector.Instance,
+                        EffectType = EffectTypes.BuffTP,
+                        Amount = new StaticAmount(200),
+                        Mode = "",
+                    },
+                ],
+            });
 
+            var game = TestFactory.MakeGame();
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
-            state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0005", instanceId: "watcher", faceUp: true);
+            var watcher = TestFactory.MakeResource(cardId: "TST-0005", instanceId: "watcher", faceUp: true);
+            state.Player1Field.Frontend[1] = watcher;
             state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "plat_1", CardID = "TST-0200", FaceUp = true };
+            PassiveRecalculator.Recalculate(state, game, cc, effects);
+            StatCalculator.CalculateEffectiveTP(watcher, state.Player1Field, cc).Should().Be(
+                800, "相手プラットフォームが場にいる間はパッシブ効果で+200される");
 
-            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+            UseIgnitionProcessor.Process(state, game, 1, Use("src"), cc, effects);
 
-            fieldChangeFires.Should().Be(1, "プラットフォーム破壊で盤面が変化しOnFieldChangeが発動する");
+            StatCalculator.CalculateEffectiveTP(watcher, state.Player1Field, cc).Should().Be(
+                600, "プラットフォーム破壊で発動条件を失い基礎値に戻る");
         }
     }
 

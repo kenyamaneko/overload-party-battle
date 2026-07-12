@@ -48,7 +48,7 @@ public static class ResourceHelpers
         }
 
         var (_, events) = EventTriggerFiring.Fire(
-            state, effects, cc, TriggerType.OnDamaged, candidates,
+            state, game, effects, cc, TriggerType.OnDamaged, candidates,
             candidate => new EffectContext
             {
                 State = state,
@@ -212,7 +212,7 @@ public static class ResourceHelpers
     }
 
     /// <summary>
-    /// リソースを破壊する（SLAペナルティ適用、while_on_field バフ除去、トラッシュ移動、フィールド除去）。
+    /// リソースを破壊する（SLAペナルティ適用、トラッシュ移動、フィールド除去）。
     /// 対象が既にフィールドに存在しなければ何もせず false を返す。
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
@@ -236,13 +236,7 @@ public static class ResourceHelpers
         long budget = state.GetBudget(ownerNum);
         state.SetBudget(ownerNum, budget - penalty);
 
-        // while_on_field バフを除去（リソース本体 + アタッチメント）
-        FieldHelpers.RemoveWhileOnFieldBuffs(field, resource.InstanceID);
         var attachments = field.Support.Where(a => a.TargetInstanceID == resource.InstanceID).ToList();
-        foreach (var att in attachments)
-        {
-            FieldHelpers.RemoveWhileOnFieldBuffs(field, att.InstanceID);
-        }
 
         // ホスト＋アタッチメントをトラッシュに移動
         CardMoveHelpers.AddToTrash(state, ownerNum, resource.CardID, resource.InstanceID, resource.ArtNo);

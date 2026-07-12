@@ -199,7 +199,7 @@ public static class AttackProcessor
             .ToList();
 
         return EventTriggerFiring.Fire(
-            state, effects, cc, TriggerType.OnAttackDeclared, candidates,
+            state, game, effects, cc, TriggerType.OnAttackDeclared, candidates,
             candidate => new EffectContext
             {
                 State = state,

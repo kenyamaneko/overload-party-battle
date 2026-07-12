@@ -204,7 +204,7 @@ public static class FieldHelpers
     }
 
     /// <summary>
-    /// サポートカードを破壊してトラッシュに移動し、盤面変化に伴う常時効果を再計算する。
+    /// サポートカードを破壊してトラッシュに移動し、盤面変化に伴うパッシブ効果を再計算する。
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
     /// <param name="game">対象ゲームのメタデータ。</param>
@@ -224,11 +224,10 @@ public static class FieldHelpers
             return false;
         }
 
-        RemoveWhileOnFieldBuffs(field, support.InstanceID);
         CardMoveHelpers.AddToTrash(state, ownerNum, support.CardID, support.InstanceID, support.ArtNo);
         field.Support.Remove(s => s.InstanceID == instanceID);
 
-        FieldChangeTrigger.Fire(state, game, cc, effects);
+        PassiveRecalculator.Recalculate(state, game, cc, effects);
         return true;
     }
 
@@ -272,20 +271,4 @@ public static class FieldHelpers
 
         return afterFlat * (100 - clamped) / 100;
     }
-
-    /// <summary>
-    /// Removes all <c>while_on_field</c> buffs whose SourceID matches the given instance.
-    /// Called when a card leaves the field (destroyed, etc.) to clean up its persistent buffs.
-    /// </summary>
-    /// <param name="field">対象フィールド。</param>
-    /// <param name="sourceInstanceID">バフ付与元のインスタンス ID。</param>
-    public static void RemoveWhileOnFieldBuffs(Field field, string sourceInstanceID)
-    {
-        foreach (var resource in AllResources(field))
-        {
-            resource.TemporaryEffects.RemoveAll(e =>
-                e.Duration == EffectDurations.WhileOnField && e.SourceID == sourceInstanceID);
-        }
-    }
-
 }

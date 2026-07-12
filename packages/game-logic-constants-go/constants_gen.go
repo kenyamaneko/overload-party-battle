@@ -74,6 +74,7 @@ const (
 	EffectDurationWhileOnField = "while_on_field"
 	EffectDurationPermanent = "permanent"
 	EffectDurationNextTurn = "next_turn"
+	EffectDurationContinuous = "continuous"
 )
 
 // Trigger types.

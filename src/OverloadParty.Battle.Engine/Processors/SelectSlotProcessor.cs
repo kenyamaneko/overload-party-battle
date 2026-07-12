@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Models;
+using OverloadParty.Battle.Engine.Effects;
 
 namespace OverloadParty.Battle.Engine.Processors;
 
@@ -15,10 +16,11 @@ public static class SelectSlotProcessor
     /// <param name="playerNum">スロットを選択するプレイヤー番号。</param>
     /// <param name="req">選択されたスロットを含むリクエスト。</param>
     /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <returns>配置イベントと、後続スロット選択の要否を含むアクション結果。</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        SelectSlotRequest req, ICardCache cc)
+        SelectSlotRequest req, ICardCache cc, IEffectRegistry effects)
     {
         if (state.PendingSlotSelects.Count == 0)
         {
@@ -40,6 +42,7 @@ public static class SelectSlotProcessor
 
         var field = state.GetField(playerNum);
         ValidateAndPlace(field, pending.Resource, req.Zone, req.Index);
+        PassiveRecalculator.Recalculate(state, game, cc, effects);
 
         state.PendingSlotSelects.RemoveAt(0);
 
