@@ -74,6 +74,7 @@ public static class EffectDurations
     public const string WhileOnField = "while_on_field";
     public const string Permanent = "permanent";
     public const string NextTurn = "next_turn";
+    public const string Continuous = "continuous";
 }
 
 public static class TriggerTypes

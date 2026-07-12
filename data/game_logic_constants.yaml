@@ -71,6 +71,7 @@ effect_durations:
 - while_on_field
 - permanent
 - next_turn
+- continuous
 
 trigger_types:
 - ignition
