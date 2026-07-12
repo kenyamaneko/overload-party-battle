@@ -787,23 +787,41 @@ public class AttackProcessorTests
     [Trait("対象", "盤面変化時の誘発効果 (OnFieldChange)")]
     public class OnFieldChangeAfterDestroy
     {
-        [Fact(DisplayName = "攻撃で対象が破壊され盤面が変化すると、OnFieldChange 誘発効果が 1 回発動する")]
+        [Fact(DisplayName = "攻撃で対象が破壊され盤面が変化すると、盤面変化を条件とする常時効果が再計算される")]
         public void FiresAfterDefenderDestroyed()
         {
             var cc = StandardCc();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", tp: 1500, av: 1400, slaPenalty: 400, name: "StrongCompute"));
+            var game = TestFactory.MakeGame();
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
-            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+            var attacker = TestFactory.MakeResource(
                 cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+            state.Player1Field.Frontend[0] = attacker;
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
 
-            int fieldChangeFires = 0;
             var effects = new TestEffectRegistry();
-            effects.Register("TST-0005", TriggerType.OnFieldChange, _ => { fieldChangeFires++; return new EffectResult(); });
+            effects.RegisterPassive("TST-0005", new PassiveEffectDef
+            {
+                Guards = [new ResourceCountGuard("opponent", null, null, null, null, ["TST-0001"], 1, null)],
+                Applications =
+                [
+                    new PassiveBuffApplication
+                    {
+                        Selector = SourceSelector.Instance,
+                        EffectType = EffectTypes.BuffTP,
+                        Amount = new StaticAmount(200),
+                        Mode = "",
+                    },
+                ],
+            });
+            PassiveRecalculator.Recalculate(state, game, cc, effects);
+            StatCalculator.CalculateEffectiveTP(attacker, state.Player1Field, cc).Should().Be(
+                1700, "相手リソースが場にいる間はパッシブ効果で+200される");
 
-            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk_1", "def_1"), cc, effects);
+            AttackProcessor.Process(state, game, 1, Atk("atk_1", "def_1"), cc, effects);
 
-            fieldChangeFires.Should().Be(1, "リソース破壊で盤面が変化し OnFieldChange が発動する");
+            StatCalculator.CalculateEffectiveTP(attacker, state.Player1Field, cc).Should().Be(
+                1500, "対象破壊で発動条件を失い基礎値に戻る");
         }
     }
 

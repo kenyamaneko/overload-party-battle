@@ -78,7 +78,6 @@ public class EffectRegistrationTests
         [InlineData("SH-0009", TriggerType.Ignition)]
         [InlineData("SH-0014", TriggerType.OnIncident)]
         [InlineData("SH-0021", TriggerType.OnDamaged)]
-        [InlineData("SH-0005", TriggerType.OnFieldChange)]
         public void Cards_AreRegistered(string cardId, TriggerType trigger)
         {
             _registry.Has(cardId, trigger).Should().BeTrue(
@@ -130,7 +129,6 @@ public class EffectRegistrationTests
         [InlineData("TN-0013", TriggerType.OnIncident)]
         [InlineData("TN-0014", TriggerType.OnDestroy)]
         [InlineData("TN-0017", TriggerType.Ignition)]
-        [InlineData("TN-0004", TriggerType.OnFieldChange)]
         public void Cards_AreRegistered(string cardId, TriggerType trigger)
         {
             _registry.Has(cardId, trigger).Should().BeTrue(
@@ -145,13 +143,26 @@ public class EffectRegistrationTests
         [Theory(DisplayName = "ニュートラルカードが指定トリガーのハンドラを登録済みである")]
         [InlineData("NT-0007", TriggerType.Ignition)]
         [InlineData("NT-0002", TriggerType.OnHit)]
-        [InlineData("NT-0005", TriggerType.OnDeploy)]
-        [InlineData("NT-0025", TriggerType.OnFieldChange)]
         public void Cards_AreRegistered(string cardId, TriggerType trigger)
         {
             _registry.Has(cardId, trigger).Should().BeTrue(
                 $"card #{cardId} should have a {trigger} handler");
             _registry.Get(cardId, trigger).Should().NotBeNull();
+        }
+    }
+
+    [Trait("対象", "パッシブ効果の登録")]
+    public class PassiveEffectRegistration : Base
+    {
+        [Theory(DisplayName = "常時再計算されるパッシブ効果を持つカードがパッシブ効果として登録済みである")]
+        [InlineData("SH-0005")]
+        [InlineData("TN-0004")]
+        [InlineData("NT-0025")]
+        [InlineData("NT-0005")]
+        public void Cards_HavePassiveRegistered(string cardId)
+        {
+            _registry.GetPassives(cardId).Should().NotBeEmpty(
+                $"card #{cardId} should have a passive effect registered");
         }
     }
 
@@ -371,14 +382,10 @@ public class EffectRegistrationTests
     [Trait("対象", "TK-0025 のリアクティブのぞき見とインシデント軽減")]
     public class Tk0025PeekAndIncidentReduction : Base
     {
-        [Fact(DisplayName = "TK-0025 のデプロイ時効果は相手の裏向きリアクティブを裏向きのままのぞき見し、自分のリソースに incident_reduction を付与する")]
-        public void Deploy_PeeksHiddenReactive_AndAppliesIncidentReduction()
+        [Fact(DisplayName = "TK-0025 のデプロイ時効果は相手の裏向きリアクティブを裏向きのままのぞき見する")]
+        public void Deploy_PeeksHiddenReactive()
         {
             var state = TestFactory.MakeGameState(p1Budget: 3000);
-
-            // Player 1's resource to receive the buff
-            var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
-            state.Player1Field.Frontend[0] = resource;
 
             // Opponent's hidden reactive
             state.Player2Field.Support[0] = new DeployedSupport
@@ -404,12 +411,45 @@ public class EffectRegistrationTests
             var oppSupport = state.Player2Field.Support[0]!;
             oppSupport.FaceUp.Should().BeFalse();
             oppSupport.PeekedBy.Should().Contain(1);
+        }
 
-            // apply_buff: incident_reduction while_on_field
+        [Fact(DisplayName = "TK-0025 が裏向きの間、パッシブの incident_reduction は付与されない")]
+        public void FaceDown_PassiveIncidentReductionNotApplied()
+        {
+            var state = TestFactory.MakeGameState(p1Budget: 3000);
+            var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
+            state.Player1Field.Frontend[0] = resource;
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "tk0025_inst",
+                CardID = "TK-0025",
+                FaceUp = false,
+            };
+
+            PassiveRecalculator.Recalculate(state, _game, _cardCache, _registry);
+
+            resource.TemporaryEffects.Should().NotContain(e => e.EffectType == "incident_reduction");
+        }
+
+        [Fact(DisplayName = "TK-0025 が表向きになると、自分のリソースにパッシブの incident_reduction が付与される")]
+        public void FaceUp_PassiveIncidentReductionApplied()
+        {
+            var state = TestFactory.MakeGameState(p1Budget: 3000);
+            var resource = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
+            state.Player1Field.Frontend[0] = resource;
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "tk0025_inst",
+                CardID = "TK-0025",
+                FaceUp = true,
+            };
+
+            PassiveRecalculator.Recalculate(state, _game, _cardCache, _registry);
+
             resource.TemporaryEffects.Should().ContainSingle(e =>
                 e.EffectType == "incident_reduction"
                 && e.Value == 300
-                && e.Duration == "while_on_field");
+                && e.Duration == "continuous");
         }
 
         [Fact(DisplayName = "incident_reduction を持つリソースはインシデントの 500 ダメージが 300 軽減され 200 になる")]

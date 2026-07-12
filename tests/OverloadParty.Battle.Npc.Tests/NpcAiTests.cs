@@ -1587,5 +1587,7 @@ public class NpcAiTests
             _infos.GetValueOrDefault((cardId, trigger));
         public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
         public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
+        public void RegisterPassive(string cardId, PassiveEffectDef def) { }
+        public IReadOnlyList<PassiveEffectDef> GetPassives(string cardId) => [];
     }
 }
