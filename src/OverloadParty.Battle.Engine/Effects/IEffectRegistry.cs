@@ -155,4 +155,18 @@ public interface IEffectRegistry
     /// <param name="trigger">検索対象のトリガー種別。</param>
     /// <returns>登録済み op 列。未登録または op 列が未保存の場合は null。</returns>
     IEffectOp[]? GetOps(string cardId, TriggerType trigger);
+
+    /// <summary>
+    /// カードが持つパッシブ効果を登録します。1 枚のカードが複数件持つ場合は呼び出しごとに積み上がります。
+    /// </summary>
+    /// <param name="cardId">検索対象のカード ID。</param>
+    /// <param name="def">登録するパッシブ効果の定義。</param>
+    void RegisterPassive(string cardId, PassiveEffectDef def);
+
+    /// <summary>
+    /// カードが持つパッシブ効果を全て返します。
+    /// </summary>
+    /// <param name="cardId">検索対象のカード ID。</param>
+    /// <returns>登録済みのパッシブ効果定義群。未登録なら空。</returns>
+    IReadOnlyList<PassiveEffectDef> GetPassives(string cardId);
 }

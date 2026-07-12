@@ -5,7 +5,7 @@ namespace OverloadParty.Battle.Engine.Helpers;
 
 /// <summary>
 /// 実効可用性が 0 以下のリソースを状態ベースで破壊し、破壊のライフサイクル
-/// (SLA ペナルティ減算・on_destroy 発火・アタッチメントの連れトラッシュ・常時効果再計算) を一元化する。
+/// (SLA ペナルティ減算・on_destroy 発火・アタッチメントの連れトラッシュ・パッシブ効果再計算) を一元化する。
 /// </summary>
 public static class DestructionSweep
 {
@@ -25,7 +25,7 @@ public static class DestructionSweep
 
         if (anyDestroyed)
         {
-            FieldChangeTrigger.Fire(state, game, cc, effects);
+            PassiveRecalculator.Recalculate(state, game, cc, effects);
         }
 
         return events;
@@ -55,14 +55,14 @@ public static class DestructionSweep
         // DestroyOne 分とカスケード分を合わせて 1 回だけ発火する (Run() 経由だと二重発火しうるため RunCore を直接使う)。
         if (destroyed || cascadeDestroyed)
         {
-            FieldChangeTrigger.Fire(state, game, cc, effects);
+            PassiveRecalculator.Recalculate(state, game, cc, effects);
         }
 
         return events;
     }
 
     /// <summary>
-    /// 実効可用性 0 以下のリソースを、常時効果の再計算を挟まずに走査・破壊する。
+    /// 実効可用性 0 以下のリソースを、パッシブ効果の再計算を挟まずに走査・破壊する。
     /// </summary>
     private static (List<GameEvent> Events, bool AnyDestroyed) RunCore(
         BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects)
@@ -151,7 +151,7 @@ public static class DestructionSweep
             .Select(sup => EventTriggerCandidate.ForSupport(sup, ownerNum)));
 
         var (_, events) = EventTriggerFiring.Fire(
-            state, effects, cc, TriggerType.OnDestroy, candidates,
+            state, game, effects, cc, TriggerType.OnDestroy, candidates,
             candidate => new EffectContext
             {
                 State = state,

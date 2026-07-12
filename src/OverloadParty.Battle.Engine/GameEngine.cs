@@ -177,7 +177,7 @@ public class GameEngine
             if (actionType == ActionType.SelectSlot)
             {
                 actionResult = SelectSlotProcessor.Process(
-                    state, game, playerNum, (SelectSlotRequest)actionData, _cardCache);
+                    state, game, playerNum, (SelectSlotRequest)actionData, _cardCache, _effects);
             }
             else if (actionType == ActionType.ResolvePendingChoice)
             {

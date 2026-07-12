@@ -193,7 +193,7 @@ public static class PlayCardProcessor
             events.AddRange(FireOnDeployForSupport(ctx, support));
         }
 
-        FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
+        PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
     }
 
     private static bool PlaceResource(
@@ -216,7 +216,7 @@ public static class PlayCardProcessor
         // 表向きになった時点で on_deploy を発動する仕様のため、デプロイ中はスキップ（実際の発動は DrawPhaseProcessor）。
         if (resource.DeployingTurnsLeft > 0)
         {
-            FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
+            PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
             return false;
         }
 
@@ -231,10 +231,11 @@ public static class PlayCardProcessor
         {
             FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
             CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, resource.InstanceID, resource.ArtNo);
+            PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
             return true;
         }
 
-        FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
+        PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
 
         return false;
     }
@@ -303,7 +304,7 @@ public static class PlayCardProcessor
             events.AddRange(effectResult.Events);
         }
 
-        FieldChangeTrigger.Fire(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
+        PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
 
         events.Insert(0, new GameEvent
         {
@@ -446,7 +447,7 @@ public static class PlayCardProcessor
             .ToList();
 
         return EventTriggerFiring.Fire(
-            ctx.State, ctx.Effects, ctx.CC, TriggerType.OnDeploy, candidates,
+            ctx.State, ctx.Game, ctx.Effects, ctx.CC, TriggerType.OnDeploy, candidates,
             candidate => new EffectContext
             {
                 State = ctx.State,
@@ -489,7 +490,7 @@ public static class PlayCardProcessor
             }
 
             var (zoneCancelled, events) = EventTriggerFiring.Fire(
-                ctx.State, ctx.Effects, ctx.CC, TriggerType.OnIncident, candidates,
+                ctx.State, ctx.Game, ctx.Effects, ctx.CC, TriggerType.OnIncident, candidates,
                 candidate => new EffectContext
                 {
                     State = ctx.State,

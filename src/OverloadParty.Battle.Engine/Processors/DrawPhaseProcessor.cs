@@ -71,6 +71,8 @@ public static class DrawPhaseProcessor
                 }
             }
         }
+
+        PassiveRecalculator.Recalculate(state, game, cc, effects);
     }
 
     /// <summary>
