@@ -12,7 +12,7 @@ namespace OverloadParty.Battle.Tests.Npc;
 /// <summary>
 /// NPC は本番同様 GameStateView 経由で生成した情報秘匿済み ClientGameState を消費する。
 /// </summary>
-[Trait("対象", "実 config を用いた NPC の意思決定")]
+[Trait("対象", "実設定を用いた NPC の意思決定")]
 public class NpcAiIntegrationTests
 {
     private readonly EffectRegistry _effects;
@@ -54,7 +54,7 @@ public class NpcAiIntegrationTests
     //  YAML loading
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact(DisplayName = "埋め込みの全 config が読み込まれ、8 件になる")]
+    [Fact(DisplayName = "埋め込みの全設定が読み込まれ、8 件になる")]
     public void AllConfigs_LoadSuccessfully()
     {
         _configs.Should().HaveCount(8);
@@ -62,7 +62,7 @@ public class NpcAiIntegrationTests
         _configs.Keys.Should().Contain("Tenki-hard");
     }
 
-    [Theory(DisplayName = "各 model のデッキが規定枚数ちょうどになる")]
+    [Theory(DisplayName = "各モデルのデッキが規定枚数ちょうどになる")]
     [InlineData("SHE-easy")]
     [InlineData("SHE-hard")]
     [InlineData("Tenki-easy")]
@@ -79,7 +79,7 @@ public class NpcAiIntegrationTests
             $"{model} deck should have exactly {InitialValues.DeckSize} cards");
     }
 
-    [Theory(DisplayName = "各 model のデッキのカードが全てカードキャッシュに存在する")]
+    [Theory(DisplayName = "各モデルのデッキのカードが全てカードキャッシュに存在する")]
     [InlineData("SHE-easy")]
     [InlineData("Tenki-hard")]
     [InlineData("Sugar-easy")]
@@ -98,7 +98,7 @@ public class NpcAiIntegrationTests
     //  メインフェーズ: デプロイ優先度に従う
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact(DisplayName = "config に従い、Compute系リソースを Data系リソースより先にデプロイする")]
+    [Fact(DisplayName = "設定に従い、Compute系リソースを Data系リソースより先にデプロイする")]
     public void MainPhase_DeploysComputeBeforeData_PerConfig()
     {
         var config = _configs["SHE-easy"];
@@ -124,7 +124,7 @@ public class NpcAiIntegrationTests
         ((PlayCardRequest)deploys[0].Data).CardInstanceID.Should().Be("h_compute");
     }
 
-    [Fact(DisplayName = "デプロイ時の分岐選択で config の値を使う")]
+    [Fact(DisplayName = "デプロイ時の分岐選択で設定の値を使う")]
     public void MainPhase_DeployChoice_UsesConfigValue()
     {
         var config = _configs["SHE-easy"];
@@ -187,7 +187,7 @@ public class NpcAiIntegrationTests
     //  メインフェーズ: スケールアップは config のインスタンスファミリーを使う
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact(DisplayName = "SHE config のスケールアップはインスタンスファミリー M を使う")]
+    [Fact(DisplayName = "SHE 設定のスケールアップはインスタンスファミリー M を使う")]
     public void MainPhase_ScaleUp_UsesSHEInstanceFamily_M()
     {
         var config = _configs["SHE-easy"];
@@ -213,7 +213,7 @@ public class NpcAiIntegrationTests
         }
     }
 
-    [Fact(DisplayName = "Tenki config のスケールアップはインスタンスファミリー R を使う")]
+    [Fact(DisplayName = "Tenki 設定のスケールアップはインスタンスファミリー R を使う")]
     public void MainPhase_ScaleUp_UsesTenkiInstanceFamily_R()
     {
         var config = _configs["Tenki-easy"];
@@ -243,7 +243,7 @@ public class NpcAiIntegrationTests
     //  バトルフェーズ: ターゲット選択は config に従う
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact(DisplayName = "easy config は可用性が最も低い相手リソースを攻撃する")]
+    [Fact(DisplayName = "easy 設定は可用性が最も低い相手リソースを攻撃する")]
     public void BattlePhase_EasyConfig_AttacksWeakestAV()
     {
         var config = _configs["SHE-easy"];
@@ -266,7 +266,7 @@ public class NpcAiIntegrationTests
         ((AttackRequest)attack!.Data).TargetInstanceID.Should().Be("weak");
     }
 
-    [Fact(DisplayName = "hard config の終盤はスループットが最も高い相手リソースを攻撃する")]
+    [Fact(DisplayName = "hard 設定の終盤はスループットが最も高い相手リソースを攻撃する")]
     public void BattlePhase_HardLateGame_AttacksStrongestTP()
     {
         var config = _configs["SHE-hard"];
@@ -358,7 +358,7 @@ public class NpcAiIntegrationTests
     //  メインフェーズは常に EndPhase で終わる
     // ═══════════════════════════════════════════════════════════════
 
-    [Theory(DisplayName = "メインフェーズのアクションは EndPhase で終わる")]
+    [Theory(DisplayName = "メインフェーズのアクションはエンドフェーズで終わる")]
     [InlineData("SHE-easy")]
     [InlineData("Tenki-hard")]
     [InlineData("Sugar-easy")]
@@ -379,7 +379,7 @@ public class NpcAiIntegrationTests
         actions.Last().ActionType.Should().Be(ActionTypes.EndPhase);
     }
 
-    [Theory(DisplayName = "バトルフェーズのアクションは EndPhase で終わる")]
+    [Theory(DisplayName = "バトルフェーズのアクションはエンドフェーズで終わる")]
     [InlineData("SHE-easy")]
     [InlineData("Tenki-hard")]
     public void BattlePhase_AlwaysEndsWithEndPhase(string model)
@@ -402,7 +402,7 @@ public class NpcAiIntegrationTests
     //  収益化: reserve ratio
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact(DisplayName = "hard config は収益化でインサイトプールの一部を残す")]
+    [Fact(DisplayName = "hard 設定は収益化でインサイトプールの一部を残す")]
     public void MainPhase_HardConfig_ReservesInsightPool()
     {
         var config = _configs["SHE-hard"];

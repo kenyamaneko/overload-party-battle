@@ -109,7 +109,7 @@ public class ActionFilterTests
             result.Should().Be("backend_0");
         }
 
-        [Fact(DisplayName = "ObjectStorage はバックエンドを優先する")]
+        [Fact(DisplayName = "オブジェクトストレージはバックエンドを優先する")]
         public void ObjectStorageCard_PrefersBackend()
         {
             var card = TestFactory.DataCard(subtype: "ObjectStorage");
@@ -131,7 +131,7 @@ public class ActionFilterTests
             act.Should().Throw<InvalidOperationException>();
         }
 
-        [Fact(DisplayName = "ObjectStorage に置けるゾーンが無いとき、例外を投げる")]
+        [Fact(DisplayName = "オブジェクトストレージに置けるゾーンが無いとき、例外を投げる")]
         public void ObjectStorageCard_NoMatchingZone_Throws()
         {
             var card = TestFactory.DataCard(subtype: "ObjectStorage");
@@ -192,10 +192,10 @@ public class ActionFilterTests
         }
     }
 
-    [Trait("対象", "インスタンスの CardID 解決")]
+    [Trait("対象", "インスタンスのカード ID 解決")]
     public class ResolveCardIdForInstance
     {
-        [Fact(DisplayName = "フロントエンドのリソースのインスタンスから CardID を解決する")]
+        [Fact(DisplayName = "フロントエンドのリソースのインスタンスからカード ID を解決する")]
         public void FindsResourceInFrontend()
         {
             var field = TestFactory.MakeWireField();
@@ -204,7 +204,7 @@ public class ActionFilterTests
             ActionFilter.ResolveCardIdForInstance("inst_42", field).Should().Be("TST-0001");
         }
 
-        [Fact(DisplayName = "デプロイ済みサポートのインスタンスから CardID を解決する")]
+        [Fact(DisplayName = "デプロイ済みサポートのインスタンスからカード ID を解決する")]
         public void FindsDeployedSupport()
         {
             var field = TestFactory.MakeWireField();

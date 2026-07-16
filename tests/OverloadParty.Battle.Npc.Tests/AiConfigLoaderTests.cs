@@ -2,10 +2,10 @@ using OverloadParty.Battle.Npc;
 
 namespace OverloadParty.Battle.Tests.Npc;
 
-[Trait("対象", "AI config の読み込み")]
+[Trait("対象", "AI 設定の読み込み")]
 public class AiConfigLoaderTests
 {
-    [Fact(DisplayName = "最小構成の config から model と faction を読み込む")]
+    [Fact(DisplayName = "最小構成の設定から model と faction を読み込む")]
     public void LoadFromString_MinimalConfig_DeserializesModel()
     {
         var yaml = """
@@ -267,7 +267,7 @@ public class AiConfigLoaderTests
         config.EffectPriorities["draw"].HandThreshold.Should().Be(3);
     }
 
-    [Fact(DisplayName = "ディレクトリ内の全 YAML を読み込み、8 件の config を得る")]
+    [Fact(DisplayName = "ディレクトリ内の全 YAML を読み込み、8 件の設定を得る")]
     public void LoadAll_LoadsAllYamlFiles()
     {
         var dir = Path.Combine(

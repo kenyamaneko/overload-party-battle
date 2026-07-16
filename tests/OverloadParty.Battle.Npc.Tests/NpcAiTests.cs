@@ -286,7 +286,7 @@ public class NpcAiTests
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
     }
 
-    [Fact(DisplayName = "攻撃アクションが無いとき、EndPhase だけを返す")]
+    [Fact(DisplayName = "攻撃アクションが無いとき、エンドフェーズだけを返す")]
     public void Battle_NoAttackActions_OnlyEndPhase()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -416,7 +416,7 @@ public class NpcAiTests
         ai.DecidePendingEffectChoice(state).Should().BeNull();
     }
 
-    [Fact(DisplayName = "resolve アクションが無いとき、null を返す")]
+    [Fact(DisplayName = "解決アクションが無いとき、null を返す")]
     public void PendingEffectChoice_NoResolveActions_ReturnsNull()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
@@ -545,7 +545,7 @@ public class NpcAiTests
     [Trait("対象", "分岐選択の解決")]
     public class BranchChoiceResolution
     {
-        [Fact(DisplayName = "config に分岐回答があるとき、その値で分岐選択を解決する")]
+        [Fact(DisplayName = "設定に分岐回答があるとき、その値で分岐選択を解決する")]
         public void UsesConfiguredChoice()
         {
             var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
@@ -577,7 +577,7 @@ public class NpcAiTests
             ((ResolvePendingChoiceRequest)action!.Data).ChosenId.Should().Be("use");
         }
 
-        [Fact(DisplayName = "config に該当カードの分岐回答が無いとき、例外を投げる")]
+        [Fact(DisplayName = "設定に該当カードの分岐回答が無いとき、例外を投げる")]
         public void NotConfigured_Throws()
         {
             var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
@@ -1017,7 +1017,7 @@ public class NpcAiTests
         ((AttackRequest)attack.Data).TargetInstanceID.Should().Be("high_tp");
     }
 
-    [Fact(DisplayName = "late フェーズ条件を満たさないとき、基本 config のターゲット選択を使う")]
+    [Fact(DisplayName = "late フェーズ条件を満たさないとき、基本設定のターゲット選択を使う")]
     public void LateGame_ConditionNotMet_UsesBaseConfig()
     {
         var yaml = """
@@ -1158,7 +1158,7 @@ public class NpcAiTests
     //  メインフェーズは常に EndPhase で終わる
     // ═══════════════════════════════════════════════════════════════
 
-    [Fact(DisplayName = "利用可能アクションが空でも、メインフェーズは EndPhase で終わる")]
+    [Fact(DisplayName = "利用可能アクションが空でも、メインフェーズはエンドフェーズで終わる")]
     public void MainPhase_EmptyAvailable_StillEndsWithEndPhase()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
