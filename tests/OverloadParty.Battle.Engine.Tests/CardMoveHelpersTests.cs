@@ -52,7 +52,7 @@ public class CardMoveHelpersTests
             state.Player1Hand.Should().BeEmpty();
         }
 
-        [Fact(DisplayName = "引いたカードはデッキで割り当て済みの InstanceID を保持する")]
+        [Fact(DisplayName = "引いたカードはデッキで割り当て済みのインスタンス ID を保持する")]
         public void PreservesDeckInstanceIDs()
         {
             var state = TestFactory.MakeGameState();
@@ -122,7 +122,7 @@ public class CardMoveHelpersTests
     [Trait("対象", "手札への追加")]
     public class AddToHand
     {
-        [Fact(DisplayName = "カードを新しい InstanceID で手札に加える")]
+        [Fact(DisplayName = "カードを新しいインスタンス ID で手札に加える")]
         public void AddsCardWithNewInstanceID()
         {
             var state = TestFactory.MakeGameState();
@@ -150,7 +150,7 @@ public class CardMoveHelpersTests
     [Trait("対象", "トラッシュへの追加")]
     public class AddToTrash
     {
-        [Fact(DisplayName = "指定した CardID・InstanceID・ArtNo でトラッシュにカードを加える")]
+        [Fact(DisplayName = "指定したカード ID・インスタンス ID・アート番号でトラッシュにカードを加える")]
         public void AddsCardToPlayerTrash()
         {
             var state = TestFactory.MakeGameState();
@@ -167,7 +167,7 @@ public class CardMoveHelpersTests
     [Trait("対象", "トラッシュから手札への回収")]
     public class TrashToHand
     {
-        [Fact(DisplayName = "トラッシュのカードを手札へ移し、CardID と ArtNo を保ってトラッシュから取り除く")]
+        [Fact(DisplayName = "トラッシュのカードを手札へ移し、カード ID とアート番号を保ってトラッシュから取り除く")]
         public void MovesCardFromTrashToHand()
         {
             var state = TestFactory.MakeGameState();
@@ -182,7 +182,7 @@ public class CardMoveHelpersTests
             state.Player1Hand[0].ArtNo.Should().Be(3);
         }
 
-        [Fact(DisplayName = "指定 InstanceID がトラッシュに無いとき、false を返しトラッシュも手札も変わらない")]
+        [Fact(DisplayName = "指定したインスタンス ID がトラッシュに無いとき、false を返しトラッシュも手札も変わらない")]
         public void NotFound_ReturnsFalse()
         {
             var state = TestFactory.MakeGameState();
@@ -195,7 +195,7 @@ public class CardMoveHelpersTests
             state.Player1Hand.Should().BeEmpty();
         }
 
-        [Fact(DisplayName = "回収したカードには新しい InstanceID を割り当てる")]
+        [Fact(DisplayName = "回収したカードには新しいインスタンス ID を割り当てる")]
         public void AssignsNewInstanceID()
         {
             var state = TestFactory.MakeGameState();

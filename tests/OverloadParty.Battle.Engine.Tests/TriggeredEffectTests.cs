@@ -147,7 +147,7 @@ public class TriggeredEffectTests
             FieldHelpers.FindResourceByID(state.Player1Field, "spot").Should().BeNull("自壊する");
         }
 
-        [Fact(DisplayName = "デプロイから規定ターン経過後のエンドフェーズでの自壊は、SLAペナルティ減算とon_destroy発火を伴う")]
+        [Fact(DisplayName = "デプロイから規定ターン経過後のエンドフェーズでの自壊は、SLA ペナルティ減算と on_destroy 発火を伴う")]
         public void OnEndPhase_ExpiryAppliesSlaPenaltyAndFiresOnDestroy()
         {
             var cc = new TestCardCache();

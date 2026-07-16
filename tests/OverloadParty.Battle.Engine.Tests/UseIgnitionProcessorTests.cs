@@ -45,7 +45,7 @@ public class UseIgnitionProcessorTests
             resource.EffectUsedThisTurn.Should().BeTrue();
         }
 
-        [Fact(DisplayName = "リソースの起動効果の使用で CardId と SourceId を載せた起動効果の使用イベントが生成される")]
+        [Fact(DisplayName = "リソースの起動効果の使用で カード ID とソース ID を載せた起動効果の使用イベントが生成される")]
         public void Process_ResourceEffect_GeneratesUseIgnitionEvent()
         {
             var reg = new EffectRegistry();
@@ -63,7 +63,7 @@ public class UseIgnitionProcessorTests
             data.SourceId.Should().Be("r_1");
         }
 
-        [Fact(DisplayName = "対象を指定したリソースの起動効果の使用でイベントに TargetId が載る")]
+        [Fact(DisplayName = "対象を指定したリソースの起動効果の使用でイベントに対象 ID が載る")]
         public void Process_ResourceEffect_EventCarriesTargetId()
         {
             var reg = new EffectRegistry();
@@ -245,7 +245,7 @@ public class UseIgnitionProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*no ignition effect*");
         }
 
-        [Fact(DisplayName = "サポートカードの起動効果の使用で CardId と SourceId を載せた起動効果の使用イベントが生成される")]
+        [Fact(DisplayName = "サポートカードの起動効果の使用で カード ID とソース ID を載せた起動効果の使用イベントが生成される")]
         public void Process_SupportEffect_GeneratesUseIgnitionEvent()
         {
             var reg = new EffectRegistry();

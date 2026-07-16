@@ -22,7 +22,7 @@ public class DestructionTests
     [Trait("対象", "効果ダメージによる破壊")]
     public class EffectDamage
     {
-        [Fact(DisplayName = "効果ダメージで可用性がちょうど0になったとき、リソースは破壊されトラッシュへ移動し、SLAペナルティが1回だけ減算される")]
+        [Fact(DisplayName = "効果ダメージで可用性がちょうど0になったとき、リソースは破壊されトラッシュへ移動し、SLA ペナルティが1回だけ減算される")]
         public void DestroysAndAppliesSlaPenaltyOnce()
         {
             var cc = new TestCardCache();

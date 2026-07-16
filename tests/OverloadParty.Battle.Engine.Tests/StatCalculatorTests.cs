@@ -16,7 +16,7 @@ public class StatCalculatorTests
     [Trait("対象", "実効エラスティックボーナスの計算")]
     public class CalculateEffectiveElasticBonus
     {
-        [Theory(DisplayName = "生の ElasticBonus と scale から、実効エラスティックボーナスを計算する")]
+        [Theory(DisplayName = "生のエラスティックボーナスと scale から、実効エラスティックボーナスを計算する")]
         [InlineData(0, 500, 0)]        // zero raw → 0
         [InlineData(100, 0, 100)]      // zero scale → raw passthrough
         [InlineData(-100, 500, -100)]  // negative raw passthrough

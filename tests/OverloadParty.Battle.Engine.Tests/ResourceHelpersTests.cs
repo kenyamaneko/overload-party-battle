@@ -71,7 +71,7 @@ public class ResourceHelpersTests
             resource.DeployingTurnsLeft.Should().Be(expectedTurnsLeft);
         }
 
-        [Fact(DisplayName = "artNo を指定して生成するとリソースに ArtNo が設定される")]
+        [Fact(DisplayName = "アート番号を指定して生成するとリソースにアート番号が設定される")]
         public void SetsArtNo()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001");
@@ -159,7 +159,7 @@ public class ResourceHelpersTests
             act.Should().Throw<GameRuleException>();
         }
 
-        [Fact(DisplayName = "バックエンドが満杯なら ObjectStorage はフロントエンドに配置される")]
+        [Fact(DisplayName = "バックエンドが満杯ならオブジェクトストレージはフロントエンドに配置される")]
         public void ObjectStorage_BackendFull_FallsToFrontend()
         {
             var field = TestFactory.MakeField();

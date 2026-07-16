@@ -39,7 +39,7 @@ public class FieldHelpersTests
     [Trait("対象", "リソースのゾーン判定")]
     public class FindResourceZone
     {
-        [Fact(DisplayName = "フロントエンドにあるリソースのゾーンとして Frontend が返る")]
+        [Fact(DisplayName = "フロントエンドにあるリソースのゾーンとしてフロントエンドが返る")]
         public void Frontend()
         {
             var field = TestFactory.MakeField();
@@ -48,7 +48,7 @@ public class FieldHelpersTests
             FieldHelpers.FindResourceZone(field, "inst_1").Should().Be(Zone.Frontend);
         }
 
-        [Fact(DisplayName = "バックエンドにあるリソースのゾーンとして Backend が返る")]
+        [Fact(DisplayName = "バックエンドにあるリソースのゾーンとしてバックエンドが返る")]
         public void Backend()
         {
             var field = TestFactory.MakeField();
@@ -193,7 +193,7 @@ public class FieldHelpersTests
     [Trait("対象", "フロントエンド配置可否の判定")]
     public class IsFrontendEligible
     {
-        [Theory(DisplayName = "フロントエンドにはCompute全般とDataのObjectStorageサブタイプだけが配置可能と判定される")]
+        [Theory(DisplayName = "フロントエンドには Compute系リソース全般と Data系リソースのオブジェクトストレージサブタイプだけが配置可能と判定される")]
         [InlineData("Compute", null, true)]
         [InlineData("DataResource", "ObjectStorage", true)]
         [InlineData("DataResource", "Database", false)]
@@ -208,7 +208,7 @@ public class FieldHelpersTests
     [Trait("対象", "バックエンド配置可否の判定")]
     public class IsBackendEligible
     {
-        [Theory(DisplayName = "バックエンドにはComputeとDataResourceが配置可能でPlatformやStrategyは不可になる")]
+        [Theory(DisplayName = "バックエンドには Compute系リソースと Data系リソースが配置可能でプラットフォームやストラテジーは不可になる")]
         [InlineData("Compute", true)]
         [InlineData("DataResource", true)]
         [InlineData("Platform", false)]
@@ -222,7 +222,7 @@ public class FieldHelpersTests
     [Trait("対象", "Compute系タイプ判定")]
     public class IsComputeType
     {
-        [Theory(DisplayName = "Compute系タイプ判定は card_type が Compute のときだけ true になる")]
+        [Theory(DisplayName = "Compute系タイプ判定は card_type が Compute系リソースのときだけ true になる")]
         [InlineData("Compute", true)]
         [InlineData("DataResource", false)]
         [InlineData("Platform", false)]
@@ -236,7 +236,7 @@ public class FieldHelpersTests
     [Trait("対象", "Data系リソースタイプ判定")]
     public class IsDataResource
     {
-        [Theory(DisplayName = "Data系リソースタイプ判定は card_type が DataResource のときだけ true になる")]
+        [Theory(DisplayName = "Data系リソースタイプ判定は card_type が Data系リソースのときだけ true になる")]
         [InlineData("DataResource", true)]
         [InlineData("Compute", false)]
         [InlineData("Database", false)] // 旧個別 subtype は category ではないため false
@@ -249,7 +249,7 @@ public class FieldHelpersTests
     [Trait("対象", "即時使用タイプ判定")]
     public class IsImmediateType
     {
-        [Theory(DisplayName = "StrategyとIncidentは即時使用タイプと判定され、それ以外は false になる")]
+        [Theory(DisplayName = "ストラテジーとインシデントは即時使用タイプと判定され、それ以外は false になる")]
         [InlineData("Strategy", true)]
         [InlineData("Incident", true)]
         [InlineData("Compute", false)]

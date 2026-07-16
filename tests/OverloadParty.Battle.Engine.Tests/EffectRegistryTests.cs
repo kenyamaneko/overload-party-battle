@@ -108,7 +108,7 @@ public class EffectRegistryTests
         registry.GetChoiceOptions("TST-0002", TriggerType.OnDeploy).Should().BeNull();
     }
 
-    [Fact(DisplayName = "OnDeploy トリガーに登録された TST-0001 と TST-0004 が返る")]
+    [Fact(DisplayName = "デプロイ時トリガーに登録された TST-0001 と TST-0004 が返る")]
     public void CardIdsForTrigger_ReturnsMatchingCards()
     {
         var registry = new EffectRegistry();

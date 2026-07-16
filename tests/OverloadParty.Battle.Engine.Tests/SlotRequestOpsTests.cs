@@ -78,7 +78,7 @@ public class SlotRequestOpsTests
             state.Player1Repository.Should().BeEmpty();
         }
 
-        [Fact(DisplayName = "OverrideAV を 200 に指定するとデプロイするリソースの最大可用性が 200 になる")]
+        [Fact(DisplayName = "可用性を上書きして 200 を指定するとデプロイするリソースの最大可用性が 200 になる")]
         public void Ignition_OverrideAV_AppliedToDeployedResource()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp { OverrideAV = 200 });
