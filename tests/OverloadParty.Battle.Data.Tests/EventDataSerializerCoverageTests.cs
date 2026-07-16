@@ -41,7 +41,7 @@ public class EventDataSerializerCoverageTests
                     .Select(f => (string)f.GetValue(null)!))
             .Distinct();
 
-    [Fact(DisplayName = "ペイロードを持たない ActionType を除く全 EventTypes/ActionTypes 定数に対応する型が登録されている")]
+    [Fact(DisplayName = "ペイロードを持たないアクション種別を除く全イベント種別・アクション種別の定数に対応する型が登録されている")]
     public void EventDataSerializer_HandlesAllExpectedEventTypes()
     {
         var missing = AllEventTypeStrings()
@@ -55,7 +55,7 @@ public class EventDataSerializerCoverageTests
             $"with a comment explaining why. Missing: [{string.Join(", ", missing)}]");
     }
 
-    [Fact(DisplayName = "viewer 専用の TurnStartEventData を除く全 IEventData 実装が登録されている")]
+    [Fact(DisplayName = "viewer 専用のターン開始イベントデータを除く全イベントデータ型が登録されている")]
     public void EventDataSerializer_AllIEventDataTypesAreReachable()
     {
         var assemblies = new[]
@@ -111,7 +111,7 @@ public class EventDataSerializerCoverageTests
         [typeof(SelectSlotEventData)] = new SelectSlotEventData { CardId = "c", InstanceId = "i", Zone = "frontend", Index = 0 },
     };
 
-    [Fact(DisplayName = "登録済み全 IEventData 型にラウンドトリップ用サンプルが過不足なく対応する")]
+    [Fact(DisplayName = "登録済み全イベントデータ型にラウンドトリップ用サンプルが過不足なく対応する")]
     public void RoundTripSamples_CoverAllRegisteredTypes()
     {
         var reachable = EventDataSerializer.GetAllRegisteredTypes().ToHashSet();
@@ -149,7 +149,7 @@ public class EventDataSerializerCoverageTests
             .WithMessage("*Unknown event type*");
     }
 
-    [Fact(DisplayName = "null を SerializeToElement に渡すと JSON null になる")]
+    [Fact(DisplayName = "null をシリアライズすると JSON null になる")]
     public void EventDataSerializer_SerializeToElement_Null_ProducesJsonNull()
     {
         var elem = EventDataSerializer.SerializeToElement(null);
