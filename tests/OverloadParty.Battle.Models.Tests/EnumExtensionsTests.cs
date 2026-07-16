@@ -4,7 +4,7 @@ namespace OverloadParty.Battle.Tests.Models;
 
 public class EnumExtensionsTests
 {
-    [Trait("対象", "Phase 変換")]
+    [Trait("対象", "フェーズ変換")]
     public class PhaseConversion
     {
         [Theory(DisplayName = "各値を対応するワイヤ文字列に変換する")]
@@ -53,7 +53,7 @@ public class EnumExtensionsTests
         }
     }
 
-    [Trait("対象", "Rank 変換")]
+    [Trait("対象", "ランク変換")]
     public class RankConversion
     {
         [Theory(DisplayName = "各値を対応するワイヤ文字列に変換する")]
@@ -99,7 +99,7 @@ public class EnumExtensionsTests
         }
     }
 
-    [Trait("対象", "InstanceFamily 変換")]
+    [Trait("対象", "インスタンスファミリー変換")]
     public class InstanceFamilyConversion
     {
         [Theory(DisplayName = "各値を対応するワイヤ文字列に変換する")]
@@ -145,7 +145,7 @@ public class EnumExtensionsTests
         }
     }
 
-    [Trait("対象", "GameStatus 変換")]
+    [Trait("対象", "ゲーム進行状態変換")]
     public class GameStatusConversion
     {
         [Theory(DisplayName = "各値を対応するワイヤ文字列に変換する")]
@@ -188,7 +188,7 @@ public class EnumExtensionsTests
         }
     }
 
-    [Trait("対象", "WinReason 変換")]
+    [Trait("対象", "勝因変換")]
     public class WinReasonConversion
     {
         [Theory(DisplayName = "各値を対応するワイヤ文字列に変換する")]
@@ -252,7 +252,7 @@ public class EnumExtensionsTests
         }
     }
 
-    [Trait("対象", "ActionType 変換")]
+    [Trait("対象", "アクション種別変換")]
     public class ActionTypeConversion
     {
         [Theory(DisplayName = "各値を対応するワイヤ文字列に変換する")]
@@ -313,7 +313,7 @@ public class EnumExtensionsTests
         }
     }
 
-    [Trait("対象", "Zone 変換")]
+    [Trait("対象", "ゾーン変換")]
     public class ZoneConversion
     {
         [Theory(DisplayName = "各値を対応するワイヤ文字列に変換する")]

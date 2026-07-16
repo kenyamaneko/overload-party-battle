@@ -7,14 +7,14 @@ public class CardDefinitionTests
     [Trait("対象", "Compute系リソース判定")]
     public class IsComputeType
     {
-        [Fact(DisplayName = "カードタイプが Compute のとき、true を返す")]
+        [Fact(DisplayName = "カードタイプが Compute系リソースのとき、true を返す")]
         public void ComputeCategory_ReturnsTrue()
         {
             var card = new CardDefinition { CardType = "Compute", Subtype = "VM" };
             card.IsComputeType.Should().BeTrue();
         }
 
-        [Theory(DisplayName = "Compute 以外のカードタイプのとき、false を返す")]
+        [Theory(DisplayName = "Compute系リソース以外のカードタイプのとき、false を返す")]
         [InlineData("DataResource")]
         [InlineData("Platform")]
         [InlineData("Attachment")]
@@ -28,14 +28,14 @@ public class CardDefinitionTests
     [Trait("対象", "Data系リソース判定")]
     public class IsDataResource
     {
-        [Fact(DisplayName = "カードタイプが DataResource のとき、true を返す")]
+        [Fact(DisplayName = "カードタイプが Data系リソースのとき、true を返す")]
         public void DataCategory_ReturnsTrue()
         {
             var card = new CardDefinition { CardType = "DataResource", Subtype = "Database" };
             card.IsDataResource.Should().BeTrue();
         }
 
-        [Theory(DisplayName = "DataResource 以外のカードタイプのとき、false を返す")]
+        [Theory(DisplayName = "Data系リソース以外のカードタイプのとき、false を返す")]
         [InlineData("Compute")]
         [InlineData("Platform")]
         [InlineData("Strategy")]
