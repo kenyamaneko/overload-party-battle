@@ -176,7 +176,7 @@ public class PriorityResolverTests
             pri.Should().Be(30);
         }
 
-        [Fact(DisplayName = "単純な優先度は config の値をそのまま返す")]
+        [Fact(DisplayName = "単純な優先度は設定の値をそのまま返す")]
         public void SimplePriority_ReturnsConfiguredValue()
         {
             var ctx = MakeCtx();
@@ -193,7 +193,7 @@ public class PriorityResolverTests
             pri.Should().Be(75);
         }
 
-        [Fact(DisplayName = "config に無いカテゴリは使用不可を返す")]
+        [Fact(DisplayName = "設定に無いカテゴリは使用不可を返す")]
         public void CategoryNotInConfig_ReturnsNotUsable()
         {
             var ctx = MakeCtx();
@@ -275,7 +275,7 @@ public class PriorityResolverTests
             use.Should().BeFalse();
         }
 
-        [Fact(DisplayName = "エントリの condition を満たさないとき、使用不可を返す")]
+        [Fact(DisplayName = "エントリの条件を満たさないとき、使用不可を返す")]
         public void WithEntryCondition_NotMet_NotUsable()
         {
             var ctx = MakeCtx(); // empty opponent field
@@ -316,7 +316,7 @@ public class PriorityResolverTests
             use.Should().BeFalse();
         }
 
-        [Fact(DisplayName = "効果があるカードは config の優先度を返す")]
+        [Fact(DisplayName = "効果があるカードは設定の優先度を返す")]
         public void WithEffect_ReturnsConfigPriority()
         {
             var reg = new StubEffectRegistry();
