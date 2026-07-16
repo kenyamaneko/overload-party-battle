@@ -25,7 +25,7 @@ public class GameServiceDeserializationTests
     [Trait("対象", "play_card のデシリアライズ")]
     public class PlayCard : Base
     {
-        [Fact(DisplayName = "入れ子 position を持つ play_card がゾーン frontend・index 0 の PlayCardRequest になる")]
+        [Fact(DisplayName = "入れ子 position を持つ play_card がゾーン frontend・index 0 のカードプレイ要求になる")]
         public void WithNestedPosition_DeserializesToPlayCardRequest()
         {
             var data = new Dictionary<string, object>
@@ -41,7 +41,7 @@ public class GameServiceDeserializationTests
             result.Index.Should().Be(0);
         }
 
-        [Fact(DisplayName = "入れ子 position を持つ play_card がゾーン backend・index 2 の PlayCardRequest になる")]
+        [Fact(DisplayName = "入れ子 position を持つ play_card がゾーン backend・index 2 のカードプレイ要求になる")]
         public void WithNestedPosition_BackendIndex2()
         {
             var data = new Dictionary<string, object>
@@ -60,7 +60,7 @@ public class GameServiceDeserializationTests
     [Trait("対象", "attack のデシリアライズ")]
     public class Attack : Base
     {
-        [Fact(DisplayName = "attack データが attacker・target の instance id を持つ AttackRequest になる")]
+        [Fact(DisplayName = "attack データが attacker・target の instance id を持つ攻撃要求になる")]
         public void DeserializesToAttackRequest()
         {
             var data = new Dictionary<string, object>
@@ -79,7 +79,7 @@ public class GameServiceDeserializationTests
     [Trait("対象", "scale_up のデシリアライズ")]
     public class ScaleUp : Base
     {
-        [Fact(DisplayName = "scale_up の componentInstanceId が ScaleUpRequest の InstanceID にマップされる")]
+        [Fact(DisplayName = "scale_up の componentInstanceId がスケールアップ要求のインスタンス ID にマップされる")]
         public void WithComponentInstanceId_MapsToInstanceID()
         {
             var data = new Dictionary<string, object>
@@ -94,7 +94,7 @@ public class GameServiceDeserializationTests
             result.TargetRank.Should().Be("medium");
         }
 
-        [Fact(DisplayName = "instanceFamily を持つ scale_up が InstanceFamily を含めて ScaleUpRequest になる")]
+        [Fact(DisplayName = "instanceFamily を持つ scale_up がインスタンスファミリーを含めてスケールアップ要求になる")]
         public void WithInstanceFamily()
         {
             var data = new Dictionary<string, object>
@@ -115,7 +115,7 @@ public class GameServiceDeserializationTests
     [Trait("対象", "monetize のデシリアライズ")]
     public class Monetize : Base
     {
-        [Fact(DisplayName = "monetize の distributions が componentInstanceId を InstanceID にマップして変換される")]
+        [Fact(DisplayName = "monetize の distributions が componentInstanceId をインスタンス ID にマップして変換される")]
         public void WithComponentInstanceId_MapsToInstanceID()
         {
             var data = new Dictionary<string, object>
@@ -140,7 +140,7 @@ public class GameServiceDeserializationTests
     [Trait("対象", "use_ignition のデシリアライズ")]
     public class UseIgnition : Base
     {
-        [Fact(DisplayName = "instanceId を持つ use_ignition が UseIgnitionRequest にデシリアライズされる")]
+        [Fact(DisplayName = "instanceId を持つ use_ignition が起動効果使用要求にデシリアライズされる")]
         public void DeserializesToUseIgnitionRequest()
         {
             var data = new Dictionary<string, object>
@@ -153,7 +153,7 @@ public class GameServiceDeserializationTests
             result.InstanceID.Should().Be("e1");
         }
 
-        [Fact(DisplayName = "targetInstanceId を持つ use_ignition が TargetInstanceID を含めて変換される")]
+        [Fact(DisplayName = "targetInstanceId を持つ use_ignition が対象インスタンス ID を含めて変換される")]
         public void WithTargetInstanceId()
         {
             var data = new Dictionary<string, object>

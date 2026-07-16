@@ -226,7 +226,7 @@ public class GameServiceTests
             result.IsNpcPending.Should().BeFalse("PvP games never have NPC pending");
         }
 
-        [Fact(DisplayName = "ターン切り替え時に発行される turn_start イベントの IsMyTurn が false になる")]
+        [Fact(DisplayName = "ターン切り替え時に発行される turn_start イベントの自分のターン判定が false になる")]
         public async Task TurnStartEvent_ContainsIsMyTurn()
         {
             var cards = MakePlayerCards();

@@ -174,7 +174,7 @@ public class GameLogServiceDescriptionTests
         /// <summary>switch のどのアームにも一致しない未知のイベントデータ型。</summary>
         private sealed class UnrecognizedEventData : IEventData { }
 
-        [Fact(DisplayName = "EventData が null のイベントは例外になる")]
+        [Fact(DisplayName = "イベントデータが null のイベントは例外になる")]
         public async Task NullEventData_Throws()
         {
             Func<Task> act = () => BuildLogWithEvent(null, playerNum: 1, winningPlayerNum: 1);

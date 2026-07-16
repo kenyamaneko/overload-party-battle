@@ -72,7 +72,7 @@ public class GameStateViewTests
             result.OppView.PlayerNum.Should().Be(2);
         }
 
-        [Fact(DisplayName = "相手のビューは裏向きリソースの CardID とステータスを隠す")]
+        [Fact(DisplayName = "相手のビューは裏向きリソースのカード ID とステータスを隠す")]
         public void HidesFaceDownResourceDetails()
         {
             var state = TestFactory.MakeGameState();
@@ -112,7 +112,7 @@ public class GameStateViewTests
             oppSlot.MaxAV.Should().Be(1400);
         }
 
-        [Fact(DisplayName = "相手のビューは裏向きサポートの CardID と ArtNo を隠す")]
+        [Fact(DisplayName = "相手のビューは裏向きサポートのカード ID とアート番号を隠す")]
         public void HidesCardIDForFaceDownSupport()
         {
             var state = TestFactory.MakeGameState();
@@ -134,7 +134,7 @@ public class GameStateViewTests
             oppSup.ArtNo.Should().Be(0, "face-down support should hide ArtNo");
         }
 
-        [Fact(DisplayName = "相手のビューはのぞき見済みサポートの CardID と ArtNo をそのプレイヤーに見せる")]
+        [Fact(DisplayName = "相手のビューはのぞき見済みサポートのカード ID とアート番号をそのプレイヤーに見せる")]
         public void RevealsPeekedSupportCardID()
         {
             var state = TestFactory.MakeGameState();
@@ -157,7 +157,7 @@ public class GameStateViewTests
             oppSup.ArtNo.Should().Be(2, "peeked card reveals ArtNo to the peeking player");
         }
 
-        [Fact(DisplayName = "相手のビューは表向きサポートの CardID と ArtNo を見せる")]
+        [Fact(DisplayName = "相手のビューは表向きサポートのカード ID とアート番号を見せる")]
         public void ShowsFaceUpSupportCardID()
         {
             var state = TestFactory.MakeGameState();
@@ -182,7 +182,7 @@ public class GameStateViewTests
     [Trait("対象", "自分のターン判定")]
     public class IsMyTurn : Base
     {
-        [Theory(DisplayName = "ビューの IsMyTurn がアクティブプレイヤーと閲覧プレイヤーの一致を反映する")]
+        [Theory(DisplayName = "ビューの自分のターン判定がアクティブプレイヤーと閲覧プレイヤーの一致を反映する")]
         [InlineData(1, 1, true)]
         [InlineData(1, 2, false)]
         [InlineData(2, 2, true)]
