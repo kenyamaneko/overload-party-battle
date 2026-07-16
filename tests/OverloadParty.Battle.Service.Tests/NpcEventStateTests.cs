@@ -183,7 +183,7 @@ public class NpcEventStateTests
                 "after the player's end_phase the NPC is active, so the gateway needs to loop");
         }
 
-        [Fact(DisplayName = "AdvanceNpcTurn は 1 回につき 1 アクションを返し、NPC ターン終了後にプレイヤーへ制御が戻る")]
+        [Fact(DisplayName = "NPC ターンの進行は 1 回につき 1 アクションを返し、NPC ターン終了後にプレイヤーへ制御が戻る")]
         public async Task AdvanceNpcTurn_ReturnsOneActionAtATime_ThenPlayerRegainsTurn()
         {
             var (game, playerNum) = await StartGameWithNpcNext();
