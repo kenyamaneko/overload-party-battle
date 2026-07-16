@@ -186,7 +186,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "Database はバックエンドにのみ配置できる")]
+        [Fact(DisplayName = "データベースはバックエンドにのみ配置できる")]
         public void PlayCard_DatabaseCanOnlyGoToBackend()
         {
             // Database は Backend のみ
@@ -635,7 +635,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "フロントエンドが満杯でも Database はプレイできる")]
+        [Fact(DisplayName = "フロントエンドが満杯でもデータベースはプレイできる")]
         public void PlayCard_DatabaseStillPlayableWhenFrontendFull()
         {
             // Database はそもそも Backend のみ。フロントが満杯でも関係ない
@@ -683,7 +683,7 @@ public class AvailableActionsTests
     [Trait("対象", "リソースサブタイプ別の配置可能ゾーン")]
     public class PlayCardResourceTypePlacement : Base
     {
-        [Fact(DisplayName = "Container はフロントエンドとバックエンドの両方に配置できる")]
+        [Fact(DisplayName = "コンテナはフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ContainerCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -700,7 +700,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "Serverless はフロントエンドとバックエンドの両方に配置できる")]
+        [Fact(DisplayName = "サーバーレスはフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ServerlessCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -717,7 +717,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "Orchestrator はフロントエンドとバックエンドの両方に配置できる")]
+        [Fact(DisplayName = "オーケストレーターはフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_OrchestratorCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -738,7 +738,7 @@ public class AvailableActionsTests
     [Trait("対象", "スケールアップの候補")]
     public class ScaleUpRules : Base
     {
-        [Fact(DisplayName = "Resizable な small リソースは medium・large × M/C/R の 6 通りがスケールアップ候補になる")]
+        [Fact(DisplayName = "リサイザブルな small リソースは medium・large × M/C/R の 6 通りがスケールアップ候補になる")]
         public void ScaleUp_ResizableSmallOffersAllOptions()
         {
             var cc = new TestCardCache();
@@ -762,7 +762,7 @@ public class AvailableActionsTests
             scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "R");
         }
 
-        [Fact(DisplayName = "Resizable な medium(M) リソースは同ファミリーの large 1 通りだけがスケールアップ候補になる")]
+        [Fact(DisplayName = "リサイザブルな medium(M) リソースは同ファミリーの large 1 通りだけがスケールアップ候補になる")]
         public void ScaleUp_ResizableMediumOffersAllOptions()
         {
             var cc = new TestCardCache();
@@ -782,7 +782,7 @@ public class AvailableActionsTests
             scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
         }
 
-        [Fact(DisplayName = "Resizable な large リソースはスケールアップ候補がない")]
+        [Fact(DisplayName = "リサイザブルな large リソースはスケールアップ候補がない")]
         public void ScaleUp_ResizableLargeHasNoOptions()
         {
             var cc = new TestCardCache();
@@ -801,7 +801,7 @@ public class AvailableActionsTests
             scaleActions.Should().BeEmpty();
         }
 
-        [Fact(DisplayName = "Resizable でないリソースはスケールアップ候補にならない")]
+        [Fact(DisplayName = "リサイザブルでないリソースはスケールアップ候補にならない")]
         public void ScaleUp_NonResizableExcluded()
         {
             // Resizable でないカードはスケールアップ不可
@@ -837,7 +837,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
 
-        [Fact(DisplayName = "Elastic のみ (Resizable でない) リソースはスケールアップ候補にならない")]
+        [Fact(DisplayName = "エラスティックのみ (リサイザブルでない) リソースはスケールアップ候補にならない")]
         public void ScaleUp_ElasticOnlyExcluded()
         {
             // Elastic-only カード（Resizable=false）は手動スケールアップ不可
@@ -871,7 +871,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
 
-        [Fact(DisplayName = "Resizable かつ Elastic のリソースはスケールアップ候補になる")]
+        [Fact(DisplayName = "リサイザブルかつエラスティックのリソースはスケールアップ候補になる")]
         public void ScaleUp_ResizableElasticCanScaleUp()
         {
             // R+E カードは手動スケールアップも可能
@@ -888,7 +888,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "orch_1");
         }
 
-        [Fact(DisplayName = "Resizable な Database はスケールアップ候補になる")]
+        [Fact(DisplayName = "リサイザブルなデータベースはスケールアップ候補になる")]
         public void ScaleUp_DataCardResizableCanScaleUp()
         {
             // Resizable な Database もスケールアップ可能
@@ -1217,7 +1217,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact(DisplayName = "バックエンドの Database は収益化できない")]
+        [Fact(DisplayName = "バックエンドのデータベースは収益化できない")]
         public void Monetize_BackendDatabaseExcluded()
         {
             // 収益化はComputeのみ。DatabaseはInsight生成源だがBudget変換はしない

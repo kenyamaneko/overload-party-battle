@@ -58,7 +58,7 @@ public class PlayCardProcessorTests
         // RULEBOOK §3 / ARCHITECTURE §3: Compute カードは Frontend へデプロイ可能
         // deployTurns > 0 の間は裏向きで待機 (§4)
 
-        [Fact(DisplayName = "Compute カードをフロントエンドにデプロイすると手札から離れてフロントエンドに置かれる")]
+        [Fact(DisplayName = "Compute系カードをフロントエンドにデプロイすると手札から離れてフロントエンドに置かれる")]
         public void PlayCard_ComputeToFrontend_IsDeployed()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -71,7 +71,7 @@ public class PlayCardProcessorTests
             state.Player1Field.Frontend[0]!.CardID.Should().Be("TST-0001");
         }
 
-        [Fact(DisplayName = "Compute カードをフロントエンドにデプロイすると play_card イベントが1件発行される")]
+        [Fact(DisplayName = "Compute系カードをフロントエンドにデプロイすると play_card イベントが1件発行される")]
         public void PlayCard_ComputeToFrontend_EmitsPlayCardEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -97,7 +97,7 @@ public class PlayCardProcessorTests
             state.Player1Field.Frontend[0]!.DeployingTurnsLeft.Should().Be(1);
         }
 
-        [Fact(DisplayName = "Compute カードをバックエンドにデプロイするとバックエンドに置かれる")]
+        [Fact(DisplayName = "Compute系カードをバックエンドにデプロイするとバックエンドに置かれる")]
         public void PlayCard_ComputeToBackend_IsDeployed()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -150,7 +150,7 @@ public class PlayCardProcessorTests
         }
 
         // RULEBOOK §3: Data カード (Database) は Frontend へ配置不可
-        [Fact(DisplayName = "Database をフロントエンドにデプロイすると拒否される")]
+        [Fact(DisplayName = "データベースをフロントエンドにデプロイすると拒否される")]
         public void PlayCard_DatabaseToFrontend_IsRejected()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -163,7 +163,7 @@ public class PlayCardProcessorTests
         }
 
         // RULEBOOK §3: Compute カードは Support ゾーンへ配置不可
-        [Fact(DisplayName = "Compute カードをサポートゾーンにデプロイすると拒否される")]
+        [Fact(DisplayName = "Compute系カードをサポートゾーンにデプロイすると拒否される")]
         public void PlayCard_ComputeToSupport_IsRejected()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);

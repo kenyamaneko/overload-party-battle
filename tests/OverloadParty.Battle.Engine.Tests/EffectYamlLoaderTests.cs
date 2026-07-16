@@ -149,7 +149,7 @@ public class EffectYamlLoaderTests
     }
 }
 
-[Trait("対象", "パッシブ効果の分類とfail-fast検証")]
+[Trait("対象", "パッシブ効果の分類と不正な定義の検出")]
 public class PassiveClassificationTests
 {
     private readonly TestCardCache _cc = new();

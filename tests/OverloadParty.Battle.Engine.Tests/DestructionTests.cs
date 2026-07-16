@@ -381,7 +381,7 @@ public class DestructionTests
     [Trait("対象", "既に盤上にない対象への破壊の no-op 保証")]
     public class NoOpOnAbsentResource
     {
-        [Fact(DisplayName = "既に盤上にないリソースを破壊しようとしたとき、BudgetもトラッシュもFieldも変化しない")]
+        [Fact(DisplayName = "既に盤上にないリソースを破壊しようとしたとき、バジェットもトラッシュも盤面も変化しない")]
         public void SecondDestroyCheckIsNoOp()
         {
             var cc = new TestCardCache();

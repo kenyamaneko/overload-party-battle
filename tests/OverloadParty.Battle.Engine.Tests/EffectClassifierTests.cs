@@ -257,7 +257,7 @@ public class EffectClassifierTests
             info.HasCategory(EffectCategory.Heal).Should().BeTrue();
         }
 
-        [Fact(DisplayName = "条件分岐効果は then 分岐のカテゴリを取り込む")]
+        [Fact(DisplayName = "条件分岐効果は条件成立時分岐のカテゴリを取り込む")]
         public void IfCondition_MergesThenBranch()
         {
             var then = new List<IEffectOp> { new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)) };

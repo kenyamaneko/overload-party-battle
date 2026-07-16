@@ -197,7 +197,7 @@ public class EffectRegistrationTests
     [Trait("対象", "未登録カードの照会")]
     public class UnregisteredCardLookup : Base
     {
-        [Fact(DisplayName = "未登録カードを照会すると Get は null、Has は false を返す")]
+        [Fact(DisplayName = "未登録カードを照会すると、ハンドラが見つからず未登録と判定される")]
         public void ReturnsNull()
         {
             _registry.Get("TEST-9999", TriggerType.Ignition).Should().BeNull();

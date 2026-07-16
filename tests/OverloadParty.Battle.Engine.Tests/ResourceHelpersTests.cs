@@ -8,7 +8,7 @@ public class ResourceHelpersTests
     [Trait("対象", "リソースの生成")]
     public class CreateDeployedResource
     {
-        [Fact(DisplayName = "Compute カードからリソースを生成するとスループットと可用性が設定される")]
+        [Fact(DisplayName = "Compute系カードからリソースを生成するとスループットと可用性が設定される")]
         public void ComputeCard_SetsTPAndAV()
         {
             var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400);
@@ -24,7 +24,7 @@ public class ResourceHelpersTests
             resource.DeployedOnTurn.Should().Be(3);
         }
 
-        [Fact(DisplayName = "Data カードからリソースを生成するとイールドと可用性が設定されスループットを持たない")]
+        [Fact(DisplayName = "Data系カードからリソースを生成するとイールドと可用性が設定されスループットを持たない")]
         public void DataCard_SetsYieldAndAV()
         {
             var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400, av: 800);
@@ -38,7 +38,7 @@ public class ResourceHelpersTests
             resource.MaxTP.Should().BeNull();
         }
 
-        [Theory(DisplayName = "Resizable が true のときランクが small になり false のときランクを持たない")]
+        [Theory(DisplayName = "リサイザブルが true のときランクが small になり false のときランクを持たない")]
         [InlineData(true)]
         [InlineData(false)]
         public void ResizableFlag_SetsRank(bool resizable)
@@ -85,7 +85,7 @@ public class ResourceHelpersTests
     [Trait("対象", "リソースのフィールド配置")]
     public class PlaceResourceOnField
     {
-        [Fact(DisplayName = "Compute リソースはまずフロントエンドに配置される")]
+        [Fact(DisplayName = "Compute系リソースはまずフロントエンドに配置される")]
         public void ComputeType_PlacedInFrontendFirst()
         {
             var field = TestFactory.MakeField();
@@ -96,7 +96,7 @@ public class ResourceHelpersTests
             field.Frontend.Any(r => r.InstanceID == "inst_1").Should().BeTrue();
         }
 
-        [Fact(DisplayName = "フロントエンドが満杯なら Compute リソースはバックエンドに配置される")]
+        [Fact(DisplayName = "フロントエンドが満杯なら Compute系リソースはバックエンドに配置される")]
         public void ComputeType_FrontendFull_PlacedInBackend()
         {
             var field = TestFactory.MakeField();
@@ -112,7 +112,7 @@ public class ResourceHelpersTests
             field.Backend.Any(r => r.InstanceID == "inst_new").Should().BeTrue();
         }
 
-        [Fact(DisplayName = "フロントエンドもバックエンドも満杯なら Compute リソースの配置は拒否される")]
+        [Fact(DisplayName = "フロントエンドもバックエンドも満杯なら Compute系リソースの配置は拒否される")]
         public void ComputeType_AllFull_Throws()
         {
             var field = TestFactory.MakeField();
@@ -144,7 +144,7 @@ public class ResourceHelpersTests
             field.Backend.Any(r => r.InstanceID == "be_1").Should().BeTrue();
         }
 
-        [Fact(DisplayName = "バックエンドが満杯なら Database の配置は拒否される")]
+        [Fact(DisplayName = "バックエンドが満杯ならデータベースの配置は拒否される")]
         public void Database_BackendFull_Throws()
         {
             var field = TestFactory.MakeField();
@@ -345,7 +345,7 @@ public class ResourceHelpersTests
             resource.MaxAV.Should().Be(2800); // 1400 * 2
         }
 
-        [Fact(DisplayName = "非 Elastic の Compute リソースをランク large にするとスループットが 1800 に再計算される")]
+        [Fact(DisplayName = "非エラスティックの Compute系リソースをランク large にするとスループットが 1800 に再計算される")]
         public void NonElasticCompute_RecalculatesTP()
         {
             var cc = new TestCardCache();
@@ -359,7 +359,7 @@ public class ResourceHelpersTests
             resource.CurrentTP.Should().Be(1800);
         }
 
-        [Fact(DisplayName = "非 Elastic の Data リソースをランク medium にするとイールドが 800 に再計算される")]
+        [Fact(DisplayName = "非エラスティックの Data系リソースをランク medium にするとイールドが 800 に再計算される")]
         public void NonElasticData_RecalculatesYield()
         {
             var cc = new TestCardCache();
@@ -373,7 +373,7 @@ public class ResourceHelpersTests
             resource.CurrentYield.Should().Be(800);
         }
 
-        [Fact(DisplayName = "Elastic のリソースはランクを上げてもスループットが再計算されない")]
+        [Fact(DisplayName = "エラスティックのリソースはランクを上げてもスループットが再計算されない")]
         public void ElasticCard_DoesNotRecalculateTP()
         {
             var cc = new TestCardCache();
