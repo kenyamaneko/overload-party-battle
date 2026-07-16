@@ -118,7 +118,7 @@ public class GameEngineTests
     [Trait("対象", "カードのデプロイ")]
     public class ProcessPlayCard : Base
     {
-        [Fact(DisplayName = "PlayCard アクションで手札のカードをフィールドに出し、PlayCard イベントを返す")]
+        [Fact(DisplayName = "カードプレイアクションで手札のカードをフィールドに出し、カードプレイイベントを返す")]
         public async Task ProcessAction_PlayCard_PlaysCardAndReturnsEvents()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -158,7 +158,7 @@ public class GameEngineTests
     [Trait("対象", "攻撃の処理")]
     public class ProcessAttack : Base
     {
-        [Fact(DisplayName = "Attack アクションで対象に 600 ダメージを与え、Attack イベントを返して永続化する")]
+        [Fact(DisplayName = "攻撃アクションで対象に 600 ダメージを与え、攻撃イベントを返して永続化する")]
         public async Task ProcessAction_Attack_DealsDamageAndReturnsEvents()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -229,7 +229,7 @@ public class GameEngineTests
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not your turn*");
         }
 
-        [Fact(DisplayName = "GetNpcModel に不正なプレイヤー番号 0 を渡すと、ArgumentOutOfRangeException を投げる")]
+        [Fact(DisplayName = "NPC モデル取得に不正なプレイヤー番号 0 を渡すと、ArgumentOutOfRangeException を投げる")]
         public async Task GetNpcModel_InvalidPlayer_Throws()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -333,7 +333,7 @@ public class GameEngineTests
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*slot selection*");
         }
 
-        [Fact(DisplayName = "スロット選択待ち中に SelectSlot すると、選択したスロットへ配置し待ちが解消される")]
+        [Fact(DisplayName = "スロット選択待ち中にスロットを選択すると、選択したスロットへ配置し待ちが解消される")]
         public async Task ProcessAction_PendingSlotSelect_AllowsSelectSlot()
         {
             var deck = MakeSingleCardDeck("TST-0001");

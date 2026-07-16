@@ -166,7 +166,7 @@ public class TrashToHandAvailableActionsTests
         playAction.ValidTargets.Should().BeEquivalentTo(["t_1", "t_3"]);
     }
 
-    [Fact(DisplayName = "フィルタに一致するカードがトラッシュにないとき PlayCard アクションが提示されない")]
+    [Fact(DisplayName = "フィルタに一致するカードがトラッシュにないときカードプレイアクションが提示されない")]
     public void PlayCard_TrashToHandNoMatchingCard_OmitsAction()
     {
         var state = TestFactory.MakeGameState();
@@ -182,7 +182,7 @@ public class TrashToHandAvailableActionsTests
         actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
     }
 
-    [Fact(DisplayName = "トラッシュが空のとき PlayCard アクションが提示されない")]
+    [Fact(DisplayName = "トラッシュが空のときカードプレイアクションが提示されない")]
     public void PlayCard_TrashToHandEmptyTrash_OmitsAction()
     {
         var state = TestFactory.MakeGameState();

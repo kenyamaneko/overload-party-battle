@@ -85,7 +85,7 @@ public class AttackProcessorTests
             state.Player2Budget.Should().Be(budgetBefore - 400);
         }
 
-        [Fact(DisplayName = "攻撃で可用性がちょうど0になったとき、リソースは破壊されSLAペナルティが1回だけ減算される")]
+        [Fact(DisplayName = "攻撃で可用性がちょうど0になったとき、リソースは破壊され SLA ペナルティが1回だけ減算される")]
         public void AppliesSlaPenaltyOnce_WhenDamageExactlyMatchesAvailability()
         {
             _cc.Add(TestFactory.ComputeCard(cardId: "TST-0006", tp: 1400, av: 1400, slaPenalty: 400, name: "ExactLethal"));
@@ -434,10 +434,10 @@ public class AttackProcessorTests
         }
     }
 
-    [Trait("対象", "攻撃時の誘発効果 (OnAttack)")]
+    [Trait("対象", "攻撃時の誘発効果")]
     public class OnAttackEffect : Base
     {
-        [Fact(DisplayName = "攻撃者の OnAttack 誘発効果が発動し、on_attack_triggered イベントが結果に加わる")]
+        [Fact(DisplayName = "攻撃者の攻撃時効果が発動し、on_attack_triggered イベントが結果に加わる")]
         public void FiresAndAddsEvents()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -516,10 +516,10 @@ public class AttackProcessorTests
         }
     }
 
-    [Trait("対象", "対象破壊時の誘発効果 (OnDestroy)")]
+    [Trait("対象", "対象破壊時の誘発効果")]
     public class OnDestroyEffect : Base
     {
-        [Fact(DisplayName = "攻撃で対象が破壊されると、対象の OnDestroy 誘発効果が発動し on_destroy_triggered イベントが加わる")]
+        [Fact(DisplayName = "攻撃で対象が破壊されると、対象の破壊時効果が発動し on_destroy_triggered イベントが加わる")]
         public void FiresWhenDefenderDestroyed()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
@@ -549,10 +549,10 @@ public class AttackProcessorTests
         }
     }
 
-    [Trait("対象", "味方リソースの破壊時誘発効果 (OnDestroy)")]
+    [Trait("対象", "味方リソースの破壊時誘発効果")]
     public class AlliedOnDestroy : Base
     {
-        [Fact(DisplayName = "対象が破壊されると、同じ盤面の味方リソースの OnDestroy 誘発効果が発動し allied_on_destroy イベントが加わる")]
+        [Fact(DisplayName = "対象が破壊されると、同じ盤面の味方リソースの破壊時効果が発動し allied_on_destroy イベントが加わる")]
         public void FiresForOtherResources()
         {
             // Card 3 = an allied resource with OnDestroy
@@ -755,10 +755,10 @@ public class AttackProcessorTests
         }
     }
 
-    [Trait("対象", "被攻撃時の誘発効果 (OnHit)")]
+    [Trait("対象", "被攻撃時の誘発効果")]
     public class OnHitEffect
     {
-        [Fact(DisplayName = "攻撃を受けた対象の OnHit 誘発効果が発動し、on_hit_triggered イベントが加わる")]
+        [Fact(DisplayName = "攻撃を受けた対象の被攻撃時効果が発動し、on_hit_triggered イベントが加わる")]
         public void FiresOnDefenderWhenAttacked()
         {
             var cc = StandardCc();
@@ -784,7 +784,7 @@ public class AttackProcessorTests
         }
     }
 
-    [Trait("対象", "盤面変化時の誘発効果 (OnFieldChange)")]
+    [Trait("対象", "盤面変化時の誘発効果")]
     public class OnFieldChangeAfterDestroy
     {
         [Fact(DisplayName = "攻撃で対象が破壊され盤面が変化すると、盤面変化を条件とする常時効果が再計算される")]
@@ -904,7 +904,7 @@ public class AttackProcessorTests
             return (cc, effects, state, TestFactory.MakeGame());
         }
 
-        [Fact(DisplayName = "被ダメージ時効果が防御側を先に破壊したとき、SLAペナルティは1回だけ減算される")]
+        [Fact(DisplayName = "被ダメージ時効果が防御側を先に破壊したとき、SLA ペナルティは1回だけ減算される")]
         public void AppliesSlaPenaltyOnce()
         {
             var (cc, effects, state, game) = Setup();

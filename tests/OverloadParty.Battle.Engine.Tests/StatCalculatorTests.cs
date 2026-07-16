@@ -16,7 +16,7 @@ public class StatCalculatorTests
     [Trait("対象", "実効エラスティックボーナスの計算")]
     public class CalculateEffectiveElasticBonus
     {
-        [Theory(DisplayName = "生の ElasticBonus と scale から、実効エラスティックボーナスを計算する")]
+        [Theory(DisplayName = "生のエラスティックボーナスと free_tier から、実効エラスティックボーナスを計算する")]
         [InlineData(0, 500, 0)]        // zero raw → 0
         [InlineData(100, 0, 100)]      // zero scale → raw passthrough
         [InlineData(-100, 500, -100)]  // negative raw passthrough
@@ -188,7 +188,7 @@ public class StatCalculatorTests
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(0);
         }
 
-        [Fact(DisplayName = "複数の一時効果 (buff/debuff) が累積してスループットが 720 になる")]
+        [Fact(DisplayName = "複数の一時効果 (バフ / デバフ) が累積してスループットが 720 になる")]
         public void MultipleTempEffects_Stack()
         {
             var cc = new TestCardCache();

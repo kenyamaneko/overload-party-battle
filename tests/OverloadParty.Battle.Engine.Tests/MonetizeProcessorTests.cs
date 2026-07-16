@@ -261,10 +261,10 @@ public class MonetizeProcessorTests
         }
     }
 
-    [Trait("対象", "Elastic リソースの収益化")]
+    [Trait("対象", "エラスティックリソースの収益化")]
     public class ElasticMonetize
     {
-        [Fact(DisplayName = "Elastic リソースを収益化するとエラスティックボーナスが加算される")]
+        [Fact(DisplayName = "エラスティックリソースを収益化するとエラスティックボーナスが加算される")]
         public void Process_AppliesElasticBonus()
         {
             var cc = new TestCardCache();

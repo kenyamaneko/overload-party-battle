@@ -140,7 +140,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
         }
 
-        [Fact(DisplayName = "InitiativeCatalog を渡さないとき、施策の使用は候補にならない")]
+        [Fact(DisplayName = "施策カタログを渡さないとき、施策の使用は候補にならない")]
         public void UseInitiative_NotEnumeratedWhenCatalogOmitted()
         {
             var state = MakeInitiativeState();
@@ -186,7 +186,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "Database はバックエンドにのみ配置できる")]
+        [Fact(DisplayName = "データベースはバックエンドにのみ配置できる")]
         public void PlayCard_DatabaseCanOnlyGoToBackend()
         {
             // Database は Backend のみ
@@ -204,7 +204,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "CacheDB はバックエンドにのみ配置できる")]
+        [Fact(DisplayName = "キャッシュ DB はバックエンドにのみ配置できる")]
         public void PlayCard_CacheDBCanOnlyGoToBackend()
         {
             var cc = new TestCardCache();
@@ -221,7 +221,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "ObjectStorage はフロントエンドとバックエンドの両方に配置できる")]
+        [Fact(DisplayName = "オブジェクトストレージはフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ObjectStorageCanGoToFrontendAndBackend()
         {
             // ObjectStorage は Frontend / Backend 両方
@@ -548,7 +548,7 @@ public class AvailableActionsTests
     [Trait("対象", "バジェットによるプレイ可否")]
     public class PlayCardBudgetFiltering : Base
     {
-        [Fact(DisplayName = "MinBudgetGuard 500 に対しバジェットが 200 のとき、ストラテジーはプレイできない")]
+        [Fact(DisplayName = "バジェット下限条件 500 に対しバジェットが 200 のとき、ストラテジーはプレイできない")]
         public void PlayStrategy_ExcludedWhenBudgetInsufficient()
         {
             var cc = new TestCardCache();
@@ -568,7 +568,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_50");
         }
 
-        [Fact(DisplayName = "MinBudgetGuard 500 に対しバジェットが 600 のとき、ストラテジーをプレイできる")]
+        [Fact(DisplayName = "バジェット下限条件 500 に対しバジェットが 600 のとき、ストラテジーをプレイできる")]
         public void PlayStrategy_IncludedWhenBudgetSufficient()
         {
             var cc = new TestCardCache();
@@ -588,7 +588,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_50");
         }
 
-        [Fact(DisplayName = "MinBudgetGuard 300 に対しバジェットが 100 のとき、インシデントはプレイできない")]
+        [Fact(DisplayName = "バジェット下限条件 300 に対しバジェットが 100 のとき、インシデントはプレイできない")]
         public void PlayIncident_ExcludedWhenBudgetInsufficient()
         {
             var cc = new TestCardCache();
@@ -635,7 +635,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "フロントエンドが満杯でも Database はプレイできる")]
+        [Fact(DisplayName = "フロントエンドが満杯でもデータベースはプレイできる")]
         public void PlayCard_DatabaseStillPlayableWhenFrontendFull()
         {
             // Database はそもそも Backend のみ。フロントが満杯でも関係ない
@@ -683,7 +683,7 @@ public class AvailableActionsTests
     [Trait("対象", "リソースサブタイプ別の配置可能ゾーン")]
     public class PlayCardResourceTypePlacement : Base
     {
-        [Fact(DisplayName = "Container はフロントエンドとバックエンドの両方に配置できる")]
+        [Fact(DisplayName = "コンテナはフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ContainerCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -700,7 +700,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "Serverless はフロントエンドとバックエンドの両方に配置できる")]
+        [Fact(DisplayName = "サーバーレスはフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_ServerlessCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -717,7 +717,7 @@ public class AvailableActionsTests
             playAction.ValidZones.Should().Contain(z => z.StartsWith("backend_"));
         }
 
-        [Fact(DisplayName = "Orchestrator はフロントエンドとバックエンドの両方に配置できる")]
+        [Fact(DisplayName = "オーケストレーターはフロントエンドとバックエンドの両方に配置できる")]
         public void PlayCard_OrchestratorCanGoToFrontendAndBackend()
         {
             var cc = new TestCardCache();
@@ -738,7 +738,7 @@ public class AvailableActionsTests
     [Trait("対象", "スケールアップの候補")]
     public class ScaleUpRules : Base
     {
-        [Fact(DisplayName = "Resizable な small リソースは medium・large × M/C/R の 6 通りがスケールアップ候補になる")]
+        [Fact(DisplayName = "リサイザブルな small リソースは medium・large × M/C/R の 6 通りがスケールアップ候補になる")]
         public void ScaleUp_ResizableSmallOffersAllOptions()
         {
             var cc = new TestCardCache();
@@ -762,7 +762,7 @@ public class AvailableActionsTests
             scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "R");
         }
 
-        [Fact(DisplayName = "Resizable な medium(M) リソースは同ファミリーの large 1 通りだけがスケールアップ候補になる")]
+        [Fact(DisplayName = "リサイザブルな medium(M) リソースは同ファミリーの large 1 通りだけがスケールアップ候補になる")]
         public void ScaleUp_ResizableMediumOffersAllOptions()
         {
             var cc = new TestCardCache();
@@ -782,7 +782,7 @@ public class AvailableActionsTests
             scaleActions.Should().Contain(a => a.TargetRank == "large" && a.InstanceFamily == "M");
         }
 
-        [Fact(DisplayName = "Resizable な large リソースはスケールアップ候補がない")]
+        [Fact(DisplayName = "リサイザブルな large リソースはスケールアップ候補がない")]
         public void ScaleUp_ResizableLargeHasNoOptions()
         {
             var cc = new TestCardCache();
@@ -801,7 +801,7 @@ public class AvailableActionsTests
             scaleActions.Should().BeEmpty();
         }
 
-        [Fact(DisplayName = "Resizable でないリソースはスケールアップ候補にならない")]
+        [Fact(DisplayName = "リサイザブルでないリソースはスケールアップ候補にならない")]
         public void ScaleUp_NonResizableExcluded()
         {
             // Resizable でないカードはスケールアップ不可
@@ -837,7 +837,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
 
-        [Fact(DisplayName = "Elastic のみ (Resizable でない) リソースはスケールアップ候補にならない")]
+        [Fact(DisplayName = "エラスティックのみ (リサイザブルでない) リソースはスケールアップ候補にならない")]
         public void ScaleUp_ElasticOnlyExcluded()
         {
             // Elastic-only カード（Resizable=false）は手動スケールアップ不可
@@ -871,7 +871,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
 
-        [Fact(DisplayName = "Resizable かつ Elastic のリソースはスケールアップ候補になる")]
+        [Fact(DisplayName = "リサイザブルかつエラスティックのリソースはスケールアップ候補になる")]
         public void ScaleUp_ResizableElasticCanScaleUp()
         {
             // R+E カードは手動スケールアップも可能
@@ -888,7 +888,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "orch_1");
         }
 
-        [Fact(DisplayName = "Resizable な Database はスケールアップ候補になる")]
+        [Fact(DisplayName = "リサイザブルなデータベースはスケールアップ候補になる")]
         public void ScaleUp_DataCardResizableCanScaleUp()
         {
             // Resizable な Database もスケールアップ可能
@@ -951,7 +951,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact(DisplayName = "フロントエンドの ObjectStorage は攻撃できない")]
+        [Fact(DisplayName = "フロントエンドのオブジェクトストレージは攻撃できない")]
         public void Attack_FrontendObjectStorageCannotAttack()
         {
             // Object Storage をフロントエンドに置いた場合、攻撃できない
@@ -1016,7 +1016,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact(DisplayName = "CannotAttack 状態のリソースは攻撃できない")]
+        [Fact(DisplayName = "攻撃不能状態のリソースは攻撃できない")]
         public void Attack_CannotAttackExcluded()
         {
             var cc = new TestCardCache();
@@ -1217,7 +1217,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact(DisplayName = "バックエンドの Database は収益化できない")]
+        [Fact(DisplayName = "バックエンドのデータベースは収益化できない")]
         public void Monetize_BackendDatabaseExcluded()
         {
             // 収益化はComputeのみ。DatabaseはInsight生成源だがBudget変換はしない
@@ -1575,7 +1575,7 @@ public class AvailableActionsTests
     [Trait("対象", "バジェットによる起動効果の使用可否")]
     public class UseIgnitionBudgetFiltering : Base
     {
-        [Fact(DisplayName = "MinBudgetGuard 400 に対しバジェットが 300 のとき、起動効果の使用は候補にならない")]
+        [Fact(DisplayName = "バジェット下限条件 400 に対しバジェットが 300 のとき、起動効果の使用は候補にならない")]
         public void UseIgnition_ExcludedWhenBudgetBelowMinimum()
         {
             var cc = new TestCardCache();
@@ -1596,7 +1596,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
-        [Fact(DisplayName = "MinBudgetGuard 400 に対しバジェットが 500 のとき、起動効果の使用が候補になる")]
+        [Fact(DisplayName = "バジェット下限条件 400 に対しバジェットが 500 のとき、起動効果の使用が候補になる")]
         public void UseIgnition_IncludedWhenBudgetMeetsMinimum()
         {
             var cc = new TestCardCache();
@@ -1617,7 +1617,7 @@ public class AvailableActionsTests
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
-        [Fact(DisplayName = "MaxBudgetGuard 1000 に対しバジェットが 1500 のとき、起動効果の使用は候補にならない")]
+        [Fact(DisplayName = "バジェット上限条件 1000 に対しバジェットが 1500 のとき、起動効果の使用は候補にならない")]
         public void UseIgnition_ExcludedWhenBudgetExceedsMaximum()
         {
             var cc = new TestCardCache();
@@ -1638,7 +1638,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_120");
         }
 
-        [Fact(DisplayName = "MaxBudgetGuard 1000 に対しバジェットが 800 のとき、起動効果の使用が候補になる")]
+        [Fact(DisplayName = "バジェット上限条件 1000 に対しバジェットが 800 のとき、起動効果の使用が候補になる")]
         public void UseIgnition_IncludedWhenBudgetWithinMaximum()
         {
             var cc = new TestCardCache();
@@ -1752,7 +1752,7 @@ public class AvailableActionsTests
                 Candidates = [.. candidates],
             };
 
-        [Fact(DisplayName = "候補が 3 件の選択待ちのとき、効果カード ID と候補ごとの選択肢を持つ ResolvePendingChoice アクションが 1 つだけ生成される")]
+        [Fact(DisplayName = "候補が 3 件の選択待ちのとき、効果カード ID と候補ごとの選択肢を持つ選択待ち解決アクションが 1 つだけ生成される")]
         public void PendingChoice_EmitsSingleActionWithOptionPerCandidate()
         {
             var cc = new TestCardCache();
@@ -1768,7 +1768,7 @@ public class AvailableActionsTests
             action.ChoiceOptions!.Select(o => o.Key).Should().Equal("c1", "c2", "c3");
         }
 
-        [Fact(DisplayName = "選択待ちの種別が ChoiceKinds.HandCard のとき、アクションが同じ ChoiceKind と候補を持つ")]
+        [Fact(DisplayName = "選択待ちの種別が手札選択のとき、アクションが同じ種別と候補を持つ")]
         public void PendingChoice_CarriesChoiceKind()
         {
             var cc = new TestCardCache();
@@ -1783,7 +1783,7 @@ public class AvailableActionsTests
             action.ChoiceOptions!.Select(o => o.Key).Should().Equal("hand_card_1");
         }
 
-        [Fact(DisplayName = "選択待ちがあるとき、他のアクションは列挙されず ResolvePendingChoice だけになる")]
+        [Fact(DisplayName = "選択待ちがあるとき、他のアクションは列挙されず選択待ち解決だけになる")]
         public void PendingChoice_ShortCircuitsOtherActions()
         {
             var cc = new TestCardCache();

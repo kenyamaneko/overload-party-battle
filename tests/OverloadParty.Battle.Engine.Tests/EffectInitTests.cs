@@ -197,7 +197,7 @@ public class EffectRegistrationTests
     [Trait("対象", "未登録カードの照会")]
     public class UnregisteredCardLookup : Base
     {
-        [Fact(DisplayName = "未登録カードを照会すると Get は null、Has は false を返す")]
+        [Fact(DisplayName = "未登録カードを照会すると、ハンドラが見つからず未登録と判定される")]
         public void ReturnsNull()
         {
             _registry.Get("TEST-9999", TriggerType.Ignition).Should().BeNull();
@@ -336,42 +336,42 @@ public class EffectRegistrationTests
     [Trait("対象", "トリガー別カード ID の照会")]
     public class CardIdsForTriggerLookup : Base
     {
-        [Fact(DisplayName = "OnAttackDeclared トリガーのカード一覧に登録済みカードが含まれる")]
+        [Fact(DisplayName = "攻撃宣言時トリガーのカード一覧に登録済みカードが含まれる")]
         public void OnAttackDeclared_ContainsExpectedCards()
         {
             var cards = _registry.CardIdsForTrigger(TriggerType.OnAttackDeclared);
             cards.Should().Contain(new string[] { "SL-0024", "NT-0024", "NT-0027", "NT-0028" });
         }
 
-        [Fact(DisplayName = "OnIncident トリガーのカード一覧に登録済みカードが含まれる")]
+        [Fact(DisplayName = "インシデント使用時トリガーのカード一覧に登録済みカードが含まれる")]
         public void OnIncident_ContainsExpectedCards()
         {
             var cards = _registry.CardIdsForTrigger(TriggerType.OnIncident);
             cards.Should().Contain(new string[] { "SH-0014", "SH-0017", "TK-0014", "TK-0017", "TK-0023", "TN-0013" });
         }
 
-        [Fact(DisplayName = "OnDestroy トリガーのカード一覧にリアクティブカードが含まれる")]
+        [Fact(DisplayName = "破壊時トリガーのカード一覧にリアクティブカードが含まれる")]
         public void OnDestroy_ContainsExpectedReactiveCards()
         {
             var cards = _registry.CardIdsForTrigger(TriggerType.OnDestroy);
             cards.Should().Contain(new string[] { "TK-0024", "TN-0018", "NT-0023" });
         }
 
-        [Fact(DisplayName = "OnDamaged トリガーのカード一覧に SH-0021 が含まれる")]
+        [Fact(DisplayName = "被ダメージ時トリガーのカード一覧に SH-0021 が含まれる")]
         public void OnDamaged_ContainsExpectedCards()
         {
             var cards = _registry.CardIdsForTrigger(TriggerType.OnDamaged);
             cards.Should().Contain("SH-0021");
         }
 
-        [Fact(DisplayName = "OnAttack トリガーのカード一覧に登録済みカードが含まれる")]
+        [Fact(DisplayName = "攻撃時トリガーのカード一覧に登録済みカードが含まれる")]
         public void OnAttack_ContainsExpectedCards()
         {
             var onAttackCards = _registry.CardIdsForTrigger(TriggerType.OnAttack);
             onAttackCards.Should().Contain(new string[] { "SL-0006", "SL-0007", "SL-0011", "SL-0018", "TN-0002" });
         }
 
-        [Fact(DisplayName = "OnEndPhase トリガーのカード一覧に SL-0016 が含まれる")]
+        [Fact(DisplayName = "エンドフェーズトリガーのカード一覧に SL-0016 が含まれる")]
         public void OnEndPhase_ContainsCard61()
         {
             var endPhaseCards = _registry.CardIdsForTrigger(TriggerType.OnEndPhase);

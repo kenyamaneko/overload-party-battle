@@ -15,7 +15,7 @@ public class ActionRequestDeserializationTests
         };
     }
 
-    [Trait("対象", "PlayCardRequest のデシリアライズ")]
+    [Trait("対象", "カードプレイ要求のデシリアライズ")]
     public class PlayCardRequestDeserialization : Base
     {
         [Fact(DisplayName = "position をネストした JSON から zone frontend と index 0 を読み取る")]
@@ -55,10 +55,10 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    [Trait("対象", "ScaleUpRequest のデシリアライズ")]
+    [Trait("対象", "スケールアップ要求のデシリアライズ")]
     public class ScaleUpRequestDeserialization : Base
     {
-        [Fact(DisplayName = "componentInstanceId を InstanceID にマッピングする")]
+        [Fact(DisplayName = "componentInstanceId をインスタンス ID にマッピングする")]
         public void ScaleUpRequest_ComponentInstanceId_MapsToInstanceID()
         {
             var json = """{ "componentInstanceId": "inst_1", "targetRank": "medium" }""";
@@ -69,7 +69,7 @@ public class ActionRequestDeserializationTests
             req.TargetRank.Should().Be("medium");
         }
 
-        [Fact(DisplayName = "instanceId を InstanceID にマッピングする")]
+        [Fact(DisplayName = "instanceId をインスタンス ID にマッピングする")]
         public void ScaleUpRequest_DirectInstanceId_MapsToInstanceID()
         {
             var json = """{ "instanceId": "inst_1", "targetRank": "medium" }""";
@@ -80,7 +80,7 @@ public class ActionRequestDeserializationTests
             req.TargetRank.Should().Be("medium");
         }
 
-        [Fact(DisplayName = "JsonElement 経由で componentInstanceId を InstanceID にマッピングする")]
+        [Fact(DisplayName = "JsonElement 経由で componentInstanceId をインスタンス ID にマッピングする")]
         public void ScaleUpRequest_ViaJsonElement()
         {
             var json = """{ "componentInstanceId": "inst_2", "targetRank": "large" }""";
@@ -92,7 +92,7 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    [Trait("対象", "MonetizeRequest のデシリアライズ")]
+    [Trait("対象", "収益化要求のデシリアライズ")]
     public class MonetizeRequestDeserialization : Base
     {
         [Fact(DisplayName = "distributions の componentInstanceId と amount を順序どおり読み取る")]
@@ -132,7 +132,7 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    [Trait("対象", "AttackRequest のデシリアライズ")]
+    [Trait("対象", "攻撃要求のデシリアライズ")]
     public class AttackRequestDeserialization : Base
     {
         [Fact(DisplayName = "attackerInstanceId と targetInstanceId を読み取る")]
@@ -158,7 +158,7 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    [Trait("対象", "UseIgnitionRequest のデシリアライズ")]
+    [Trait("対象", "起動効果使用要求のデシリアライズ")]
     public class UseIgnitionRequestDeserialization : Base
     {
         [Fact(DisplayName = "instanceId を読み取る")]
@@ -183,7 +183,7 @@ public class ActionRequestDeserializationTests
         }
     }
 
-    [Trait("対象", "DiscardHandRequest のデシリアライズ")]
+    [Trait("対象", "手札破棄要求のデシリアライズ")]
     public class DiscardHandRequestDeserialization : Base
     {
         [Fact(DisplayName = "cardInstanceIds の配列を読み取る")]

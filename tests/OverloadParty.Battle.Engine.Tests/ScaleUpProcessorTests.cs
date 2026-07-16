@@ -177,7 +177,7 @@ public class ScaleUpProcessorTests
     [Trait("対象", "スケールアップイベントの生成")]
     public class ScaleUpEvent : Base
     {
-        [Fact(DisplayName = "スケールアップすると、instanceId と targetRank medium を含む ScaleUp イベントを生成する")]
+        [Fact(DisplayName = "スケールアップすると、instanceId と targetRank medium を含むスケールアップイベントを生成する")]
         public void Process_GeneratesScaleUpEvent()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -194,7 +194,7 @@ public class ScaleUpProcessorTests
             data.TargetRank.Should().Be("medium");
         }
 
-        [Fact(DisplayName = "ScaleUp イベントに要求したインスタンスファミリー C が含まれる")]
+        [Fact(DisplayName = "スケールアップイベントに要求したインスタンスファミリー C が含まれる")]
         public void Process_ScaleUpEvent_IncludesInstanceFamily()
         {
             var state = TestFactory.MakeGameState(turn: 3);
@@ -269,10 +269,10 @@ public class ScaleUpProcessorTests
         }
     }
 
-    [Trait("対象", "スケールアップの OnScaleUp 誘発効果")]
+    [Trait("対象", "スケールアップ時の誘発効果")]
     public class OnScaleUpTrigger
     {
-        [Fact(DisplayName = "スケールアップすると、リソース自身の OnScaleUp 誘発効果が発動する")]
+        [Fact(DisplayName = "スケールアップすると、リソース自身のスケールアップ時効果が発動する")]
         public void Process_FiresOnScaleUpForResource()
         {
             var cc = ResizableCc();
@@ -290,7 +290,7 @@ public class ScaleUpProcessorTests
             fired.Should().Be(1, "スケールアップで自身の OnScaleUp 誘発効果が発動する");
         }
 
-        [Fact(DisplayName = "スケールアップすると、装備したアタッチメントの OnScaleUp 誘発効果も発動する")]
+        [Fact(DisplayName = "スケールアップすると、装備したアタッチメントのスケールアップ時効果も発動する")]
         public void Process_FiresOnScaleUpForAttachment()
         {
             var cc = ResizableCc();

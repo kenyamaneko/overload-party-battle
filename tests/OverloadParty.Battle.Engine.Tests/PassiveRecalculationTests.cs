@@ -76,7 +76,7 @@ public class PassiveRecalculationTests
                 800, "同一 source からのバフは洗い替えのため何度再計算されても1つに留まる");
         }
 
-        [Fact(DisplayName = "条件対象(ObjectStorage)が0体のとき、実効TPに加算はない")]
+        [Fact(DisplayName = "条件対象(オブジェクトストレージ)が0体のとき、実効TPに加算はない")]
         public void ZeroMatchingResources_NoBonusApplied()
         {
             var watcherCard = MakeWatcherCard("TST-9001");
@@ -97,7 +97,7 @@ public class PassiveRecalculationTests
                 600, "条件対象がいなければ加算されない");
         }
 
-        [Fact(DisplayName = "条件対象(ObjectStorage)が1体のとき、実効TPは+200になる")]
+        [Fact(DisplayName = "条件対象(オブジェクトストレージ)が1体のとき、実効TPは+200になる")]
         public void OneMatchingResource_EffectiveTPGets200Bonus()
         {
             var watcherCard = MakeWatcherCard("TST-9001");
@@ -117,7 +117,7 @@ public class PassiveRecalculationTests
             StatCalculator.CalculateEffectiveTP(watcher, state.Player1Field, cc).Should().Be(800);
         }
 
-        [Fact(DisplayName = "条件対象(ObjectStorage)が2体のとき、実効TPは+200のまま (min1条件は件数に比例しない)")]
+        [Fact(DisplayName = "条件対象(オブジェクトストレージ)が2体のとき、実効TPは+200のまま (min1条件は件数に比例しない)")]
         public void TwoMatchingResources_EffectiveTPStaysAt200Bonus()
         {
             var watcherCard = MakeWatcherCard("TST-9001");
@@ -344,7 +344,7 @@ public class PassiveRecalculationTests
         }
     }
 
-    [Trait("対象", "パッシブ効果の再計算 (Platform型 while_on_field)")]
+    [Trait("対象", "パッシブ効果の再計算 (プラットフォーム型 while_on_field)")]
     public class PlatformTypePassiveEffect
     {
         private static CardDefinition MakePlatformCard(string cardId)
@@ -361,7 +361,7 @@ public class PassiveRecalculationTests
             return card;
         }
 
-        [Fact(DisplayName = "Platform稼働中は自リソースの実効TPが+200になり、相手が2回デプロイしても+200のまま")]
+        [Fact(DisplayName = "プラットフォーム稼働中は自リソースの実効TPが+200になり、相手が2回デプロイしても+200のまま")]
         public void PlatformActive_EffectiveTPStaysAt200Bonus_EvenAfterTwoOpponentDeploys()
         {
             var platformCard = MakePlatformCard("TST-9011");
@@ -393,7 +393,7 @@ public class PassiveRecalculationTests
                 800, "相手の2回目のデプロイでも+200のまま (旧モデルのスタック根絶)");
         }
 
-        [Fact(DisplayName = "Platformが破壊された瞬間、実効TPが基礎値に戻る")]
+        [Fact(DisplayName = "プラットフォームが破壊された瞬間、実効TPが基礎値に戻る")]
         public void PlatformDestroyed_RevertsToBaseValue()
         {
             var platformCard = MakePlatformCard("TST-9011");
@@ -420,7 +420,7 @@ public class PassiveRecalculationTests
                 600, "Platform破壊で発動条件を失い基礎値に戻る");
         }
 
-        [Fact(DisplayName = "SourceIDに使われうる相手リソースが破壊されても、Platform稼働中は+200が維持される")]
+        [Fact(DisplayName = "ソース ID に使われうる相手リソースが破壊されても、プラットフォーム稼働中は+200が維持される")]
         public void UnrelatedOpponentResourceDestroyed_PlatformBonusPersists()
         {
             var platformCard = MakePlatformCard("TST-9011");

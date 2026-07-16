@@ -92,7 +92,7 @@ public class EndPhaseProcessorTests
             state.CurrentTurn.Should().Be(2);
         }
 
-        [Fact(DisplayName = "メインフェーズのエンドフェーズ処理が previous=main・current=battle の PhaseChange イベントを 1 件発行する")]
+        [Fact(DisplayName = "メインフェーズのエンドフェーズ処理が previous=main・current=battle のフェーズ変更イベントを 1 件発行する")]
         public void EmitsPhaseChangeEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
@@ -503,7 +503,7 @@ public class EndPhaseProcessorTests
     [Trait("対象", "ターン終了イベントの発行")]
     public class TurnEndEvent : Base
     {
-        [Fact(DisplayName = "エンドフェーズ処理で TurnEnd イベントが発行される")]
+        [Fact(DisplayName = "エンドフェーズ処理でターン終了イベントが発行される")]
         public void EmitsTurnEndEvent()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -538,7 +538,7 @@ public class EndPhaseProcessorTests
     [Trait("対象", "ターン開始イベントの生成")]
     public class TurnStartEvent : Base
     {
-        [Fact(DisplayName = "MakeTurnStartEvent が現在ターン 3 とアクティブプレイヤー 2 を持つ TurnStart イベントを生成する")]
+        [Fact(DisplayName = "ターン開始イベントの生成は、現在ターン 3 とアクティブプレイヤー 2 を持つイベントになる")]
         public void ContainsActivePlayerForViewMapping()
         {
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, activePlayer: 2);
