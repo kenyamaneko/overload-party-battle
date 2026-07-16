@@ -71,7 +71,7 @@ public class PgGameRepositoryTests
     [Trait("対象", "ゲームリポジトリ")]
     public class CreateGameAndGetGame(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact(DisplayName = "CreateGame で保存したゲームを GetGame で読み戻せる")]
+        [Fact(DisplayName = "保存したゲームを読み戻せる")]
         public async Task CreateGame_and_GetGame_roundtrip()
         {
             var repo = CreateRepo();
@@ -103,7 +103,7 @@ public class PgGameRepositoryTests
             got.Npc2Model.Should().BeNull();
         }
 
-        [Fact(DisplayName = "存在しないゲーム ID を GetGame すると null を返す")]
+        [Fact(DisplayName = "存在しないゲーム ID を取得すると null を返す")]
         public async Task GetGame_returns_null_when_not_found()
         {
             var repo = CreateRepo();
@@ -117,7 +117,7 @@ public class PgGameRepositoryTests
     [Trait("対象", "ゲームリポジトリ")]
     public class GetGameState(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact(DisplayName = "CreateGame で保存したゲーム状態を GetGameState で読み戻せる")]
+        [Fact(DisplayName = "保存したゲーム状態を読み戻せる")]
         public async Task GetGameState_roundtrip()
         {
             var repo = CreateRepo();
@@ -139,7 +139,7 @@ public class PgGameRepositoryTests
             got.NextInstanceSeq.Should().Be(1);
         }
 
-        [Fact(DisplayName = "存在しないゲーム ID を GetGameState すると null を返す")]
+        [Fact(DisplayName = "存在しないゲーム ID のゲーム状態を取得すると null を返す")]
         public async Task GetGameState_returns_null_when_not_found()
         {
             var repo = CreateRepo();
@@ -153,7 +153,7 @@ public class PgGameRepositoryTests
     [Trait("対象", "ゲームリポジトリ")]
     public class UpdateGameState(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact(DisplayName = "UpdateGameState で状態を書き換えるとバージョンが加算され変更が保存される")]
+        [Fact(DisplayName = "状態を更新するとバージョンが加算され変更が保存される")]
         public async Task UpdateGameState_modifies_state_and_increments_version()
         {
             var repo = CreateRepo();
@@ -179,7 +179,7 @@ public class PgGameRepositoryTests
             got.Player2Budget.Should().Be(4800);
         }
 
-        [Fact(DisplayName = "存在しないゲームを UpdateGameState すると InvalidOperationException を投げる")]
+        [Fact(DisplayName = "存在しないゲームの状態を更新すると InvalidOperationException を投げる")]
         public async Task UpdateGameState_throws_when_game_not_found()
         {
             var repo = CreateRepo();
@@ -188,7 +188,7 @@ public class PgGameRepositoryTests
             await act.Should().ThrowAsync<InvalidOperationException>();
         }
 
-        [Fact(DisplayName = "UpdateGameState で書き換えたエンジン進行状態がリロード後も保持される")]
+        [Fact(DisplayName = "更新したエンジン進行状態がリロード後も保持される")]
         public async Task UpdateGameState_engine_progress_fields_roundtrip()
         {
             var repo = CreateRepo();
@@ -247,7 +247,7 @@ public class PgGameRepositoryTests
             got.PendingEffectChoice.Candidates.Should().Equal("inst_1", "inst_2");
         }
 
-        [Fact(DisplayName = "UpdateGameState で選択待ちを null・空に戻すとその状態が保存される")]
+        [Fact(DisplayName = "選択待ちを null・空に戻すとその状態が保存される")]
         public async Task UpdateGameState_clears_pending_choice_state()
         {
             var repo = CreateRepo();
@@ -282,7 +282,7 @@ public class PgGameRepositoryTests
     [Trait("対象", "ゲームリポジトリ")]
     public class EventPersistence(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact(DisplayName = "UpdateGameState が返したイベントを保存し sequence_number を採番して各イベントへ書き戻す")]
+        [Fact(DisplayName = "状態更新が返したイベントを保存し sequence_number を採番して各イベントへ書き戻す")]
         public async Task UpdateGameState_persists_events_and_assigns_sequence_numbers()
         {
             var repo = CreateRepo();
@@ -329,7 +329,7 @@ public class PgGameRepositoryTests
                 .Which.Turn.Should().Be(1);
         }
 
-        [Fact(DisplayName = "複数回の UpdateGameState をまたいで sequence_number が連番で継続する")]
+        [Fact(DisplayName = "複数回の状態更新をまたいで sequence_number が連番で継続する")]
         public async Task UpdateGameState_continues_sequence_numbers_across_calls()
         {
             var repo = CreateRepo();
@@ -369,7 +369,7 @@ public class PgGameRepositoryTests
     [Trait("対象", "ゲームリポジトリ")]
     public class FinishGame(PgTestFixture fixture) : Base(fixture)
     {
-        [Fact(DisplayName = "FinishGame でステータスが Finished になり勝者・勝因が記録される")]
+        [Fact(DisplayName = "ゲームを終了するとステータスが Finished になり勝者・勝因が記録される")]
         public async Task FinishGame_updates_status_and_winner()
         {
             var repo = CreateRepo();
