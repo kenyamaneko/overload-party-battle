@@ -363,6 +363,151 @@ public class PgGameRepositoryTests
             var events = await repo.GetEvents(game.GameID);
             events.Select(e => e.SequenceNumber).Should().Equal(1, 2);
         }
+
+        [Fact(DisplayName = "イベントを保存していないゲームのイベント取得は、0 件になる")]
+        public async Task GetEvents_returns_empty_list_when_no_events_saved()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            await repo.CreateGame(game, state);
+
+            var events = await repo.GetEvents(game.GameID);
+
+            events.Should().BeEmpty();
+        }
+    }
+
+    [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
+    public class InitialStateSnapshot(PgTestFixture fixture) : Base(fixture)
+    {
+        [Fact(DisplayName = "状態を更新した後も、初期状態の取得は作成時点の状態を返す")]
+        public async Task GetInitialState_returns_state_at_creation_time_after_update()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            state.Player1Budget = 5000;
+            await repo.CreateGame(game, state);
+
+            await repo.UpdateGameState(game.GameID, s =>
+            {
+                s.Player1Budget = 4200;
+                return Task.FromResult<IReadOnlyList<GameEvent>>([]);
+            });
+
+            var initial = await repo.GetInitialState(game.GameID);
+            initial.Should().NotBeNull();
+            initial!.Player1Budget.Should().Be(5000);
+        }
+    }
+
+    [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
+    public class PlayerSummaryPersistence(PgTestFixture fixture) : Base(fixture)
+    {
+        [Fact(DisplayName = "プレイヤーサマリを保存して取得すると、名前とレベルが一致する")]
+        public async Task SaveAndGetPlayerSummaries_roundtrips_name_and_level()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            await repo.CreateGame(game, state);
+
+            await repo.SavePlayerSummaries(game.GameID,
+                [new PlayerSummarySnapshot { PlayerNum = 1, Name = "TST-P1", Level = 5 }]);
+
+            var got = await repo.GetPlayerSummaries(game.GameID);
+            got.Should().ContainSingle();
+            got[0].PlayerNum.Should().Be(1);
+            got[0].Name.Should().Be("TST-P1");
+            got[0].Level.Should().Be(5);
+        }
+
+        [Fact(DisplayName = "レベルの無い (null) サマリを保存して取得すると、レベルは null のまま返る")]
+        public async Task SaveAndGetPlayerSummaries_withNullLevel_returnsNullLevel()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            await repo.CreateGame(game, state);
+
+            await repo.SavePlayerSummaries(game.GameID,
+                [new PlayerSummarySnapshot { PlayerNum = 2, Name = "TST-NPC", Level = null }]);
+
+            var got = await repo.GetPlayerSummaries(game.GameID);
+            got.Should().ContainSingle();
+            got[0].Level.Should().BeNull();
+        }
+    }
+
+    [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
+    public class PendingActionPersistence(PgTestFixture fixture) : Base(fixture)
+    {
+        [Fact(DisplayName = "pending action 付きで状態を更新すると、アクション履歴の行が保存される")]
+        public async Task UpdateGameState_withPendingAction_persistsActionHistoryRow()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            await repo.CreateGame(game, state);
+
+            var pendingAction = new PendingAction(1, ActionTypes.PlayCard,
+                new { cardInstanceId = "inst_1", zone = "frontend", index = 0 });
+
+            await repo.UpdateGameState(game.GameID,
+                _ => Task.FromResult<IReadOnlyList<GameEvent>>([]),
+                pendingAction);
+
+            await using var conn = await _ds.OpenConnectionAsync();
+            await using var cmd = new Npgsql.NpgsqlCommand(
+                "SELECT player_num, action_type FROM game_actions WHERE game_id = $1", conn);
+            cmd.Parameters.AddWithValue(game.GameID);
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            (await reader.ReadAsync()).Should().BeTrue();
+            reader.GetInt16(0).Should().Be(1);
+            reader.GetString(1).Should().Be(ActionTypes.PlayCard);
+            (await reader.ReadAsync()).Should().BeFalse();
+        }
+    }
+
+    [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
+    public class InitialDeckSnapshot(PgTestFixture fixture) : Base(fixture)
+    {
+        [Fact(DisplayName = "ゲームを作成すると、両プレイヤーの手札とデッキ全カードのスナップショットが保存される")]
+        public async Task CreateGame_persistsHandAndDeckSnapshotForBothPlayers()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            state.Player1Hand =
+            [
+                new UndeployedCard { InstanceID = "h1", CardID = "TST-0001", ArtNo = 1 },
+                new UndeployedCard { InstanceID = "h2", CardID = "TST-0002", ArtNo = 2 },
+            ];
+            state.Player1Repository =
+            [
+                new UndeployedCard { InstanceID = "r1", CardID = "TST-0003", ArtNo = 3 },
+            ];
+            await repo.CreateGame(game, state);
+
+            await using var conn = await _ds.OpenConnectionAsync();
+            await using var cmd = new Npgsql.NpgsqlCommand(
+                "SELECT player_num, deck_snapshot FROM game_decks WHERE game_id = $1 ORDER BY player_num", conn);
+            cmd.Parameters.AddWithValue(game.GameID);
+            await using var reader = await cmd.ExecuteReaderAsync();
+
+            (await reader.ReadAsync()).Should().BeTrue();
+            reader.GetInt16(0).Should().Be(1);
+            var p1Snapshot = System.Text.Json.JsonDocument.Parse(reader.GetString(1)).RootElement;
+            p1Snapshot.GetArrayLength().Should().Be(3);
+            p1Snapshot[0].GetProperty("card_id").GetString().Should().Be("TST-0001");
+            p1Snapshot[0].GetProperty("art_no").GetInt64().Should().Be(1);
+            p1Snapshot[1].GetProperty("card_id").GetString().Should().Be("TST-0002");
+            p1Snapshot[2].GetProperty("card_id").GetString().Should().Be("TST-0003");
+            p1Snapshot[2].GetProperty("art_no").GetInt64().Should().Be(3);
+
+            (await reader.ReadAsync()).Should().BeTrue();
+            reader.GetInt16(0).Should().Be(2);
+        }
     }
 
     [Collection(PgTestCollection.Name)]
