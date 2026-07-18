@@ -147,6 +147,113 @@ public class EffectYamlLoaderTests
         result.HasGuardFailed.Should().BeTrue("min=2 should reject when count is 0");
         state.Player1Budget.Should().Be(1000);
     }
+
+    [Fact(DisplayName = "リソース数の発動条件が Compute系を指定するとき、Data系リソースは数えられない")]
+    public void CountGuard_CardTypeFilter_ExcludesNonMatchingCardType()
+    {
+        var handler = LoadAndGetHandler(
+            cardId: "TST-0004",
+            triggerStr: "ignition",
+            trigger: TriggerType.Ignition,
+            guardJson: """
+                {
+                    "count": {
+                        "selector": { "owner": "myself", "card_type": "Compute" },
+                        "min": 2
+                    }
+                }
+                """,
+            opsJson: """{ "gain_budget": { "target": "myself", "amount": 100 } }""");
+
+        _cc.Add(TestFactory.ComputeCard(cardId: "CP-A"));
+        _cc.Add(TestFactory.DataCard(cardId: "DB-A"));
+        var state = TestFactory.MakeGameState(p1Budget: 1000);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "CP-A", instanceId: "c1");
+        state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "DB-A", instanceId: "d1");
+
+        var result = handler(new EffectContext
+        {
+            State = state,
+            Game = _game,
+            PlayerNum = 1,
+            CardCache = _cc,
+            Effects = new EffectRegistry(),
+        });
+
+        result.HasGuardFailed.Should().BeTrue("Data系は数えられず Compute は 1 体分だけなので min=2 を満たさない");
+        state.Player1Budget.Should().Be(1000);
+    }
+
+    [Fact(DisplayName = "同条件で Compute系が 2 体なら、条件を満たし発動する")]
+    public void CountGuard_CardTypeFilter_MatchesWhenComputeCountReachesMin()
+    {
+        var handler = LoadAndGetHandler(
+            cardId: "TST-0005",
+            triggerStr: "ignition",
+            trigger: TriggerType.Ignition,
+            guardJson: """
+                {
+                    "count": {
+                        "selector": { "owner": "myself", "card_type": "Compute" },
+                        "min": 2
+                    }
+                }
+                """,
+            opsJson: """{ "gain_budget": { "target": "myself", "amount": 100 } }""");
+
+        _cc.Add(TestFactory.ComputeCard(cardId: "CP-A"));
+        var state = TestFactory.MakeGameState(p1Budget: 1000);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "CP-A", instanceId: "c1");
+        state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "CP-A", instanceId: "c2");
+
+        var result = handler(new EffectContext
+        {
+            State = state,
+            Game = _game,
+            PlayerNum = 1,
+            CardCache = _cc,
+            Effects = new EffectRegistry(),
+        });
+
+        result.HasGuardFailed.Should().BeFalse();
+        state.Player1Budget.Should().Be(1100);
+    }
+
+    [Fact(DisplayName = "発動条件の数えでも、count_multiplier 2 のリソースは 2 体分になる")]
+    public void CountGuard_CountMultiplier_CountsAsMultipleUnits()
+    {
+        var handler = LoadAndGetHandler(
+            cardId: "TST-0006",
+            triggerStr: "ignition",
+            trigger: TriggerType.Ignition,
+            guardJson: """
+                {
+                    "count": {
+                        "selector": { "owner": "myself", "card_type": "Compute" },
+                        "min": 2
+                    }
+                }
+                """,
+            opsJson: """{ "gain_budget": { "target": "myself", "amount": 100 } }""");
+
+        _cc.Add(TestFactory.ComputeCard(cardId: "CP-A"));
+        var state = TestFactory.MakeGameState(p1Budget: 1000);
+        var counted = TestFactory.MakeResource(cardId: "CP-A", instanceId: "c1");
+        counted.TemporaryEffects.Add(new TemporaryEffect { EffectType = "count_multiplier", Value = 2 });
+        state.Player1Field.Frontend[0] = counted;
+
+        var result = handler(new EffectContext
+        {
+            State = state,
+            Game = _game,
+            PlayerNum = 1,
+            CardCache = _cc,
+            Effects = new EffectRegistry(),
+        });
+
+        result.HasGuardFailed.Should().BeFalse();
+        state.Player1Budget.Should().Be(1100);
+    }
 }
 
 [Trait("対象", "パッシブ効果の分類と不正な定義の検出")]

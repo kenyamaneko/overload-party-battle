@@ -182,6 +182,18 @@ public class GameInitializerTests
         state.Player1TimeBank.Should().Be(480);
     }
 
+    [Fact(DisplayName = "未登録カードを含むデッキでゲームを作成すると、GameRuleException になる")]
+    public void CreateNewGame_DeckWithUnregisteredCard_Throws()
+    {
+        var cc = SetupCardCache();
+        var deckCards = new List<DeckSnapshotCard> { new() { CardId = "TST-9999" } };
+        var deck = new DeckSnapshot { DeckID = "d1", Cards = deckCards };
+
+        var act = () => GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
+
+        act.Should().Throw<GameRuleException>().WithMessage("*TST-9999*");
+    }
+
     [Fact(DisplayName = "新規ゲームではフィールドの全スロットが空になる")]
     public void CreateNewGame_EmptyField_NoDeployedResources()
     {
