@@ -434,6 +434,68 @@ public class PlayCardProcessorTests
         }
     }
 
+    [Trait("対象", "デプロイターン 0 のサポートカードのデプロイ時効果")]
+    public class SupportDeployTurn0Effect
+    {
+        [Fact(DisplayName = "デプロイターン 0 のプラットフォームカードを出すと、そのデプロイ時効果が即時発動する")]
+        public void PlayCard_ImmediatePlatform_FiresOwnOnDeploy()
+        {
+            var cc = new TestCardCache();
+            cc.Add(new CardDefinition
+            {
+                CardId = "TST-0600",
+                CardName = "TestImmediatePlatform",
+                CardType = CardTypes.Platform,
+                DeployTurns = 0,
+            });
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 5000);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_plat", CardID = "TST-0600" });
+
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0600", TriggerType.OnDeploy, ctx =>
+            {
+                ctx.State.SetBudget(1, ctx.State.GetBudget(1) + 300);
+                return new EffectResult();
+            });
+
+            PlayCardProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req("h_plat", Zones.Support, 0), cc, effects);
+
+            state.Player1Budget.Should().Be(5300);
+        }
+
+        [Fact(DisplayName = "相手のデプロイに反応する誘発効果が、サポートカードのデプロイでも発動する")]
+        public void PlayCard_SupportDeploy_TriggersOpponentReactiveWatcher()
+        {
+            var cc = new TestCardCache();
+            cc.Add(new CardDefinition
+            {
+                CardId = "TST-0601",
+                CardName = "TestImmediatePlatform2",
+                CardType = CardTypes.Platform,
+                DeployTurns = 0,
+            });
+            cc.Add(TestFactory.ReactiveCard(cardId: "TST-0602"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_plat", CardID = "TST-0601" });
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "watcher",
+                CardID = "TST-0602",
+                DeployOrder = 1,
+            };
+
+            bool watcherFired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0602", TriggerType.OnDeploy, _ => { watcherFired = true; return new EffectResult(); });
+
+            PlayCardProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req("h_plat", Zones.Support, 1), cc, effects);
+
+            watcherFired.Should().BeTrue("相手のサポートゾーンの伏せリアクティブはサポートカードのデプロイにも反応する");
+        }
+    }
+
     [Trait("対象", "インシデントのトラッシュ移動")]
     public class IncidentPlay
     {

@@ -287,4 +287,120 @@ public class IgnitionEffectTests
             sup.PeekedBy.Should().Contain(1);
         }
     }
+
+    [Trait("対象", "効果量のステータス参照")]
+    public class AmountRefResolution
+    {
+        /// <summary>指定カードに yaml (JSON) の ops 定義を起動効果として読み込んだ環境を作る。</summary>
+        /// <param name="cardId">起動効果を持たせるカード ID。</param>
+        /// <param name="opsJson">単一 op の JSON 定義。</param>
+        /// <returns>カードキャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Effects) LoadIgnitionFromJson(string cardId, string opsJson)
+        {
+            var card = TestFactory.ComputeCard(cardId: cardId, tp: 600);
+            card.Effects =
+            [
+                new EffectDef
+                {
+                    Trigger = "ignition",
+                    Ops = [System.Text.Json.JsonDocument.Parse(opsJson).RootElement],
+                },
+            ];
+            var cc = new TestCardCache();
+            cc.Add(card);
+            var registry = new EffectRegistry();
+            EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+            return (cc, registry);
+        }
+
+        [Fact(DisplayName = "効果量に発動源のスループット参照を指定すると、その実効値分の効果量になる")]
+        public void SourceTpRef_UsesEffectiveThroughput()
+        {
+            var (cc, effects) = LoadIgnitionFromJson("TST-0900",
+                """{"lose_budget":{"target":"opponent","amount":{"ref":"source.tp"}}}""");
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0900", instanceId: "src", faceUp: true, maxTP: 600, currentTP: 600);
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+
+            state.Player2Budget.Should().Be(5000 - 600);
+        }
+
+        [Fact(DisplayName = "効果量に対象の最大可用性の半分を指定すると、半分の値になる")]
+        public void TargetMaxAvRef_HalfMultiplier_UsesHalfValue()
+        {
+            var (cc, effects) = LoadIgnitionFromJson("TST-0901",
+                """{"deal_damage":{"selector":"target","amount":{"ref":"target.max_av","multiply":0.5}}}""");
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0901", instanceId: "src", faceUp: true);
+            var target = TestFactory.MakeResource(cardId: "TST-0901", instanceId: "tgt", faceUp: true, maxAV: 1400, damage: 0);
+            state.Player2Field.Frontend[0] = target;
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src", "tgt"), cc, effects);
+
+            target.Damage.Should().Be(700);
+        }
+    }
+
+    [Trait("対象", "両者対象と発動源除外のセレクタ")]
+    public class BothOwnerAndExcludeSourceSelectors
+    {
+        /// <summary>指定カードに yaml (JSON) の ops 定義を起動効果として読み込んだ環境を作る。</summary>
+        /// <param name="cardId">起動効果を持たせるカード ID。</param>
+        /// <param name="opsJson">単一 op の JSON 定義。</param>
+        /// <returns>カードキャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Effects) LoadIgnitionFromJson(string cardId, string opsJson)
+        {
+            var card = TestFactory.ComputeCard(cardId: cardId);
+            card.Effects =
+            [
+                new EffectDef
+                {
+                    Trigger = "ignition",
+                    Ops = [System.Text.Json.JsonDocument.Parse(opsJson).RootElement],
+                },
+            ];
+            var cc = new TestCardCache();
+            cc.Add(card);
+            var registry = new EffectRegistry();
+            EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+            return (cc, registry);
+        }
+
+        [Fact(DisplayName = "対象が両者の全体効果は、自分と相手のリソース両方に適用される")]
+        public void OwnerBoth_AppliesToBothSides()
+        {
+            var (cc, effects) = LoadIgnitionFromJson("TST-0902",
+                """{"deal_damage":{"selector":{"owner":"both"},"amount":200}}""");
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0902", instanceId: "src", faceUp: true);
+            var mine = TestFactory.MakeResource(cardId: "TST-0902", instanceId: "mine", faceUp: true, maxAV: 1000);
+            state.Player1Field.Frontend[1] = mine;
+            var theirs = TestFactory.MakeResource(cardId: "TST-0902", instanceId: "theirs", faceUp: true, maxAV: 1000);
+            state.Player2Field.Frontend[0] = theirs;
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+
+            mine.Damage.Should().Be(200);
+            theirs.Damage.Should().Be(200);
+        }
+
+        [Fact(DisplayName = "発動源除外の全体効果は、発動源自身に適用されない")]
+        public void ExcludeSource_DoesNotApplyToSourceItself()
+        {
+            var (cc, effects) = LoadIgnitionFromJson("TST-0903",
+                """{"apply_buff":{"selector":{"owner":"myself","exclude":"source"},"buff":"tp","amount":200,"duration":"this_turn"}}""");
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            var source = TestFactory.MakeResource(cardId: "TST-0903", instanceId: "src", faceUp: true);
+            state.Player1Field.Frontend[0] = source;
+            var ally = TestFactory.MakeResource(cardId: "TST-0903", instanceId: "ally", faceUp: true);
+            state.Player1Field.Frontend[1] = ally;
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+
+            ally.TemporaryEffects.Should().ContainSingle(e => e.EffectType == EffectTypes.BuffTP);
+            source.TemporaryEffects.Should().BeEmpty("発動源除外セレクタは発動源自身を対象から除く");
+        }
+    }
 }

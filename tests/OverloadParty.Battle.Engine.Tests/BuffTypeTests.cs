@@ -90,6 +90,12 @@ public class BuffTypeTests
         {
             PlayIncidentAgainst(FlatReduction(100), PercentReduction(50)).Should().Be(200);
         }
+
+        [Fact(DisplayName = "割合軽減の合計が 100% を超えるとき、ダメージは 0 になる")]
+        public void Incident_PercentReductionSumOver100_ClampsDamageToZero()
+        {
+            PlayIncidentAgainst(PercentReduction(60), PercentReduction(60)).Should().Be(0);
+        }
     }
 
     /// <summary>Shared setup for buff-type effect tests (card cache and game).</summary>

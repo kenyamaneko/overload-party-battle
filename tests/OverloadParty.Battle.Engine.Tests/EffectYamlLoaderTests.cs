@@ -256,3 +256,105 @@ public class PassiveClassificationTests
         state.Player1Hand.Should().ContainSingle(c => c.InstanceID == "repo_1");
     }
 }
+
+[Trait("対象", "効果定義の不正値の読み込み拒否")]
+public class UnknownValueRejectionTests
+{
+    private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement;
+
+    private static CardDefinition MakeCard(string cardId, string? guardJson, string opsJson) => new()
+    {
+        CardId = cardId,
+        CardName = "T",
+        CardType = CardTypes.Compute,
+        DeployTurns = 0,
+        Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "ignition",
+                Guard = guardJson is null ? null : [Parse(guardJson)],
+                Ops = [Parse(opsJson)],
+            },
+        ],
+    };
+
+    [Theory(DisplayName = "未知の値を含む効果定義は、読み込みが失敗する")]
+    [InlineData("未知の op 名", null, """{ "TST_unknown_op": {} }""", "Unknown op")]
+    [InlineData("selector の未知キーワード", null, """{"apply_buff":{"selector":"TST_unknown_keyword","buff":"tp","amount":100,"duration":"this_turn"}}""", "Unknown selector keyword")]
+    [InlineData("selector の未知 owner", null, """{"apply_buff":{"selector":{"owner":"TST_unknown_owner"},"buff":"tp","amount":100,"duration":"this_turn"}}""", "Unknown selector owner")]
+    [InlineData("未知のバフ種別", null, """{"apply_buff":{"selector":"source","buff":"TST_unknown_buff","amount":100,"duration":"this_turn"}}""", "Unknown buff type")]
+    [InlineData("未知の効果量形式", null, """{"gain_budget":{"target":"myself","amount":{}}}""", "Unknown amount format")]
+    [InlineData("不正な ref 表記", null, """{"gain_budget":{"target":"myself","amount":{"ref":"onlydot"}}}""", "Invalid ref format")]
+    [InlineData("未知の発動条件種別", """{"TST_unknown_guard_key":{}}""", """{"gain_budget":{"target":"myself","amount":100}}""", "Unknown guard type")]
+    public void UnknownValue_ThrowsWithFragment(string caseName, string? guardJson, string opsJson, string expectedMessageFragment)
+    {
+        var card = MakeCard(caseName, guardJson, opsJson);
+
+        var act = () => EffectYamlLoader.LoadEffectSources([card], new EffectRegistry(), new CustomEffectRegistry());
+
+        act.Should().Throw<InvalidOperationException>().WithMessage($"*{expectedMessageFragment}*");
+    }
+
+    [Fact(DisplayName = "未知のトリガー名を含む定義は、読み込みが失敗する")]
+    public void UnknownTrigger_Throws()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9200");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "TST_unknown_trigger",
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":100}}""")],
+            },
+        ];
+
+        var act = () => EffectYamlLoader.LoadEffectSources([card], new EffectRegistry(), new CustomEffectRegistry());
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Unknown trigger*");
+    }
+
+    [Fact(DisplayName = "未知の use_limit を含む定義は、読み込みが失敗する")]
+    public void UnknownUseLimit_Throws()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9201");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "on_deploy",
+                UseLimit = "TST_unknown_limit",
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":100}}""")],
+            },
+        ];
+
+        var act = () => EffectYamlLoader.LoadEffectSources([card], new EffectRegistry(), new CustomEffectRegistry());
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Unknown use_limit*");
+    }
+
+    [Fact(DisplayName = "id の無い効果定義は、読み込みが失敗する")]
+    public void MissingId_Throws()
+    {
+        // 従属ブロック (after 付き) が存在するとき、ルートブロックには id が必須。
+        var card = TestFactory.ComputeCard(cardId: "TST-9202");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "ignition",
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":100}}""")],
+            },
+            new EffectDef
+            {
+                Trigger = "ignition",
+                After = "root",
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":50}}""")],
+            },
+        ];
+
+        var act = () => EffectYamlLoader.LoadEffectSources([card], new EffectRegistry(), new CustomEffectRegistry());
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*must have an id*");
+    }
+}

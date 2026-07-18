@@ -449,4 +449,69 @@ public class PassiveRecalculationTests
                 800, "無関係な相手リソースの破壊ではPlatform由来のバフは失われない");
         }
     }
+
+    [Trait("対象", "アタッチメント由来のパッシブ効果")]
+    public class AttachmentDerivedPassiveEffect
+    {
+        /// <summary>自身を装備したリソースの実効 TP を +200 する while_on_field のダミーアタッチメントカードを作る。</summary>
+        private static CardDefinition MakeAttachmentCard(string cardId)
+        {
+            var card = TestFactory.AttachmentCard(cardId: cardId, name: "Booster");
+            card.Effects =
+            [
+                new EffectDef
+                {
+                    Trigger = TriggerTypes.OnFieldChange,
+                    Ops = [Parse("""{"apply_buff":{"selector":"source","buff":"tp","amount":200,"duration":"while_on_field"}}""")],
+                },
+            ];
+            return card;
+        }
+
+        [Fact(DisplayName = "アタッチメントの常時強化が、装備先のリソースに適用される")]
+        public void Attach_AppliesContinuousBuffToHost()
+        {
+            var attachmentCard = MakeAttachmentCard("TST-0910");
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
+            cc.Add(attachmentCard);
+            var registry = LoadRegistry(attachmentCard);
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            var host = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "host", faceUp: true, maxTP: 600, currentTP: 600);
+            state.Player1Field.Frontend[0] = host;
+            state.Player1Hand = [new UndeployedCard { InstanceID = "h_att", CardID = "TST-0910" }];
+
+            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new PlayCardRequest { CardInstanceID = "h_att", Zone = Zones.Support, Index = 0, TargetInstanceID = "host" },
+                cc, registry);
+
+            StatCalculator.CalculateEffectiveTP(host, state.Player1Field, cc).Should().Be(800);
+        }
+
+        [Fact(DisplayName = "アタッチメントが離れると、装備先の強化が消える")]
+        public void Detach_RemovesContinuousBuffFromHost()
+        {
+            var attachmentCard = MakeAttachmentCard("TST-0911");
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
+            cc.Add(attachmentCard);
+            var registry = LoadRegistry(attachmentCard);
+            var game = TestFactory.MakeGame();
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            var host = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "host", faceUp: true, maxTP: 600, currentTP: 600);
+            state.Player1Field.Frontend[0] = host;
+            state.Player1Hand = [new UndeployedCard { InstanceID = "h_att", CardID = "TST-0911" }];
+
+            PlayCardProcessor.Process(state, game, 1,
+                new PlayCardRequest { CardInstanceID = "h_att", Zone = Zones.Support, Index = 0, TargetInstanceID = "host" },
+                cc, registry);
+            var attachmentInstanceId = state.Player1Field.Support[0]!.InstanceID;
+
+            FieldHelpers.DestroySupport(state, game, 1, state.Player1Field, attachmentInstanceId, cc, registry);
+
+            StatCalculator.CalculateEffectiveTP(host, state.Player1Field, cc).Should().Be(600);
+        }
+    }
 }
