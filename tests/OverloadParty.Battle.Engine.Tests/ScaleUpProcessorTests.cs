@@ -66,6 +66,24 @@ public class ScaleUpProcessorTests
         }
     }
 
+    [Trait("対象", "裏向きリソースの拒否")]
+    public class FaceDownResource : Base
+    {
+        [Fact(DisplayName = "裏向きのリソースをスケールアップすると例外になる")]
+        public void Process_FaceDownResource_Throws()
+        {
+            var state = TestFactory.MakeGameState(turn: 3);
+            var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_1", rank: Rank.Small, faceUp: false, deployLeft: 1);
+            resource.DeployedOnTurn = 1;
+            state.Player1Field.Frontend[0] = resource;
+
+            var act = () => ScaleUpProcessor.Process(
+                state, _game, 1, MakeReq("inst_1", "medium", "M"), _cc, new EffectRegistry());
+
+            act.Should().Throw<GameRuleException>().WithMessage("*face-down*");
+        }
+    }
+
     [Trait("対象", "休止リソースの拒否")]
     public class DormantResource : Base
     {

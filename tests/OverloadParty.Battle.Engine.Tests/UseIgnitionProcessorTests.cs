@@ -129,6 +129,22 @@ public class UseIgnitionProcessorTests
             act.Should().Throw<GameRuleException>().WithMessage("*already used*");
         }
 
+        [Fact(DisplayName = "裏向きのリソースの起動効果を使用すると例外になる")]
+        public void Process_FaceDownResource_Throws()
+        {
+            var reg = new EffectRegistry();
+            reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
+
+            var state = TestFactory.MakeGameState(turn: 2);
+            var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 1);
+            state.Player1Field.Frontend[0] = resource;
+
+            var req = new UseIgnitionRequest { InstanceID = "r_1" };
+            var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*face-down*");
+        }
+
         [Fact(DisplayName = "存在しないインスタンスを指定して起動効果を使用すると例外になる")]
         public void Process_ResourceNotFound_Throws()
         {
@@ -224,6 +240,27 @@ public class UseIgnitionProcessorTests
 
             handlerCalled.Should().BeTrue();
             support.EffectUsedThisTurn.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "デプロイターンが残っているサポートカードの起動効果を使用すると例外になる")]
+        public void Process_DeployingSupport_Throws()
+        {
+            var reg = new EffectRegistry();
+            reg.Register("TEST-0200", TriggerType.Ignition, _ => new EffectResult());
+
+            var state = TestFactory.MakeGameState(turn: 2);
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TEST-0200",
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+            };
+
+            var req = new UseIgnitionRequest { InstanceID = "sup_1" };
+            var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*deploy turns*");
         }
 
         [Fact(DisplayName = "起動効果が登録されていないサポートカードを起動すると例外になる")]

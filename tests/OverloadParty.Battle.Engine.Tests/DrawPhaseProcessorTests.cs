@@ -176,6 +176,28 @@ public class DrawPhaseProcessorTests
 
             fired.Should().BeTrue("カウントダウン完了で稼働したサポートカードのデプロイ時効果が発動する");
         }
+
+        [Fact(DisplayName = "デプロイターンが残っているプラットフォームは 2 回目の自ドローフェーズで表向きになる")]
+        public void Support_ReachesZero_FlipsFaceUp()
+        {
+            var cc = DrawCc();
+            cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            var support = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = "TST-0200",
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+            };
+            state.Player1Field.Support[0] = support;
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), cc, new EffectRegistry());
+
+            support.DeployingTurnsLeft.Should().Be(0);
+            support.FaceUp.Should().BeTrue();
+        }
     }
 
     [Trait("対象", "ドロー後の勝敗判定")]

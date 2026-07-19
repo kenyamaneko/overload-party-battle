@@ -180,7 +180,7 @@ public static class PlayCardProcessor
             InstanceID = ctx.State.NextInstanceID(),
             CardID = cardDef.CardId,
             ArtNo = handCard.ArtNo,
-            FaceUp = cardDef.CardType != CardTypes.Reactive,
+            FaceUp = cardDef.CardType != CardTypes.Reactive && cardDef.DeployTurns <= 0,
             DeployingTurnsLeft = cardDef.DeployTurns,
             DeployOrder = deployOrder,
         };
@@ -188,7 +188,8 @@ public static class PlayCardProcessor
         field.Support[req.Index] = support;
 
         // カウントダウンなしで稼働した Support 自身の効果を発火（on_deploy 2 段解決）。
-        if (support.DeployingTurnsLeft <= 0)
+        // リアクティブを裏向きで伏せる行為はリソースのデプロイと異なり on_deploy の契機にしない。
+        if (support.DeployingTurnsLeft <= 0 && cardDef.CardType != CardTypes.Reactive)
         {
             events.AddRange(FireOnDeployForSupport(ctx, support));
         }
@@ -253,6 +254,10 @@ public static class PlayCardProcessor
         var field = ctx.State.GetField(ctx.PlayerNum);
         var target = FieldHelpers.FindResourceByID(field, req.TargetInstanceID)
             ?? throw new GameRuleException($"target resource {req.TargetInstanceID} not found");
+        if (!target.FaceUp)
+        {
+            throw new GameRuleException($"target resource {req.TargetInstanceID} is face-down");
+        }
         if (req.Zone != Zones.Support)
         {
             throw new GameRuleException("attachment must be placed in support zone");
@@ -442,7 +447,7 @@ public static class PlayCardProcessor
         var opponentNum = ctx.State.OpponentOf(ctx.PlayerNum);
         var opponentField = ctx.State.GetField(opponentNum);
 
-        var candidates = FieldHelpers.AllSupports(opponentField)
+        var candidates = FieldHelpers.AllTriggerableSupports(opponentField)
             .Select(s => EventTriggerCandidate.ForSupport(s, opponentNum))
             .ToList();
 
@@ -480,7 +485,7 @@ public static class PlayCardProcessor
             var field = ctx.State.GetField(ownerNum);
             var candidates = new List<EventTriggerCandidate>();
 
-            foreach (var sup in FieldHelpers.AllSupports(field))
+            foreach (var sup in FieldHelpers.AllTriggerableSupports(field))
             {
                 candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum));
             }

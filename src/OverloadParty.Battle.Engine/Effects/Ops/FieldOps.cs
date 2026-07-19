@@ -82,7 +82,8 @@ public class DestroyPlatformOp : IEffectOp
         var target = instanceId is not null
             ? oppField.Support.FirstOrDefault(s => s.InstanceID == instanceId)
                 ?? throw new GameRuleException($"Support {instanceId} not found on opponent field")
-            : oppField.Support.FirstOrDefault(s => ctx.CardCache.Get(s.CardID)?.CardType == CardTypes.Platform);
+            : oppField.Support.FirstOrDefault(s =>
+                ctx.CardCache.Get(s.CardID)?.CardType == CardTypes.Platform && s.DeployingTurnsLeft <= 0);
 
         if (target is null) { return; }
 
@@ -90,6 +91,10 @@ public class DestroyPlatformOp : IEffectOp
         if (targetCard?.CardType != CardTypes.Platform)
         {
             throw new GameRuleException($"Selected support {instanceId} is not a Platform");
+        }
+        if (target.DeployingTurnsLeft > 0)
+        {
+            throw new GameRuleException($"Selected support {instanceId} still has deploy turns remaining");
         }
 
         FieldHelpers.DestroySupport(ctx.State, ctx.Game, ctx.OpponentNum, oppField, target.InstanceID, ctx.CardCache, ctx.Effects);

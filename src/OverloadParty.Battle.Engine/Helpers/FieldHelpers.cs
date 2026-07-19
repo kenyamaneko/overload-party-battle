@@ -141,6 +141,20 @@ public static class FieldHelpers
     }
 
     /// <summary>
+    /// イベントトリガーの候補になり得るサポートインスタンスを返す (デプロイターンが残っているものを除く)。
+    /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <returns>デプロイターンが残っていないサポートインスタンスの即時評価リスト。</returns>
+    /// <remarks>
+    /// 呼び出し元でフィールド状態が変更される可能性があるため、
+    /// 遅延実行せず即時評価して結果を確定させる。
+    /// </remarks>
+    public static List<DeployedSupport> AllTriggerableSupports(Field field)
+    {
+        return field.Support.Where(s => s.DeployingTurnsLeft <= 0).ToList();
+    }
+
+    /// <summary>
     /// Check card eligibility for frontend zone (Compute 全般 + Data の ObjectStorage subtype のみ)。
     /// </summary>
     /// <param name="cardType">判定対象のカードタイプ。</param>

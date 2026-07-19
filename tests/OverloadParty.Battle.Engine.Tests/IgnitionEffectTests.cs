@@ -159,6 +159,49 @@ public class IgnitionEffectTests
             state.Player2Field.Support.Select(s => s.InstanceID).Should().NotContain("plat_1");
         }
 
+        [Fact(DisplayName = "デプロイターンが残っているプラットフォームはプラットフォーム破壊効果の対象にならない")]
+        public void Ignition_DoesNotDestroyDeployingPlatform()
+        {
+            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new DestroyPlatformOp());
+            cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "plat_1",
+                CardID = "TST-0200",
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+            };
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+
+            state.Player2Field.Support.Select(s => s.InstanceID).Should().Contain("plat_1");
+        }
+
+        [Fact(DisplayName = "デプロイターンが残っているプラットフォームを対象に指定してプラットフォーム破壊効果を使用すると例外になる")]
+        public void Ignition_ExplicitTarget_DeployingPlatform_Throws()
+        {
+            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new DestroyPlatformOp());
+            cc.Add(TestFactory.PlatformCard(cardId: "TST-0200"));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "plat_1",
+                CardID = "TST-0200",
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+            };
+            var choiceData = new Dictionary<string, object> { ["instanceId"] = "plat_1" };
+
+            var act = () => UseIgnitionProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Use("src", choiceData: choiceData), cc, effects);
+
+            act.Should().Throw<GameRuleException>();
+            state.Player2Field.Support.Select(s => s.InstanceID).Should().Contain("plat_1");
+        }
+
         [Fact(DisplayName = "destroy_platform でプラットフォームが破壊されたとき、盤面変化を条件とする常時効果が再計算される")]
         public void Ignition_DestroyingPlatform_FiresOnFieldChange()
         {

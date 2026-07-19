@@ -194,7 +194,7 @@ public static class AttackProcessor
         ICardCache cc, IEffectRegistry effects)
     {
 
-        var candidates = FieldHelpers.AllSupports(defenderField)
+        var candidates = FieldHelpers.AllTriggerableSupports(defenderField)
             .Select(s => EventTriggerCandidate.ForSupport(s, defenderNum))
             .ToList();
 

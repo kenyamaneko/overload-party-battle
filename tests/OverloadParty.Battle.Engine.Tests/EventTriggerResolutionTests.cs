@@ -94,6 +94,30 @@ public class EventTriggerResolutionTests
             state.Player2Trash.Should().Contain(c => c.CardID == "REACT-B",
                 "the firing Reactive is consumed to trash");
         }
+
+        [Fact(DisplayName = "デプロイターンが残っているサポートは攻撃宣言時トリガーの候補にならない")]
+        public void DeployingSupport_ExcludedFromCandidates()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "ATK", instanceId: "atk", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "DEF", instanceId: "def", faceUp: true);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "building",
+                CardID = "PLATFORM",
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+                DeployOrder = 1,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("PLATFORM", TriggerType.OnAttackDeclared, _ => { fired = true; return new EffectResult(); });
+
+            AttackProcessor.Process(state, _game, 1, AttackReq("atk", "def"), _cc, effects);
+
+            fired.Should().BeFalse("デプロイターンが残っているサポートは攻撃宣言時トリガーの候補にならない");
+        }
     }
 
     [Trait("対象", "on_destroy のサポートゾーン走査")]
@@ -122,6 +146,32 @@ public class EventTriggerResolutionTests
             AttackProcessor.Process(state, _game, 1, AttackReq("atk", "def"), _cc, effects);
 
             fired.Should().BeTrue("on_destroy scans face-down Reactives in the support zone");
+        }
+
+        [Fact(DisplayName = "デプロイターンが残っているサポートは破壊時トリガーの候補にならない")]
+        public void DeployingSupport_ExcludedFromCandidates()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "ATK", instanceId: "atk", faceUp: true, maxTP: 5000, currentTP: 5000);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "DEF", instanceId: "def", faceUp: true, maxAV: 100, currentAV: 100);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "building",
+                CardID = "PLATFORM",
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+                DeployOrder = 1,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("PLATFORM", TriggerType.OnDestroy, _ => { fired = true; return new EffectResult(); });
+
+            AttackProcessor.Process(state, _game, 1, AttackReq("atk", "def"), _cc, effects);
+
+            fired.Should().BeFalse("デプロイターンが残っているサポートは破壊時トリガーの候補にならない");
         }
     }
 
@@ -221,6 +271,52 @@ public class EventTriggerResolutionTests
 
             incidentBodyFired.Should().BeFalse("a cancelled incident skips its own ops");
         }
+
+        [Fact(DisplayName = "デプロイ残り1ターンのプラットフォームは、相手のインシデント使用時に無効化効果を発動しない")]
+        public void DeployingPlatform_DoesNotFireOnOpponentIncident()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h", CardID = "INCIDENT" });
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "building",
+                CardID = "PLATFORM",
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+                DeployOrder = 1,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("PLATFORM", TriggerType.OnIncident, _ => { fired = true; return new EffectResult(); });
+
+            PlayCardProcessor.Process(state, _game, 1, PlayReq("h", Zones.Support, 0), _cc, effects);
+
+            fired.Should().BeFalse("デプロイターンが残っているプラットフォームはインシデント使用時トリガーの候補にならない");
+        }
+
+        [Fact(DisplayName = "デプロイが完了したプラットフォームは、相手のインシデント使用時に無効化効果を発動する")]
+        public void DeployedPlatform_FiresOnOpponentIncident()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h", CardID = "INCIDENT" });
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "active",
+                CardID = "PLATFORM",
+                FaceUp = true,
+                DeployingTurnsLeft = 0,
+                DeployOrder = 1,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("PLATFORM", TriggerType.OnIncident, _ => { fired = true; return new EffectResult(); });
+
+            PlayCardProcessor.Process(state, _game, 1, PlayReq("h", Zones.Support, 0), _cc, effects);
+
+            fired.Should().BeTrue("デプロイが完了したプラットフォームはインシデント使用時トリガーの候補になる");
+        }
     }
 
     [Trait("対象", "on_damaged の発動タイミング")]
@@ -253,6 +349,32 @@ public class EventTriggerResolutionTests
             AttackProcessor.Process(state, _game, 1, AttackReq("atk", "def"), _cc, effects);
 
             observedDamage.Should().Be(600, "on_damaged observes the target after attack damage is applied");
+        }
+
+        [Fact(DisplayName = "デプロイターンが残っているサポートは被ダメージ時トリガーの候補にならない")]
+        public void DeployingSupport_ExcludedFromCandidates()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "ATK", instanceId: "atk", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "DEF", instanceId: "def", faceUp: true, maxAV: 1400, currentAV: 1400);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "building",
+                CardID = "PLATFORM",
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+                DeployOrder = 1,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("PLATFORM", TriggerType.OnDamaged, _ => { fired = true; return new EffectResult(); });
+
+            AttackProcessor.Process(state, _game, 1, AttackReq("atk", "def"), _cc, effects);
+
+            fired.Should().BeFalse("デプロイターンが残っているサポートは被ダメージ時トリガーの候補にならない");
         }
     }
 }

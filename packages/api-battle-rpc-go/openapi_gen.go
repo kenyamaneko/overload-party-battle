@@ -251,10 +251,13 @@ type HealthResponse struct {
 type HiddenDeployedSupport struct {
 	ArtNo int64 `json:"artNo"`
 
-	// CardID カード ID (表向きの場合のみ含まれる)
-	CardID     *string `json:"cardID,omitempty"`
-	FaceDown   bool    `json:"faceDown"`
-	InstanceID string  `json:"instanceID"`
+	// CardID カード ID (表向き、覗き見済み、またはデプロイ残りターン数が 1 以上の場合のみ含まれる)
+	CardID *string `json:"cardID,omitempty"`
+
+	// DeployingTurnsLeft デプロイ残りターン数 (0=アクティブ)。デプロイ中はカード名が公開されるため client の建設中表示に使う
+	DeployingTurnsLeft int64  `json:"deployingTurnsLeft"`
+	FaceDown           bool   `json:"faceDown"`
+	InstanceID         string `json:"instanceID"`
 
 	// Peeked 覗き見されたか
 	Peeked bool `json:"peeked"`

@@ -178,14 +178,15 @@ public static class TestFactory
     /// </summary>
     public static CardDefinition PlatformCard(
         string cardId = "TST-0200",
-        string name = "TestPlatform")
+        string name = "TestPlatform",
+        long deployTurns = 2)
     {
         return new CardDefinition
         {
             CardId = cardId,
             CardName = name,
             CardType = "Platform",
-            DeployTurns = 2,
+            DeployTurns = deployTurns,
         };
     }
 

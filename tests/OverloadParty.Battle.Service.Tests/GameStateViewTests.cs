@@ -134,6 +134,29 @@ public class GameStateViewTests
             oppSup.ArtNo.Should().Be(0, "face-down support should hide ArtNo");
         }
 
+        [Fact(DisplayName = "相手のビューはデプロイターンが残っているサポートのカード ID とアート番号を見せる")]
+        public void ShowsCardIDForDeployingSupport()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_building",
+                CardID = "TEST-0200",
+                ArtNo = 4,
+                FaceUp = false,
+                DeployingTurnsLeft = 1,
+            };
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            var oppSup = result.OppView.Field.Support[0];
+            oppSup.Should().NotBeNull();
+            oppSup!.FaceDown.Should().BeTrue("card is still face-down while deploying");
+            oppSup.DeployingTurnsLeft.Should().Be(1);
+            oppSup.CardID.Should().Be("TEST-0200", "deploying cards reveal their name while under construction");
+            oppSup.ArtNo.Should().Be(4, "deploying cards reveal their art while under construction");
+        }
+
         [Fact(DisplayName = "相手のビューはのぞき見済みサポートのカード ID とアート番号をそのプレイヤーに見せる")]
         public void RevealsPeekedSupportCardID()
         {

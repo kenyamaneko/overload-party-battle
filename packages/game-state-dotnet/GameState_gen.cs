@@ -548,7 +548,7 @@ namespace OverloadParty.GameState
         public string InstanceID { get; set; } = default!;
 
         /// <summary>
-        /// カード ID (表向きの場合のみ含まれる)
+        /// カード ID (表向き、覗き見済み、またはデプロイ残りターン数が 1 以上の場合のみ含まれる)
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("cardID")]
         public string? CardID { get; set; } = default!;
@@ -564,6 +564,12 @@ namespace OverloadParty.GameState
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("peeked")]
         public bool Peeked { get; set; } = default!;
+
+        /// <summary>
+        /// デプロイ残りターン数 (0=アクティブ)。デプロイ中はカード名が公開されるため client の建設中表示に使う
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("deployingTurnsLeft")]
+        public long DeployingTurnsLeft { get; set; } = default!;
 
         private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
 
