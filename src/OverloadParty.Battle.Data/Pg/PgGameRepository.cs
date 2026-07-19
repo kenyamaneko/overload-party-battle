@@ -31,7 +31,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 created_at, updated_at, finished_at
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)", conn, tx))
         {
-            cmd.Parameters.AddWithValue(game.GameID);
+            cmd.Parameters.AddWithValue(ToDbGameID(game.GameID));
             cmd.Parameters.AddWithValue(game.Status.ToWireString());
             cmd.Parameters.AddWithValue((short)game.FirstPlayer);
             cmd.Parameters.AddWithValue((object?)(game.WinningPlayerNum is { } w ? (short)w : null) ?? DBNull.Value);
@@ -76,7 +76,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await using var cmd = new NpgsqlCommand(@"
             INSERT INTO game_decks (game_id, player_num, deck_snapshot)
             VALUES ($1, $2, $3)", conn, tx);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
         cmd.Parameters.AddWithValue((short)playerNum);
         cmd.Parameters.Add(BuildJsonbParam(snapshot));
         await cmd.ExecuteNonQueryAsync(ct);
@@ -90,7 +90,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await using var cmd = new NpgsqlCommand(@"
             INSERT INTO game_npcs (game_id, player_num, npc_model)
             VALUES ($1, $2, $3)", conn, tx);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
         cmd.Parameters.AddWithValue((short)playerNum);
         cmd.Parameters.AddWithValue(npcModel);
         await cmd.ExecuteNonQueryAsync(ct);
@@ -113,7 +113,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             LEFT JOIN game_npcs n1 ON g.game_id = n1.game_id AND n1.player_num = 1
             LEFT JOIN game_npcs n2 ON g.game_id = n2.game_id AND n2.player_num = 2
             WHERE g.game_id = $1", conn);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct))
@@ -131,7 +131,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(SelectGameStateSql, conn);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct))
@@ -155,7 +155,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         BattleGameState state;
         await using (var cmd = new NpgsqlCommand(SelectGameStateSql + " FOR UPDATE", conn, tx))
         {
-            cmd.Parameters.AddWithValue(gameID);
+            cmd.Parameters.AddWithValue(ToDbGameID(gameID));
             await using var reader = await cmd.ExecuteReaderAsync(ct);
             if (!await reader.ReadAsync(ct))
             {
@@ -184,7 +184,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             WHERE game_id = $30", conn, tx))
         {
             AddGameStateParams(cmd, state);
-            cmd.Parameters.AddWithValue(state.GameID);
+            cmd.Parameters.AddWithValue(ToDbGameID(state.GameID));
             await cmd.ExecuteNonQueryAsync(ct);
         }
 
@@ -203,7 +203,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                     COALESCE((SELECT MAX(seq) FROM game_actions WHERE game_id = $1), 0) + 1,
                     $2, $3, $4, $5
                 )", conn, tx);
-            cmd.Parameters.AddWithValue(gameID);
+            cmd.Parameters.AddWithValue(ToDbGameID(gameID));
             cmd.Parameters.AddWithValue((short)pendingAction.PlayerNum);
             cmd.Parameters.AddWithValue(pendingAction.ActionType);
             cmd.Parameters.Add(BuildJsonbParam(pendingAction.ActionData));
@@ -228,7 +228,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 $2, $3, $4, $5
             )
             RETURNING sequence_number", conn, tx);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
         cmd.Parameters.AddWithValue(evt.EventType);
         cmd.Parameters.AddWithValue(evt.PlayerNum.HasValue ? (object)(short)evt.PlayerNum.Value : DBNull.Value);
         cmd.Parameters.Add(BuildEventDataJsonbParam(evt.EventData));
@@ -255,7 +255,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(winReason);
         cmd.Parameters.AddWithValue(now);
         cmd.Parameters.AddWithValue(now);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
@@ -271,7 +271,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             FROM game_events
             WHERE game_id = $1
             ORDER BY sequence_number", conn);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
 
         var events = new List<GameEvent>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -279,7 +279,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         {
             events.Add(new GameEvent
             {
-                GameID = reader.GetString(0),
+                GameID = reader.GetGuid(0).ToString(),
                 SequenceNumber = reader.GetInt64(1),
                 EventType = reader.GetString(2),
                 PlayerNum = reader.IsDBNull(3) ? null : reader.GetInt16(3),
@@ -301,7 +301,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(
             "SELECT initial_state FROM game_states WHERE game_id = $1", conn);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         if (!await reader.ReadAsync(ct))
@@ -341,7 +341,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     {
         return new Game
         {
-            GameID = r.GetString(0),
+            GameID = r.GetGuid(0).ToString(),
             Status = EnumExtensions.ParseGameStatus(r.GetString(1)),
             FirstPlayer = r.GetInt16(2),
             WinningPlayerNum = r.IsDBNull(3) ? null : r.GetInt16(3),
@@ -360,7 +360,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     {
         return new BattleGameState
         {
-            GameID = r.GetString(0),
+            GameID = r.GetGuid(0).ToString(),
             Version = r.GetInt64(1),
             CurrentTurn = r.GetInt64(2),
             CurrentPhase = EnumExtensions.ParsePhase(r.GetString(3)),
@@ -415,7 +415,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 turn_started_at, next_deploy_order_seq,
                 pending_slot_selects, pending_effect_choice, updated_at
             ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)", conn, tx);
-        cmd.Parameters.AddWithValue(state.GameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(state.GameID));
         cmd.Parameters.Add(new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = stateJson });
         AddGameStateParams(cmd, state);
         await cmd.ExecuteNonQueryAsync(ct);
@@ -463,6 +463,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         return new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = json };
     }
 
+    private static Guid ToDbGameID(string gameID) => Guid.Parse(gameID);
+
     /// <summary>
     /// EventData の JSONB パラメータは EventDataSerializer を通す。BattleGameState など他の JSONB 列の
     /// snake_case 設定 (DbJsonOptions) とは別経路で camelCase 統一されている点に注意。
@@ -487,7 +489,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             await using var cmd = new NpgsqlCommand(@"
                 INSERT INTO player_summary (game_id, player_num, name, level)
                 VALUES ($1, $2, $3, $4)", conn, tx);
-            cmd.Parameters.AddWithValue(gameID);
+            cmd.Parameters.AddWithValue(ToDbGameID(gameID));
             cmd.Parameters.AddWithValue((short)s.PlayerNum);
             cmd.Parameters.AddWithValue(s.Name);
             cmd.Parameters.AddWithValue((object?)(s.Level is { } lv ? (int)lv : null) ?? DBNull.Value);
@@ -508,7 +510,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             FROM player_summary
             WHERE game_id = $1
             ORDER BY player_num", conn);
-        cmd.Parameters.AddWithValue(gameID);
+        cmd.Parameters.AddWithValue(ToDbGameID(gameID));
         var result = new List<PlayerSummarySnapshot>();
         await using var reader = await cmd.ExecuteReaderAsync(ct);
         while (await reader.ReadAsync(ct))

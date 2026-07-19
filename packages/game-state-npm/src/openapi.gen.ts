@@ -315,7 +315,7 @@ export interface components {
         };
         /** @description クライアントに返すゲーム状態スナップショット。 */
         ClientGameState: {
-            /** @description ゲーム ID (ULID) */
+            /** @description ゲーム ID (UUID v7) */
             gameID: string;
             /**
              * Format: int64

@@ -36,7 +36,7 @@ namespace OverloadParty.GameState
     {
 
         /// <summary>
-        /// ゲーム ID (ULID)
+        /// ゲーム ID (UUID v7)
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("gameID")]
         public string GameID { get; set; } = default!;

@@ -53,7 +53,7 @@ public class GameEngine
         string engineVersion = "", string cardDataVersion = "",
         CancellationToken ct = default)
     {
-        var gameID = Guid.NewGuid().ToString("N");
+        var gameID = Guid.CreateVersion7().ToString();
         var (game, state) = GameInitializer.CreateNewGame(
             gameID, deck1, deck2, firstPlayer, _cardCache);
 

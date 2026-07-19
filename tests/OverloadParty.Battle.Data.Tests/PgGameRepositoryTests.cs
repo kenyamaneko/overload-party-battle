@@ -1,5 +1,6 @@
 using Npgsql;
 using OverloadParty.Battle.Data.Pg;
+using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Data;
@@ -19,8 +20,8 @@ public class PgGameRepositoryTests
         /// <summary>Creates a PgGameRepository over the shared data source.</summary>
         protected PgGameRepository CreateRepo() => new(_ds);
 
-        /// <summary>Generates a unique 26-character game id.</summary>
-        protected static string NewGameID() => $"g-{Guid.NewGuid():N}"[..26];
+        /// <summary>Generates a unique canonical-format game id (UUID v7).</summary>
+        protected static string NewGameID() => Guid.CreateVersion7().ToString();
 
         /// <summary>Builds a playing game and a matching initial battle state, optionally with a given game id.</summary>
         protected static (Game game, BattleGameState state) MakeFixture(string? gameID = null)
@@ -108,7 +109,7 @@ public class PgGameRepositoryTests
         {
             var repo = CreateRepo();
 
-            var got = await repo.GetGame("nonexistent-id");
+            var got = await repo.GetGame(NewGameID());
             got.Should().BeNull();
         }
     }
@@ -144,7 +145,7 @@ public class PgGameRepositoryTests
         {
             var repo = CreateRepo();
 
-            var got = await repo.GetGameState("nonexistent-id");
+            var got = await repo.GetGameState(NewGameID());
             got.Should().BeNull();
         }
     }
@@ -184,7 +185,7 @@ public class PgGameRepositoryTests
         {
             var repo = CreateRepo();
 
-            var act = () => repo.UpdateGameState("nonexistent", _ => Task.FromResult<IReadOnlyList<GameEvent>>([]));
+            var act = () => repo.UpdateGameState(NewGameID(), _ => Task.FromResult<IReadOnlyList<GameEvent>>([]));
             await act.Should().ThrowAsync<InvalidOperationException>();
         }
 
@@ -362,6 +363,37 @@ public class PgGameRepositoryTests
             evtNext.SequenceNumber.Should().Be(2);
             var events = await repo.GetEvents(game.GameID);
             events.Select(e => e.SequenceNumber).Should().Equal(1, 2);
+        }
+    }
+
+    [Collection(PgTestCollection.Name)]
+    [Trait("対象", "エンジン採番の game_id の永続化")]
+    public class EngineIssuedGameID(PgTestFixture fixture) : Base(fixture)
+    {
+        [Fact(DisplayName = "エンジンが採番した game_id で作成したゲームは、状態取得とイベント追記を経ても同じ ID で読み戻せる")]
+        public async Task CreateNewGame_IssuedGameID_RoundtripsThroughStateAndEvents()
+        {
+            var (effects, cc) = TestEffectSetup.Get();
+            var repo = CreateRepo();
+            var engine = new GameEngine(repo, cc, effects, new InitiativeCatalog(TestFactory.StandardInitiatives()));
+            var deck = TestFactory.MakeDeck("SH-0001");
+
+            var gameID = await engine.CreateNewGame(deck, deck, firstPlayer: 1);
+
+            var game = await repo.GetGame(gameID);
+            game.Should().NotBeNull();
+            game!.GameID.Should().Be(gameID);
+
+            var state = await repo.GetGameState(gameID);
+            state.Should().NotBeNull();
+            state!.GameID.Should().Be(gameID);
+
+            await repo.UpdateGameState(gameID,
+                _ => Task.FromResult<IReadOnlyList<GameEvent>>(
+                    [new GameEvent { GameID = gameID, EventType = EventTypes.TurnStart, EventData = new TurnStartInternalEventData { Turn = 1, ActivePlayer = 1 } }]));
+
+            var events = await repo.GetEvents(gameID);
+            events.Should().ContainSingle().Which.GameID.Should().Be(gameID);
         }
     }
 

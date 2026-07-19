@@ -32,7 +32,7 @@ $$ LANGUAGE plpgsql;
 -- =============================================================================
 
 CREATE TABLE battle.games (
-  game_id              VARCHAR(26) NOT NULL,           -- ULID
+  game_id              UUID NOT NULL,
   status               VARCHAR(20) NOT NULL,           -- 'waiting' / 'playing' / 'finished'
   first_player         SMALLINT NOT NULL,              -- 先攻プレイヤー番号 (1 or 2)
   winning_player_num   SMALLINT,                       -- NULL=進行中, 0=引分, 1=P1勝, 2=P2勝
@@ -51,7 +51,7 @@ CREATE TRIGGER trg_games_updated_at BEFORE UPDATE ON battle.games FOR EACH ROW E
 -- 4.1a Game NPC Settings (child of games, NPC 戦のみ。PvP では行なし)
 
 CREATE TABLE battle.game_npcs (
-  game_id       VARCHAR(26) NOT NULL REFERENCES battle.games(game_id), -- 親テーブル参照
+  game_id       UUID NOT NULL REFERENCES battle.games(game_id), -- 親テーブル参照
   player_num    SMALLINT NOT NULL,              -- NPC が座っているスロット番号 (1 or 2)
   npc_model     VARCHAR NOT NULL,               -- NPC モデル名
   PRIMARY KEY (game_id, player_num)
@@ -63,18 +63,18 @@ CREATE TABLE battle.game_npcs (
 -- NPC のように level を持たない player では level は NULL となる。
 
 CREATE TABLE battle.player_summary (
-  game_id      VARCHAR(26) NOT NULL REFERENCES battle.games(game_id) ON DELETE CASCADE,
+  game_id      UUID NOT NULL REFERENCES battle.games(game_id) ON DELETE CASCADE,  -- 親テーブル参照
   player_num   SMALLINT NOT NULL,                     -- 1 or 2
   name         TEXT NOT NULL,                         -- battle 開始時点の name snapshot
   level        INT,                                   -- battle 開始時点の level snapshot (NPC は NULL)
-  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT now(),     -- 作成日時
   PRIMARY KEY (game_id, player_num)
 );
 
 -- 4.1b Game Decks (child of games, 常に 2 行)
 
 CREATE TABLE battle.game_decks (
-  game_id        VARCHAR(26) NOT NULL REFERENCES battle.games(game_id), -- 親テーブル参照
+  game_id        UUID NOT NULL REFERENCES battle.games(game_id), -- 親テーブル参照
   player_num     SMALLINT NOT NULL,             -- 1 or 2
   deck_snapshot  JSONB NOT NULL,                -- デッキスナップショット
   PRIMARY KEY (game_id, player_num)
@@ -83,7 +83,7 @@ CREATE TABLE battle.game_decks (
 -- 4.2 Game State (child of games, 1:1)
 
 CREATE TABLE battle.game_states (
-  game_id              VARCHAR(26) PRIMARY KEY REFERENCES battle.games(game_id) ON DELETE CASCADE, -- 親テーブル参照
+  game_id              UUID PRIMARY KEY REFERENCES battle.games(game_id) ON DELETE CASCADE, -- 親テーブル参照
   initial_state        JSONB NOT NULL DEFAULT '{}',  -- ゲーム開始時の初期状態スナップショット（作成後は上書きされない）
   version              BIGINT NOT NULL,              -- 更新回数カウンタ（行ロック下で更新ごとに +1）
   current_turn         BIGINT NOT NULL,              -- 現在ターン数
@@ -120,7 +120,7 @@ CREATE TRIGGER trg_game_states_updated_at BEFORE UPDATE ON battle.game_states FO
 -- Game Actions (child of games, append-only action log)
 
 CREATE TABLE battle.game_actions (
-  game_id     VARCHAR(26) NOT NULL REFERENCES battle.games(game_id) ON DELETE CASCADE, -- 親テーブル参照
+  game_id     UUID NOT NULL REFERENCES battle.games(game_id) ON DELETE CASCADE, -- 親テーブル参照
   seq         INT NOT NULL,                          -- アクション連番
   player_num  SMALLINT NOT NULL,                     -- アクション実行プレイヤー番号 (1 or 2)
   action_type TEXT NOT NULL,                         -- アクション種別（play_card, attack, scale_up 等）
@@ -132,7 +132,7 @@ CREATE TABLE battle.game_actions (
 -- 4.3 Game Events (child of games)
 
 CREATE TABLE battle.game_events (
-  game_id         VARCHAR(26) NOT NULL REFERENCES battle.games(game_id) ON DELETE CASCADE, -- 親テーブル参照
+  game_id         UUID NOT NULL REFERENCES battle.games(game_id) ON DELETE CASCADE, -- 親テーブル参照
   sequence_number BIGINT NOT NULL,                   -- イベント連番
   event_type      VARCHAR(50) NOT NULL,              -- イベント種別
   player_num      SMALLINT,                          -- NULL=system event, 1 or 2=プレイヤーイベント
