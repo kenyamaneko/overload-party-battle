@@ -34,9 +34,9 @@ draw → main → battle → end → (ActivePlayer切替) → draw ...
 | 3 | Insight 生成 & Elastic ボーナス累積 | `GenerateInsight`：バックエンドの Data 系リソースが `StatCalculator.CalculateEffectiveInsight` で yield を計算し Insight プールに加算。続けて `StatCalculator.ApplyElasticBonus` で `ElasticBonus` を `elasticIncrement` ぶん**累積**（リセットではない。逓減は `CalculateEffectiveElasticBonus` が対数スケールで処理） |
 | 4 | 一時効果の終了 | `ExpireTemporaryEffects`：`duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
 | 5 | ターン単位フラグのリセット | `ResetPerTurnFlags`：`HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |
-| 6 | 手札上限チェック | 手札が **6枚** を超過している場合、サーバーが `discard_prompt` を送信（後続 7–8 は破棄完了後に実行）|
-| 7 | プレイヤーが破棄カードを選択 | クライアントが `discard_hand` で破棄するカードを送信（15秒タイムアウト）。タイムアウト時は手札の末尾から自動的に破棄（古い順）|
-| 8 | ターン切り替え | `WinConditionChecker.CheckLaunchFailure` → 問題なければ `TurnManager.SwitchActivePlayer` → 次プレイヤーの `DrawPhaseProcessor.Process` を起動 |
+| 6 | 手札上限チェック | 手札が **6枚** を超過していなければ手順 7 を飛ばして手順 8 へ進む。超過していれば `EndPhaseProcessor` が `phase_end`（`needsDiscard: true`）イベントを返し、手順 8 のターン交代を保留する |
+| 7 | プレイヤーが破棄カードを選択（手順 6 で超過時のみ） | `TurnControlsMessage.DiscardRequired`（手札枚数 − 6、`AvailableActions.ComputeTurnControls`）を見たクライアントが `discard_hand` で破棄するカードを送信。`DiscardProcessor` が枚数を検証し破棄を実行する。個別のタイムアウトは持たず、ターン全体のタイムバンクが時間の上限として働く |
+| 8 | ターン切り替え | 手順 6 で超過が無ければ `EndPhaseProcessor`、超過があれば手順 7 の `DiscardProcessor` が、`WinConditionChecker.CheckLaunchFailure` → 問題なければ `TurnManager.SwitchActivePlayer` → 次プレイヤーの `DrawPhaseProcessor.Process` を起動 |
 
 > Note: 旧バージョンのドキュメントには「Elastic 値のリセット」手順が存在したが、実装上 `ElasticBonus` は毎ターン累積する設計（逓減は `StatCalculator.CalculateEffectiveElasticBonus` の対数スケーリングで表現）のため、リセットステップは存在しない。
 
@@ -52,7 +52,7 @@ draw → main → battle → end → (ActivePlayer切替) → draw ...
 | 4 | Platformカードの効果 |
 | 5 | Attachmentの効果 |
 | 6 | 一時効果（そのターンのみ） |
-| 7 | 現在AV = MaxAV − ダメージ蔓積量 |
+| 7 | 現在AV = MaxAV − ダメージ蓄積量 |
 
 ### Available Actions と NPC AI 統合
 
@@ -152,9 +152,6 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 ### アクション失敗時のフィードバック
 
 アクション処理が失敗した場合、battle は `GameRuleException` を 400、その他を 500 として `{"error": "..."}` 形式で gateway に返す。gateway はこれを WS の `action_rejected` メッセージ（`gameID` / `actionType` / `reason`）としてクライアントへ中継する。ルール違反はリトライしても成功しないため、自動リトライは行わない。
-
----
-
 
 ---
 
