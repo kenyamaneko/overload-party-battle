@@ -109,11 +109,20 @@ public class CardDefinitionMapperTests
     [Trait("対象", "Compute カードの stats 異常系")]
     public class Computeカードのstats異常系
     {
-        [Theory(DisplayName = "Compute カードの stats が不正なとき、マッピングが失敗する")]
-        [InlineData("必須キーが欠落しているとき", """{ "throughput": 400, "availability": 800, "sla_penalty": 300 }""")]
-        [InlineData("契約に無い未知のキーを含むとき", """{ "throughput": 400, "availability": 800, "sla_penalty": 300, "maintenance_cost": 100, "unknown_key": 1 }""")]
-        [InlineData("stats が空オブジェクトのとき", "{}")]
-        public void Throws(string caseLabel, string statsJson)
+        [Theory(DisplayName = "Compute カードの stats が不正なとき、原因ごとに対応するメッセージの例外になる")]
+        [InlineData(
+            "必須キーが欠落しているとき",
+            """{ "throughput": 400, "availability": 800, "sla_penalty": 300 }""",
+            "*missing required key 'maintenance_cost'*")]
+        [InlineData(
+            "契約に無い未知のキーを含むとき",
+            """{ "throughput": 400, "availability": 800, "sla_penalty": 300, "maintenance_cost": 100, "unknown_key": 1 }""",
+            "*unrecognized key 'unknown_key'*")]
+        [InlineData(
+            "stats が空オブジェクトのとき",
+            "{}",
+            "*missing required key 'throughput'*")]
+        public void Throws(string caseLabel, string statsJson, string expectedMessagePattern)
         {
             var wire = ParseWireCard($$"""
             {
@@ -127,7 +136,7 @@ public class CardDefinitionMapperTests
 
             var act = () => CardDefinitionMapper.ToCardDefinition(wire);
 
-            act.Should().Throw<InvalidOperationException>();
+            act.Should().Throw<InvalidOperationException>(caseLabel).WithMessage(expectedMessagePattern);
         }
     }
 
