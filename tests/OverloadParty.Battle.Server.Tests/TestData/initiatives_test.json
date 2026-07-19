@@ -1,0 +1,20 @@
+[
+  {
+    "initiative_id": "TST-IN01",
+    "product_id": "TST-PD01",
+    "kind": "routine",
+    "name": "TestRoutine",
+    "insight_cost": 0,
+    "effect_text": "",
+    "effect": { "ops": [{ "gain_budget": { "target": "myself", "amount": 0 } }] }
+  },
+  {
+    "initiative_id": "TST-IN02",
+    "product_id": "TST-PD01",
+    "kind": "special",
+    "name": "TestSpecial",
+    "insight_cost": 0,
+    "effect_text": "",
+    "effect": { "ops": [{ "gain_budget": { "target": "myself", "amount": 0 } }] }
+  }
+]
