@@ -87,6 +87,26 @@ paths:
         "400":
           description: デッキカードが不正
 
+  /api/v1/games:
+    post:
+      operationId: createGame
+      summary: ゲームを作成 (スロット対称)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGameRequest"
+      responses:
+        "200":
+          description: 作成成功
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameCreatedResult"
+        "400":
+          description: デッキカードが不正、NPC モデルが存在しない、またはスロット指定が不正
+
   /api/v1/games/{gameId}/actions:
     post:
       operationId: processGameAction
@@ -398,6 +418,45 @@ components:
         player1_summary:
           $ref: "#/components/schemas/PlayerSummaryRequest"
         player2_summary:
+          $ref: "#/components/schemas/PlayerSummaryRequest"
+
+    CreateGameRequest:
+      type: object
+      description: POST /api/v1/games のリクエスト body。
+      x-battle-csharp-package: rpc
+      required: [slots]
+      properties:
+        slots:
+          type: array
+          minItems: 2
+          maxItems: 2
+          items:
+            $ref: "#/components/schemas/GameSlotRequest"
+          description: スロット番号は配列順 (先頭 = player 1)。
+
+    GameSlotRequest:
+      type: object
+      description: |
+        ゲーム作成時の 1 スロット分の指定。人間スロット (deck_cards / routine_id / special_id)
+        か NPC スロット (npc_model) のどちらか一方のみを指定する。両方指定・両方欠落は 400。
+      x-battle-csharp-package: rpc
+      required: [summary]
+      properties:
+        deck_cards:
+          type: array
+          items:
+            $ref: "#/components/schemas/BattleDeckCard"
+          description: 人間スロットのみ指定。
+        routine_id:
+          type: string
+          description: 人間スロットのみ指定。デッキに設定されたルーチン施策の ID。
+        special_id:
+          type: string
+          description: 人間スロットのみ指定。デッキに設定されたスペシャル施策の ID。
+        npc_model:
+          type: string
+          description: NPC スロットのみ指定。対戦相手となる NPC モデル ID。
+        summary:
           $ref: "#/components/schemas/PlayerSummaryRequest"
 
     PlayerSummaryRequest:

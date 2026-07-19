@@ -140,6 +140,12 @@ type ClientGameState struct {
 	TurnStartedAt time.Time `json:"turnStartedAt"`
 }
 
+// CreateGameRequest POST /api/v1/games のリクエスト body。
+type CreateGameRequest struct {
+	// Slots スロット番号は配列順 (先頭 = player 1)。
+	Slots []GameSlotRequest `json:"slots"`
+}
+
 // DeployedResource フィールドに展開済みのリソースカードインスタンス。
 type DeployedResource struct {
 	ArtNo     int64  `json:"artNo"`
@@ -240,6 +246,27 @@ type GameCreatedResult struct {
 type GameOverEventData struct {
 	WinReason string `json:"winReason"`
 	WinnerNum int64  `json:"winnerNum"`
+}
+
+// GameSlotRequest ゲーム作成時の 1 スロット分の指定。人間スロット (deck_cards / routine_id / special_id)
+// か NPC スロット (npc_model) のどちらか一方のみを指定する。両方指定・両方欠落は 400。
+type GameSlotRequest struct {
+	// DeckCards 人間スロットのみ指定。
+	DeckCards *[]BattleDeckCard `json:"deck_cards,omitempty"`
+
+	// NpcModel NPC スロットのみ指定。対戦相手となる NPC モデル ID。
+	NpcModel *string `json:"npc_model,omitempty"`
+
+	// RoutineId 人間スロットのみ指定。デッキに設定されたルーチン施策の ID。
+	RoutineId *string `json:"routine_id,omitempty"`
+
+	// SpecialId 人間スロットのみ指定。デッキに設定されたスペシャル施策の ID。
+	SpecialId *string `json:"special_id,omitempty"`
+
+	// Summary CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
+	// battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
+	// 永続化する。NPC のように level を持たない player では level は null となる。
+	Summary PlayerSummaryRequest `json:"summary"`
 }
 
 // HealthResponse defines model for HealthResponse.
@@ -591,6 +618,9 @@ type GameIdPath = string
 // PlayerNumPath defines model for PlayerNumPath.
 type PlayerNumPath = int32
 
+// CreateGameJSONRequestBody defines body for CreateGame for application/json ContentType.
+type CreateGameJSONRequestBody = CreateGameRequest
+
 // CreateNpcGameJSONRequestBody defines body for CreateNpcGame for application/json ContentType.
 type CreateNpcGameJSONRequestBody = NpcBattleRequest
 
@@ -676,6 +706,11 @@ type ClientInterface interface {
 	// ListDevCards request
 	ListDevCards(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// CreateGameWithBody request with any body
+	CreateGameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	CreateGame(ctx context.Context, body CreateGameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// CreateNpcGameWithBody request with any body
 	CreateNpcGameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -715,6 +750,30 @@ type ClientInterface interface {
 
 func (c *Client) ListDevCards(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewListDevCardsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateGameWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateGameRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) CreateGame(ctx context.Context, body CreateGameJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewCreateGameRequest(c.Server, body)
 	if err != nil {
 		return nil, err
 	}
@@ -904,6 +963,46 @@ func NewListDevCardsRequest(server string) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	return req, nil
+}
+
+// NewCreateGameRequest calls the generic CreateGame builder with application/json body
+func NewCreateGameRequest(server string, body CreateGameJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewCreateGameRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewCreateGameRequestWithBody generates requests for CreateGame with any type of body
+func NewCreateGameRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
 
 	return req, nil
 }
@@ -1319,6 +1418,11 @@ type ClientWithResponsesInterface interface {
 	// ListDevCardsWithResponse request
 	ListDevCardsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListDevCardsResponse, error)
 
+	// CreateGameWithBodyWithResponse request with any body
+	CreateGameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGameResponse, error)
+
+	CreateGameWithResponse(ctx context.Context, body CreateGameJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGameResponse, error)
+
 	// CreateNpcGameWithBodyWithResponse request with any body
 	CreateNpcGameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateNpcGameResponse, error)
 
@@ -1380,6 +1484,36 @@ func (r ListDevCardsResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ListDevCardsResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+type CreateGameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *GameCreatedResult
+}
+
+// Status returns HTTPResponse.Status
+func (r CreateGameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r CreateGameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r CreateGameResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -1694,6 +1828,23 @@ func (c *ClientWithResponses) ListDevCardsWithResponse(ctx context.Context, reqE
 	return ParseListDevCardsResponse(rsp)
 }
 
+// CreateGameWithBodyWithResponse request with arbitrary body returning *CreateGameResponse
+func (c *ClientWithResponses) CreateGameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateGameResponse, error) {
+	rsp, err := c.CreateGameWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateGameResponse(rsp)
+}
+
+func (c *ClientWithResponses) CreateGameWithResponse(ctx context.Context, body CreateGameJSONRequestBody, reqEditors ...RequestEditorFn) (*CreateGameResponse, error) {
+	rsp, err := c.CreateGame(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseCreateGameResponse(rsp)
+}
+
 // CreateNpcGameWithBodyWithResponse request with arbitrary body returning *CreateNpcGameResponse
 func (c *ClientWithResponses) CreateNpcGameWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*CreateNpcGameResponse, error) {
 	rsp, err := c.CreateNpcGameWithBody(ctx, contentType, body, reqEditors...)
@@ -1824,6 +1975,32 @@ func ParseListDevCardsResponse(rsp *http.Response) (*ListDevCardsResponse, error
 	switch {
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
 		var dest []DevCard
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
+}
+
+// ParseCreateGameResponse parses an HTTP response from a CreateGameWithResponse call
+func ParseCreateGameResponse(rsp *http.Response) (*CreateGameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &CreateGameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest GameCreatedResult
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
 			return nil, err
 		}

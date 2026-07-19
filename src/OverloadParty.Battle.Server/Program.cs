@@ -285,6 +285,21 @@ api.MapPost("/games/pvp", async (GameService gameSvc, PvpBattleRequest req) =>
     return Results.Ok(new GameCreatedResult { GameId = game.GameID });
 });
 
+// ゲーム作成（スロット対称。配列順 = プレイヤー番号）
+api.MapPost("/games", async (GameService gameSvc, CreateGameRequest req) =>
+{
+    var slots = req.Slots.Select(s => new GameSlotSpec
+    {
+        DeckCards = s.DeckCards?.Select(c => new DeckSnapshotCard { CardId = c.CardId, ArtNo = c.ArtNo }).ToList(),
+        RoutineId = s.RoutineId,
+        SpecialId = s.SpecialId,
+        NpcModel = s.NpcModel,
+        Summary = new PlayerSummarySnapshot { Name = s.Summary.Name, Level = s.Summary.Level },
+    }).ToList();
+    var game = await gameSvc.CreateGame(slots);
+    return Results.Ok(new GameCreatedResult { GameId = game.GameID });
+});
+
 // ゲームアクション
 api.MapPost("/games/{gameId}/actions", async (GameService gameSvc, string gameId, GameActionRequest req) =>
 {

@@ -29,7 +29,15 @@ public class GameServiceTests
                 .ToList();
             var aiConfigs = new Dictionary<string, AiConfig>
             {
-                [Factions.SHE] = new AiConfig { Model = Factions.SHE, Faction = Factions.SHE, Deck = npcDeck, RoutineId = "IN-0001", SpecialId = "IN-0002" },
+                [Factions.SHE] = new AiConfig
+                {
+                    Model = Factions.SHE,
+                    Faction = Factions.SHE,
+                    Deck = npcDeck,
+                    RoutineId = "IN-0001",
+                    SpecialId = "IN-0002",
+                    ScaleUp = new ScaleUpConfig { InstanceFamily = "M", MaxMaintenanceRatio = 0.6, OrderBy = "tp_desc" },
+                },
             };
             var npcRunner = new NpcRunner(_engine, _repo, _cc, aiConfigs, NullNpcLogger.Instance);
             _svc = new GameService(_engine, _repo, _cc, npcRunner, aiConfigs);
@@ -140,7 +148,7 @@ public class GameServiceTests
         {
             var act = () => _svc.StartNPCBattle([], "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
 
-            await act.Should().ThrowAsync<InvalidOperationException>()
+            await act.Should().ThrowAsync<GameRuleException>()
                 .WithMessage("*empty*");
         }
 
@@ -152,6 +160,146 @@ public class GameServiceTests
 
             await act.Should().ThrowAsync<GameRuleException>()
                 .WithMessage("*No AI config found*");
+        }
+    }
+
+    [Trait("対象", "スロット対称なゲーム作成")]
+    public class CreateGame : Base
+    {
+        private static GameSlotSpec HumanSlot(List<DeckSnapshotCard> cards, string name = "p") => new()
+        {
+            DeckCards = cards,
+            RoutineId = "IN-0001",
+            SpecialId = "IN-0002",
+            Summary = new PlayerSummarySnapshot { Name = name, Level = 1 },
+        };
+
+        private static GameSlotSpec NpcSlot(string model = Factions.SHE) => new()
+        {
+            NpcModel = model,
+            Summary = new PlayerSummarySnapshot { Name = "npc", Level = null },
+        };
+
+        [Theory(DisplayName = "スロット数が 2 でないとき、作成が拒否される")]
+        [InlineData(1)]
+        [InlineData(3)]
+        public async Task WrongSlotCount_Throws(int slotCount)
+        {
+            var cards = MakePlayerCards();
+            var slots = Enumerable.Range(0, slotCount).Select(_ => HumanSlot(cards)).ToList();
+
+            var act = () => _svc.CreateGame(slots);
+
+            await act.Should().ThrowAsync<GameRuleException>($"slots.Count={slotCount}")
+                .WithMessage("*slots must contain exactly 2 entries*");
+        }
+
+        [Fact(DisplayName = "スロット 1 が人間・スロット 2 が NPC のとき、Npc2Model に NPC モデルが設定される")]
+        public async Task Slot2Npc_SetsNpc2Model()
+        {
+            var cards = MakePlayerCards();
+            List<GameSlotSpec> slots = [HumanSlot(cards), NpcSlot()];
+
+            var game = await _svc.CreateGame(slots);
+
+            game.Npc1Model.Should().BeNull();
+            game.Npc2Model.Should().Be(Factions.SHE);
+        }
+
+        [Fact(DisplayName = "スロット 1 が NPC・スロット 2 が人間のとき、Npc1Model に NPC モデルが設定される")]
+        public async Task Slot1Npc_SetsNpc1Model()
+        {
+            var cards = MakePlayerCards();
+            List<GameSlotSpec> slots = [NpcSlot(), HumanSlot(cards)];
+
+            var game = await _svc.CreateGame(slots);
+
+            game.Npc1Model.Should().Be(Factions.SHE);
+            game.Npc2Model.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "スロット 1 が NPC のゲームで NPC ターンを進めると、人間 (player 2) 視点の状態が返る")]
+        public async Task Slot1Npc_AdvanceNpcTurn_ReturnsHumanPlayerView()
+        {
+            var cards = MakePlayerCards();
+            List<GameSlotSpec> slots = [NpcSlot(), HumanSlot(cards)];
+            var game = await _svc.CreateGame(slots);
+
+            var state = await _repo.GetGameState(game.GameID);
+            state!.ActivePlayer = 1;
+
+            var result = await _svc.AdvanceNpcTurn(game.GameID);
+
+            result.State.Should().NotBeNull();
+            result.State!.MyView.PlayerNum.Should().Be(2);
+        }
+
+        [Fact(DisplayName = "両スロットが NPC のとき、作成が拒否される")]
+        public async Task BothSlotsNpc_Throws()
+        {
+            List<GameSlotSpec> slots = [NpcSlot(), NpcSlot()];
+
+            var act = () => _svc.CreateGame(slots);
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*both players are NPC*");
+        }
+
+        [Fact(DisplayName = "両スロットが人間のとき、ゲームが作成される")]
+        public async Task BothSlotsHuman_CreatesGame()
+        {
+            var cards = MakePlayerCards();
+            List<GameSlotSpec> slots = [HumanSlot(cards), HumanSlot(cards)];
+
+            var game = await _svc.CreateGame(slots);
+
+            game.Status.Should().Be(GameStatus.Playing);
+            game.Npc1Model.Should().BeNull();
+            game.Npc2Model.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "1 スロットに deck_cards と npc_model の両方を指定すると、作成が拒否される")]
+        public async Task SlotWithBothDeckCardsAndNpcModel_Throws()
+        {
+            var cards = MakePlayerCards();
+            var slot = HumanSlot(cards);
+            List<GameSlotSpec> slots =
+            [
+                new() { DeckCards = slot.DeckCards, RoutineId = slot.RoutineId, SpecialId = slot.SpecialId, NpcModel = Factions.SHE, Summary = slot.Summary },
+                HumanSlot(cards),
+            ];
+
+            var act = () => _svc.CreateGame(slots);
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*exactly one of deck_cards or npc_model*");
+        }
+
+        [Fact(DisplayName = "deck_cards も npc_model も無いスロットがあると、作成が拒否される")]
+        public async Task SlotWithNeitherDeckCardsNorNpcModel_Throws()
+        {
+            var cards = MakePlayerCards();
+            List<GameSlotSpec> slots =
+            [
+                new() { Summary = new PlayerSummarySnapshot { Name = "p", Level = 1 } },
+                HumanSlot(cards),
+            ];
+
+            var act = () => _svc.CreateGame(slots);
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*exactly one of deck_cards or npc_model*");
+        }
+
+        [Theory(DisplayName = "人間スロットのデッキが空のとき、作成が拒否される")]
+        [InlineData("スロット 1 が空のとき", 0)]
+        [InlineData("スロット 2 が空のとき", 1)]
+        public async Task HumanSlotWithEmptyDeck_Throws(string caseLabel, int emptySlotIndex)
+        {
+            var cards = MakePlayerCards();
+            var slots = new List<GameSlotSpec> { HumanSlot(cards), HumanSlot(cards) };
+            slots[emptySlotIndex] = HumanSlot([]);
+
+            var act = () => _svc.CreateGame(slots);
+
+            await act.Should().ThrowAsync<GameRuleException>(caseLabel).WithMessage("*empty*");
         }
     }
 
