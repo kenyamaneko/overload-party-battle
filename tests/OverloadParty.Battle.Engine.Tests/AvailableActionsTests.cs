@@ -898,7 +898,7 @@ public class AvailableActionsTests
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
             var myField = TestFactory.MakeField();
             myField.Backend[0] = TestFactory.MakeResource(
-                cardId: "TST-0002", instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+                cardId: "TST-0002", instanceId: "db_1", maxTP: null, maxYield: 400);
 
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
@@ -962,7 +962,7 @@ public class AvailableActionsTests
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle);
             var myField = TestFactory.MakeField();
             myField.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0004", instanceId: "os_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+                cardId: "TST-0004", instanceId: "os_1", maxTP: null, maxYield: 400);
 
             var oppField = TestFactory.MakeField();
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
@@ -1227,7 +1227,7 @@ public class AvailableActionsTests
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
             var myField = TestFactory.MakeField();
             myField.Backend[0] = TestFactory.MakeResource(
-                cardId: "TST-0002", instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+                cardId: "TST-0002", instanceId: "db_1", maxTP: null, maxYield: 400);
 
             var actions = AvailableActions.GetAllAvailableActions(
                 state, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());

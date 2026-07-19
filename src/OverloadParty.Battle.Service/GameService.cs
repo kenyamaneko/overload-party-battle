@@ -362,7 +362,7 @@ public class GameService
     /// <summary>
     /// Maps view-dependent event data fields for a specific player.
     /// TurnStart: converts internal ActivePlayer to viewer-relative IsMyTurn (internal → wire type).
-    /// PlayCard: redacts CardId when the actor is the opponent and the card lands face-down.
+    /// PlayCard: redacts CardId when the actor is the opponent and the card is a Reactive.
     /// </summary>
     private IEventData? MapEventData(GameEvent evt, long viewerPlayerNum)
     {
@@ -390,6 +390,6 @@ public class GameService
     {
         if (evt.PlayerNum == viewerPlayerNum) { return false; }
         var cardDef = _cardCache.MustGet(cardId);
-        return cardDef.CardType == CardTypes.Reactive || cardDef.DeployTurns > 0;
+        return cardDef.CardType == CardTypes.Reactive;
     }
 }

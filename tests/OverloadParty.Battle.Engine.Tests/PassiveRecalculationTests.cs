@@ -158,9 +158,9 @@ public class PassiveRecalculationTests
             var watcher = TestFactory.MakeResource(cardId: "TST-9001", instanceId: "watcher", faceUp: true);
             state.Player2Field.Frontend[0] = watcher;
             state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-                cardId: "TST-9002", instanceId: "os1", faceUp: true, maxAV: 400, currentAV: 400);
+                cardId: "TST-9002", instanceId: "os1", faceUp: true, maxAV: 400);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-9004", instanceId: "attacker", faceUp: true, maxTP: 1500, currentTP: 1500);
+                cardId: "TST-9004", instanceId: "attacker", faceUp: true, maxTP: 1500);
             PassiveRecalculator.Recalculate(state, game, cc, registry);
             StatCalculator.CalculateEffectiveTP(watcher, state.Player2Field, cc).Should().Be(800);
 
@@ -284,7 +284,7 @@ public class PassiveRecalculationTests
             state.Player1Field.Frontend[1] = TestFactory.MakeResource(
                 cardId: "TST-9021", instanceId: "destroyer", faceUp: true);
             state.Player1Field.Backend[0] = TestFactory.MakeResource(
-                cardId: "TST-9002", instanceId: "os1", faceUp: true, maxAV: 800, currentAV: 800, damage: 800);
+                cardId: "TST-9002", instanceId: "os1", faceUp: true, maxAV: 800, damage: 800);
             PassiveRecalculator.Recalculate(state, game, cc, registry);
             StatCalculator.CalculateEffectiveTP(watcher, state.Player1Field, cc).Should().Be(800);
 
@@ -438,7 +438,7 @@ public class PassiveRecalculationTests
             state.Player1Field.Frontend[0] = myResource;
             state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-9015", instanceId: "destroyer", faceUp: true);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-9012", instanceId: "opp_victim", faceUp: true, maxAV: 800, currentAV: 800, damage: 800);
+                cardId: "TST-9012", instanceId: "opp_victim", faceUp: true, maxAV: 800, damage: 800);
             PassiveRecalculator.Recalculate(state, game, cc, registry);
             StatCalculator.CalculateEffectiveTP(myResource, state.Player1Field, cc).Should().Be(800);
 

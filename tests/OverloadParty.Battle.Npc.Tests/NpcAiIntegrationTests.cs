@@ -253,9 +253,9 @@ public class NpcAiIntegrationTests
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(
             cardId: "SH-0001", instanceId: "attacker");
         state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            instanceId: "strong", maxAV: 2000, currentAV: 2000);
+            cardId: "SH-0001", instanceId: "strong", maxAV: 2000);
         state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            instanceId: "weak", maxAV: 400, currentAV: 400);
+            cardId: "SH-0001", instanceId: "weak", maxAV: 400);
 
         var clientState = BuildClientState(state, 1);
 
@@ -281,9 +281,9 @@ public class NpcAiIntegrationTests
             cardId: "SH-0001", instanceId: "atk3");
 
         state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "SH-0001", instanceId: "low_tp", currentTP: 200, maxAV: 2000, currentAV: 2000);
+            cardId: "SH-0001", instanceId: "low_tp", rank: Rank.Small, maxAV: 2000);
         state.Player2Field.Frontend[1] = TestFactory.MakeResource(
-            cardId: "SH-0001", instanceId: "high_tp", currentTP: 900, maxAV: 400, currentAV: 400);
+            cardId: "SH-0001", instanceId: "high_tp", rank: Rank.Medium, maxAV: 400);
 
         var clientState = BuildClientState(state, 1);
 
@@ -307,7 +307,7 @@ public class NpcAiIntegrationTests
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         state.Player1Field.Backend[0] = TestFactory.MakeResource(
             cardId: "TK-0010", instanceId: "cosmo_1",
-            maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
+            maxYield: 300, maxTP: null);
         state.Player1Hand =
         [
             new() { InstanceID = "h_tk1", CardID = "TK-0001" },
@@ -411,8 +411,7 @@ public class NpcAiIntegrationTests
         var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
         state.Player1InsightPool = 1000;
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-            cardId: "SH-0001", instanceId: "fe_1",
-            currentTP: 600, maxTP: 600);
+            cardId: "SH-0001", instanceId: "fe_1", maxTP: 600);
         state.Player1Budget = 5000;
 
         var clientState = BuildClientState(state, 1);

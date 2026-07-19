@@ -238,39 +238,38 @@ public class NpcEventStateTests
                 "player is still the active player after playing a card in main phase");
         }
 
-        [Fact(DisplayName = "相手の play_card イベントは裏向きカードの cardId を秘匿し表向きカードでは残す")]
-        public async Task AdvanceNpcTurn_PlayCardEvent_RedactsFaceDownCardId()
+        [Fact(DisplayName = "相手のカードプレイイベントは、リアクティブのカード名を秘匿しデプロイ中のリソースのカード名を公開する")]
+        public async Task AdvanceNpcTurn_PlayCardEvent_RedactsReactiveButRevealsDeployingResource()
         {
-            // From the player's viewpoint, opponent play_card events must redact
-            // the cardId whenever the card is face-down (DeployTurns>0 or Reactive);
-            // face-up cards (Strategy/Attachment/deploy_turns=0 resource) keep cardId.
-            var result = await RunNpcTurn();
+            // NT-0023 is Reactive; SH-0001 is a Compute resource with deploy_turns=1
+            // (still face-down while deploying). Force both into the NPC's hand with
+            // ample budget so SHE-easy's config (reactive priority + deploy priority)
+            // deterministically plays them, instead of relying on a natural draw.
+            var (game, playerNum) = await StartGameWithPlayerFirst();
+            var state = await _repo.GetGameState(game.GameID);
+            state!.Player2Hand.Clear();
+            state.Player2Hand.Add(new UndeployedCard { InstanceID = "forced_reactive", CardID = "NT-0023" });
+            state.Player2Hand.Add(new UndeployedCard { InstanceID = "forced_deploying", CardID = "SH-0001" });
+            state.Player2Budget = 10000;
 
-            var playCards = result.Events
-                .Where(e => e.Event.EventType == ActionTypes.PlayCard)
-                .Select(e => e.Event)
-                .ToList();
-
-            playCards.Should().NotBeEmpty("NPC should play at least one card during main phase");
-
-            bool sawRedacted = false;
-            foreach (var evt in playCards)
+            await EndPlayerTurn(game.GameID, playerNum);
+            var events = new List<ActionEventWithState>();
+            GameActionResult current = new() { IsNpcPending = true };
+            while (current.IsNpcPending && current.GameOver is null)
             {
-                var data = evt.EventData.Should().BeOfType<PlayCardEventData>().Subject;
-                var cardId = data.CardId;
-                if (cardId == "")
-                {
-                    sawRedacted = true;
-                    continue;
-                }
-                var def = _cc.Get(cardId);
-                def.Should().NotBeNull();
-                (def!.CardType == CardTypes.Reactive || def.DeployTurns > 0).Should().BeFalse(
-                    $"face-down card {cardId} should have been redacted (type={def.CardType}, deploy_turns={def.DeployTurns})");
+                current = await _svc.AdvanceNpcTurn(game.GameID);
+                events.AddRange(current.Events);
             }
 
-            sawRedacted.Should().BeTrue(
-                "SHE-easy deck contains cards with DeployTurns>0; at least one should have been redacted");
+            var playCards = events
+                .Where(e => e.Event.EventType == ActionTypes.PlayCard)
+                .Select(e => e.Event.EventData.Should().BeOfType<PlayCardEventData>().Subject)
+                .ToList();
+
+            playCards.Should().Contain(d => d.CardId == "",
+                "the Reactive NT-0023 should have its cardId redacted");
+            playCards.Should().Contain(d => d.CardId == "SH-0001",
+                "the deploying resource SH-0001 should reveal its cardId even while face-down");
         }
 
         [Fact(DisplayName = "プレイヤー自身の play_card イベントは cardId を秘匿しない")]

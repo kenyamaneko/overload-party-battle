@@ -61,7 +61,7 @@ public class StatCalculatorTests
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400));
 
             var field = TestFactory.MakeField();
-            var resource = TestFactory.MakeResource(cardId: "TST-0001", maxTP: 600, currentTP: 600);
+            var resource = TestFactory.MakeResource(cardId: "TST-0001", maxTP: 600);
 
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(600);
         }
@@ -133,7 +133,7 @@ public class StatCalculatorTests
             cc.Add(TestFactory.ElasticContainerCard(cardId: "TEST-0002"));
 
             var field = TestFactory.MakeField();
-            var resource = TestFactory.MakeResource(cardId: "TEST-0002", elasticBonus: 100, maxTP: 500, currentTP: 500);
+            var resource = TestFactory.MakeResource(cardId: "TEST-0002", elasticBonus: 100, maxTP: 500);
 
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(591); // 500 + 91
         }
@@ -145,7 +145,7 @@ public class StatCalculatorTests
             cc.Add(TestFactory.ElasticContainerCard(cardId: "TEST-0002"));
 
             var field = TestFactory.MakeField();
-            var resource = TestFactory.MakeResource(cardId: "TEST-0002", elasticBonus: 500, maxTP: 500, currentTP: 500);
+            var resource = TestFactory.MakeResource(cardId: "TEST-0002", elasticBonus: 500, maxTP: 500);
 
             StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(846);
         }
@@ -215,7 +215,7 @@ public class StatCalculatorTests
             cc.Add(TestFactory.DataCard(cardId: "TST-0002", yield: 400));
 
             var field = TestFactory.MakeField();
-            var resource = TestFactory.MakeResource(cardId: "TST-0002", maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
+            var resource = TestFactory.MakeResource(cardId: "TST-0002", maxYield: 400, maxTP: null);
 
             StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(400);
         }
@@ -243,7 +243,7 @@ public class StatCalculatorTests
 
             var field = TestFactory.MakeField();
             var resource = TestFactory.MakeResource(
-                cardId: "TST-0002", maxYield: 400, currentYield: 400, maxTP: null, currentTP: null, family: family);
+                cardId: "TST-0002", maxYield: 400, maxTP: null, family: family);
 
             StatCalculator.CalculateEffectiveInsight(resource, field, cc).Should().Be(expected);
         }
@@ -258,7 +258,7 @@ public class StatCalculatorTests
             var field = TestFactory.MakeField();
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0004", instanceId: "db_1", faceUp: true, elasticBonus: 100,
-                maxAV: 800, currentAV: 800, maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
+                maxAV: 800, maxYield: 300, maxTP: null);
             field.Backend[0] = resource;
 
             // base=300, elastic bonus = 300 * ln(1 + 100/300) = 300 * ln(1.333) ≈ 300 * 0.2876 ≈ 86
@@ -275,7 +275,7 @@ public class StatCalculatorTests
             var field = TestFactory.MakeField();
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0002", instanceId: "db_1",
-                maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
+                maxAV: 800, maxYield: 400, maxTP: null);
             resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.BuffYield, Value = 100 });
             field.Backend[0] = resource;
 
@@ -291,7 +291,7 @@ public class StatCalculatorTests
             var field = TestFactory.MakeField();
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0002", instanceId: "db_1",
-                maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
+                maxAV: 800, maxYield: 400, maxTP: null);
             resource.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.DebuffYield, Value = 500 });
             field.Backend[0] = resource;
 

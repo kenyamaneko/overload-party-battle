@@ -65,7 +65,7 @@ public class ReactiveEffectTests
 
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0005", instanceId: "atk", faceUp: true, maxTP: 1500, currentTP: 1500);
+                cardId: "TST-0005", instanceId: "atk", faceUp: true, maxTP: 1500);
             var defender = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def", faceUp: true, maxAV: 1400);
             state.Player2Field.Frontend[0] = defender;
             PlaceReactive(state, "TST-0400");

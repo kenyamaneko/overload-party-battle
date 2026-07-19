@@ -196,14 +196,14 @@ public class GuardOpTests
         [Fact(DisplayName = "ダメージが対象の可用性 800 に等しいとき満たす")]
         public void Lethal_PassesWhenDamageAtOrAboveTargetAv()
         {
-            var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "def", maxAV: 800, currentAV: 800);
+            var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "def", maxAV: 800);
             ShouldPass(LethalGuard.Instance, Ctx(target: target, eventDamage: 800));
         }
 
         [Fact(DisplayName = "ダメージが対象の可用性 800 を下回る 799 のとき満たさない")]
         public void Lethal_FailsWhenDamageBelowTargetAv()
         {
-            var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "def", maxAV: 800, currentAV: 800);
+            var target = TestFactory.MakeResource(cardId: "SHE-VM", instanceId: "def", maxAV: 800);
             ShouldFail(LethalGuard.Instance, Ctx(target: target, eventDamage: 799));
         }
     }

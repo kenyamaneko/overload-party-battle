@@ -38,7 +38,7 @@ public class EndPhaseProcessorTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
             AddRepoCards(state, 2);
             var db = TestFactory.MakeResource(cardId: "TST-0002", instanceId: "db_1", faceUp: true,
-                maxYield: 400, currentYield: 400);
+                maxYield: 400);
             db.TemporaryEffects.Add(new TemporaryEffect { EffectType = BuffTypes.Dormant, Duration = "this_turn" });
             state.Player1Field.Backend[0] = db;
             state.SetInsightPool(1, 0);
@@ -249,7 +249,7 @@ public class EndPhaseProcessorTests
             // MC = max(0, 500 - 500) * 10 / 100 = 0
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0002", instanceId: "res_1", faceUp: true,
-                maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200);
+                maxTP: 500, maxAV: 1200);
             state.Player1Field.Frontend[0] = resource;
 
             EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
@@ -272,7 +272,7 @@ public class EndPhaseProcessorTests
             // MC = max(0, 735 - 500) × 10 / 100 = 23
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0002", instanceId: "res_1", faceUp: true,
-                maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200, elasticBonus: 300);
+                maxTP: 500, maxAV: 1200, elasticBonus: 300);
             state.Player1Field.Frontend[0] = resource;
 
             EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
@@ -293,7 +293,7 @@ public class EndPhaseProcessorTests
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0004", instanceId: "res_1", faceUp: true,
                 rank: Rank.Medium, family: InstanceFamily.C,
-                maxTP: 1560, currentTP: 1560, maxAV: 3600, currentAV: 3600);
+                maxTP: 1560, maxAV: 3600);
             state.Player1Field.Frontend[0] = resource;
 
             EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
@@ -311,7 +311,7 @@ public class EndPhaseProcessorTests
             // Serverless: cost_per_request=0 → 固有ステータスが free_tier を超えても維持コストは常に 0
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0005", instanceId: "res_1", faceUp: true,
-                maxTP: 300, currentTP: 300, maxAV: 600, currentAV: 600, elasticBonus: 500);
+                maxTP: 300, maxAV: 600, elasticBonus: 500);
             state.Player1Field.Frontend[0] = resource;
 
             EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
@@ -333,7 +333,7 @@ public class EndPhaseProcessorTests
             // Place a face-up data resource in backend
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0003", instanceId: "db_1", faceUp: true,
-                maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
+                maxAV: 800, maxYield: 400, maxTP: null);
             state.Player1Field.Backend[0] = resource;
 
             long insightBefore = state.Player1InsightPool;
@@ -353,7 +353,7 @@ public class EndPhaseProcessorTests
             // Place a face-down data resource in backend
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0003", instanceId: "db_1", faceUp: false, deployLeft: 1,
-                maxAV: 800, currentAV: 800, maxYield: 400, currentYield: 400, maxTP: null, currentTP: null);
+                maxAV: 800, maxYield: 400, maxTP: null);
             state.Player1Field.Backend[0] = resource;
 
             long insightBefore = state.Player1InsightPool;
@@ -373,7 +373,7 @@ public class EndPhaseProcessorTests
 
             var resource = TestFactory.MakeResource(
                 cardId: "TST-0004", instanceId: "db_1", faceUp: true,
-                maxAV: 800, currentAV: 800, maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
+                maxAV: 800, maxYield: 300, maxTP: null);
             state.Player1Field.Backend[0] = resource;
 
             EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());

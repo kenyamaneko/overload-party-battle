@@ -114,7 +114,7 @@ public class BuffTypeTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
             var attacker = TestFactory.MakeResource(
-                cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxTP: 600, currentTP: 600);
+                cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxTP: 600);
             state.Player1Field.Frontend[0] = attacker;
 
             var defender = TestFactory.MakeResource(
@@ -139,7 +139,7 @@ public class BuffTypeTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
 
             var attacker = TestFactory.MakeResource(
-                cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxTP: 600, currentTP: 600);
+                cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxTP: 600);
             state.Player1Field.Frontend[0] = attacker;
 
             var defender = TestFactory.MakeResource(

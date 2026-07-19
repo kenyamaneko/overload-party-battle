@@ -28,12 +28,11 @@ public static class TargetSelector
     /// </summary>
     /// <param name="field">対象の自フィールド。</param>
     /// <param name="zone">フロントエンド / バックエンドの絞り込み。null なら両方。</param>
-    /// <param name="cc">カード定義の参照元。</param>
     /// <returns>該当リソースの InstanceID。なければ null。</returns>
-    public static string? StrongestInZone(GD.Field field, string? zone, ICardCache cc)
+    public static string? StrongestInZone(GD.Field field, string? zone)
     {
         return FaceUpInZone(field.Frontend, field.Backend, zone)
-            .MaxBy(r => CalculateResourceValue(r, cc))
+            .MaxBy(CalculateResourceValue)
             ?.InstanceID;
     }
 
@@ -126,9 +125,8 @@ public static class TargetSelector
     /// リソースの強さを表すスコア (スループット or イールド) を返します。
     /// </summary>
     /// <param name="r">対象リソース。</param>
-    /// <param name="cc">カード定義の参照元。</param>
     /// <returns>スループット or イールド値。</returns>
-    public static long CalculateResourceValue(GD.DeployedResource r, ICardCache cc)
+    public static long CalculateResourceValue(GD.DeployedResource r)
     {
         if (r.CurrentTP is > 0)
         {
@@ -138,9 +136,7 @@ public static class TargetSelector
         {
             return r.CurrentYield.Value;
         }
-        var card = cc.Get(r.CardID)
-            ?? throw new InvalidOperationException($"Card '{r.CardID}' not found in card cache");
-        return card.IsComputeType ? card.BaseThroughput : card.IsDataResource ? card.BaseYield : 0;
+        return 0;
     }
 
     // ─── TargetSpec resolution ──────────────────────────────────
@@ -156,7 +152,7 @@ public static class TargetSelector
     public static string? Resolve(TargetSpec spec, GD.Field myField, GD.OpponentField oppField, ICardCache cc)
     {
         var resources = FilterResources(spec.Selector, myField, oppField, cc);
-        return OrderAndPick(resources, spec.OrderBy, cc);
+        return OrderAndPick(resources, spec.OrderBy);
     }
 
     /// <summary>
@@ -169,7 +165,7 @@ public static class TargetSelector
         var validSet = new HashSet<string>(validTargets);
         var resources = FilterResources(spec.Selector, myField, oppField, cc)
             .Where(r => validSet.Contains(r.InstanceID));
-        return OrderAndPick(resources, spec.OrderBy, cc);
+        return OrderAndPick(resources, spec.OrderBy);
     }
 
     /// <summary>
@@ -180,17 +176,16 @@ public static class TargetSelector
     /// <param name="sourceInstanceId">アクションから source リソースの InstanceID を取り出す関数。</param>
     /// <param name="orderBy">並べ替えに使う stat 指定。</param>
     /// <param name="field">stat を引く自フィールド。</param>
-    /// <param name="cc">カード定義の参照元。</param>
     /// <returns>並べ替え済みのアクション列。</returns>
     public static List<T> OrderActions<T>(
-        List<T> actions, Func<T, string?> sourceInstanceId, string orderBy, GD.Field field, ICardCache cc)
+        List<T> actions, Func<T, string?> sourceInstanceId, string orderBy, GD.Field field)
         where T : GD.AvailableAction
     {
         var resMap = WireFieldHelpers.AllResources(field).ToDictionary(r => r.InstanceID);
         var (stat, desc) = ParseOrderBy(orderBy);
         long Selector(T a) =>
             resMap.TryGetValue(sourceInstanceId(a)!, out var r)
-                ? GetStatValue(r, stat, cc) : 0;
+                ? GetStatValue(r, stat) : 0;
         return (desc
             ? actions.OrderByDescending(Selector)
             : actions.OrderBy(Selector)).ToList();
@@ -262,7 +257,7 @@ public static class TargetSelector
             ?? throw new InvalidOperationException($"Card '{cardId}' not found in card cache");
 
     private static string? OrderAndPick(
-        IEnumerable<GD.DeployedResource> resources, string? orderBy, ICardCache cc)
+        IEnumerable<GD.DeployedResource> resources, string? orderBy)
     {
         if (orderBy is null)
         {
@@ -270,8 +265,8 @@ public static class TargetSelector
         }
         var (stat, desc) = ParseOrderBy(orderBy);
         var ordered = desc
-            ? resources.OrderByDescending(r => GetStatValue(r, stat, cc))
-            : resources.OrderBy(r => GetStatValue(r, stat, cc));
+            ? resources.OrderByDescending(r => GetStatValue(r, stat))
+            : resources.OrderBy(r => GetStatValue(r, stat));
         return ordered.FirstOrDefault()?.InstanceID;
     }
 
@@ -289,11 +284,11 @@ public static class TargetSelector
             $"order_by must end with _desc or _asc: '{orderBy}'");
     }
 
-    private static long GetStatValue(GD.DeployedResource r, string stat, ICardCache cc)
+    private static long GetStatValue(GD.DeployedResource r, string stat)
     {
         return stat switch
         {
-            "tp" => CalculateResourceValue(r, cc),
+            "tp" => CalculateResourceValue(r),
             "av" => WireFieldHelpers.CalculateEffectiveAV(r),
             "damage" => r.Damage,
             _ => throw new InvalidOperationException($"Unknown order_by stat: '{stat}'"),

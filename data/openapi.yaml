@@ -738,6 +738,7 @@ components:
           x-csharp-name: InstanceID
         cardID:
           type: string
+          description: カード ID (裏向き・デプロイ中でも公開される)
           x-go-name: CardID
           x-csharp-name: CardID
         artNo:
@@ -760,6 +761,7 @@ components:
         currentAV:
           type: integer
           format: int64
+          description: 実効可用性 (MaxAV - Damage)
           x-go-name: CurrentAV
           x-csharp-name: CurrentAV
         maxAV:
@@ -771,7 +773,7 @@ components:
           type: integer
           format: int64
           nullable: true
-          description: 現在のスループット (Compute のみ)
+          description: 実効スループット (バフ・Elastic ボーナス・ランク/ファミリー倍率適用後、Compute のみ)
           x-go-name: CurrentTP
           x-csharp-name: CurrentTP
         maxTP:
@@ -784,7 +786,7 @@ components:
           type: integer
           format: int64
           nullable: true
-          description: 現在のイールド (Data のみ)
+          description: 実効イールド (バフ・Elastic ボーナス・ランク/ファミリー倍率適用後、Data のみ)
         maxYield:
           type: integer
           format: int64

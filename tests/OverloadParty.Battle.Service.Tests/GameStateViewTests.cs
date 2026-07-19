@@ -72,13 +72,13 @@ public class GameStateViewTests
             result.OppView.PlayerNum.Should().Be(2);
         }
 
-        [Fact(DisplayName = "相手のビューは裏向きリソースのカード ID とステータスを隠す")]
-        public void HidesFaceDownResourceDetails()
+        [Fact(DisplayName = "裏向きのリソースのとき、カード ID とアート番号は公開される")]
+        public void RevealsCardIDAndArtNoForFaceDownResource()
         {
             var state = TestFactory.MakeGameState();
             var faceDownRes = TestFactory.MakeResource(
-                cardId: "TST-0001", instanceId: "inst_opp", faceUp: false,
-                deployLeft: 1, maxAV: 1400, currentAV: 1400, maxTP: 600, currentTP: 600);
+                cardId: "TST-0001", instanceId: "inst_opp", faceUp: false, deployLeft: 1);
+            faceDownRes.ArtNo = 3;
             state.Player2Field.Frontend[0] = faceDownRes;
 
             var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
@@ -88,10 +88,28 @@ public class GameStateViewTests
             oppSlot!.InstanceID.Should().Be("inst_opp");
             oppSlot.FaceUp.Should().BeFalse();
             oppSlot.DeployingTurnsLeft.Should().Be(1);
-            // Hidden details: stats should be zeroed out
-            oppSlot.CardID.Should().Be("");
-            oppSlot.MaxAV.Should().Be(0);
+            oppSlot.CardID.Should().Be("TST-0001");
+            oppSlot.ArtNo.Should().Be(3);
+        }
+
+        [Fact(DisplayName = "裏向きのリソースのとき、可用性・スループット等のステータスは公開されない")]
+        public void HidesStatsForFaceDownResource()
+        {
+            var state = TestFactory.MakeGameState();
+            var faceDownRes = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "inst_opp", faceUp: false,
+                deployLeft: 1, maxAV: 1400, maxTP: 600);
+            state.Player2Field.Frontend[0] = faceDownRes;
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            var oppSlot = result.OppView.Field.Frontend[0];
+            oppSlot.Should().NotBeNull();
+            oppSlot!.MaxAV.Should().Be(0);
+            oppSlot.CurrentAV.Should().Be(0);
             oppSlot.MaxTP.Should().BeNull();
+            oppSlot.CurrentTP.Should().BeNull();
+            oppSlot.TemporaryEffects.Should().BeEmpty();
         }
 
         [Fact(DisplayName = "相手のビューは表向きリソースを完全に見せる")]
@@ -100,7 +118,7 @@ public class GameStateViewTests
             var state = TestFactory.MakeGameState();
             var faceUpRes = TestFactory.MakeResource(
                 cardId: "TST-0001", instanceId: "inst_opp_up", faceUp: true,
-                maxAV: 1400, currentAV: 1400, maxTP: 600, currentTP: 600);
+                maxAV: 1400, maxTP: 600);
             state.Player2Field.Frontend[1] = faceUpRes;
 
             var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
@@ -383,6 +401,125 @@ public class GameStateViewTests
             result.OppView.Field.Frontend.Should().AllSatisfy(slot => slot.Should().BeNull());
             result.OppView.Field.Backend.Should().AllSatisfy(slot => slot.Should().BeNull());
             result.OppView.Field.Support.Should().AllSatisfy(slot => slot.Should().BeNull());
+        }
+    }
+
+    [Trait("対象", "ステータス実効値の算出")]
+    public class EffectiveStats : Base
+    {
+        [Fact(DisplayName = "ダメージ 600 を受けたリソースのとき、実効可用性は 800 になる")]
+        public void DealtDamage600_EffectiveAVIs800()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", faceUp: true, maxAV: 1400, damage: 600);
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.Field.Frontend[0]!.CurrentAV.Should().Be(800);
+        }
+
+        [Fact(DisplayName = "ダメージ 0 のとき、実効可用性は 1400 になる")]
+        public void NoDamage_EffectiveAVIs1400()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", faceUp: true, maxAV: 1400, damage: 0);
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.Field.Frontend[0]!.CurrentAV.Should().Be(1400);
+        }
+
+        [Fact(DisplayName = "ダメージ 1399 のとき、実効可用性は 1 になる")]
+        public void DealtDamage1399_EffectiveAVIs1()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", faceUp: true, maxAV: 1400, damage: 1399);
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.Field.Frontend[0]!.CurrentAV.Should().Be(1);
+        }
+
+        [Fact(DisplayName = "スループットバフ +200 を持つとき、実効スループットは 800 になる")]
+        public void BuffTP200_EffectiveTPIs800()
+        {
+            var state = TestFactory.MakeGameState();
+            var res = TestFactory.MakeResource(cardId: "TST-0001", faceUp: true);
+            res.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.BuffTP, Value = 200 });
+            state.Player1Field.Frontend[0] = res;
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.Field.Frontend[0]!.CurrentTP.Should().Be(800);
+        }
+
+        [Fact(DisplayName = "スループットデバフ 700 を持つとき、実効スループットは下限 0 になる")]
+        public void DebuffTP700_EffectiveTPClampsToZero()
+        {
+            var state = TestFactory.MakeGameState();
+            var res = TestFactory.MakeResource(cardId: "TST-0001", faceUp: true);
+            res.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.DebuffTP, Value = 700 });
+            state.Player1Field.Frontend[0] = res;
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.Field.Frontend[0]!.CurrentTP.Should().Be(0);
+        }
+
+        [Fact(DisplayName = "Elastic ボーナス 100 (free_tier 500) を蓄積したとき、実効スループットは逓減後ボーナス込みの 591 になる")]
+        public void ElasticBonus100_EffectiveTPIncludesDiminishedBonus()
+        {
+            _cc.Add(TestFactory.ElasticContainerCard(cardId: "TEST-ELASTIC"));
+            var state = TestFactory.MakeGameState();
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TEST-ELASTIC", faceUp: true, maxTP: 500, elasticBonus: 100);
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.Field.Frontend[0]!.CurrentTP.Should().Be(591); // 500 + floor(500*ln(1.2))
+        }
+
+        [Fact(DisplayName = "medium に ScaleUp した非 Elastic リソースのとき、実効スループットは 1200 になる")]
+        public void ScaledUpToMedium_EffectiveTPIs1200()
+        {
+            var state = TestFactory.MakeGameState();
+            var res = TestFactory.MakeResource(cardId: "TST-0001", faceUp: true, rank: Rank.Small, family: InstanceFamily.M);
+            ResourceHelpers.ChangeRank(res, Rank.Medium, state.Player1Field, _cc);
+            state.Player1Field.Frontend[0] = res;
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.Field.Frontend[0]!.CurrentTP.Should().Be(1200); // 600 * 2 (medium)
+        }
+
+        [Fact(DisplayName = "可用性 999 の上書きつきでリポジトリからデプロイされたとき、実効可用性は 999 になる")]
+        public void DeployedFromRepoWithAVOverride_EffectiveAVIs999()
+        {
+            var state = TestFactory.MakeGameState();
+            var repoCard = new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" };
+            state.Player1Repository.Add(repoCard);
+            ResourceHelpers.DeployFromRepo(state, 1, state.Player1Field, repoCard, overrideAV: 999, _cc);
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.Field.Frontend[0]!.CurrentAV.Should().Be(999);
+        }
+
+        [Fact(DisplayName = "自分ビューと相手ビューの双方で同じ実効値が見える")]
+        public void EffectiveValues_ConsistentAcrossOwnAndOpponentView()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", faceUp: true, maxAV: 1400, damage: 600);
+
+            var ownerResult = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+            var opponentResult = GameStateView.Build(state, _game, 2, _cc, new EffectRegistry());
+
+            ownerResult.MyView.Field.Frontend[0]!.CurrentAV.Should().Be(800);
+            opponentResult.OppView.Field.Frontend[0]!.CurrentAV.Should().Be(800);
         }
     }
 }

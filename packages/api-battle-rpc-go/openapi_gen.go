@@ -142,14 +142,18 @@ type ClientGameState struct {
 
 // DeployedResource フィールドに展開済みのリソースカードインスタンス。
 type DeployedResource struct {
-	ArtNo     int64  `json:"artNo"`
-	CardID    string `json:"cardID"`
-	CurrentAV int64  `json:"currentAV"`
+	ArtNo int64 `json:"artNo"`
 
-	// CurrentTP 現在のスループット (Compute のみ)
+	// CardID カード ID (裏向き・デプロイ中でも公開される)
+	CardID string `json:"cardID"`
+
+	// CurrentAV 実効可用性 (MaxAV - Damage)
+	CurrentAV int64 `json:"currentAV"`
+
+	// CurrentTP 実効スループット (バフ・Elastic ボーナス・ランク/ファミリー倍率適用後、Compute のみ)
 	CurrentTP *int64 `json:"currentTP,omitempty"`
 
-	// CurrentYield 現在のイールド (Data のみ)
+	// CurrentYield 実効イールド (バフ・Elastic ボーナス・ランク/ファミリー倍率適用後、Data のみ)
 	CurrentYield *int64 `json:"currentYield,omitempty"`
 
 	// Damage 受けたダメージ量

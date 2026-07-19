@@ -261,7 +261,7 @@ public class UseInitiativeProcessorTests
             var (effects, catalog) = Setup(initiatives);
 
             var state = MakeState();
-            var ally = TestFactory.MakeResource(instanceId: "a1", faceUp: true, maxAV: 1400, currentAV: 800, damage: 600);
+            var ally = TestFactory.MakeResource(instanceId: "a1", faceUp: true, maxAV: 1400, damage: 600);
             state.Player1Field.Frontend[0] = ally;
 
             Use(state, InitiativeKinds.Routine, effects, catalog,

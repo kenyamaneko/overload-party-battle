@@ -292,9 +292,7 @@ public class FieldHelpersTests
             var res = ResourceHelpers.CreateDeployedResource(card, "inst_1", 1);
 
             res.MaxTP.Should().Be(700);
-            res.CurrentTP.Should().Be(700);
             res.MaxAV.Should().Be(1400);
-            res.CurrentAV.Should().Be(1400);
         }
 
         [Fact(DisplayName = "Data系カードから生成したリソースにイールド 500 と可用性 800 が設定される")]
@@ -304,9 +302,7 @@ public class FieldHelpersTests
             var res = ResourceHelpers.CreateDeployedResource(card, "inst_1", 1);
 
             res.MaxYield.Should().Be(500);
-            res.CurrentYield.Should().Be(500);
             res.MaxAV.Should().Be(800);
-            res.CurrentAV.Should().Be(800);
         }
     }
 

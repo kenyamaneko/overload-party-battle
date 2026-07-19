@@ -22,11 +22,8 @@ public class DeployedResource
     public InstanceFamily? InstanceFamily { get; set; }
     public bool FaceUp { get; set; }
     public long DeployingTurnsLeft { get; set; }
-    public long CurrentAV { get; set; }
     public long MaxAV { get; set; }
-    public long? CurrentTP { get; set; }
     public long? MaxTP { get; set; }
-    public long? CurrentYield { get; set; }
     public long? MaxYield { get; set; }
     public long Damage { get; set; }
     public List<TemporaryEffect> TemporaryEffects { get; set; } = [];

@@ -391,6 +391,9 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("instanceID")]
         public string InstanceID { get; set; } = default!;
 
+        /// <summary>
+        /// カード ID (裏向き・デプロイ中でも公開される)
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("cardID")]
         public string CardID { get; set; } = default!;
 
@@ -418,6 +421,9 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("deployingTurnsLeft")]
         public long DeployingTurnsLeft { get; set; } = default!;
 
+        /// <summary>
+        /// 実効可用性 (MaxAV - Damage)
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("currentAV")]
         public long CurrentAV { get; set; } = default!;
 
@@ -425,7 +431,7 @@ namespace OverloadParty.GameState
         public long MaxAV { get; set; } = default!;
 
         /// <summary>
-        /// 現在のスループット (Compute のみ)
+        /// 実効スループット (バフ・Elastic ボーナス・ランク/ファミリー倍率適用後、Compute のみ)
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("currentTP")]
         public long? CurrentTP { get; set; } = default!;
@@ -434,7 +440,7 @@ namespace OverloadParty.GameState
         public long? MaxTP { get; set; } = default!;
 
         /// <summary>
-        /// 現在のイールド (Data のみ)
+        /// 実効イールド (バフ・Elastic ボーナス・ランク/ファミリー倍率適用後、Data のみ)
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("currentYield")]
         public long? CurrentYield { get; set; } = default!;

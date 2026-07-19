@@ -33,7 +33,7 @@ public class DestructionTests
 
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
-            var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "tgt", faceUp: true, maxAV: 300, currentAV: 300);
+            var target = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "tgt", faceUp: true, maxAV: 300);
             state.Player2Field.Frontend[0] = target;
             long budgetBefore = state.Player2Budget;
 
@@ -56,7 +56,7 @@ public class DestructionTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0001", instanceId: "tgt", faceUp: true, maxAV: 300, currentAV: 300);
+                cardId: "TST-0001", instanceId: "tgt", faceUp: true, maxAV: 300);
 
             UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src", "tgt"), cc, effects);
 
@@ -80,7 +80,7 @@ public class DestructionTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0002", instanceId: "tgt", faceUp: true, maxAV: 300, currentAV: 300);
+                cardId: "TST-0002", instanceId: "tgt", faceUp: true, maxAV: 300);
 
             var result = UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src", "tgt"), cc, effects);
 
@@ -105,7 +105,7 @@ public class DestructionTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "src", faceUp: true);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0002", instanceId: "tgt", faceUp: true, maxAV: 300, currentAV: 300);
+                cardId: "TST-0002", instanceId: "tgt", faceUp: true, maxAV: 300);
             state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "watcher", CardID = "TST-0400", FaceUp = false };
 
             var result = UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src", "tgt"), cc, effects);
@@ -145,7 +145,7 @@ public class DestructionTests
             var watcher = TestFactory.MakeResource(cardId: "TST-0005", instanceId: "watcher", faceUp: true);
             state.Player1Field.Frontend[1] = watcher;
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0002", instanceId: "tgt", faceUp: true, maxAV: 300, currentAV: 300);
+                cardId: "TST-0002", instanceId: "tgt", faceUp: true, maxAV: 300);
             PassiveRecalculator.Recalculate(state, game, cc, effects);
             StatCalculator.CalculateEffectiveTP(watcher, state.Player1Field, cc).Should().Be(
                 800, "Victim が場にいる間はパッシブ効果で+200される");
@@ -172,9 +172,9 @@ public class DestructionTests
 
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxAV: 300, currentAV: 300, maxTP: 300, currentTP: 300);
+                cardId: "TST-ATK", instanceId: "atk_1", faceUp: true, maxAV: 300, maxTP: 300);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-DEF", instanceId: "def_1", faceUp: true, maxAV: 5000, currentAV: 5000, maxTP: 100, currentTP: 100);
+                cardId: "TST-DEF", instanceId: "def_1", faceUp: true, maxAV: 5000, maxTP: 100);
 
             AttackProcessor.Process(state, TestFactory.MakeGame(), 1,
                 new AttackRequest { AttackerInstanceID = "atk_1", TargetInstanceID = "def_1" }, cc, effects);
@@ -305,7 +305,7 @@ public class DestructionTests
 
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
             state.Player2Field.Support[0] = new DeployedSupport
             {
@@ -333,7 +333,7 @@ public class DestructionTests
 
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
             state.Player2Field.Support[0] = new DeployedSupport
             {
@@ -366,7 +366,7 @@ public class DestructionTests
 
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500, currentTP: 1500);
+                cardId: "TST-0005", instanceId: "atk_1", faceUp: true, maxTP: 1500);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def_1", faceUp: true);
             var unrelatedSupport = new DeployedSupport { InstanceID = "plat_1", CardID = "TST-0200", FaceUp = true };
             state.Player2Field.Support[0] = unrelatedSupport;
