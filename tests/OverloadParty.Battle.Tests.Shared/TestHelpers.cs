@@ -1,4 +1,6 @@
 using System.Text.Json;
+using ApiCard = OverloadParty.ApiCard;
+using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Ports;
 using OverloadParty.Battle.Models;
@@ -511,12 +513,8 @@ public static class TestEffectSetup
             ?? throw new FileNotFoundException(
                 "cards_gen.json not found. Set CARDS_JSON_PATH or run generate_from_yaml.py in the common repo.");
 
-        var cards = JsonSerializer.Deserialize<List<CardDefinition>>(
-            File.ReadAllText(cardsPath), new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-                PropertyNameCaseInsensitive = true,
-            })!;
+        var wireCards = JsonSerializer.Deserialize<List<ApiCard.CardDefinition>>(File.ReadAllText(cardsPath))!;
+        var cards = wireCards.Select(CardDefinitionMapper.ToCardDefinition).ToList();
 
         var cardCache = new TestCardCache();
         foreach (var card in cards)
