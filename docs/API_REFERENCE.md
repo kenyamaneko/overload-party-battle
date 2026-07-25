@@ -7,7 +7,7 @@
 Battle Service は Gateway からのみ呼ばれる内部サービス。クライアントからの直接アクセスはない。エラー時は `{"error": "..."}` 形式で返却する（`GameRuleException` → 400、それ以外 → 500）。
 
 - **Base path:** `/api/v1`
-- **認証:** なし（internal。Gateway → Battle はクラスタ内通信）
+- **認証:** アプリケーション層の認証トークン検証は持たない。到達制御は Cloud Run の呼び出し IAM に委ねる（詳細は [ARCHITECTURE.md](ARCHITECTURE.md) を参照）
 - **ポート:** 9002（ローカル）/ 9090（k8s）
 
 ---
