@@ -80,6 +80,8 @@ draw → main → battle → end → (ActivePlayer切替) → draw ...
 | `use_initiative` | `CardID`, `Kind`, `Cost`, `ValidTargets`, `EffectTargetType` |
 | `resolve_pending_choice` | `EffectCardId`, `ChoiceKind`, `ChoiceOptions` |
 
+AvailableAction は `type` による判別ユニオンで、各 variant は自身に必要な型固有の名前付きフィールドだけを持つ。汎用の `{type, value}` メタデータ機構は導入しない。named field は生成型（C# / Go / TS）に乗り、client / NPC が型で辿れることを優先するためである。
+
 ゲームフロー制御（フェーズ終了、手札破棄）は `available_actions` に含めず、`turn_controls` メッセージとして別途送信される。
 
 **NPC AI アーキテクチャ（Battle Server / C#）:**
