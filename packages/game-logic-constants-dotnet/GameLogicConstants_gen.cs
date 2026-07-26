@@ -15,6 +15,7 @@ public static class GameStatus
     public const string Waiting = "waiting";
     public const string Playing = "playing";
     public const string Finished = "finished";
+    public const string Voided = "voided";
 }
 
 public static class WinReasons

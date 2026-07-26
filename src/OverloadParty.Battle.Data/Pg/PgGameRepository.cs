@@ -259,6 +259,24 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await cmd.ExecuteNonQueryAsync(ct);
     }
 
+    /// <summary>ゲームを無効状態にする。勝者・勝因は記録しない。</summary>
+    /// <param name="gameID">無効化対象のゲーム ID。</param>
+    /// <param name="ct">キャンセレーショントークン。</param>
+    /// <returns>非同期処理を表すタスク。</returns>
+    public async Task VoidGame(string gameID, CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        await using var conn = await ds.OpenConnectionAsync(ct);
+        await using var cmd = new NpgsqlCommand(@"
+            UPDATE games SET status = $1, finished_at = $2, updated_at = $3
+            WHERE game_id = $4", conn);
+        cmd.Parameters.AddWithValue(GameStatus.Voided.ToWireString());
+        cmd.Parameters.AddWithValue(now);
+        cmd.Parameters.AddWithValue(now);
+        cmd.Parameters.AddWithValue(gameID);
+        await cmd.ExecuteNonQueryAsync(ct);
+    }
+
     /// <summary>指定ゲームのイベントを sequence_number 昇順で取得する。</summary>
     /// <param name="gameID">取得対象のゲーム ID。</param>
     /// <param name="ct">キャンセレーショントークン。</param>

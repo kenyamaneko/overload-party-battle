@@ -151,6 +151,7 @@ public class EnumExtensionsTests
         [Theory(DisplayName = "各値を対応するワイヤ文字列に変換する")]
         [InlineData(GameStatus.Playing, "playing")]
         [InlineData(GameStatus.Finished, "finished")]
+        [InlineData(GameStatus.Voided, "voided")]
         public void ToWireString_ReturnsExpected(GameStatus status, string expected)
         {
             status.ToWireString().Should().Be(expected);
@@ -159,6 +160,7 @@ public class EnumExtensionsTests
         [Theory(DisplayName = "ワイヤ文字列を対応する値に解析する")]
         [InlineData("playing", GameStatus.Playing)]
         [InlineData("finished", GameStatus.Finished)]
+        [InlineData("voided", GameStatus.Voided)]
         public void Parse_ValidInput_ReturnsExpected(string input, GameStatus expected)
         {
             EnumExtensions.ParseGameStatus(input).Should().Be(expected);
@@ -182,6 +184,7 @@ public class EnumExtensionsTests
         [Theory(DisplayName = "ワイヤ文字列へ変換して解析すると元の値に戻る")]
         [InlineData(GameStatus.Playing)]
         [InlineData(GameStatus.Finished)]
+        [InlineData(GameStatus.Voided)]
         public void Roundtrip(GameStatus status)
         {
             EnumExtensions.ParseGameStatus(status.ToWireString()).Should().Be(status);

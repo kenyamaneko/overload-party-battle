@@ -706,6 +706,9 @@ type ClientInterface interface {
 	// GetGameStateForPlayer request
 	GetGameStateForPlayer(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*http.Response, error)
 
+	// VoidGame request
+	VoidGame(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// ListNpcModels request
 	ListNpcModels(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 
@@ -847,6 +850,18 @@ func (c *Client) GetGameLogText(ctx context.Context, gameId GameIdPath, reqEdito
 
 func (c *Client) GetGameStateForPlayer(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewGetGameStateForPlayerRequest(c.Server, gameId, playerNum)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) VoidGame(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewVoidGameRequest(c.Server, gameId)
 	if err != nil {
 		return nil, err
 	}
@@ -1219,6 +1234,40 @@ func NewGetGameStateForPlayerRequest(server string, gameId GameIdPath, playerNum
 	return req, nil
 }
 
+// NewVoidGameRequest generates requests for VoidGame
+func NewVoidGameRequest(server string, gameId GameIdPath) (*http.Request, error) {
+	var err error
+
+	var pathParam0 string
+
+	pathParam0, err = runtime.StyleParamWithOptions("simple", false, "gameId", gameId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationPath, Type: "string", Format: ""})
+	if err != nil {
+		return nil, err
+	}
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/v1/games/%s/void", pathParam0)
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
 // NewListNpcModelsRequest generates requests for ListNpcModels
 func NewListNpcModelsRequest(server string) (*http.Request, error) {
 	var err error
@@ -1348,6 +1397,9 @@ type ClientWithResponsesInterface interface {
 
 	// GetGameStateForPlayerWithResponse request
 	GetGameStateForPlayerWithResponse(ctx context.Context, gameId GameIdPath, playerNum PlayerNumPath, reqEditors ...RequestEditorFn) (*GetGameStateForPlayerResponse, error)
+
+	// VoidGameWithResponse request
+	VoidGameWithResponse(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*VoidGameResponse, error)
 
 	// ListNpcModelsWithResponse request
 	ListNpcModelsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ListNpcModelsResponse, error)
@@ -1625,6 +1677,35 @@ func (r GetGameStateForPlayerResponse) ContentType() string {
 	return ""
 }
 
+type VoidGameResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r VoidGameResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r VoidGameResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r VoidGameResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
 type ListNpcModelsResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
@@ -1788,6 +1869,15 @@ func (c *ClientWithResponses) GetGameStateForPlayerWithResponse(ctx context.Cont
 		return nil, err
 	}
 	return ParseGetGameStateForPlayerResponse(rsp)
+}
+
+// VoidGameWithResponse request returning *VoidGameResponse
+func (c *ClientWithResponses) VoidGameWithResponse(ctx context.Context, gameId GameIdPath, reqEditors ...RequestEditorFn) (*VoidGameResponse, error) {
+	rsp, err := c.VoidGame(ctx, gameId, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseVoidGameResponse(rsp)
 }
 
 // ListNpcModelsWithResponse request returning *ListNpcModelsResponse
@@ -2027,6 +2117,22 @@ func ParseGetGameStateForPlayerResponse(rsp *http.Response) (*GetGameStateForPla
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseVoidGameResponse parses an HTTP response from a VoidGameWithResponse call
+func ParseVoidGameResponse(rsp *http.Response) (*VoidGameResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &VoidGameResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

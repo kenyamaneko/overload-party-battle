@@ -103,6 +103,7 @@ public static class EnumExtensions
     {
         GameStatus.Playing => OverloadParty.GameLogicConstants.GameStatus.Playing,
         GameStatus.Finished => OverloadParty.GameLogicConstants.GameStatus.Finished,
+        GameStatus.Voided => OverloadParty.GameLogicConstants.GameStatus.Voided,
         _ => throw new ArgumentOutOfRangeException(nameof(status))
     };
 
@@ -115,6 +116,7 @@ public static class EnumExtensions
     {
         OverloadParty.GameLogicConstants.GameStatus.Playing => GameStatus.Playing,
         OverloadParty.GameLogicConstants.GameStatus.Finished => GameStatus.Finished,
+        OverloadParty.GameLogicConstants.GameStatus.Voided => GameStatus.Voided,
         _ => throw new ArgumentException($"Unknown game status: {s}")
     };
 

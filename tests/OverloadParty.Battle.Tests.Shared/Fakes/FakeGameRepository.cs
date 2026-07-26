@@ -107,6 +107,19 @@ public class FakeGameRepository : IGameRepository
         return Task.CompletedTask;
     }
 
+    public Task VoidGame(string gameID, CancellationToken ct = default)
+    {
+        lock (_lock)
+        {
+            if (_games.TryGetValue(gameID, out var game))
+            {
+                game.Status = GameStatus.Voided;
+                game.FinishedAt = DateTime.UtcNow;
+            }
+        }
+        return Task.CompletedTask;
+    }
+
     public Task<List<GameEvent>> GetEvents(string gameID, CancellationToken ct = default)
     {
         lock (_lock)

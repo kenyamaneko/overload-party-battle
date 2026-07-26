@@ -85,6 +85,17 @@ public class GameLogServiceTests
             await _repo.FinishGame("test-game", 1, WinReasons.BudgetZero);
             return "test-game";
         }
+
+        protected async Task<string> SeedVoidedGame()
+        {
+            var game = TestFactory.MakeGame();
+            game.CreatedAt = new DateTime(2026, 3, 1, 10, 0, 0, DateTimeKind.Utc);
+            var state = TestFactory.MakeGameState(turn: 3, p1Budget: 800, p2Budget: 900);
+
+            await _repo.CreateGame(game, state);
+            await _repo.VoidGame("test-game");
+            return "test-game";
+        }
     }
 
     [Trait("対象", "構造化ログ")]
@@ -111,6 +122,16 @@ public class GameLogServiceTests
             log.FinalBudget!.Player1.Should().Be(1200);
             log.FinalBudget.Player2.Should().Be(0);
             log.Entries.Should().HaveCount(4);
+        }
+
+        [Fact(DisplayName = "無効化された対戦の構造化ログでは、勝者が引き分けとも決着済みの勝敗とも異なる値になる")]
+        public async Task VoidedGame_WinnerDiffersFromDrawAndDecidedOutcomes()
+        {
+            var gameId = await SeedVoidedGame();
+            var log = await _svc.GetGameLog(gameId);
+
+            log.Should().NotBeNull();
+            log!.Winner.Should().Be("voided");
         }
 
         [Fact(DisplayName = "構造化ログの各エントリが対応するイベントのデータを含む")]
@@ -163,6 +184,18 @@ public class GameLogServiceTests
             // 各イベントのデータ (デプロイしたカード名・攻撃のダメージ量) がテキストに載る
             text.Should().Contain("えくぼ");
             text.Should().Contain("600");
+        }
+
+        [Fact(DisplayName = "無効化された対戦のテキストログには Voided と載り、Draw にも N/A にもならない")]
+        public async Task VoidedGame_ShowsVoided_NotDrawOrNotApplicable()
+        {
+            var gameId = await SeedVoidedGame();
+            var text = await _svc.GetGameLogText(gameId);
+
+            text.Should().NotBeNull();
+            text.Should().Contain("Voided");
+            text.Should().NotContain("Draw");
+            text.Should().NotContain("N/A");
         }
     }
 
