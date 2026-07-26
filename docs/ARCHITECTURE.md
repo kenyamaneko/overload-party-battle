@@ -189,7 +189,7 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 
 battle は `PlayerNum`（1 または 2）を呼び出し元の申告としてそのまま受け取る。手札・フィールドの所有やターン順との整合性はアクション検証（前節）で確認するが、その `PlayerNum` を名乗る呼び出し元が実際にそのプレイヤー本人かどうかは検証できない。battle がプレイヤー ID 自体を持たない点は [DATA_DESIGN.md](DATA_DESIGN.md) のとおりで、プレイヤー ID から `PlayerNum` への対応付けと認可は gateway が担う。
 
-内部トークンによるプレイヤー ID の伝播は、プレイヤーのデータを扱うサービスに対して行われる。battle はその対象外であり、内部トークンの検証を持たない。呼び出し元自体の到達制御は Cloud Run の呼び出し IAM が担う。
+内部トークンによるプレイヤー ID の伝播は、プレイヤーのデータを扱うサービスに対して行われる。battle はその対象外であり、内部トークンの検証を持たない。呼び出し元自体の到達制御はサービス間認証の基盤層に委ねる（[ADR-057](https://github.com/kenyamaneko/overload-party-common/blob/main/docs/adr/057-cloudrun-service-auth-iam-and-rs256.md)）。
 
 ---
 
