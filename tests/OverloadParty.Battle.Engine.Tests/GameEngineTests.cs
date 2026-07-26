@@ -280,6 +280,53 @@ public class GameEngineTests
         }
     }
 
+    [Trait("対象", "対戦の無効化")]
+    public class VoidGame : Base
+    {
+        [Fact(DisplayName = "進行中の対戦を無効化すると、ステータスが Voided になり勝者・勝因は記録されない")]
+        public async Task VoidGame_TransitionsStatusToVoided_WithoutWinner()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+
+            await _engine.VoidGame(game!);
+
+            var got = await _repo.GetGame(gameID);
+            got!.Status.Should().Be(GameStatus.Voided);
+            got.WinningPlayerNum.Should().BeNull();
+            got.WinReason.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "投了により決着済みの対戦を無効化しようとすると、GameRuleException を投げる")]
+        public async Task VoidGame_FinishedGame_Throws()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.Forfeit(game!, 1, WinReason.Surrender);
+
+            game = await _repo.GetGame(gameID);
+            var act = () => _engine.VoidGame(game!);
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
+        }
+
+        [Fact(DisplayName = "既に無効化済みの対戦を再度無効化しようとすると、GameRuleException を投げる")]
+        public async Task VoidGame_AlreadyVoidedGame_Throws()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.VoidGame(game!);
+
+            game = await _repo.GetGame(gameID);
+            var act = () => _engine.VoidGame(game!);
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
+        }
+    }
+
     [Trait("対象", "初期状態の保存")]
     public class InitialStatePreservation : Base
     {

@@ -48,13 +48,15 @@ public class GameLogService
             ? (long)(game.FinishedAt.Value - game.CreatedAt).TotalSeconds
             : (long?)null;
 
-        var winnerLabel = game.WinningPlayerNum switch
-        {
-            null or 0 => null,
-            1 => "player1",
-            2 => "player2",
-            var n => throw new InvalidOperationException($"Invalid WinningPlayerNum: {n}"),
-        };
+        var winnerLabel = game.Status == GameStatus.Voided
+            ? GameStatus.Voided.ToWireString()
+            : game.WinningPlayerNum switch
+            {
+                null or 0 => null,
+                1 => "player1",
+                2 => "player2",
+                var n => throw new InvalidOperationException($"Invalid WinningPlayerNum: {n}"),
+            };
 
         var winReason = game.WinReason ?? FindWinReasonFromEvents(events);
 
@@ -112,14 +114,16 @@ public class GameLogService
 
         // 勝者/所要時間
         var winReason = game.WinReason ?? FindWinReasonFromEvents(events);
-        var winnerTag = game.WinningPlayerNum switch
-        {
-            null => "N/A",
-            0 => "Draw",
-            1 => $"P1 ({winReason})",
-            2 => $"P2 ({winReason})",
-            var n => throw new InvalidOperationException($"Invalid WinningPlayerNum: {n}"),
-        };
+        var winnerTag = game.Status == GameStatus.Voided
+            ? "Voided"
+            : game.WinningPlayerNum switch
+            {
+                null => "N/A",
+                0 => "Draw",
+                1 => $"P1 ({winReason})",
+                2 => $"P2 ({winReason})",
+                var n => throw new InvalidOperationException($"Invalid WinningPlayerNum: {n}"),
+            };
 
         var turns = state.CurrentTurn;
         var durationStr = game.FinishedAt.HasValue
@@ -264,6 +268,11 @@ public class GameLogService
 
     private string DescribeGameOver(Game game)
     {
+        if (game.Status == GameStatus.Voided)
+        {
+            return "Game over: Voided";
+        }
+
         return game.WinningPlayerNum switch
         {
             null or 0 => "Game over: Draw",

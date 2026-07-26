@@ -119,6 +119,22 @@ public class GameEngine
     }
 
     /// <summary>
+    /// VoidGame はサーバ停止等により対戦が成立しなかった場合に、勝敗を記録せず対戦を無効として終了します
+    /// </summary>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>非同期処理を表すタスク。</returns>
+    public async Task VoidGame(Game game, CancellationToken ct = default)
+    {
+        if (game.Status != GameStatus.Playing)
+        {
+            throw new GameRuleException("game is not in playing state");
+        }
+
+        await _repo.VoidGame(game.GameID, ct);
+    }
+
+    /// <summary>
     /// Processes a player action (play card, attack, etc.) and persists the resulting events.
     /// </summary>
     /// <param name="game">The game metadata.</param>

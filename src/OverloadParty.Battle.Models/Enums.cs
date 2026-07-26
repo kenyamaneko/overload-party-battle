@@ -55,7 +55,8 @@ public enum CardTypeCategory
 public enum GameStatus
 {
     Playing,
-    Finished
+    Finished,
+    Voided
 }
 
 /// <summary>

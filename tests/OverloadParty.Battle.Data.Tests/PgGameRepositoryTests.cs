@@ -533,6 +533,27 @@ public class PgGameRepositoryTests
 
     [Collection(PgTestCollection.Name)]
     [Trait("対象", "ゲームリポジトリ")]
+    public class VoidGame(PgTestFixture fixture) : Base(fixture)
+    {
+        [Fact(DisplayName = "ゲームを無効化するとステータスが Voided になり勝者・勝因は記録されない")]
+        public async Task VoidGame_updates_status_without_winner()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            await repo.CreateGame(game, state);
+
+            await repo.VoidGame(game.GameID);
+
+            var got = await repo.GetGame(game.GameID);
+            got!.Status.Should().Be(GameStatus.Voided);
+            got.WinningPlayerNum.Should().BeNull();
+            got.WinReason.Should().BeNull();
+            got.FinishedAt.Should().NotBeNull();
+        }
+    }
+
+    [Collection(PgTestCollection.Name)]
+    [Trait("対象", "ゲームリポジトリ")]
     public class JsonbFieldRoundtrip(PgTestFixture fixture) : Base(fixture)
     {
         [Fact(DisplayName = "フィールドに配置したリソースが JSONB 永続化を経て読み戻される")]
