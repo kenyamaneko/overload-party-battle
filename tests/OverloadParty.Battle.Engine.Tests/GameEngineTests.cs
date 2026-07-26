@@ -280,6 +280,44 @@ public class GameEngineTests
         }
     }
 
+    [Trait("対象", "両者投了の処理")]
+    public class ProcessForfeitBoth : Base
+    {
+        [Fact(DisplayName = "両者投了すると、勝者なし・理由 Disconnect としてゲームが即座に終了する")]
+        public async Task ForfeitBoth_EndsGameAsDraw()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+
+            var game = await _repo.GetGame(gameID);
+            var result = await _engine.ForfeitBoth(game!);
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(0, "neither player wins when both forfeit");
+            result.GameOver.Reason.Should().Be(WinReasons.Disconnect);
+
+            game = await _repo.GetGame(gameID);
+            game!.Status.Should().Be(GameStatus.Finished);
+            game.WinningPlayerNum.Should().Be(0);
+            game.WinReason.Should().Be(WinReasons.Disconnect);
+        }
+
+        [Fact(DisplayName = "終了済みゲームで両者投了すると、GameRuleException を投げる")]
+        public async Task ForfeitBoth_FinishedGame_Throws()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+
+            var game = await _repo.GetGame(gameID);
+            await _engine.Forfeit(game!, 1, WinReason.Surrender);
+
+            game = await _repo.GetGame(gameID);
+            var act = () => _engine.ForfeitBoth(game!);
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
+        }
+    }
+
     [Trait("対象", "初期状態の保存")]
     public class InitialStatePreservation : Base
     {

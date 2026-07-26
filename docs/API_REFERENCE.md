@@ -110,6 +110,7 @@ PvP 戦を作成する。マッチメイキング後に Gateway が呼び出す�
 | `discard_hand` | `{cardInstanceIds}` | 手札を破棄（end フェーズ、手札 > 6 枚時） |
 | `end_phase` | `{}` | フェーズを終了 |
 | `forfeit` | `{reason}` | 降参 |
+| `forfeit_both` | `{}` | 両者投了。勝者なし・理由 `disconnect` で終了（`player_num` は無視される） |
 | `select_slot` | `{zone, index}` | 効果デプロイのスロット選択に応答 |
 | `resolve_pending_choice` | `{chosen_id}` | 効果処理中の選択を解決 |
 

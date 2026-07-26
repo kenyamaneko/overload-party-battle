@@ -42,6 +42,7 @@ const (
 	ActionTypeSetReactive = "set_reactive"
 	ActionTypeEndPhase = "end_phase"
 	ActionTypeForfeit = "forfeit"
+	ActionTypeForfeitBoth = "forfeit_both"
 	ActionTypeSelectSlot = "select_slot"
 	ActionTypeReactive = "reactive"
 	ActionTypeResolvePendingChoice = "resolve_pending_choice"

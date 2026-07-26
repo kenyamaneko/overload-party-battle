@@ -105,16 +105,32 @@ public class GameEngine
         Game game, long playerNum, WinReason reason,
         CancellationToken ct = default)
     {
-        if (game.Status != GameStatus.Playing)
-        {
-            throw new GameRuleException("game is not in playing state");
-        }
+        EnsurePlaying(game);
 
         var opponentNum = playerNum == 1 ? 2 : 1;
         await _repo.FinishGame(game.GameID, opponentNum, reason.ToWireString(), ct);
         return new ActionResult
         {
             GameOver = new GameOverResult(opponentNum, reason.ToWireString()),
+        };
+    }
+
+    /// <summary>
+    /// ForfeitBoth はゲームを両者投了 (勝者なし) で即座に終了します
+    /// </summary>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>引き分けを表すアクション結果。</returns>
+    public async Task<ActionResult> ForfeitBoth(
+        Game game, CancellationToken ct = default)
+    {
+        EnsurePlaying(game);
+
+        var reason = WinReason.Disconnect.ToWireString();
+        await _repo.FinishGame(game.GameID, 0, reason, ct);
+        return new ActionResult
+        {
+            GameOver = new GameOverResult(0, reason),
         };
     }
 
@@ -131,10 +147,7 @@ public class GameEngine
         Game game, long playerNum, ActionType actionType, object actionData,
         CancellationToken ct = default)
     {
-        if (game.Status != GameStatus.Playing)
-        {
-            throw new GameRuleException("game is not in playing state");
-        }
+        EnsurePlaying(game);
 
         ActionResult actionResult = null!;
 
@@ -229,6 +242,18 @@ public class GameEngine
         }
 
         return actionResult;
+    }
+
+    /// <summary>
+    /// Throws if the game is not in the Playing state.
+    /// </summary>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    private static void EnsurePlaying(Game game)
+    {
+        if (game.Status != GameStatus.Playing)
+        {
+            throw new GameRuleException("game is not in playing state");
+        }
     }
 
     /// <summary>
