@@ -93,22 +93,22 @@ public class EventDataSerializerCoverageTests
     /// </summary>
     private static readonly Dictionary<Type, IEventData> RoundTripSamples = new()
     {
-        [typeof(PlayCardEventData)] = new PlayCardEventData { CardId = "TST-0001", Zone = "frontend", Index = 0 },
+        [typeof(PlayCardEventData)] = new PlayCardEventData { CardId = "TST-0001", Zone = "frontend", Index = 2 },
         [typeof(AttachCardEventData)] = new AttachCardEventData { CardId = "TST-0002", TargetId = "inst_7" },
-        [typeof(AttackEventData)] = new AttackEventData { AttackerId = "a", TargetId = "d", Damage = 300, Destroyed = false, SlaPenalty = 0 },
+        [typeof(AttackEventData)] = new AttackEventData { AttackerId = "a", TargetId = "d", Damage = 300, Destroyed = true, SlaPenalty = 400 },
         [typeof(ScaleUpEventData)] = new ScaleUpEventData { InstanceId = "i", TargetRank = "medium", InstanceFamily = "M" },
         [typeof(MonetizeEventData)] = new MonetizeEventData { TotalAmount = 100 },
         [typeof(DiscardHandEventData)] = new DiscardHandEventData { DiscardedCount = 2, DiscardedIds = ["x", "y"] },
         [typeof(UseIgnitionEventData)] = new UseIgnitionEventData { CardId = "c", SourceId = "s", TargetId = "t" },
         [typeof(UseInitiativeEventData)] = new UseInitiativeEventData { ProductId = "PD-TST", InitiativeId = "IN-TST-R", Kind = "routine", InitiativeName = "R", InsightCost = 400 },
         [typeof(PhaseChangeEventData)] = new PhaseChangeEventData { PreviousPhase = "main", CurrentPhase = "battle" },
-        [typeof(PhaseEndEventData)] = new PhaseEndEventData { Phase = "end", NeedsDiscard = false },
+        [typeof(PhaseEndEventData)] = new PhaseEndEventData { Phase = "end", NeedsDiscard = true },
         [typeof(TurnEndEventData)] = new TurnEndEventData { Phase = "end", NextTurn = 2, ActivePlayer = 2, CurrentPhase = "draw" },
         [typeof(BattleStartEventData)] = new BattleStartEventData { MatchType = "npc", MyName = "me", MyLevel = 1, OpponentName = "opp", OpponentLevel = 1 },
         [typeof(TurnStartInternalEventData)] = new TurnStartInternalEventData { Turn = 3, ActivePlayer = 1 },
         [typeof(ReactiveRevealedEventData)] = new ReactiveRevealedEventData { InstanceId = "i", CardId = "c" },
         [typeof(GameOverEventData)] = new GameOverEventData { WinnerNum = 1, WinReason = WinReasons.BudgetZero },
-        [typeof(SelectSlotEventData)] = new SelectSlotEventData { CardId = "c", InstanceId = "i", Zone = "frontend", Index = 0 },
+        [typeof(SelectSlotEventData)] = new SelectSlotEventData { CardId = "c", InstanceId = "i", Zone = "frontend", Index = 1 },
     };
 
     [Fact(DisplayName = "登録済み全イベントデータ型にラウンドトリップ用サンプルが過不足なく対応する")]
@@ -127,9 +127,9 @@ public class EventDataSerializerCoverageTests
     public static IEnumerable<object[]> RegisteredEventTypes() =>
         EventDataSerializer.GetAllRegisteredEventTypes().Select(et => new object[] { et });
 
-    [Theory(DisplayName = "登録済みイベント型をシリアライズ後にデシリアライズすると同じ実行時型に戻る")]
+    [Theory(DisplayName = "登録済みイベント型をシリアライズ後にデシリアライズすると元の値に戻る")]
     [MemberData(nameof(RegisteredEventTypes))]
-    public void EventDataSerializer_RoundTrip_ProducesSameRuntimeType(string eventType)
+    public void EventDataSerializer_RoundTrip_RestoresOriginalValues(string eventType)
     {
         var expectedType = EventDataSerializer.GetTypeForEventType(eventType);
         expectedType.Should().NotBeNull($"{eventType} must be registered");
@@ -138,7 +138,7 @@ public class EventDataSerializerCoverageTests
         var json = EventDataSerializer.Serialize(sample);
         var restored = EventDataSerializer.Deserialize(eventType, json);
 
-        restored.GetType().Should().Be(expectedType);
+        restored.Should().BeEquivalentTo(sample, o => o.PreferringRuntimeMemberTypes());
     }
 
     [Fact(DisplayName = "未登録のイベント型をデシリアライズすると InvalidOperationException を投げる")]
