@@ -203,14 +203,9 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(clientState);
 
         var scaleUp = actions.FirstOrDefault(a => a.ActionType == ActionTypes.ScaleUp);
-        if (scaleUp is not null)
-        {
-            var req = (ScaleUpRequest)scaleUp.Data;
-            if (req.InstanceFamily is not null)
-            {
-                req.InstanceFamily.Should().Be("M");
-            }
-        }
+        scaleUp.Should().NotBeNull("SHE-easy は稼働中の Resizable リソースをスケールアップする");
+        ((ScaleUpRequest)scaleUp!.Data).InstanceFamily.Should().Be("M",
+            "SHE-easy config のインスタンスファミリーは M 系");
     }
 
     [Fact(DisplayName = "Tenki 設定のスケールアップはインスタンスファミリー R を使う")]
@@ -229,14 +224,9 @@ public class NpcAiIntegrationTests
         var actions = ai.DecideMainPhaseActions(clientState);
 
         var scaleUp = actions.FirstOrDefault(a => a.ActionType == ActionTypes.ScaleUp);
-        if (scaleUp is not null)
-        {
-            var req = (ScaleUpRequest)scaleUp.Data;
-            if (req.InstanceFamily is not null)
-            {
-                req.InstanceFamily.Should().Be("R");
-            }
-        }
+        scaleUp.Should().NotBeNull("Tenki-easy は稼働中の Resizable リソースをスケールアップする");
+        ((ScaleUpRequest)scaleUp!.Data).InstanceFamily.Should().Be("R",
+            "Tenki-easy config のインスタンスファミリーは R 系");
     }
 
     // ═══════════════════════════════════════════════════════════════

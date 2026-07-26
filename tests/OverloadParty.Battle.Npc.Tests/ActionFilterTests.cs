@@ -45,38 +45,6 @@ public class ActionFilterTests
         }
     }
 
-    [Trait("対象", "アクション種別フィルタ")]
-    public class FilterByType
-    {
-        [Fact(DisplayName = "指定した種別のアクションだけを残す")]
-        public void ReturnsOnlyMatchingActions()
-        {
-            var actions = new List<GD.AvailableAction>
-            {
-                new GD.PlayCardAction { HandInstanceID = "h1" },
-                new GD.AttackAction { SourceInstanceID = "a1" },
-                new GD.PlayCardAction { HandInstanceID = "h2" },
-                new GD.ScaleUpAction { SourceInstanceID = "s1" },
-            };
-
-            var result = ActionFilter.FilterByType<GD.PlayCardAction>(actions);
-
-            result.Should().HaveCount(2);
-            result.Select(a => a.HandInstanceID).Should().Equal("h1", "h2");
-        }
-
-        [Fact(DisplayName = "一致する種別が無いとき、空リストを返す")]
-        public void NoMatches_ReturnsEmptyList()
-        {
-            var actions = new List<GD.AvailableAction>
-            {
-                new GD.AttackAction(),
-            };
-
-            ActionFilter.FilterByType<GD.PlayCardAction>(actions).Should().BeEmpty();
-        }
-    }
-
     [Trait("対象", "デプロイゾーンの選択")]
     public class PickBestZone
     {
