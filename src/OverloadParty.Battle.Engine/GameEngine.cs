@@ -108,11 +108,7 @@ public class GameEngine
         EnsurePlaying(game);
 
         var opponentNum = playerNum == 1 ? 2 : 1;
-        await _repo.FinishGame(game.GameID, opponentNum, reason.ToWireString(), ct);
-        return new ActionResult
-        {
-            GameOver = new GameOverResult(opponentNum, reason.ToWireString()),
-        };
+        return await FinishGameWithResult(game.GameID, opponentNum, reason.ToWireString(), ct);
     }
 
     /// <summary>
@@ -126,11 +122,24 @@ public class GameEngine
     {
         EnsurePlaying(game);
 
-        var reason = WinReason.Disconnect.ToWireString();
-        await _repo.FinishGame(game.GameID, 0, reason, ct);
+        return await FinishGameWithResult(game.GameID, 0, WinReason.Disconnect.ToWireString(), ct);
+    }
+
+    /// <summary>
+    /// Persists the game outcome and builds the corresponding action result.
+    /// </summary>
+    /// <param name="gameID">対象ゲームの ID。</param>
+    /// <param name="winnerNum">勝者のプレイヤー番号 (0 は引き分け)。</param>
+    /// <param name="reason">勝敗が確定した理由の wire 文字列。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>勝敗確定情報を含むアクション結果。</returns>
+    private async Task<ActionResult> FinishGameWithResult(
+        string gameID, long winnerNum, string reason, CancellationToken ct)
+    {
+        await _repo.FinishGame(gameID, winnerNum, reason, ct);
         return new ActionResult
         {
-            GameOver = new GameOverResult(0, reason),
+            GameOver = new GameOverResult(winnerNum, reason),
         };
     }
 
