@@ -74,6 +74,16 @@ jobs:
         with:
           search-root: tests
           title: 単体テスト結果
+      - name: Extract test catalog source
+        if: ${{ !cancelled() }}
+        run: dotnet run --project tools/TestCatalogExtractor -- --tests-root tests --output test-catalog-source.json
+      - name: Upload test catalog source
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-catalog-source
+          path: test-catalog-source.json
+          retention-days: 7
 
   codegen-sync:
     needs: changes
