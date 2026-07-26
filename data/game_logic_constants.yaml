@@ -43,6 +43,7 @@ action_types:
 - set_reactive
 - end_phase
 - forfeit
+- forfeit_both
 - select_slot
 - reactive
 - resolve_pending_choice

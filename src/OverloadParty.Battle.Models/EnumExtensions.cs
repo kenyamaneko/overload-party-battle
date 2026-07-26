@@ -176,6 +176,7 @@ public static class EnumExtensions
         ActionType.UseInitiative => ActionTypes.UseInitiative,
         ActionType.EndPhase => ActionTypes.EndPhase,
         ActionType.Forfeit => ActionTypes.Forfeit,
+        ActionType.ForfeitBoth => ActionTypes.ForfeitBoth,
         ActionType.SelectSlot => ActionTypes.SelectSlot,
         ActionType.ResolvePendingChoice => ActionTypes.ResolvePendingChoice,
         _ => throw new ArgumentOutOfRangeException(nameof(action))
@@ -197,6 +198,7 @@ public static class EnumExtensions
         ActionTypes.UseInitiative => ActionType.UseInitiative,
         ActionTypes.EndPhase => ActionType.EndPhase,
         ActionTypes.Forfeit => ActionType.Forfeit,
+        ActionTypes.ForfeitBoth => ActionType.ForfeitBoth,
         ActionTypes.SelectSlot => ActionType.SelectSlot,
         ActionTypes.ResolvePendingChoice => ActionType.ResolvePendingChoice,
         _ => throw new ArgumentException($"Unknown action type: {s}")

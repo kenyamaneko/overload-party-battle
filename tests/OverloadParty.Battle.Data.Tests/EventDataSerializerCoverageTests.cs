@@ -22,6 +22,7 @@ public class EventDataSerializerCoverageTests
         // Control actions: no payload emitted by the engine.
         ActionTypes.EndPhase,
         ActionTypes.Forfeit,
+        ActionTypes.ForfeitBoth,
         // Reactive / SetReactive are carrier action names; events use play_card / attach_card
         // and reactive_revealed instead. No dedicated EventData type exists.
         ActionTypes.SetReactive,

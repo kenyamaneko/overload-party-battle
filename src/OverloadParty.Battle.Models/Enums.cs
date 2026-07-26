@@ -88,6 +88,7 @@ public enum ActionType
     UseInitiative,
     EndPhase,
     Forfeit,
+    ForfeitBoth,
     SelectSlot,
     ResolvePendingChoice
 }

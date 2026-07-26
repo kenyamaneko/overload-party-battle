@@ -201,7 +201,7 @@ public class GameEngineTests
         }
     }
 
-    [Trait("対象", "アクションの検証と投了")]
+    [Trait("対象", "アクションの検証と強制決着")]
     public class ProcessActionValidation : Base
     {
         [Fact(DisplayName = "自分のターンでないプレイヤーがアクションすると、GameRuleException を投げる")]
@@ -242,7 +242,7 @@ public class GameEngineTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact(DisplayName = "プレイヤー 1 が投了すると、相手を勝者・理由 Surrender としてゲームが即座に終了する")]
+        [Fact(DisplayName = "プレイヤー 1 が強制決着すると、相手を勝者・理由 Surrender としてゲームが即座に終了する")]
         public async Task Forfeit_EndsGameImmediately()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -275,6 +275,44 @@ public class GameEngineTests
             game = await _repo.GetGame(gameID);
             var act = () => _engine.ProcessAction(
                 game!, 2, ActionType.EndPhase, new object());
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
+        }
+    }
+
+    [Trait("対象", "両者強制決着の処理")]
+    public class ProcessForfeitBoth : Base
+    {
+        [Fact(DisplayName = "両者強制決着すると、勝者なし・理由 Disconnect としてゲームが即座に終了する")]
+        public async Task ForfeitBoth_EndsGameAsDraw()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+
+            var game = await _repo.GetGame(gameID);
+            var result = await _engine.ForfeitBoth(game!);
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(0, "neither player wins when both forfeit");
+            result.GameOver.Reason.Should().Be(WinReasons.Disconnect);
+
+            game = await _repo.GetGame(gameID);
+            game!.Status.Should().Be(GameStatus.Finished);
+            game.WinningPlayerNum.Should().Be(0);
+            game.WinReason.Should().Be(WinReasons.Disconnect);
+        }
+
+        [Fact(DisplayName = "終了済みゲームで両者強制決着すると、GameRuleException を投げる")]
+        public async Task ForfeitBoth_FinishedGame_Throws()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+
+            var game = await _repo.GetGame(gameID);
+            await _engine.Forfeit(game!, 1, WinReason.Surrender);
+
+            game = await _repo.GetGame(gameID);
+            var act = () => _engine.ForfeitBoth(game!);
 
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
         }

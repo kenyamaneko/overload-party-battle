@@ -264,6 +264,7 @@ public class EnumExtensionsTests
         [InlineData(ActionType.UseIgnition, "use_ignition")]
         [InlineData(ActionType.EndPhase, "end_phase")]
         [InlineData(ActionType.Forfeit, "forfeit")]
+        [InlineData(ActionType.ForfeitBoth, "forfeit_both")]
         public void ToWireString_ReturnsExpected(ActionType action, string expected)
         {
             action.ToWireString().Should().Be(expected);
@@ -278,6 +279,7 @@ public class EnumExtensionsTests
         [InlineData("use_ignition", ActionType.UseIgnition)]
         [InlineData("end_phase", ActionType.EndPhase)]
         [InlineData("forfeit", ActionType.Forfeit)]
+        [InlineData("forfeit_both", ActionType.ForfeitBoth)]
         public void Parse_ValidInput_ReturnsExpected(string input, ActionType expected)
         {
             EnumExtensions.ParseActionType(input).Should().Be(expected);
@@ -307,6 +309,7 @@ public class EnumExtensionsTests
         [InlineData(ActionType.UseIgnition)]
         [InlineData(ActionType.EndPhase)]
         [InlineData(ActionType.Forfeit)]
+        [InlineData(ActionType.ForfeitBoth)]
         public void Roundtrip(ActionType action)
         {
             EnumExtensions.ParseActionType(action.ToWireString()).Should().Be(action);

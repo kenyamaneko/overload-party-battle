@@ -42,6 +42,7 @@ public static class ActionTypes
     public const string SetReactive = "set_reactive";
     public const string EndPhase = "end_phase";
     public const string Forfeit = "forfeit";
+    public const string ForfeitBoth = "forfeit_both";
     public const string SelectSlot = "select_slot";
     public const string Reactive = "reactive";
     public const string ResolvePendingChoice = "resolve_pending_choice";

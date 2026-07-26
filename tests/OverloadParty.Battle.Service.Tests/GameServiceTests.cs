@@ -181,7 +181,7 @@ public class GameServiceTests
             result.GameOver.Should().BeNull();
         }
 
-        [Fact(DisplayName = "投了のアクションを処理すると決着結果が返る")]
+        [Fact(DisplayName = "強制決着のアクションを処理すると決着結果が返る")]
         public async Task Forfeit_ReturnsGameOver()
         {
             var cards = MakePlayerCards();
@@ -194,6 +194,28 @@ public class GameServiceTests
             result.Should().NotBeNull();
             result.GameOver.Should().NotBeNull();
             result.State.Should().NotBeNull();
+        }
+
+        [Fact(DisplayName = "両者強制決着のアクションを処理すると、勝者なし・理由 Disconnect の決着結果が返り、ゲームに永続化される")]
+        public async Task ForfeitBoth_ReturnsDrawGameOver()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
+
+            var state = await _repo.GetGameState(game.GameID);
+
+            var result = await _svc.ProcessAction(game.GameID, state!.ActivePlayer, ActionType.ForfeitBoth, new object());
+
+            result.Should().NotBeNull();
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(0);
+            result.GameOver.Reason.Should().Be(WinReasons.Disconnect);
+            result.State.Should().NotBeNull();
+
+            var persistedGame = await _repo.GetGame(game.GameID);
+            persistedGame!.Status.Should().Be(GameStatus.Finished);
+            persistedGame.WinningPlayerNum.Should().Be(0);
+            persistedGame.WinReason.Should().Be(WinReasons.Disconnect);
         }
 
         [Fact(DisplayName = "フェーズ終了のアクションを処理すると有効な状態が返り決着しない")]

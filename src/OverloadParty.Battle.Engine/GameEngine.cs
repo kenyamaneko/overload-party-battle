@@ -94,27 +94,52 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Forfeit はゲームを即座にフォーフェイト（棄権）で終了します
+    /// Forfeit はゲームを即座に強制決着で終了します
     /// </summary>
     /// <param name="game">The game metadata.</param>
     /// <param name="playerNum">The forfeiting player's number (1 or 2).</param>
     /// <param name="reason">The reason for the forfeit.</param>
     /// <param name="ct">キャンセル用トークン。</param>
-    /// <returns>棄権処理の結果として相手の勝利を表すアクション結果。</returns>
+    /// <returns>強制決着処理の結果として相手の勝利を表すアクション結果。</returns>
     public async Task<ActionResult> Forfeit(
         Game game, long playerNum, WinReason reason,
         CancellationToken ct = default)
     {
-        if (game.Status != GameStatus.Playing)
-        {
-            throw new GameRuleException("game is not in playing state");
-        }
+        EnsurePlaying(game);
 
         var opponentNum = playerNum == 1 ? 2 : 1;
-        await _repo.FinishGame(game.GameID, opponentNum, reason.ToWireString(), ct);
+        return await FinishGameWithResult(game.GameID, opponentNum, reason.ToWireString(), ct);
+    }
+
+    /// <summary>
+    /// ForfeitBoth はゲームを両者強制決着 (勝者なし) で即座に終了します
+    /// </summary>
+    /// <param name="game">The game metadata.</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>引き分けを表すアクション結果。</returns>
+    public async Task<ActionResult> ForfeitBoth(
+        Game game, CancellationToken ct = default)
+    {
+        EnsurePlaying(game);
+
+        return await FinishGameWithResult(game.GameID, 0, WinReason.Disconnect.ToWireString(), ct);
+    }
+
+    /// <summary>
+    /// Persists the game outcome and builds the corresponding action result.
+    /// </summary>
+    /// <param name="gameID">対象ゲームの ID。</param>
+    /// <param name="winnerNum">勝者のプレイヤー番号 (0 は引き分け)。</param>
+    /// <param name="reason">勝敗が確定した理由の wire 文字列。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>勝敗確定情報を含むアクション結果。</returns>
+    private async Task<ActionResult> FinishGameWithResult(
+        string gameID, long winnerNum, string reason, CancellationToken ct)
+    {
+        await _repo.FinishGame(gameID, winnerNum, reason, ct);
         return new ActionResult
         {
-            GameOver = new GameOverResult(opponentNum, reason.ToWireString()),
+            GameOver = new GameOverResult(winnerNum, reason),
         };
     }
 
@@ -131,10 +156,7 @@ public class GameEngine
         Game game, long playerNum, ActionType actionType, object actionData,
         CancellationToken ct = default)
     {
-        if (game.Status != GameStatus.Playing)
-        {
-            throw new GameRuleException("game is not in playing state");
-        }
+        EnsurePlaying(game);
 
         ActionResult actionResult = null!;
 
@@ -229,6 +251,18 @@ public class GameEngine
         }
 
         return actionResult;
+    }
+
+    /// <summary>
+    /// Throws if the game is not in the Playing state.
+    /// </summary>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    private static void EnsurePlaying(Game game)
+    {
+        if (game.Status != GameStatus.Playing)
+        {
+            throw new GameRuleException("game is not in playing state");
+        }
     }
 
     /// <summary>
