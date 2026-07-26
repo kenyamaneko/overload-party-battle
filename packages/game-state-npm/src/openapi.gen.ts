@@ -106,7 +106,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/games/{gameId}/void": {
+    "/api/v1/games/{gameId}/no-game": {
         parameters: {
             query?: never;
             header?: never;
@@ -115,8 +115,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 対戦を無効として終了 (サーバ停止等で対戦が成立しなかった場合。Gateway が停止時処理から呼び出す) */
-        post: operations["voidGame"];
+        /** 対戦をノーゲームとして終了 (サーバ停止等で対戦が成立しなかった場合。Gateway が停止時処理から呼び出す) */
+        post: operations["markNoGame"];
         delete?: never;
         options?: never;
         head?: never;
@@ -968,7 +968,7 @@ export interface operations {
             };
         };
     };
-    voidGame: {
+    markNoGame: {
         parameters: {
             query?: never;
             header?: never;
@@ -979,7 +979,7 @@ export interface operations {
         };
         requestBody?: never;
         responses: {
-            /** @description 無効化成功 */
+            /** @description ノーゲーム化成功 */
             204: {
                 headers: {
                     [name: string]: unknown;

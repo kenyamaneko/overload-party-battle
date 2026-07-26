@@ -303,10 +303,10 @@ api.MapPost("/games/{gameId}/advance-npc", async (GameService gameSvc, string ga
     return Results.Ok(ProjectActionResult(result));
 });
 
-// 対戦の無効化（サーバ停止等で対戦が成立しなかった場合。Gateway が停止時処理から呼び出す）
-api.MapPost("/games/{gameId}/void", async (GameService gameSvc, string gameId) =>
+// 対戦のノーゲーム化（サーバ停止等で対戦が成立しなかった場合。Gateway が停止時処理から呼び出す）
+api.MapPost("/games/{gameId}/no-game", async (GameService gameSvc, string gameId) =>
 {
-    await gameSvc.VoidGame(gameId);
+    await gameSvc.MarkNoGame(gameId);
     return Results.NoContent();
 });
 

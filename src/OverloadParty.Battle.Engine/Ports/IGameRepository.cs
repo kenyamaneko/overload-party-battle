@@ -51,10 +51,10 @@ public interface IGameRepository
     /// <param name="ct">キャンセル用トークン。</param>
     Task FinishGame(string gameID, long winnerNum, string winReason, CancellationToken ct = default);
 
-    /// <summary>Marks the game as voided (no winner, no win reason recorded).</summary>
+    /// <summary>Marks the game as a no-game (no winner, no win reason recorded).</summary>
     /// <param name="gameID">対象のゲーム ID。</param>
     /// <param name="ct">キャンセル用トークン。</param>
-    Task VoidGame(string gameID, CancellationToken ct = default);
+    Task MarkNoGame(string gameID, CancellationToken ct = default);
 
     /// <summary>Returns all events for a game in order.</summary>
     /// <param name="gameID">対象のゲーム ID。</param>

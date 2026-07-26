@@ -15,7 +15,7 @@ const (
 	GameStatusWaiting = "waiting"
 	GameStatusPlaying = "playing"
 	GameStatusFinished = "finished"
-	GameStatusVoided = "voided"
+	GameStatusNoGame = "no_game"
 )
 
 // Win reasons.

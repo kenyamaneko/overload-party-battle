@@ -280,26 +280,26 @@ public class GameEngineTests
         }
     }
 
-    [Trait("対象", "対戦の無効化")]
-    public class VoidGame : Base
+    [Trait("対象", "対戦のノーゲーム化")]
+    public class MarkNoGame : Base
     {
-        [Fact(DisplayName = "進行中の対戦を無効化すると、ステータスが Voided になり勝者・勝因は記録されない")]
-        public async Task VoidGame_TransitionsStatusToVoided_WithoutWinner()
+        [Fact(DisplayName = "進行中の対戦をノーゲームにすると、ステータスが NoGame になり勝者・勝因は記録されない")]
+        public async Task MarkNoGame_TransitionsStatusToNoGame_WithoutWinner()
         {
             var deck = MakeSingleCardDeck("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
 
-            await _engine.VoidGame(game!);
+            await _engine.MarkNoGame(game!);
 
             var got = await _repo.GetGame(gameID);
-            got!.Status.Should().Be(GameStatus.Voided);
+            got!.Status.Should().Be(GameStatus.NoGame);
             got.WinningPlayerNum.Should().BeNull();
             got.WinReason.Should().BeNull();
         }
 
-        [Fact(DisplayName = "投了により決着済みの対戦を無効化しようとすると、GameRuleException を投げる")]
-        public async Task VoidGame_FinishedGame_Throws()
+        [Fact(DisplayName = "投了により決着済みの対戦をノーゲームにしようとすると、GameRuleException を投げる")]
+        public async Task MarkNoGame_FinishedGame_Throws()
         {
             var deck = MakeSingleCardDeck("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
@@ -307,21 +307,21 @@ public class GameEngineTests
             await _engine.Forfeit(game!, 1, WinReason.Surrender);
 
             game = await _repo.GetGame(gameID);
-            var act = () => _engine.VoidGame(game!);
+            var act = () => _engine.MarkNoGame(game!);
 
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
         }
 
-        [Fact(DisplayName = "既に無効化済みの対戦を再度無効化しようとすると、GameRuleException を投げる")]
-        public async Task VoidGame_AlreadyVoidedGame_Throws()
+        [Fact(DisplayName = "既にノーゲーム済みの対戦を再度ノーゲームにしようとすると、GameRuleException を投げる")]
+        public async Task MarkNoGame_AlreadyNoGame_Throws()
         {
             var deck = MakeSingleCardDeck("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
-            await _engine.VoidGame(game!);
+            await _engine.MarkNoGame(game!);
 
             game = await _repo.GetGame(gameID);
-            var act = () => _engine.VoidGame(game!);
+            var act = () => _engine.MarkNoGame(game!);
 
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
         }

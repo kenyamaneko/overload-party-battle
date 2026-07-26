@@ -22,9 +22,9 @@ battle スキーマはゲームエンジンが管理するバトル進行デー�
 | カラム名 | 型 | Nullable | 説明 |
 |---|---|---|---|
 | `game_id` | VARCHAR(26) | No | ULID |
-| `status` | VARCHAR(20) | No | 'waiting' / 'playing' / 'finished' / 'voided' |
+| `status` | VARCHAR(20) | No | 'waiting' / 'playing' / 'finished' / 'no_game' |
 | `first_player` | SMALLINT | No | 先攻プレイヤー番号 (1 or 2) |
-| `winning_player_num` | SMALLINT | Yes | NULL=進行中または無効(status で判別), 0=引分, 1=P1勝, 2=P2勝 |
+| `winning_player_num` | SMALLINT | Yes | NULL=進行中またはノーゲーム(status で判別), 0=引分, 1=P1勝, 2=P2勝 |
 | `win_reason` | TEXT | Yes | 'budget_zero', 'turn_timeout' 等 |
 | `engine_version` | TEXT | No | バトルエンジンバージョン（ゲーム作成時に記録） |
 | `card_data_version` | TEXT | No | カードデータバージョン（ゲーム作成時に記録） |

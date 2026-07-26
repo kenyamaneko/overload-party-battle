@@ -20,7 +20,7 @@ game_status:
 - waiting
 - playing
 - finished
-- voided
+- no_game
 
 win_reasons:
 - budget_zero

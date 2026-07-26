@@ -33,9 +33,9 @@ $$ LANGUAGE plpgsql;
 
 CREATE TABLE battle.games (
   game_id              VARCHAR(26) NOT NULL,           -- ULID
-  status               VARCHAR(20) NOT NULL,           -- 'waiting' / 'playing' / 'finished' / 'voided'
+  status               VARCHAR(20) NOT NULL,           -- 'waiting' / 'playing' / 'finished' / 'no_game'
   first_player         SMALLINT NOT NULL,              -- 先攻プレイヤー番号 (1 or 2)
-  winning_player_num   SMALLINT,                       -- NULL=進行中または無効(status で判別), 0=引分, 1=P1勝, 2=P2勝
+  winning_player_num   SMALLINT,                       -- NULL=進行中またはノーゲーム(status で判別), 0=引分, 1=P1勝, 2=P2勝
   win_reason           TEXT,                           -- 'budget_zero', 'turn_timeout' 等
   engine_version       TEXT NOT NULL DEFAULT '',        -- バトルエンジンバージョン（ゲーム作成時に記録）
   card_data_version    TEXT NOT NULL DEFAULT '',        -- カードデータバージョン（ゲーム作成時に記録）

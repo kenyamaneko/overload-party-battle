@@ -217,17 +217,17 @@ public class GameService
     }
 
     /// <summary>
-    /// サーバ停止等で対戦が成立しなかった場合に、対戦を無効として終了する。
+    /// サーバ停止等で対戦が成立しなかった場合に、対戦をノーゲームとして終了する。
     /// </summary>
     /// <param name="gameID">対象 Game の ID。</param>
     /// <param name="ct">キャンセル用トークン。</param>
     /// <returns>非同期処理を表すタスク。</returns>
-    public async Task VoidGame(string gameID, CancellationToken ct = default)
+    public async Task MarkNoGame(string gameID, CancellationToken ct = default)
     {
         var game = await _gameRepo.GetGame(gameID, ct)
             ?? throw new GameRuleException($"game {gameID} not found");
 
-        await _engine.VoidGame(game, ct);
+        await _engine.MarkNoGame(game, ct);
     }
 
     // ─── State queries ──────────────────────────────────────────

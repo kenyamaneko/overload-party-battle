@@ -48,8 +48,8 @@ public class GameLogService
             ? (long)(game.FinishedAt.Value - game.CreatedAt).TotalSeconds
             : (long?)null;
 
-        var winnerLabel = game.Status == GameStatus.Voided
-            ? GameStatus.Voided.ToWireString()
+        var winnerLabel = game.Status == GameStatus.NoGame
+            ? GameStatus.NoGame.ToWireString()
             : game.WinningPlayerNum switch
             {
                 null or 0 => null,
@@ -114,8 +114,8 @@ public class GameLogService
 
         // 勝者/所要時間
         var winReason = game.WinReason ?? FindWinReasonFromEvents(events);
-        var winnerTag = game.Status == GameStatus.Voided
-            ? "Voided"
+        var winnerTag = game.Status == GameStatus.NoGame
+            ? "No Game"
             : game.WinningPlayerNum switch
             {
                 null => "N/A",
@@ -268,9 +268,9 @@ public class GameLogService
 
     private string DescribeGameOver(Game game)
     {
-        if (game.Status == GameStatus.Voided)
+        if (game.Status == GameStatus.NoGame)
         {
-            return "Game over: Voided";
+            return "Game over: No Game";
         }
 
         return game.WinningPlayerNum switch

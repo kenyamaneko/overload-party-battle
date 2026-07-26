@@ -107,13 +107,13 @@ public class FakeGameRepository : IGameRepository
         return Task.CompletedTask;
     }
 
-    public Task VoidGame(string gameID, CancellationToken ct = default)
+    public Task MarkNoGame(string gameID, CancellationToken ct = default)
     {
         lock (_lock)
         {
             if (_games.TryGetValue(gameID, out var game))
             {
-                game.Status = GameStatus.Voided;
+                game.Status = GameStatus.NoGame;
                 game.FinishedAt = DateTime.UtcNow;
             }
         }

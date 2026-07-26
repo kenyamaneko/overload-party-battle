@@ -3,7 +3,7 @@
 export const PHASES = ["draw", "main", "battle", "end"] as const;
 export type GamePhase = (typeof PHASES)[number] | 'selecting';
 
-export const GAME_STATUS = ["waiting", "playing", "finished", "voided"] as const;
+export const GAME_STATUS = ["waiting", "playing", "finished", "no_game"] as const;
 export type GameStatus = (typeof GAME_STATUS)[number];
 
 export const WIN_REASONS = ["budget_zero", "system_down", "deck_out", "turn_timeout", "disconnect", "turn_limit", "draw", "launch_failure", "surrender"] as const;

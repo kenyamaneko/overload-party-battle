@@ -129,15 +129,15 @@ paths:
         "500":
           description: 内部エラー
 
-  /api/v1/games/{gameId}/void:
+  /api/v1/games/{gameId}/no-game:
     post:
-      operationId: voidGame
-      summary: 対戦を無効として終了 (サーバ停止等で対戦が成立しなかった場合。Gateway が停止時処理から呼び出す)
+      operationId: markNoGame
+      summary: 対戦をノーゲームとして終了 (サーバ停止等で対戦が成立しなかった場合。Gateway が停止時処理から呼び出す)
       parameters:
         - $ref: "#/components/parameters/GameIdPath"
       responses:
         "204":
-          description: 無効化成功
+          description: ノーゲーム化成功
         "400":
           description: 対戦が進行中でない (GameRuleException)
         "500":

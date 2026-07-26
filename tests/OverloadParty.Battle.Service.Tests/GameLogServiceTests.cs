@@ -86,14 +86,14 @@ public class GameLogServiceTests
             return "test-game";
         }
 
-        protected async Task<string> SeedVoidedGame()
+        protected async Task<string> SeedNoGame()
         {
             var game = TestFactory.MakeGame();
             game.CreatedAt = new DateTime(2026, 3, 1, 10, 0, 0, DateTimeKind.Utc);
             var state = TestFactory.MakeGameState(turn: 3, p1Budget: 800, p2Budget: 900);
 
             await _repo.CreateGame(game, state);
-            await _repo.VoidGame("test-game");
+            await _repo.MarkNoGame("test-game");
             return "test-game";
         }
     }
@@ -124,14 +124,14 @@ public class GameLogServiceTests
             log.Entries.Should().HaveCount(4);
         }
 
-        [Fact(DisplayName = "無効化された対戦の構造化ログでは、勝者が引き分けとも決着済みの勝敗とも異なる値になる")]
-        public async Task VoidedGame_WinnerDiffersFromDrawAndDecidedOutcomes()
+        [Fact(DisplayName = "ノーゲームになった対戦の構造化ログでは、勝者が引き分けとも決着済みの勝敗とも異なる値になる")]
+        public async Task NoGame_WinnerDiffersFromDrawAndDecidedOutcomes()
         {
-            var gameId = await SeedVoidedGame();
+            var gameId = await SeedNoGame();
             var log = await _svc.GetGameLog(gameId);
 
             log.Should().NotBeNull();
-            log!.Winner.Should().Be("voided");
+            log!.Winner.Should().Be("no_game");
         }
 
         [Fact(DisplayName = "構造化ログの各エントリが対応するイベントのデータを含む")]
@@ -186,14 +186,14 @@ public class GameLogServiceTests
             text.Should().Contain("600");
         }
 
-        [Fact(DisplayName = "無効化された対戦のテキストログには Voided と載り、Draw にも N/A にもならない")]
-        public async Task VoidedGame_ShowsVoided_NotDrawOrNotApplicable()
+        [Fact(DisplayName = "ノーゲームになった対戦のテキストログには No Game と載り、Draw にも N/A にもならない")]
+        public async Task NoGame_ShowsNoGame_NotDrawOrNotApplicable()
         {
-            var gameId = await SeedVoidedGame();
+            var gameId = await SeedNoGame();
             var text = await _svc.GetGameLogText(gameId);
 
             text.Should().NotBeNull();
-            text.Should().Contain("Voided");
+            text.Should().Contain("No Game");
             text.Should().NotContain("Draw");
             text.Should().NotContain("N/A");
         }

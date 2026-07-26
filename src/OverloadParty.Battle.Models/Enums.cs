@@ -56,7 +56,7 @@ public enum GameStatus
 {
     Playing,
     Finished,
-    Voided
+    NoGame
 }
 
 /// <summary>

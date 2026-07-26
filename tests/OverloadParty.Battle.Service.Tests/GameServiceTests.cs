@@ -246,38 +246,38 @@ public class GameServiceTests
         }
     }
 
-    [Trait("対象", "対戦の無効化")]
-    public class VoidGame : Base
+    [Trait("対象", "対戦のノーゲーム化")]
+    public class MarkNoGame : Base
     {
-        [Fact(DisplayName = "進行中の対戦を無効化すると、ステータスが Voided になる")]
-        public async Task VoidsGame_TransitionsStatusToVoided()
+        [Fact(DisplayName = "進行中の対戦をノーゲームにすると、ステータスが NoGame になる")]
+        public async Task MarksGameAsNoGame_TransitionsStatusToNoGame()
         {
             var cards = MakePlayerCards();
             var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
 
-            await _svc.VoidGame(game.GameID);
+            await _svc.MarkNoGame(game.GameID);
 
             var got = await _repo.GetGame(game.GameID);
-            got!.Status.Should().Be(GameStatus.Voided);
+            got!.Status.Should().Be(GameStatus.NoGame);
         }
 
-        [Fact(DisplayName = "存在しないゲーム ID を無効化しようとすると、game not found の GameRuleException を投げる")]
-        public async Task VoidsGame_UnknownGameID_ThrowsNotFound()
+        [Fact(DisplayName = "存在しないゲーム ID をノーゲームにしようとすると、game not found の GameRuleException を投げる")]
+        public async Task MarksGameAsNoGame_UnknownGameID_ThrowsNotFound()
         {
-            var act = () => _svc.VoidGame("nonexistent-game-id");
+            var act = () => _svc.MarkNoGame("nonexistent-game-id");
 
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not found*");
         }
 
-        [Fact(DisplayName = "決着済みの対戦を無効化しようとすると、not in playing state の GameRuleException を投げる")]
-        public async Task VoidsGame_FinishedGame_ThrowsNotPlaying()
+        [Fact(DisplayName = "決着済みの対戦をノーゲームにしようとすると、not in playing state の GameRuleException を投げる")]
+        public async Task MarksGameAsNoGame_FinishedGame_ThrowsNotPlaying()
         {
             var cards = MakePlayerCards();
             var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
             var state = await _repo.GetGameState(game.GameID);
             await _svc.ProcessAction(game.GameID, state!.ActivePlayer, ActionType.Forfeit, new ForfeitRequest { Reason = WinReasons.Surrender });
 
-            var act = () => _svc.VoidGame(game.GameID);
+            var act = () => _svc.MarkNoGame(game.GameID);
 
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*not in playing state*");
         }
