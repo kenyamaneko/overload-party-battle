@@ -181,7 +181,7 @@ public class GameServiceTests
             result.GameOver.Should().BeNull();
         }
 
-        [Fact(DisplayName = "投了のアクションを処理すると決着結果が返る")]
+        [Fact(DisplayName = "強制決着のアクションを処理すると決着結果が返る")]
         public async Task Forfeit_ReturnsGameOver()
         {
             var cards = MakePlayerCards();
@@ -196,7 +196,7 @@ public class GameServiceTests
             result.State.Should().NotBeNull();
         }
 
-        [Fact(DisplayName = "両者投了のアクションを処理すると、勝者なし・理由 Disconnect の決着結果が返り、ゲームに永続化される")]
+        [Fact(DisplayName = "両者強制決着のアクションを処理すると、勝者なし・理由 Disconnect の決着結果が返り、ゲームに永続化される")]
         public async Task ForfeitBoth_ReturnsDrawGameOver()
         {
             var cards = MakePlayerCards();

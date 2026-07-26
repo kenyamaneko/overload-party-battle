@@ -201,7 +201,7 @@ public class GameEngineTests
         }
     }
 
-    [Trait("対象", "アクションの検証と投了")]
+    [Trait("対象", "アクションの検証と強制決着")]
     public class ProcessActionValidation : Base
     {
         [Fact(DisplayName = "自分のターンでないプレイヤーがアクションすると、GameRuleException を投げる")]
@@ -242,7 +242,7 @@ public class GameEngineTests
             act.Should().Throw<ArgumentOutOfRangeException>();
         }
 
-        [Fact(DisplayName = "プレイヤー 1 が投了すると、相手を勝者・理由 Surrender としてゲームが即座に終了する")]
+        [Fact(DisplayName = "プレイヤー 1 が強制決着すると、相手を勝者・理由 Surrender としてゲームが即座に終了する")]
         public async Task Forfeit_EndsGameImmediately()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -280,10 +280,10 @@ public class GameEngineTests
         }
     }
 
-    [Trait("対象", "両者投了の処理")]
+    [Trait("対象", "両者強制決着の処理")]
     public class ProcessForfeitBoth : Base
     {
-        [Fact(DisplayName = "両者投了すると、勝者なし・理由 Disconnect としてゲームが即座に終了する")]
+        [Fact(DisplayName = "両者強制決着すると、勝者なし・理由 Disconnect としてゲームが即座に終了する")]
         public async Task ForfeitBoth_EndsGameAsDraw()
         {
             var deck = MakeSingleCardDeck("TST-0001");
@@ -302,7 +302,7 @@ public class GameEngineTests
             game.WinReason.Should().Be(WinReasons.Disconnect);
         }
 
-        [Fact(DisplayName = "終了済みゲームで両者投了すると、GameRuleException を投げる")]
+        [Fact(DisplayName = "終了済みゲームで両者強制決着すると、GameRuleException を投げる")]
         public async Task ForfeitBoth_FinishedGame_Throws()
         {
             var deck = MakeSingleCardDeck("TST-0001");

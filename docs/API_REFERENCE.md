@@ -109,8 +109,8 @@ PvP 戦を作成する。マッチメイキング後に Gateway が呼び出す�
 | `use_initiative` | `{kind, choiceData?}` | プロダクトの施策（ルーチン / スペシャル）を発動 |
 | `discard_hand` | `{cardInstanceIds}` | 手札を破棄（end フェーズ、手札 > 6 枚時） |
 | `end_phase` | `{}` | フェーズを終了 |
-| `forfeit` | `{reason}` | 降参 |
-| `forfeit_both` | `{}` | 両者投了。勝者なし・理由 `disconnect` で終了（勝敗判定に `player_num` は使われないが、応答の `state` はその視点で構築されるため 1 か 2 を渡す） |
+| `forfeit` | `{reason}` | 強制決着。理由は `turn_timeout` / `disconnect` / `surrender` のいずれかを指定する（省略不可） |
+| `forfeit_both` | `{}` | 両者強制決着。勝者なし・理由 `disconnect` で終了（勝敗判定に `player_num` は使われないが、応答の `state` はその視点で構築されるため 1 か 2 を渡す） |
 | `select_slot` | `{zone, index}` | 効果デプロイのスロット選択に応答 |
 | `resolve_pending_choice` | `{chosen_id}` | 効果処理中の選択を解決 |
 

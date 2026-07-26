@@ -94,13 +94,13 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Forfeit はゲームを即座にフォーフェイト（棄権）で終了します
+    /// Forfeit はゲームを即座に強制決着で終了します
     /// </summary>
     /// <param name="game">The game metadata.</param>
     /// <param name="playerNum">The forfeiting player's number (1 or 2).</param>
     /// <param name="reason">The reason for the forfeit.</param>
     /// <param name="ct">キャンセル用トークン。</param>
-    /// <returns>棄権処理の結果として相手の勝利を表すアクション結果。</returns>
+    /// <returns>強制決着処理の結果として相手の勝利を表すアクション結果。</returns>
     public async Task<ActionResult> Forfeit(
         Game game, long playerNum, WinReason reason,
         CancellationToken ct = default)
@@ -112,7 +112,7 @@ public class GameEngine
     }
 
     /// <summary>
-    /// ForfeitBoth はゲームを両者投了 (勝者なし) で即座に終了します
+    /// ForfeitBoth はゲームを両者強制決着 (勝者なし) で即座に終了します
     /// </summary>
     /// <param name="game">The game metadata.</param>
     /// <param name="ct">キャンセル用トークン。</param>
