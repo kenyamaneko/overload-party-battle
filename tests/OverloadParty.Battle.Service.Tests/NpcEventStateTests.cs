@@ -166,6 +166,25 @@ public class NpcEventStateTests
         }
     }
 
+    [Trait("対象", "NPC ターン終了時の turn_start イベント")]
+    public class TurnStartEvent : Base
+    {
+        [Fact(DisplayName = "ターンが自分に切り替わったとき、turn_start イベントの自分のターン判定が true になる")]
+        public async Task IsMyTurn_BecomesTrue_WhenTurnSwitchesToPlayer()
+        {
+            var result = await RunNpcTurn();
+
+            // RunNpcTurn loops until control returns to the human player, so the
+            // last turn_start event emitted is necessarily the switch back to them.
+            var turnStartEvent = result.Events
+                .LastOrDefault(e => e.Event.EventType == EventTypes.TurnStart);
+
+            turnStartEvent.Should().NotBeNull("NPC turn completion should emit a turn_start event");
+            turnStartEvent!.Event.EventData.Should().BeOfType<TurnStartEventData>()
+                .Which.IsMyTurn.Should().BeTrue("turn switched to the human player");
+        }
+    }
+
     [Trait("対象", "NPC の逐次アクション譲渡とカード秘匿")]
     public class YieldMode : Base
     {

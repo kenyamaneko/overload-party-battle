@@ -54,6 +54,150 @@ public class GameStateViewTests
             result.MyView.TrashCount.Should().Be(1);
             result.MyView.Trash.Should().HaveCount(1);
         }
+
+        [Fact(DisplayName = "自分のビューのリソースに、ランク・ダメージ・デプロイ順・攻撃済みなどの盤面状態がそのまま載る")]
+        public void ResourceCarriesBoardStateFields()
+        {
+            var state = TestFactory.MakeGameState();
+            var res = new DeployedResource
+            {
+                InstanceID = "inst_1",
+                CardID = "TST-0001",
+                ArtNo = 2,
+                Rank = Rank.Medium,
+                InstanceFamily = InstanceFamily.M,
+                FaceUp = true,
+                Damage = 200,
+                DeployedOnTurn = 3,
+                DeployOrder = 2,
+                HasAttacked = true,
+                EffectUsedThisTurn = true,
+                MonetizedAmount = 300,
+                ElasticBonus = 150,
+                LastAttackTurn = 3,
+            };
+            state.Player1Field.Frontend[0] = res;
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            var mapped = result.MyView.Field.Frontend[0]!;
+            mapped.Rank.Should().Be("medium");
+            mapped.InstanceFamily.Should().Be("M");
+            mapped.Damage.Should().Be(200);
+            mapped.DeployedOnTurn.Should().Be(3);
+            mapped.DeployOrder.Should().Be(2);
+            mapped.HasAttacked.Should().BeTrue();
+            mapped.EffectUsedThisTurn.Should().BeTrue();
+            mapped.MonetizedAmount.Should().Be(300);
+            mapped.ElasticBonus.Should().Be(150);
+            mapped.LastAttackTurn.Should().Be(3);
+            mapped.ArtNo.Should().Be(2);
+        }
+
+        [Fact(DisplayName = "一時効果を持つリソースのビューに、一時効果が載る")]
+        public void ResourceWithTemporaryEffect_CarriesTemporaryEffect()
+        {
+            var state = TestFactory.MakeGameState();
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "inst_te", faceUp: true);
+            res.TemporaryEffects.Add(new TemporaryEffect
+            {
+                EffectType = EffectTypes.BuffTP,
+                Value = 200,
+                Duration = "this_turn",
+                SourceID = "src_1",
+                Mode = "",
+            });
+            state.Player1Field.Frontend[0] = res;
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            var mapped = result.MyView.Field.Frontend[0]!;
+            mapped.TemporaryEffects.Should().ContainSingle();
+            mapped.TemporaryEffects[0].EffectType.Should().Be(EffectTypes.BuffTP);
+            mapped.TemporaryEffects[0].Value.Should().Be(200);
+            mapped.TemporaryEffects[0].Duration.Should().Be("this_turn");
+            mapped.TemporaryEffects[0].SourceID.Should().Be("src_1");
+        }
+    }
+
+    [Trait("対象", "選択待ちの表示")]
+    public class PendingSelectionView : Base
+    {
+        [Fact(DisplayName = "スロット選択待ちのプレイヤーのビューに、対象リソースと配置可能ゾーンが載る")]
+        public void SlotSelectPending_ShowsResourceAndValidZones()
+        {
+            var state = TestFactory.MakeGameState();
+            state.PendingSlotSelects =
+            [
+                new AwaitingSlotSelect
+                {
+                    PlayerNum = 1,
+                    Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0001" },
+                    ValidZones = ["frontend_0", "frontend_1"],
+                },
+            ];
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.PendingSlotSelect.Should().NotBeNull();
+            result.MyView.PendingSlotSelect!.Resource.CardID.Should().Be("TST-0001");
+            result.MyView.PendingSlotSelect.ValidZones.Should().Equal("frontend_0", "frontend_1");
+        }
+
+        [Fact(DisplayName = "スロット選択待ちでない相手のビューには、スロット選択待ちが載らない")]
+        public void SlotSelectPending_OpponentViewHasNoPendingSelect()
+        {
+            var state = TestFactory.MakeGameState();
+            state.PendingSlotSelects =
+            [
+                new AwaitingSlotSelect
+                {
+                    PlayerNum = 1,
+                    Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0001" },
+                    ValidZones = ["frontend_0"],
+                },
+            ];
+
+            var result = GameStateView.Build(state, _game, 2, _cc, new EffectRegistry());
+
+            result.MyView.PendingSlotSelect.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "効果中選択の待ちがあるとき、ビューに選択者・効果カード・選択種別が載る")]
+        public void EffectChoicePending_ShowsChooserCardAndKind()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "c_1", CardID = "TST-0001" });
+            state.PendingEffectChoice = new PendingEffectChoice
+            {
+                ChooserPlayerNum = 1,
+                OwnerPlayerNum = 1,
+                EffectCardId = "TST-0002",
+                EffectInstanceId = "inst_2",
+                Trigger = TriggerType.Ignition,
+                ChoiceKey = "deckTop",
+                ChoiceKind = ChoiceKinds.DeckTop,
+                Candidates = ["c_1"],
+            };
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.PendingEffectChoice.Should().NotBeNull();
+            result.PendingEffectChoice!.ChooserPlayerNum.Should().Be(1);
+            result.PendingEffectChoice.EffectCardId.Should().Be("TST-0002");
+            result.PendingEffectChoice.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
+        }
+
+        [Fact(DisplayName = "選択待ちが無いとき、ビューの選択待ちは null になる")]
+        public void NoPending_BothViewsAreNull()
+        {
+            var state = TestFactory.MakeGameState();
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.PendingSlotSelect.Should().BeNull();
+            result.PendingEffectChoice.Should().BeNull();
+        }
     }
 
     [Trait("対象", "相手のビュー")]
