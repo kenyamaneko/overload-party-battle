@@ -219,6 +219,97 @@ public class NpcAiTests
         discards.Should().Equal("h_nt9", "h_tk5");
     }
 
+    [Trait("対象", "手札調整のカードタイプ順序")]
+    public class DiscardTypeOrdering
+    {
+        private static AiConfig MakeDiscardOrderingConfig()
+        {
+            return AiConfigLoader.LoadFromString("""
+                model: test
+                faction: SHE
+                deploy:
+                  priorities:
+                    - card_id: TST-0001
+                      priority: 80
+                attachments:
+                  TST-0006:
+                    priority: 50
+                reactive:
+                  max_slots: 2
+                  priorities:
+                    TST-0400: 50
+                """);
+        }
+
+        [Fact(DisplayName = "手札がアタッチメント・リソース・ストラテジー各 1 枚で 2 枚捨てるとき、アタッチメント→リソースの順に捨ててストラテジーを残す")]
+        public void AttachmentThenResource_BeforeStrategy()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            cc.Add(TestFactory.AttachmentCard(cardId: "TST-0006"));
+            cc.Add(new CardDefinition { CardId = "TST-0700", CardName = "TestStrategy", CardType = CardTypes.Strategy });
+            var ai = new NpcAi(MakeDiscardOrderingConfig(), cc, new StubEffectRegistry());
+            var hand = new List<GD.UndeployedCard>
+            {
+                new() { InstanceID = "h_att", CardID = "TST-0006" },
+                new() { InstanceID = "h_res", CardID = "TST-0001" },
+                new() { InstanceID = "h_str", CardID = "TST-0700" },
+            };
+            var state = BuildState(phase: "end", hand: hand);
+
+            var discards = ai.DecideDiscard(state, 2);
+
+            discards.Should().Equal("h_att", "h_res");
+        }
+
+        [Fact(DisplayName = "手札がリアクティブとインシデントで 1 枚捨てるとき、リアクティブを捨てる")]
+        public void ReactiveBeforeIncident()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ReactiveCard(cardId: "TST-0400"));
+            cc.Add(new CardDefinition { CardId = "TST-0800", CardName = "TestIncident", CardType = CardTypes.Incident });
+            var ai = new NpcAi(MakeDiscardOrderingConfig(), cc, new StubEffectRegistry());
+            var hand = new List<GD.UndeployedCard>
+            {
+                new() { InstanceID = "h_rea", CardID = "TST-0400" },
+                new() { InstanceID = "h_inc", CardID = "TST-0800" },
+            };
+            var state = BuildState(phase: "end", hand: hand);
+
+            var discards = ai.DecideDiscard(state, 1);
+
+            discards.Should().Equal("h_rea");
+        }
+
+        [Fact(DisplayName = "attachments 設定に無いアタッチメントを含む手札を調整すると、InvalidOperationException になる")]
+        public void UnconfiguredAttachment_Throws()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.AttachmentCard(cardId: "TST-0006"));
+            var ai = new NpcAi(MakeConfig(), cc, new StubEffectRegistry());
+            var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_att", CardID = "TST-0006" } };
+            var state = BuildState(phase: "end", hand: hand);
+
+            var act = () => ai.DecideDiscard(state, 1);
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*TST-0006*");
+        }
+
+        [Fact(DisplayName = "reactive 設定に無いリアクティブを含む手札を調整すると、InvalidOperationException になる")]
+        public void UnconfiguredReactive_Throws()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ReactiveCard(cardId: "TST-0400"));
+            var ai = new NpcAi(MakeConfig(), cc, new StubEffectRegistry());
+            var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_rea", CardID = "TST-0400" } };
+            var state = BuildState(phase: "end", hand: hand);
+
+            var act = () => ai.DecideDiscard(state, 1);
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*TST-0400*");
+        }
+    }
+
     // ═══════════════════════════════════════════════════════════════
     //  バトルフェーズ
     // ═══════════════════════════════════════════════════════════════
@@ -320,6 +411,40 @@ public class NpcAiTests
             .Should().BeEquivalentTo(new[] { "atk1", "atk2" }, "2 体のリソースがそれぞれ攻撃する");
         attacks.Should().OnlyContain(a => ((AttackRequest)a.Data).TargetInstanceID == "target",
             "唯一の相手リソースが両方の攻撃の対象になる");
+    }
+
+    [Fact(DisplayName = "攻撃アクションに有効な対象が無いとき、例外になる")]
+    public void Battle_NoValidTargets_Throws()
+    {
+        var ai = new NpcAi(MakeConfig(), _cc, _effects);
+        var available = new List<GD.AvailableAction>
+        {
+            new GD.AttackAction { SourceInstanceID = "atk1", ValidTargets = new() },
+        };
+        var state = BuildState(phase: "battle", available: available);
+
+        var act = () => ai.DecideBattlePhaseActions(state);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*no valid targets*");
+    }
+
+    [Fact(DisplayName = "攻撃対象の選択設定が無いとき、例外になる")]
+    public void Battle_NoAttackTargetSelectionConfig_Throws()
+    {
+        var config = AiConfigLoader.LoadFromString("""
+            model: test
+            faction: SHE
+            """);
+        var ai = new NpcAi(config, _cc, _effects);
+        var available = new List<GD.AvailableAction>
+        {
+            new GD.AttackAction { SourceInstanceID = "atk1", ValidTargets = new() { "target" } },
+        };
+        var state = BuildState(phase: "battle", available: available);
+
+        var act = () => ai.DecideBattlePhaseActions(state);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*No attack target selection configured*");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -433,6 +558,60 @@ public class NpcAiTests
         var state = BuildState(pendingEffectChoice: pending, available: new List<GD.AvailableAction>());
 
         ai.DecidePendingEffectChoice(state).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "効果中選択の候補が 0 件のとき、例外になる")]
+    public void PendingEffectChoice_NoChoiceOptions_Throws()
+    {
+        var ai = new NpcAi(MakeConfig(), _cc, _effects);
+        var pending = new GD.PendingEffectChoiceView
+        {
+            ChooserPlayerNum = 1,
+            EffectCardId = "TST-0002",
+            EffectInstanceId = "inst_1",
+            ChoiceKind = ChoiceKinds.HandCard,
+        };
+        var available = new List<GD.AvailableAction>
+        {
+            new GD.ResolvePendingChoiceAction
+            {
+                EffectCardId = "TST-0002",
+                ChoiceKind = ChoiceKinds.HandCard,
+                ChoiceOptions = [],
+            },
+        };
+        var state = BuildState(pendingEffectChoice: pending, available: available);
+
+        var act = () => ai.DecidePendingEffectChoice(state);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*no choice options*");
+    }
+
+    [Fact(DisplayName = "未知の選択種別のとき、例外になる")]
+    public void PendingEffectChoice_UnknownChoiceKind_Throws()
+    {
+        var ai = new NpcAi(MakeConfig(), _cc, _effects);
+        var pending = new GD.PendingEffectChoiceView
+        {
+            ChooserPlayerNum = 1,
+            EffectCardId = "TST-0002",
+            EffectInstanceId = "inst_1",
+            ChoiceKind = "TST-unknown",
+        };
+        var available = new List<GD.AvailableAction>
+        {
+            new GD.ResolvePendingChoiceAction
+            {
+                EffectCardId = "TST-0002",
+                ChoiceKind = "TST-unknown",
+                ChoiceOptions = [new GD.ChoiceOption { Key = "TST-0001" }],
+            },
+        };
+        var state = BuildState(pendingEffectChoice: pending, available: available);
+
+        var act = () => ai.DecidePendingEffectChoice(state);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*Unknown choice kind*");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -611,6 +790,35 @@ public class NpcAiTests
             act.Should().Throw<InvalidOperationException>()
                 .WithMessage("*No branch choice configured*TST-9999*");
         }
+
+        [Fact(DisplayName = "設定した分岐回答が候補に無いとき、例外を投げる")]
+        public void ConfiguredChoiceNotInOptions_Throws()
+        {
+            var ai = new NpcAi(MakeConfig(), new TestCardCache(), new StubEffectRegistry());
+            var pending = new GD.PendingEffectChoiceView
+            {
+                ChooserPlayerNum = 1,
+                EffectCardId = "TST-0007",
+                EffectInstanceId = "inst_1",
+                ChoiceKind = ChoiceKinds.Branch,
+            };
+            // config は "use" を指すが、候補には "keep" しか無い。
+            var available = new List<GD.AvailableAction>
+            {
+                new GD.ResolvePendingChoiceAction
+                {
+                    EffectCardId = "TST-0007",
+                    ChoiceKind = ChoiceKinds.Branch,
+                    ChoiceOptions = [new GD.ChoiceOption { Key = "keep" }],
+                },
+            };
+            var state = BuildState(pendingEffectChoice: pending, available: available);
+
+            var act = () => ai.DecidePendingEffectChoice(state);
+
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*use*not an available option*");
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -643,6 +851,75 @@ public class NpcAiTests
     public void Deploy_ZonePreference_DataPrefersBackend()
     {
         var ai = new NpcAi(MakeConfig(), _cc, _effects);
+        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-0003" } };
+        var available = new List<GD.AvailableAction>
+        {
+            new GD.PlayCardAction
+            {
+                HandInstanceID = "h_db", CardID = "TST-0003",
+                ValidZones = new() { "frontend_0", "backend_0" },
+            },
+        };
+        var state = BuildState(hand: hand, available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+        var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
+        var req = (PlayCardRequest)deploy.Data;
+
+        req.Zone.Should().Be("backend");
+    }
+
+    [Fact(DisplayName = "オブジェクトストレージは、専用のゾーン設定に従いフロントエンドへデプロイされる")]
+    public void Deploy_ZonePreference_ObjectStoragePrefersFrontend()
+    {
+        _cc.Add(TestFactory.DataCard(cardId: "TST-0500", subtype: "ObjectStorage"));
+        var config = AiConfigLoader.LoadFromString("""
+            model: test
+            faction: SHE
+            budget:
+              maintenance_limit_ratio: 0.8
+            deploy:
+              zone_preferences:
+                DataResource: [backend]
+                ObjectStorage: [frontend]
+            scale_up:
+              order_by: tp_desc
+            """);
+        var ai = new NpcAi(config, _cc, _effects);
+        var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_os", CardID = "TST-0500" } };
+        var available = new List<GD.AvailableAction>
+        {
+            new GD.PlayCardAction
+            {
+                HandInstanceID = "h_os", CardID = "TST-0500",
+                ValidZones = new() { "backend_0", "frontend_0" },
+            },
+        };
+        var state = BuildState(hand: hand, available: available);
+
+        var actions = ai.DecideMainPhaseActions(state);
+        var deploy = actions.First(a => a.ActionType == ActionTypes.PlayCard);
+        var req = (PlayCardRequest)deploy.Data;
+
+        req.Zone.Should().Be("frontend");
+    }
+
+    [Fact(DisplayName = "データベースは、Data系のゾーン設定に従いバックエンドへデプロイされる")]
+    public void Deploy_ZonePreference_DatabasePrefersBackendAlongsideObjectStorageConfig()
+    {
+        var config = AiConfigLoader.LoadFromString("""
+            model: test
+            faction: SHE
+            budget:
+              maintenance_limit_ratio: 0.8
+            deploy:
+              zone_preferences:
+                DataResource: [backend]
+                ObjectStorage: [frontend]
+            scale_up:
+              order_by: tp_desc
+            """);
+        var ai = new NpcAi(config, _cc, _effects);
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-0003" } };
         var available = new List<GD.AvailableAction>
         {

@@ -267,6 +267,59 @@ public class AiConfigLoaderTests
         config.EffectPriorities["draw"].HandThreshold.Should().Be(3);
     }
 
+    [Fact(DisplayName = "効果優先度が数値でない設定を読むと、数値変換に失敗して例外になる")]
+    public void LoadFromString_EffectPriority_NonNumericScalar_Throws()
+    {
+        var yaml = """
+            model: test
+            faction: SHE
+            effect_priorities:
+              budget_gain: TST-abc
+            """;
+
+        var act = () => AiConfigLoader.LoadFromString(yaml);
+
+        act.Should().Throw<YamlDotNet.Core.YamlException>()
+            .WithInnerException<FormatException>();
+    }
+
+    [Fact(DisplayName = "不正な設定ファイルを含むディレクトリを一括読み込みすると、ファイル名付きの例外になる")]
+    public void LoadAll_DirectoryWithInvalidYaml_ThrowsWithFileName()
+    {
+        var dir = Directory.CreateTempSubdirectory("battle-ai-config-tests-").FullName;
+        try
+        {
+            var invalidFile = Path.Combine(dir, "broken.yaml");
+            File.WriteAllText(invalidFile, "model: [unterminated");
+
+            var act = () => AiConfigLoader.LoadAll(dir);
+
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage($"*Failed to load AI config from*{Path.GetFileName(invalidFile)}*");
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact(DisplayName = "min_targets 付きの効果優先度を読み込むと、その値が設定に載る")]
+    public void LoadFromString_EffectPriority_MinTargets()
+    {
+        var yaml = """
+            model: test
+            faction: SHE
+            effect_priorities:
+              aoe_damage:
+                priority: 500
+                min_targets: 2
+            """;
+
+        var config = AiConfigLoader.LoadFromString(yaml);
+
+        config.EffectPriorities["aoe_damage"].MinTargets.Should().Be(2);
+    }
+
     [Fact(DisplayName = "ディレクトリ内の全 YAML を読み込み、8 件の設定を得る")]
     public void LoadAll_LoadsAllYamlFiles()
     {

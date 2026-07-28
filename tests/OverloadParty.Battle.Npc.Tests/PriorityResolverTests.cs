@@ -275,6 +275,176 @@ public class PriorityResolverTests
             use.Should().BeFalse();
         }
 
+        [Fact(DisplayName = "インサイト吸収は、相手リソースが 0 体のとき使用不可を返す")]
+        public void InsightAbsorb_NoOpponentResources_NotUsable()
+        {
+            var ctx = MakeCtx(); // empty opponent field
+            var config = MakeConfig(new()
+            {
+                ["insight_absorb"] = new EffectPriorityEntry { Priority = 60 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.InsightAbsorb, info, ctx, config, _cc);
+
+            use.Should().BeFalse();
+        }
+
+        [Fact(DisplayName = "インサイト吸収は、相手リソースが 1 体のとき使用可を返す")]
+        public void InsightAbsorb_WithOpponentResource_Usable()
+        {
+            var oppField = TestFactory.MakeWireOpponentField();
+            oppField.Frontend[0] = TestFactory.MakeWireResource(instanceId: "t1");
+            var ctx = MakeCtx(oppField: oppField);
+            var config = MakeConfig(new()
+            {
+                ["insight_absorb"] = new EffectPriorityEntry { Priority = 60 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.InsightAbsorb, info, ctx, config, _cc);
+
+            use.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "デバフは、相手リソースが 0 体のとき使用不可を返す")]
+        public void Debuff_NoOpponentResources_NotUsable()
+        {
+            var ctx = MakeCtx(); // empty opponent field
+            var config = MakeConfig(new()
+            {
+                ["debuff"] = new EffectPriorityEntry { Priority = 55 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.Debuff, info, ctx, config, _cc);
+
+            use.Should().BeFalse();
+        }
+
+        [Fact(DisplayName = "デバフは、相手リソースが 1 体のとき使用可を返す")]
+        public void Debuff_WithOpponentResource_Usable()
+        {
+            var oppField = TestFactory.MakeWireOpponentField();
+            oppField.Frontend[0] = TestFactory.MakeWireResource(instanceId: "t1");
+            var ctx = MakeCtx(oppField: oppField);
+            var config = MakeConfig(new()
+            {
+                ["debuff"] = new EffectPriorityEntry { Priority = 55 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.Debuff, info, ctx, config, _cc);
+
+            use.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "バフは、自分のリソースが 0 体のとき使用不可を返す")]
+        public void Buff_NoOwnResources_NotUsable()
+        {
+            var ctx = MakeCtx(); // empty own field
+            var config = MakeConfig(new()
+            {
+                ["buff"] = new EffectPriorityEntry { Priority = 45 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.Buff, info, ctx, config, _cc);
+
+            use.Should().BeFalse();
+        }
+
+        [Fact(DisplayName = "バフは、自分のリソースが 1 体のとき使用可を返す")]
+        public void Buff_WithOwnResource_Usable()
+        {
+            var field = TestFactory.MakeWireField();
+            field.Frontend[0] = TestFactory.MakeWireResource(instanceId: "m1");
+            var ctx = MakeCtx(field: field);
+            var config = MakeConfig(new()
+            {
+                ["buff"] = new EffectPriorityEntry { Priority = 45 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.Buff, info, ctx, config, _cc);
+
+            use.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "リアクティブ公開は、相手の伏せサポートが無いとき使用不可を返す")]
+        public void RevealReactive_NoFaceDownSupport_NotUsable()
+        {
+            var ctx = MakeCtx(); // empty opponent support zone
+            var config = MakeConfig(new()
+            {
+                ["reveal_reactive"] = new EffectPriorityEntry { Priority = 50 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.RevealReactive, info, ctx, config, _cc);
+
+            use.Should().BeFalse();
+        }
+
+        [Fact(DisplayName = "リアクティブ公開は、相手に裏向きサポートが 1 件あるとき使用可を返す")]
+        public void RevealReactive_WithFaceDownSupport_Usable()
+        {
+            var oppField = TestFactory.MakeWireOpponentField();
+            oppField.Support[0] = TestFactory.MakeHiddenSupport(instanceId: "s1", faceDown: true);
+            var ctx = MakeCtx(oppField: oppField);
+            var config = MakeConfig(new()
+            {
+                ["reveal_reactive"] = new EffectPriorityEntry { Priority = 50 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.RevealReactive, info, ctx, config, _cc);
+
+            use.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "プラットフォーム破壊は、相手のプラットフォームが無いとき使用不可を返す")]
+        public void DestroyPlatform_NoPlatform_NotUsable()
+        {
+            var ctx = MakeCtx(); // empty opponent support zone
+            var config = MakeConfig(new()
+            {
+                ["destroy_platform"] = new EffectPriorityEntry { Priority = 65 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.DestroyPlatform, info, ctx, config, _cc);
+
+            use.Should().BeFalse();
+        }
+
+        [Fact(DisplayName = "プラットフォーム破壊は、相手のプラットフォームが 1 件あるとき使用可を返す")]
+        public void DestroyPlatform_WithPlatform_Usable()
+        {
+            var oppField = TestFactory.MakeWireOpponentField();
+            oppField.Support[0] = TestFactory.MakeHiddenSupport(instanceId: "s1", cardId: "TEST-0200", faceDown: false);
+            var ctx = MakeCtx(oppField: oppField);
+            var config = MakeConfig(new()
+            {
+                ["destroy_platform"] = new EffectPriorityEntry { Priority = 65 },
+            });
+            var info = new EffectInfo();
+
+            var (_, use) = PriorityResolver.Resolve(
+                EffectCategory.DestroyPlatform, info, ctx, config, _cc);
+
+            use.Should().BeTrue();
+        }
+
         [Fact(DisplayName = "エントリの条件を満たさないとき、使用不可を返す")]
         public void WithEntryCondition_NotMet_NotUsable()
         {
