@@ -316,4 +316,51 @@ public class NpcEventStateTests
                 "player's own play_card must keep the real cardId (actor == viewer)");
         }
     }
+
+    [Trait("対象", "NPC の手札調整アクションの組み立て")]
+    public class HandAdjustmentDiscard : Base
+    {
+        private const string HandCardId = "SH-0001";
+
+        private static List<UndeployedCard> MakeNpcHand(int count) =>
+            Enumerable.Range(0, count)
+                .Select(i => new UndeployedCard { InstanceID = $"npc_h_{i}", CardID = HandCardId })
+                .ToList();
+
+        [Theory(DisplayName = "NPC の手札が手札上限を超えてエンドフェーズに入ると、超過枚数を捨てて手札上限枚数になる")]
+        [InlineData("手札 8 枚のとき、超過 2 枚を捨てる", 8, 2)]
+        [InlineData("手札 7 枚のとき、超過 1 枚を捨てる", 7, 1)]
+        public async Task HandExceedsLimit_DiscardsDownToLimit(string _, int handSize, int expectedDiscardCount)
+        {
+            var (game, _) = await StartGameWithPlayerFirst();
+            var state = await _repo.GetGameState(game.GameID);
+            state!.ActivePlayer = 2;
+            state.CurrentPhase = Phase.End;
+            state.Player2Hand = MakeNpcHand(handSize);
+
+            var result = await _svc.AdvanceNpcTurn(game.GameID);
+
+            var discardEvent = result.Events.Should().ContainSingle(
+                e => e.Event.EventType == ActionTypes.DiscardHand).Subject;
+            var data = discardEvent.Event.EventData.Should().BeOfType<DiscardHandEventData>().Subject;
+            data.DiscardedIds.Should().HaveCount(expectedDiscardCount);
+
+            var postState = await _repo.GetGameState(game.GameID);
+            postState!.Player2Hand.Should().HaveCount(BattleConstants.HandLimit);
+        }
+
+        [Fact(DisplayName = "NPC の手札が手札上限のままエンドフェーズに残る矛盾状態のとき、エラーになる")]
+        public async Task HandAtLimit_EndPhase_Throws()
+        {
+            var (game, _) = await StartGameWithPlayerFirst();
+            var state = await _repo.GetGameState(game.GameID);
+            state!.ActivePlayer = 2;
+            state.CurrentPhase = Phase.End;
+            state.Player2Hand = MakeNpcHand(BattleConstants.HandLimit);
+
+            var act = () => _svc.AdvanceNpcTurn(game.GameID);
+
+            await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*no discard needed*");
+        }
+    }
 }

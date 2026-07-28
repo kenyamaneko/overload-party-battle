@@ -17,6 +17,7 @@
     <Project Path="tests/OverloadParty.Battle.Engine.Tests/OverloadParty.Battle.Engine.Tests.csproj" />
     <Project Path="tests/OverloadParty.Battle.Models.Tests/OverloadParty.Battle.Models.Tests.csproj" />
     <Project Path="tests/OverloadParty.Battle.Npc.Tests/OverloadParty.Battle.Npc.Tests.csproj" />
+    <Project Path="tests/OverloadParty.Battle.Server.Tests/OverloadParty.Battle.Server.Tests.csproj" />
     <Project Path="tests/OverloadParty.Battle.Service.Tests/OverloadParty.Battle.Service.Tests.csproj" />
     <Project Path="tests/OverloadParty.Battle.Tests.Shared/OverloadParty.Battle.Tests.Shared.csproj" />
   </Folder>
