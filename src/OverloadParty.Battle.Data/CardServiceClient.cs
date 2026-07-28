@@ -1,5 +1,4 @@
-using System.Net.Http.Json;
-using System.Text.Json;
+using ApiCard = OverloadParty.ApiCard;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Data;
@@ -11,14 +10,9 @@ namespace OverloadParty.Battle.Data;
 /// </summary>
 public sealed class CardServiceClient : IDisposable
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-        PropertyNameCaseInsensitive = true,
-    };
-
     private readonly HttpClient _http;
     private readonly bool _canDisposeHttpClient;
+    private readonly ApiCard.CardClient _client;
 
     public CardServiceClient(string baseUrl)
         : this(baseUrl, new HttpClient(), ownsHttpClient: true)
@@ -40,6 +34,7 @@ public sealed class CardServiceClient : IDisposable
         _http = httpClient;
         _canDisposeHttpClient = ownsHttpClient;
         _http.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/");
+        _client = new ApiCard.CardClient(_http);
     }
 
     /// <summary>カードサービスの internal カード一覧エンドポイントから全カード定義を取得する。</summary>
@@ -47,16 +42,8 @@ public sealed class CardServiceClient : IDisposable
     /// <returns>取得したカード定義の一覧。</returns>
     public async Task<List<CardDefinition>> ListAllCardsAsync(CancellationToken ct = default)
     {
-        using var response = await _http.GetAsync("internal/v1/cards", ct);
-        response.EnsureSuccessStatusCode();
-
-        var cards = await response.Content.ReadFromJsonAsync<List<CardDefinition>>(JsonOptions, ct);
-        if (cards is null)
-        {
-            throw new InvalidOperationException("card service returned null body for /internal/v1/cards");
-        }
-
-        return cards;
+        var cards = await _client.ListCardsAsync(ct);
+        return cards.Select(CardDefinitionMapper.ToCardDefinition).ToList();
     }
 
     /// <summary>カードサービスの internal 施策一覧エンドポイントから全施策定義を取得する。</summary>
@@ -64,16 +51,8 @@ public sealed class CardServiceClient : IDisposable
     /// <returns>取得した施策定義の一覧。</returns>
     public async Task<List<Initiative>> ListAllInitiativesAsync(CancellationToken ct = default)
     {
-        using var response = await _http.GetAsync("internal/v1/initiatives", ct);
-        response.EnsureSuccessStatusCode();
-
-        var initiatives = await response.Content.ReadFromJsonAsync<List<Initiative>>(JsonOptions, ct);
-        if (initiatives is null)
-        {
-            throw new InvalidOperationException("card service returned null body for /internal/v1/initiatives");
-        }
-
-        return initiatives;
+        var initiatives = await _client.ListInitiativesAsync(ct);
+        return initiatives.Select(CardDefinitionMapper.ToInitiative).ToList();
     }
 
     public void Dispose()

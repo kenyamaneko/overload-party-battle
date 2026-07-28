@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http;
 using System.Text;
+using OverloadParty.ApiCard;
 using OverloadParty.Battle.Data;
 
 namespace OverloadParty.Battle.Tests.Data;
@@ -30,8 +31,8 @@ public class CardServiceClientTests
         }
     }
 
-    [Fact(DisplayName = "snake_case の payload を受けたとき、カード一覧にデシリアライズする")]
-    public async Task ListAllCardsAsync_deserializes_snake_case_payload()
+    [Fact(DisplayName = "stats を含む payload を受けたとき、実効ステータスを持つカード定義にマッピングする")]
+    public async Task ListAllCardsAsync_maps_stats_into_card_definition()
     {
         const string body = """
         [
@@ -43,6 +44,12 @@ public class CardServiceClientTests
             "card_type": "Compute",
             "resizable": true,
             "elastic": false,
+            "stats": {
+              "throughput": 400,
+              "availability": 800,
+              "sla_penalty": 300,
+              "maintenance_cost": 100
+            },
             "restriction": "unlimited",
             "is_active": true
           }
@@ -61,10 +68,13 @@ public class CardServiceClientTests
         cards[0].Faction.Should().Be("SHE");
         cards[0].Resizable.Should().BeTrue();
         cards[0].IsActive.Should().BeTrue();
+        cards[0].ComputeStats.Should().NotBeNull();
+        cards[0].ComputeStats!.Throughput.Should().Be(400);
+        cards[0].ComputeStats!.Availability.Should().Be(800);
         handler.LastRequestUri!.AbsoluteUri.Should().Be("http://card:9003/internal/v1/cards");
     }
 
-    [Fact(DisplayName = "非成功ステータスのとき、HttpRequestException を投げる")]
+    [Fact(DisplayName = "非成功ステータスのとき、ApiException を投げる")]
     public async Task ListAllCardsAsync_throws_on_non_success_status()
     {
         var handler = new StubHandler(HttpStatusCode.InternalServerError, "{\"error\":\"boom\"}");
@@ -72,10 +82,10 @@ public class CardServiceClientTests
         using var client = new CardServiceClient("http://card:9003/", http);
 
         await client.Invoking(c => c.ListAllCardsAsync())
-            .Should().ThrowAsync<HttpRequestException>();
+            .Should().ThrowAsync<ApiException>();
     }
 
-    [Fact(DisplayName = "body が null リテラルのとき、InvalidOperationException を投げる")]
+    [Fact(DisplayName = "body が null リテラルのとき、ApiException を投げる")]
     public async Task ListAllCardsAsync_throws_when_body_is_null_literal()
     {
         var handler = new StubHandler(HttpStatusCode.OK, "null");
@@ -83,7 +93,7 @@ public class CardServiceClientTests
         using var client = new CardServiceClient("http://card:9003", http);
 
         await client.Invoking(c => c.ListAllCardsAsync())
-            .Should().ThrowAsync<InvalidOperationException>();
+            .Should().ThrowAsync<ApiException>();
     }
 
     [Fact(DisplayName = "カード一覧 API が空配列を返すと、0 件のリストが返る")]

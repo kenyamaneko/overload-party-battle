@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\OverloadParty.Battle.Engine\OverloadParty.Battle.Engine.csproj" />
+    <ProjectReference Include="..\..\src\OverloadParty.Battle.Data\OverloadParty.Battle.Data.csproj" />
   </ItemGroup>
 
 </Project>
