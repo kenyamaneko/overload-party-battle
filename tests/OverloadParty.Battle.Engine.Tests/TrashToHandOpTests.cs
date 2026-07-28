@@ -219,4 +219,88 @@ public class TrashToHandAvailableActionsTests
         playAction.EffectTargetType.Should().Be("Choice");
         playAction.ValidTargets.Should().BeEquivalentTo(["t_1", "t_2"]);
     }
+
+    [Fact(DisplayName = "トラッシュ回収の起動効果を持つ表向きリソースは、トラッシュに候補があるとき候補一覧付きで起動効果アクションが提示される")]
+    public void UseIgnition_ResourceWithTrashOp_CandidatesPresent_ShowsValidTargets()
+    {
+        const string SourceCard = "RES-IGN";
+        _cc.Add(TestFactory.ComputeCard(cardId: SourceCard));
+        var registry = MakeRegistryWithTrashOp(SourceCard, c => c.Faction == "Tenki");
+
+        var state = TestFactory.MakeGameState();
+        state.Player1Trash =
+        [
+            new UndeployedCard { InstanceID = "t_1", CardID = "RES-TEN" },
+            new UndeployedCard { InstanceID = "t_2", CardID = "RES-SUG" },
+        ];
+        var field = TestFactory.MakeField();
+        field.Frontend[0] = TestFactory.MakeResource(cardId: SourceCard, instanceId: "src_1", faceUp: true);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
+
+        var ignition = actions.Should().ContainSingle(a => a.Type == ActionTypes.UseIgnition).Subject;
+        ignition.ValidTargets.Should().Equal("t_1");
+    }
+
+    [Fact(DisplayName = "トラッシュに候補が無いとき、その起動効果アクションは提示されない")]
+    public void UseIgnition_ResourceWithTrashOp_NoCandidates_OmitsAction()
+    {
+        const string SourceCard = "RES-IGN";
+        _cc.Add(TestFactory.ComputeCard(cardId: SourceCard));
+        var registry = MakeRegistryWithTrashOp(SourceCard, filter: null);
+
+        var state = TestFactory.MakeGameState();
+        state.Player1Trash = [];
+        var field = TestFactory.MakeField();
+        field.Frontend[0] = TestFactory.MakeResource(cardId: SourceCard, instanceId: "src_1", faceUp: true);
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
+    }
+
+    [Fact(DisplayName = "サポートゾーンのカードの起動効果でも、候補が無いと提示されない")]
+    public void UseIgnition_SupportWithTrashOp_NoCandidates_OmitsAction()
+    {
+        const string SourceCard = "SUP-IGN";
+        _cc.Add(TestFactory.PlatformCard(cardId: SourceCard));
+        var registry = MakeRegistryWithTrashOp(SourceCard, filter: null);
+
+        var state = TestFactory.MakeGameState();
+        state.Player1Trash = [];
+        var field = TestFactory.MakeField();
+        field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = SourceCard, FaceUp = true };
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
+    }
+
+    [Fact(DisplayName = "トラッシュ回収を含む施策は、候補が無いとき施策アクションが提示されない")]
+    public void UseInitiative_TrashOpNoCandidates_OmitsAction()
+    {
+        var initiative = new Initiative
+        {
+            InitiativeId = "IN-TRASH",
+            ProductId = "PD-TST",
+            Kind = InitiativeKinds.Routine,
+            Name = "R",
+            InsightCost = 100,
+        };
+        var registry = MakeRegistryWithTrashOp(initiative.EffectSourceId, filter: null);
+        var catalog = new InitiativeCatalog([initiative]);
+
+        var state = TestFactory.MakeGameState(turn: 2);
+        state.Player1RoutineId = initiative.InitiativeId;
+        state.Player1SpecialUsedThisGame = true;
+        state.Player1Trash = [];
+
+        var actions = AvailableActions.GetAllAvailableActions(
+            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 500, _cc, registry, catalog);
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
+    }
 }

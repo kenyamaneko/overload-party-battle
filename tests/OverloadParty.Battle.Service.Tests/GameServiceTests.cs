@@ -181,7 +181,7 @@ public class GameServiceTests
             result.GameOver.Should().BeNull();
         }
 
-        [Fact(DisplayName = "投了のアクションを処理すると決着結果が返る")]
+        [Fact(DisplayName = "強制決着のアクションを処理すると決着結果が返る")]
         public async Task Forfeit_ReturnsGameOver()
         {
             var cards = MakePlayerCards();
@@ -194,6 +194,28 @@ public class GameServiceTests
             result.Should().NotBeNull();
             result.GameOver.Should().NotBeNull();
             result.State.Should().NotBeNull();
+        }
+
+        [Fact(DisplayName = "両者強制決着のアクションを処理すると、勝者なし・理由 Disconnect の決着結果が返り、ゲームに永続化される")]
+        public async Task ForfeitBoth_ReturnsDrawGameOver()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
+
+            var state = await _repo.GetGameState(game.GameID);
+
+            var result = await _svc.ProcessAction(game.GameID, state!.ActivePlayer, ActionType.ForfeitBoth, new object());
+
+            result.Should().NotBeNull();
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(0);
+            result.GameOver.Reason.Should().Be(WinReasons.Disconnect);
+            result.State.Should().NotBeNull();
+
+            var persistedGame = await _repo.GetGame(game.GameID);
+            persistedGame!.Status.Should().Be(GameStatus.Finished);
+            persistedGame.WinningPlayerNum.Should().Be(0);
+            persistedGame.WinReason.Should().Be(WinReasons.Disconnect);
         }
 
         [Fact(DisplayName = "フェーズ終了のアクションを処理すると有効な状態が返り決着しない")]
@@ -224,6 +246,64 @@ public class GameServiceTests
                 game.GameID, state!.ActivePlayer, ActionType.EndPhase, new object());
 
             result.IsNpcPending.Should().BeFalse("PvP games never have NPC pending");
+        }
+
+        [Fact(DisplayName = "存在しないゲームにアクションを処理すると、GameRuleException になる")]
+        public async Task UnknownGame_Throws()
+        {
+            var act = () => _svc.ProcessAction(
+                "TST-none", 1, ActionType.EndPhase, new object());
+
+            await act.Should().ThrowAsync<GameRuleException>()
+                .WithMessage("*TST-none*");
+        }
+
+        [Theory(DisplayName = "投了すると相手の勝ちとして指定した勝因で決着する")]
+        [InlineData(WinReasons.TurnTimeout)]
+        [InlineData(WinReasons.Disconnect)]
+        public async Task Forfeit_WithReason_OpponentWinsWithReason(string reason)
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
+            var state = await _repo.GetGameState(game.GameID);
+            var expectedWinner = state!.ActivePlayer == 1 ? 2 : 1;
+
+            var result = await _svc.ProcessAction(
+                game.GameID, state.ActivePlayer, ActionType.Forfeit, new ForfeitRequest { Reason = reason });
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(expectedWinner);
+            result.GameOver.Reason.Should().Be(reason);
+            var persisted = await _repo.GetGame(game.GameID);
+            persisted!.Status.Should().Be(GameStatus.Finished);
+        }
+
+        [Fact(DisplayName = "勝因なしで投了すると、GameRuleException になりゲームは進行中のまま残る")]
+        public async Task Forfeit_NoReason_ThrowsAndGameStaysPlaying()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
+            var state = await _repo.GetGameState(game.GameID);
+
+            var act = () => _svc.ProcessAction(
+                game.GameID, state!.ActivePlayer, ActionType.Forfeit, new ForfeitRequest { Reason = null });
+
+            await act.Should().ThrowAsync<GameRuleException>();
+            var persisted = await _repo.GetGame(game.GameID);
+            persisted!.Status.Should().Be(GameStatus.Playing);
+        }
+
+        [Fact(DisplayName = "未知の勝因で投了すると、GameRuleException になる")]
+        public async Task Forfeit_UnknownReason_Throws()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
+            var state = await _repo.GetGameState(game.GameID);
+
+            var act = () => _svc.ProcessAction(
+                game.GameID, state!.ActivePlayer, ActionType.Forfeit, new ForfeitRequest { Reason = "TST-unknown" });
+
+            await act.Should().ThrowAsync<GameRuleException>();
         }
 
         [Fact(DisplayName = "ターン切り替え時に発行される turn_start イベントの自分のターン判定が false になる")]
@@ -270,6 +350,36 @@ public class GameServiceTests
 
             await act.Should().ThrowAsync<InvalidOperationException>();
         }
+
+        [Fact(DisplayName = "ゲーム状態を取得すると、対戦開始時のプレイヤー名とレベルがビューに載る")]
+        public async Task ReturnsPlayerSummariesFromMatchStart()
+        {
+            var cards = MakePlayerCards();
+            var summaries = new List<PlayerSummarySnapshot>
+            {
+                new() { PlayerNum = 1, Name = "TST-P1", Level = 5 },
+                new() { PlayerNum = 2, Name = "TST-P2", Level = 9 },
+            };
+            var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", summaries);
+
+            var clientState = await _svc.GetGameStateForPlayer(game.GameID, 1);
+
+            clientState.Player1Summary!.Name.Should().Be("TST-P1");
+            clientState.Player1Summary.Level.Should().Be(5);
+            clientState.Player2Summary!.Name.Should().Be("TST-P2");
+            clientState.Player2Summary.Level.Should().Be(9);
+        }
+
+        [Fact(DisplayName = "NPC 側のプレイヤーサマリは、レベルが null になる")]
+        public async Task NpcSide_HasNullLevel()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", Factions.SHE, NpcPlayerSummaries);
+
+            var clientState = await _svc.GetGameStateForPlayer(game.GameID, 1);
+
+            clientState.Player2Summary!.Level.Should().BeNull();
+        }
     }
 
     [Trait("対象", "プレイヤーのターンコントロール取得")]
@@ -309,6 +419,35 @@ public class GameServiceTests
             var act = () => _svc.GetTurnControlsForPlayer("nonexistent", 1);
 
             await act.Should().ThrowAsync<InvalidOperationException>();
+        }
+    }
+
+    [Trait("対象", "NPC ターンの進行")]
+    public class AdvanceNpcTurn : Base
+    {
+        [Fact(DisplayName = "存在しないゲームの NPC ターンを進行すると、GameRuleException になる")]
+        public async Task UnknownGame_Throws()
+        {
+            var act = () => _svc.AdvanceNpcTurn("TST-none");
+
+            await act.Should().ThrowAsync<GameRuleException>()
+                .WithMessage("*TST-none*");
+        }
+
+        [Fact(DisplayName = "PvP ゲームの NPC ターンを進行すると、何も起こらずイベント 0 件が返る")]
+        public async Task PvpGame_NoOp()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.CreateGameFromMatch(cards, "IN-0001", "IN-0002", cards, "IN-0001", "IN-0002", DefaultPlayerSummaries);
+            var before = await _repo.GetGameState(game.GameID);
+
+            var result = await _svc.AdvanceNpcTurn(game.GameID);
+
+            result.Events.Should().BeEmpty();
+            result.GameOver.Should().BeNull();
+            var after = await _repo.GetGameState(game.GameID);
+            after!.CurrentTurn.Should().Be(before!.CurrentTurn);
+            after.CurrentPhase.Should().Be(before.CurrentPhase);
         }
     }
 }

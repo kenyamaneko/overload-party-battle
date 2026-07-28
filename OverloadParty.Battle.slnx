@@ -20,4 +20,8 @@
     <Project Path="tests/OverloadParty.Battle.Service.Tests/OverloadParty.Battle.Service.Tests.csproj" />
     <Project Path="tests/OverloadParty.Battle.Tests.Shared/OverloadParty.Battle.Tests.Shared.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/TestCatalogExtractor/TestCatalogExtractor.csproj" />
+    <Project Path="tools/TestCatalogExtractor.Tests/TestCatalogExtractor.Tests.csproj" />
+  </Folder>
 </Solution>

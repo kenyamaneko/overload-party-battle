@@ -7,7 +7,7 @@
 Battle Service は Gateway からのみ呼ばれる内部サービス。クライアントからの直接アクセスはない。エラー時は `{"error": "..."}` 形式で返却する（`GameRuleException` → 400、それ以外 → 500）。
 
 - **Base path:** `/api/v1`
-- **認証:** なし（internal。Gateway → Battle はクラスタ内通信）
+- **認証:** アプリケーション層の認証トークン検証は持たない。呼び出し元自体の到達制御は実行基盤の呼び出し認可に委ねる（詳細は [ARCHITECTURE.md](ARCHITECTURE.md) を参照）
 - **ポート:** 9002（ローカル）/ 9090（k8s）
 
 ---
@@ -109,7 +109,8 @@ PvP 戦を作成する。マッチメイキング後に Gateway が呼び出す�
 | `use_initiative` | `{kind, choiceData?}` | プロダクトの施策（ルーチン / スペシャル）を発動 |
 | `discard_hand` | `{cardInstanceIds}` | 手札を破棄（end フェーズ、手札 > 6 枚時） |
 | `end_phase` | `{}` | フェーズを終了 |
-| `forfeit` | `{reason}` | 降参 |
+| `forfeit` | `{reason}` | 強制決着。理由は `turn_timeout` / `disconnect` / `surrender` のいずれかを指定する（省略不可） |
+| `forfeit_both` | `{}` | 両者強制決着。勝者なし・理由 `disconnect` で終了（勝敗判定に `player_num` は使われないが、応答の `state` はその視点で構築されるため 1 か 2 を渡す） |
 | `select_slot` | `{zone, index}` | 効果デプロイのスロット選択に応答 |
 | `resolve_pending_choice` | `{chosen_id}` | 効果処理中の選択を解決 |
 

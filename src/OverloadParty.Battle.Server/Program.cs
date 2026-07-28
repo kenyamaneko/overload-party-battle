@@ -394,6 +394,7 @@ public static class ActionDataDeserializer
         ActionType.UseInitiative => data.Deserialize<UseInitiativeRequest>(JsonOpts)!,
         ActionType.EndPhase => new object(),
         ActionType.Forfeit => data.Deserialize<ForfeitRequest>(JsonOpts)!,
+        ActionType.ForfeitBoth => new object(),
         _ => throw new ArgumentException($"unknown action type: {actionType}"),
     };
 }

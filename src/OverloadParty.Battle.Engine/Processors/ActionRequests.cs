@@ -204,13 +204,12 @@ public class SelectSlotRequest
 }
 
 /// <summary>
-/// Request to forfeit a game, with an optional reason indicating why.
+/// Request to forfeit a game, with the reason indicating why.
 /// </summary>
 public class ForfeitRequest
 {
     /// <summary>
-    /// The reason for the forfeit (e.g. "turn_timeout", "disconnect", "surrender").
-    /// Defaults to TurnTimeout if not specified.
+    /// The reason for the forfeit ("turn_timeout", "disconnect", or "surrender"). Required; omitting it is rejected.
     /// </summary>
     [JsonPropertyName("reason")]
     public string? Reason { get; set; }

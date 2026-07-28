@@ -80,6 +80,8 @@ draw → main → battle → end → (ActivePlayer切替) → draw ...
 | `use_initiative` | `CardID`, `Kind`, `Cost`, `ValidTargets`, `EffectTargetType` |
 | `resolve_pending_choice` | `EffectCardId`, `ChoiceKind`, `ChoiceOptions` |
 
+AvailableAction は `type` による判別ユニオンで、各 variant は自身に必要な型固有の名前付きフィールドだけを持つ。汎用の `{type, value}` メタデータ機構は導入しない。named field は生成型（C# / Go / TS）に乗り、client / NPC が型で辿れることを優先するためである。
+
 ゲームフロー制御（フェーズ終了、手札破棄）は `available_actions` に含めず、`turn_controls` メッセージとして別途送信される。
 
 **NPC AI アーキテクチャ（Battle Server / C#）:**
@@ -182,6 +184,16 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 | `monetize` | Main Phase | バックエンドのコンピュート（休止でない） | — | — | Insight Pool 残量 ≥ 分配量、TP上限 |
 | `use_ignition` | Main/Battle Phase | 効果を持つカード | 効果の対象 | 効果コスト | 1ターン1回制限 |
 | `use_initiative` | Main Phase | デッキが選んだプロダクトの施策 | 施策の対象 | Insight | ルーチン 1ターン1回 / スペシャル 1ゲーム1回、先攻 T1 不可 |
+
+---
+
+## プレイヤー ID と到達制御
+
+battle は `PlayerNum`（1 または 2）を呼び出し元の申告としてそのまま受け取る。手札・フィールドの所有やターン順との整合性はアクション検証（前節）で確認するが、その `PlayerNum` を名乗る呼び出し元が実際にそのプレイヤー本人かどうかは検証できない。battle がプレイヤー ID 自体を持たない点は [DATA_DESIGN.md](DATA_DESIGN.md) のとおりで、プレイヤー ID から `PlayerNum` への対応付けと認可は gateway が担う。
+
+内部トークンによるプレイヤー ID の伝播は、プレイヤーのデータを扱うサービスに対して行われる。battle はその対象外であり、内部トークンの検証を持たない。呼び出し元自体の到達制御は実行基盤の呼び出し認可に委ねる（[ADR-057](https://github.com/kenyamaneko/overload-party-common/blob/main/docs/adr/057-cloudrun-service-auth-iam-and-rs256.md)）。
+
+---
 
 ## 実装規約
 

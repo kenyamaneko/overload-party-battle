@@ -403,4 +403,37 @@ public class IgnitionEffectTests
             source.TemporaryEffects.Should().BeEmpty("発動源除外セレクタは発動源自身を対象から除く");
         }
     }
+
+    [Trait("対象", "発動条件を満たさない起動効果")]
+    public class UnsatisfiedGuard
+    {
+        private const string SourceCard = "TST-0800";
+
+        /// <summary>自分のリソース数が 2 体以上という発動条件付きで gain_budget を起動効果登録した環境を作る。</summary>
+        /// <returns>カードキャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Effects) Env()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: SourceCard));
+            var effects = new EffectRegistry();
+            effects.RegisterComposed(SourceCard, TriggerType.Ignition,
+                [new ResourceCountGuard("myself", null, null, null, null, null, min: 2, max: null)],
+                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)));
+            return (cc, effects);
+        }
+
+        [Fact(DisplayName = "発動条件を満たさない起動効果は、利用可能アクションに提示されない")]
+        public void NotShownInAvailableActions()
+        {
+            var (cc, effects) = Env();
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            var field = TestFactory.MakeField();
+            field.Frontend[0] = TestFactory.MakeResource(cardId: SourceCard, instanceId: "src", faceUp: true);
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, field, TestFactory.MakeField(), [], 5000, 0, cc, effects);
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
+        }
+    }
 }

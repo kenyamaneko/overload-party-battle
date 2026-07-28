@@ -181,6 +181,10 @@ public class GameService
             var reason = ParseForfeitReason(req?.Reason);
             result = await _engine.Forfeit(game, playerNum, reason, ct);
         }
+        else if (actionType == ActionType.ForfeitBoth)
+        {
+            result = await _engine.ForfeitBoth(game, ct);
+        }
         else
         {
             result = await _engine.ProcessAction(game, playerNum, actionType, actionData, ct);

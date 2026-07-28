@@ -151,6 +151,43 @@ public class GameLogServiceDescriptionTests
             description.Should().Contain("300");
             description.Should().NotContain("SLA");
         }
+
+        [Fact(DisplayName = "カタログに無いカードのイベント説明文は、Card#ID の代替表記になる")]
+        public async Task UncatalogedCard_UsesCardHashIdFallback()
+        {
+            var description = await RenderDescription(
+                new PlayCardEventData { CardId = "TST-9999", Zone = "frontend" }, playerNum: 1);
+
+            description.Should().Contain("Card#TST-9999");
+        }
+
+        [Fact(DisplayName = "プレイヤー番号の無いイベントの説明文は、System と表記される")]
+        public async Task NoPlayerNum_StartsWithSystem()
+        {
+            var description = await RenderDescription(
+                new PlayCardEventData { CardId = "TST-0001", Zone = "frontend" }, playerNum: null);
+
+            description.Should().StartWith("System");
+        }
+
+        [Fact(DisplayName = "手札破棄 1 枚の説明文は、単数形 (1 card) になる")]
+        public async Task DiscardOneCard_UsesSingularForm()
+        {
+            var description = await RenderDescription(
+                new DiscardHandEventData { DiscardedCount = 1 }, playerNum: 1);
+
+            description.Should().Contain("1 card");
+            description.Should().NotContain("1 cards");
+        }
+
+        [Fact(DisplayName = "手札破棄 2 枚の説明文は、複数形 (2 cards) になる")]
+        public async Task DiscardTwoCards_UsesPluralForm()
+        {
+            var description = await RenderDescription(
+                new DiscardHandEventData { DiscardedCount = 2 }, playerNum: 1);
+
+            description.Should().Contain("2 cards");
+        }
     }
 
     [Trait("対象", "ゲーム終了の説明文")]

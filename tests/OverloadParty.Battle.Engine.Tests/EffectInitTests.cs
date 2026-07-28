@@ -251,18 +251,15 @@ public class EffectRegistrationTests
     [Trait("対象", "効果情報の公開")]
     public class EffectInfoClassification : Base
     {
-        [Fact(DisplayName = "NT-0013 の起動効果に効果情報が存在する")]
-        public void Card104_EffectInfo_HasDamageCategory()
+        [Theory(DisplayName = "起動効果の効果情報が期待どおりの効果カテゴリを持つ")]
+        [InlineData("NT-0013", EffectCategory.SingleDamage)]
+        [InlineData("NT-0010", EffectCategory.BudgetGain)]
+        public void EffectInfo_HasExpectedCategory(string cardId, EffectCategory expected)
         {
-            var info = _registry.GetEffectInfo("NT-0013", TriggerType.Ignition);
-            info.Should().NotBeNull();
-        }
+            var info = _registry.GetEffectInfo(cardId, TriggerType.Ignition);
 
-        [Fact(DisplayName = "NT-0010 の起動効果に効果情報が存在する")]
-        public void Card101_EffectInfo_HasBudgetCategory()
-        {
-            var info = _registry.GetEffectInfo("NT-0010", TriggerType.Ignition);
             info.Should().NotBeNull();
+            info!.HasCategory(expected).Should().BeTrue();
         }
     }
 

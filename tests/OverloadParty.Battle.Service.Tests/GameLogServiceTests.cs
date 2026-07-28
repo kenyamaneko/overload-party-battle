@@ -166,6 +166,93 @@ public class GameLogServiceTests
         }
     }
 
+    [Trait("対象", "テキストログの勝者表記")]
+    public class TextLogWinnerLabel : Base
+    {
+        [Fact(DisplayName = "進行中ゲームのテキストログは、勝者が N/A・所要時間が in progress と表記される")]
+        public async Task InProgressGame_ShowsNAAndInProgress()
+        {
+            await _repo.CreateGame(TestFactory.MakeGame(), TestFactory.MakeGameState());
+
+            var text = await _svc.GetGameLogText("test-game");
+
+            text.Should().Contain("Winner: N/A");
+            text.Should().Contain("in progress");
+        }
+
+        [Fact(DisplayName = "引き分け (勝者番号 0) のテキストログは、勝者が Draw と表記される")]
+        public async Task Draw_ShowsDraw()
+        {
+            await _repo.CreateGame(TestFactory.MakeGame(), TestFactory.MakeGameState());
+            await _repo.FinishGame("test-game", 0, WinReasons.TurnLimit);
+
+            var text = await _svc.GetGameLogText("test-game");
+
+            text.Should().Contain("Winner: Draw");
+        }
+
+        [Fact(DisplayName = "プレイヤー 2 が budget_zero で勝ったテキストログは、P2 と勝因が表記される")]
+        public async Task Player2Wins_ShowsP2AndReason()
+        {
+            await _repo.CreateGame(TestFactory.MakeGame(), TestFactory.MakeGameState());
+            await _repo.FinishGame("test-game", 2, WinReasons.BudgetZero);
+
+            var text = await _svc.GetGameLogText("test-game");
+
+            text.Should().Contain("Winner: P2 (budget_zero)");
+        }
+
+        [Fact(DisplayName = "定義外の勝者番号 3 のテキストログ取得は、例外になる")]
+        public async Task UndefinedWinnerNumber_Throws()
+        {
+            await _repo.CreateGame(TestFactory.MakeGame(), TestFactory.MakeGameState());
+            await _repo.FinishGame("test-game", 3, WinReasons.BudgetZero);
+
+            var act = () => _svc.GetGameLogText("test-game");
+
+            await act.Should().ThrowAsync<InvalidOperationException>();
+        }
+    }
+
+    [Trait("対象", "構造化ログの勝因補完")]
+    public class WinReasonFallback : Base
+    {
+        [Fact(DisplayName = "ゲームに勝因が保存されていないとき、game_over イベントの勝因が構造化ログに載る")]
+        public async Task MissingGameWinReason_FallsBackToGameOverEvent()
+        {
+            var game = TestFactory.MakeGame();
+            game.WinningPlayerNum = 1;
+            game.WinReason = null;
+            var state = TestFactory.MakeGameState();
+            await _repo.CreateGame(game, state);
+            _repo.SeedEvent(new GameEvent
+            {
+                GameID = "test-game",
+                SequenceNumber = 1,
+                EventType = EventTypes.GameOver,
+                PlayerNum = null,
+                EventData = new GameOverEventData { WinnerNum = 1, WinReason = WinReasons.BudgetZero },
+            });
+
+            var log = await _svc.GetGameLog("test-game");
+
+            log!.WinReason.Should().Be(WinReasons.BudgetZero);
+        }
+
+        [Fact(DisplayName = "勝因も game_over イベントも無いとき、構造化ログの勝因は null になる")]
+        public async Task NoWinReasonAndNoGameOverEvent_ReturnsNull()
+        {
+            var game = TestFactory.MakeGame();
+            game.WinReason = null;
+            var state = TestFactory.MakeGameState();
+            await _repo.CreateGame(game, state);
+
+            var log = await _svc.GetGameLog("test-game");
+
+            log!.WinReason.Should().BeNull();
+        }
+    }
+
     [Trait("対象", "イベント説明文")]
     public class EventDescriptions : Base
     {
