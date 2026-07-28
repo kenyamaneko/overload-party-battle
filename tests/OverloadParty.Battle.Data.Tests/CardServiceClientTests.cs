@@ -113,8 +113,10 @@ public class CardServiceClientTests
     {
         const string body = """
         [
-          { "card_id": "TST-0001", "card_name": "A", "resource_label": "VM", "faction": "SHE", "card_type": "Compute", "resizable": true, "elastic": false, "restriction": "unlimited", "is_active": true },
-          { "card_id": "TST-0002", "card_name": "B", "resource_label": "VM", "faction": "SHE", "card_type": "Compute", "resizable": true, "elastic": false, "restriction": "unlimited", "is_active": true }
+          { "card_id": "TST-0001", "card_name": "A", "resource_label": "VM", "faction": "SHE", "card_type": "Compute", "resizable": true, "elastic": false, "restriction": "unlimited", "is_active": true,
+            "stats": { "throughput": 400, "availability": 800, "sla_penalty": 300, "maintenance_cost": 100 } },
+          { "card_id": "TST-0002", "card_name": "B", "resource_label": "VM", "faction": "SHE", "card_type": "Compute", "resizable": true, "elastic": false, "restriction": "unlimited", "is_active": true,
+            "stats": { "throughput": 500, "availability": 900, "sla_penalty": 200, "maintenance_cost": 150 } }
         ]
         """;
         var handler = new StubHandler(HttpStatusCode.OK, body);
@@ -133,8 +135,10 @@ public class CardServiceClientTests
     {
         const string body = """
         [
-          { "initiative_id": "IN-TST-0001", "product_id": "PD-TST-0001", "kind": "routine", "name": "R1", "insight_cost": 400 },
-          { "initiative_id": "IN-TST-0002", "product_id": "PD-TST-0001", "kind": "special", "name": "S1", "insight_cost": 800 }
+          { "initiative_id": "IN-TST-0001", "product_id": "PD-TST-0001", "kind": "routine", "name": "R1", "insight_cost": 400,
+            "effect": { "trigger": "ignition", "ops": [] } },
+          { "initiative_id": "IN-TST-0002", "product_id": "PD-TST-0001", "kind": "special", "name": "S1", "insight_cost": 800,
+            "effect": { "trigger": "ignition", "ops": [] } }
         ]
         """;
         var handler = new StubHandler(HttpStatusCode.OK, body);
@@ -149,7 +153,7 @@ public class CardServiceClientTests
         handler.LastRequestUri!.AbsoluteUri.Should().Be("http://card:9003/internal/v1/initiatives");
     }
 
-    [Fact(DisplayName = "施策一覧 API が null リテラルを返すと、InvalidOperationException を投げる")]
+    [Fact(DisplayName = "施策一覧 API が null リテラルを返すと、ApiException を投げる")]
     public async Task ListAllInitiativesAsync_throws_when_body_is_null_literal()
     {
         var handler = new StubHandler(HttpStatusCode.OK, "null");
@@ -157,7 +161,7 @@ public class CardServiceClientTests
         using var client = new CardServiceClient("http://card:9003", http);
 
         await client.Invoking(c => c.ListAllInitiativesAsync())
-            .Should().ThrowAsync<InvalidOperationException>();
+            .Should().ThrowAsync<ApiException>();
     }
 
     [Fact(DisplayName = "接続先 URL が空文字のとき、生成時に ArgumentException を投げる")]

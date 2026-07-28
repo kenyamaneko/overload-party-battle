@@ -62,7 +62,7 @@ public class ServerTestFixture : IAsyncLifetime
         var dir = new DirectoryInfo(AppContext.BaseDirectory);
         while (dir is not null)
         {
-            var candidate = Path.Combine(dir.FullName, "overload-party-battle",
+            var candidate = Path.Combine(dir.FullName,
                 "packages", "game-state-dotnet", "cache", "cards_gen.json");
             if (File.Exists(candidate))
             {
