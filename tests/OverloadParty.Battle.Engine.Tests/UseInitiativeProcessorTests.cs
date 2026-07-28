@@ -208,6 +208,44 @@ public class UseInitiativeProcessorTests
             state.Player2Budget.Should().Be(5000 - 200);
         }
 
+        [Fact(DisplayName = "count_multiplier 2 の一時効果を持つリソース 1 体は、2 体分として数えられる")]
+        public void Routine_LoseBudgetPerOpponentCount_CountMultiplierCountsAsMultipleUnits()
+        {
+            var initiatives = Initiatives(
+                routineCost: 400,
+                routineJson: """{"ops":[{"lose_budget":{"target":"opponent","amount":{"base":0,"per":{"count":{"owner":"opponent"},"value":100}}}}]}""",
+                specialCost: 0,
+                specialJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}""");
+            var (effects, catalog) = Setup(initiatives);
+
+            var state = MakeState();
+            var counted = TestFactory.MakeResource(instanceId: "o1", faceUp: true);
+            counted.TemporaryEffects.Add(new TemporaryEffect { EffectType = "count_multiplier", Value = 2 });
+            state.Player2Field.Frontend[0] = counted;
+
+            Use(state, InitiativeKinds.Routine, effects, catalog);
+
+            state.Player2Budget.Should().Be(5000 - 200);
+        }
+
+        [Fact(DisplayName = "count_multiplier の無いリソースは、1 体分として数えられる")]
+        public void Routine_LoseBudgetPerOpponentCount_NoMultiplierCountsAsOneUnit()
+        {
+            var initiatives = Initiatives(
+                routineCost: 400,
+                routineJson: """{"ops":[{"lose_budget":{"target":"opponent","amount":{"base":0,"per":{"count":{"owner":"opponent"},"value":100}}}}]}""",
+                specialCost: 0,
+                specialJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}""");
+            var (effects, catalog) = Setup(initiatives);
+
+            var state = MakeState();
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "o1", faceUp: true);
+
+            Use(state, InitiativeKinds.Routine, effects, catalog);
+
+            state.Player2Budget.Should().Be(5000 - 100);
+        }
+
         [Fact(DisplayName = "インサイトプール全量を 1.5 倍のバジェットに変換しプールが 0 になる")]
         public void Special_ConvertAllInsight()
         {
