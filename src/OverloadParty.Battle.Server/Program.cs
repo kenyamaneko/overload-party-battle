@@ -371,7 +371,7 @@ ActionResult ProjectActionResult(GameActionResult result) => new()
     }).ToList(),
 };
 
-/// <summary>WebApplicationFactory&lt;Program&gt; がテストホストを構築するための型マーカー。挙動は変えない。</summary>
+/// <summary>WebApplicationFactory&lt;Program&gt; がテストホストを構築するための型マーカー。</summary>
 public partial class Program { }
 
 public static class ActionDataDeserializer
