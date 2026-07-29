@@ -1,0 +1,26 @@
+model: TST-ReactiveDeploy
+faction: SHE
+routine_id: IN-0001
+special_id: IN-0002
+display_name: リアクティブのみのデッキ
+
+deck:
+  - card_id: NT-0023
+    copies: 30
+
+budget:
+  low_threshold: 1500
+  maintenance_limit_ratio: 0.8
+
+scale_up:
+  instance_family: M
+  max_maintenance_ratio: 0.6
+  order_by: tp_desc
+
+reactive:
+  max_slots: 2
+  priorities:
+    NT-0023: 70
+
+slot_select:
+  strategy: left_fill

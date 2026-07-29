@@ -16,15 +16,20 @@ public class NpcEventStateTests
     {
         protected readonly FakeGameRepository _repo = new();
         protected readonly GameService _svc;
-        protected readonly ICardCache _cc;
 
-        protected Base()
+        /// <summary>Uses the production NPC AI config directory.</summary>
+        protected Base() : this(npcDataDirOverride: null)
+        {
+        }
+
+        /// <summary>Uses <paramref name="npcDataDirOverride"/> in place of the production NPC AI config directory when given.</summary>
+        protected Base(string? npcDataDirOverride)
         {
             var (effects, cc) = TestEffectSetup.Get();
-            _cc = cc;
             var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog(TestFactory.StandardInitiatives()));
 
-            var npcDataDir = FindNpcDataDir()
+            var npcDataDir = npcDataDirOverride
+                ?? FindNpcDataDir()
                 ?? throw new FileNotFoundException("NPC data directory not found");
             var aiConfigs = AiConfigLoader.LoadAll(npcDataDir);
 
@@ -79,10 +84,11 @@ public class NpcEventStateTests
         /// Simulates the gateway's yield loop: kicks off the NPC turn, then calls
         /// AdvanceNpcTurn repeatedly while IsNpcPending is true, aggregating events.
         /// </summary>
-        protected async Task<GameActionResult> RunNpcTurn()
+        /// <param name="npcModel">対戦相手となる NPC モデル ID。</param>
+        protected async Task<GameActionResult> RunNpcTurn(string npcModel = "SHE-easy")
         {
             var cards = MakePlayerCards("SH-0001");
-            var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
+            var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", npcModel, NpcPlayerSummaries);
 
             var state = await _repo.GetGameState(game.GameID);
 
@@ -126,6 +132,22 @@ public class NpcEventStateTests
             while (dir is not null)
             {
                 var candidate = Path.Combine(dir.FullName, "src", "OverloadParty.Battle.Npc", "Data");
+                if (Directory.Exists(candidate))
+                {
+                    return candidate;
+                }
+                dir = dir.Parent;
+            }
+            return null;
+        }
+
+        /// <summary>Walks up from the test binary to find this test project's own NPC AI config fixtures.</summary>
+        protected static string? FindTestFixtureNpcDataDir()
+        {
+            var dir = new DirectoryInfo(AppContext.BaseDirectory);
+            while (dir is not null)
+            {
+                var candidate = Path.Combine(dir.FullName, "TestData", "npc-ai");
                 if (Directory.Exists(candidate))
                 {
                     return candidate;
@@ -257,41 +279,6 @@ public class NpcEventStateTests
                 "player is still the active player after playing a card in main phase");
         }
 
-        [Fact(DisplayName = "相手の play_card イベントは裏向きカードの cardId を秘匿し表向きカードでは残す")]
-        public async Task AdvanceNpcTurn_PlayCardEvent_RedactsFaceDownCardId()
-        {
-            // From the player's viewpoint, opponent play_card events must redact
-            // the cardId whenever the card is face-down (DeployTurns>0 or Reactive);
-            // face-up cards (Strategy/Attachment/deploy_turns=0 resource) keep cardId.
-            var result = await RunNpcTurn();
-
-            var playCards = result.Events
-                .Where(e => e.Event.EventType == ActionTypes.PlayCard)
-                .Select(e => e.Event)
-                .ToList();
-
-            playCards.Should().NotBeEmpty("NPC should play at least one card during main phase");
-
-            bool sawRedacted = false;
-            foreach (var evt in playCards)
-            {
-                var data = evt.EventData.Should().BeOfType<PlayCardEventData>().Subject;
-                var cardId = data.CardId;
-                if (cardId == "")
-                {
-                    sawRedacted = true;
-                    continue;
-                }
-                var def = _cc.Get(cardId);
-                def.Should().NotBeNull();
-                (def!.CardType == CardTypes.Reactive || def.DeployTurns > 0).Should().BeFalse(
-                    $"face-down card {cardId} should have been redacted (type={def.CardType}, deploy_turns={def.DeployTurns})");
-            }
-
-            sawRedacted.Should().BeTrue(
-                "SHE-easy deck contains cards with DeployTurns>0; at least one should have been redacted");
-        }
-
         [Fact(DisplayName = "プレイヤー自身の play_card イベントは cardId を秘匿しない")]
         public async Task ProcessAction_PlayerOwnPlayCard_DoesNotRedact()
         {
@@ -314,6 +301,64 @@ public class NpcEventStateTests
             var data = playCard.Event.EventData.Should().BeOfType<PlayCardEventData>().Subject;
             data.CardId.Should().Be(first.CardID,
                 "player's own play_card must keep the real cardId (actor == viewer)");
+        }
+    }
+
+    [Trait("対象", "NPC の play_card イベントにおける相手プレイヤーからのカード秘匿")]
+    public class OpponentCardVisibility : Base
+    {
+        public OpponentCardVisibility()
+            : base(FindTestFixtureNpcDataDir()
+                ?? throw new FileNotFoundException("test fixture NPC data directory not found"))
+        {
+        }
+
+        [Fact(DisplayName = "相手が裏向きカードのみをプレイしたとき、play_card イベントの cardId が秘匿される")]
+        public async Task AdvanceNpcTurn_OpponentDeckIsAllFaceDown_RedactsEveryPlayCardId()
+        {
+            var result = await RunNpcTurn("TST-FaceDownDeploy");
+
+            var playCards = result.Events
+                .Where(e => e.Event.EventType == ActionTypes.PlayCard)
+                .Select(e => e.Event.EventData.Should().BeOfType<PlayCardEventData>().Subject)
+                .ToList();
+
+            playCards.Should().NotBeEmpty(
+                "デッキの全カードがデプロイ可能なリソースなので、NPC は自分のターンに必ず何か配置する");
+            playCards.Should().OnlyContain(pc => pc.CardId == "",
+                "デッキの全カードのデプロイターンが 1 以上 (裏向き) なので cardId は常に秘匿される");
+        }
+
+        [Fact(DisplayName = "相手が表向きカードのみをプレイしたとき、play_card イベントの cardId は秘匿されない")]
+        public async Task AdvanceNpcTurn_OpponentDeckIsAllFaceUp_KeepsEveryPlayCardId()
+        {
+            var result = await RunNpcTurn("TST-FaceUpDeploy");
+
+            var playCards = result.Events
+                .Where(e => e.Event.EventType == ActionTypes.PlayCard)
+                .Select(e => e.Event.EventData.Should().BeOfType<PlayCardEventData>().Subject)
+                .ToList();
+
+            playCards.Should().NotBeEmpty(
+                "デッキの全カードがデプロイ可能なリソースなので、NPC は自分のターンに必ず何か配置する");
+            playCards.Should().OnlyContain(pc => pc.CardId != "",
+                "デッキの全カードのデプロイターンが 0 (表向き) なので cardId は秘匿されない");
+        }
+
+        [Fact(DisplayName = "相手がリアクティブカードのみをプレイしたとき、play_card イベントの cardId が秘匿される")]
+        public async Task AdvanceNpcTurn_OpponentDeckIsAllReactive_RedactsEveryPlayCardId()
+        {
+            var result = await RunNpcTurn("TST-ReactiveDeploy");
+
+            var playCards = result.Events
+                .Where(e => e.Event.EventType == ActionTypes.PlayCard)
+                .Select(e => e.Event.EventData.Should().BeOfType<PlayCardEventData>().Subject)
+                .ToList();
+
+            playCards.Should().NotBeEmpty(
+                "デッキの全カードがリアクティブなので、NPC は自分のターンに必ず何か伏せる");
+            playCards.Should().OnlyContain(pc => pc.CardId == "",
+                "デッキの全カードがリアクティブ (常に裏向きで伏せられる) なので cardId は常に秘匿される");
         }
     }
 

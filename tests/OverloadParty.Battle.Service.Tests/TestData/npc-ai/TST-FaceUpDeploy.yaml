@@ -1,0 +1,26 @@
+model: TST-FaceUpDeploy
+faction: SHE
+routine_id: IN-0001
+special_id: IN-0002
+display_name: 表向きリソースのみのデッキ
+
+deck:
+  - card_id: SH-0002
+    copies: 30
+
+budget:
+  low_threshold: 1500
+  maintenance_limit_ratio: 0.8
+
+deploy:
+  priorities:
+    - card_type: Compute
+      priority: 50
+
+  zone_preferences:
+    Compute: [frontend, backend]
+
+scale_up:
+  instance_family: M
+  max_maintenance_ratio: 0.6
+  order_by: tp_desc
