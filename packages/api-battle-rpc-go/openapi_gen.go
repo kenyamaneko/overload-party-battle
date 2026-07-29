@@ -104,7 +104,7 @@ type ClientGameState struct {
 	// ActivePlayer アクティブプレイヤー番号 (1 or 2)
 	ActivePlayer int64 `json:"activePlayer"`
 
-	// CurrentPhase 現在のフェーズ (`selecting` / `draw` / `yield` / `main` / `battle` / `end`)。
+	// CurrentPhase 現在のフェーズ (`draw` / `main` / `battle` / `end`)。
 	// 定数マッピングは data/game_logic_constants.yaml 参照。
 	CurrentPhase string `json:"currentPhase"`
 

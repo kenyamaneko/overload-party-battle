@@ -159,7 +159,7 @@ NPC のターンを進行させる。NPC 戦で `game_enter` 後に Gateway が�
 |---|---|---|---|
 | `GameID` | `string` | `gameID` | ゲームID（ULID） |
 | `CurrentTurn` | `int64` | `currentTurn` | 現在のターン番号 |
-| `CurrentPhase` | `string` | `currentPhase` | 現在のフェーズ（`selecting` / `draw` / `yield` / `main` / `battle` / `end`） |
+| `CurrentPhase` | `string` | `currentPhase` | 現在のフェーズ（`draw` / `main` / `battle` / `end`） |
 | `ActivePlayer` | `int64` | `activePlayer` | アクティブプレイヤー番号（1 or 2） |
 | `IsMyTurn` | `bool` | `isMyTurn` | 自分のターンか |
 | `TurnStartedAt` | `time.Time` | `turnStartedAt` | ターン開始日時 |

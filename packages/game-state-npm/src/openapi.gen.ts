@@ -323,7 +323,7 @@ export interface components {
              */
             currentTurn: number;
             /**
-             * @description 現在のフェーズ (`selecting` / `draw` / `yield` / `main` / `battle` / `end`)。
+             * @description 現在のフェーズ (`draw` / `main` / `battle` / `end`)。
              *     定数マッピングは data/game_logic_constants.yaml 参照。
              */
             currentPhase: string;

@@ -48,7 +48,7 @@ namespace OverloadParty.GameState
         public long CurrentTurn { get; set; } = default!;
 
         /// <summary>
-        /// 現在のフェーズ (`selecting` / `draw` / `yield` / `main` / `battle` / `end`)。
+        /// 現在のフェーズ (`draw` / `main` / `battle` / `end`)。
         /// <br/>定数マッピングは data/game_logic_constants.yaml 参照。
         /// <br/>
         /// </summary>
