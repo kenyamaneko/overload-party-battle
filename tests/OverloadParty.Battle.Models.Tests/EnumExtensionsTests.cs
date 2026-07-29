@@ -262,9 +262,12 @@ public class EnumExtensionsTests
         [InlineData(ActionType.Monetize, "monetize")]
         [InlineData(ActionType.DiscardHand, "discard_hand")]
         [InlineData(ActionType.UseIgnition, "use_ignition")]
+        [InlineData(ActionType.UseInitiative, "use_initiative")]
         [InlineData(ActionType.EndPhase, "end_phase")]
         [InlineData(ActionType.Forfeit, "forfeit")]
         [InlineData(ActionType.ForfeitBoth, "forfeit_both")]
+        [InlineData(ActionType.SelectSlot, "select_slot")]
+        [InlineData(ActionType.ResolvePendingChoice, "resolve_pending_choice")]
         public void ToWireString_ReturnsExpected(ActionType action, string expected)
         {
             action.ToWireString().Should().Be(expected);
@@ -277,9 +280,12 @@ public class EnumExtensionsTests
         [InlineData("monetize", ActionType.Monetize)]
         [InlineData("discard_hand", ActionType.DiscardHand)]
         [InlineData("use_ignition", ActionType.UseIgnition)]
+        [InlineData("use_initiative", ActionType.UseInitiative)]
         [InlineData("end_phase", ActionType.EndPhase)]
         [InlineData("forfeit", ActionType.Forfeit)]
         [InlineData("forfeit_both", ActionType.ForfeitBoth)]
+        [InlineData("select_slot", ActionType.SelectSlot)]
+        [InlineData("resolve_pending_choice", ActionType.ResolvePendingChoice)]
         public void Parse_ValidInput_ReturnsExpected(string input, ActionType expected)
         {
             EnumExtensions.ParseActionType(input).Should().Be(expected);
@@ -307,9 +313,12 @@ public class EnumExtensionsTests
         [InlineData(ActionType.Monetize)]
         [InlineData(ActionType.DiscardHand)]
         [InlineData(ActionType.UseIgnition)]
+        [InlineData(ActionType.UseInitiative)]
         [InlineData(ActionType.EndPhase)]
         [InlineData(ActionType.Forfeit)]
         [InlineData(ActionType.ForfeitBoth)]
+        [InlineData(ActionType.SelectSlot)]
+        [InlineData(ActionType.ResolvePendingChoice)]
         public void Roundtrip(ActionType action)
         {
             EnumExtensions.ParseActionType(action.ToWireString()).Should().Be(action);

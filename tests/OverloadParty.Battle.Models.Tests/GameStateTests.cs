@@ -500,6 +500,24 @@ public class GameStateTests
         }
     }
 
+    [Trait("対象", "実効可用性")]
+    public class EffectiveAvailability
+    {
+        [Fact(DisplayName = "ダメージが最大可用性と等しいとき、実効可用性は 0 になる")]
+        public void Damage_EqualsMaxAV_ReturnsZero()
+        {
+            var resource = TestFactory.MakeResource(maxAV: 1400, damage: 1400);
+            resource.EffectiveAV.Should().Be(0);
+        }
+
+        [Fact(DisplayName = "ダメージが最大可用性を超えるとき、実効可用性は負になる")]
+        public void Damage_ExceedsMaxAV_ReturnsNegative()
+        {
+            var resource = TestFactory.MakeResource(maxAV: 1400, damage: 1500);
+            resource.EffectiveAV.Should().Be(-100);
+        }
+    }
+
     [Trait("対象", "NPC モデル取得")]
     public class GetNpcModel
     {
