@@ -233,11 +233,8 @@ public static class TestFactory
         bool faceUp = true,
         long deployLeft = 0,
         long maxAV = 1400,
-        long currentAV = 1400,
         long? maxTP = 600,
-        long? currentTP = 600,
         long? maxYield = null,
-        long? currentYield = null,
         long damage = 0,
         long elasticBonus = 0)
     {
@@ -250,11 +247,8 @@ public static class TestFactory
             FaceUp = faceUp,
             DeployingTurnsLeft = deployLeft,
             MaxAV = maxAV,
-            CurrentAV = currentAV,
             MaxTP = maxTP,
-            CurrentTP = currentTP,
             MaxYield = maxYield,
-            CurrentYield = currentYield,
             Damage = damage,
             ElasticBonus = elasticBonus,
         };

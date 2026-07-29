@@ -230,7 +230,7 @@ public class SlotRequestOpsTests
 
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, activePlayer: 2);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "TST-0005", instanceId: "atk", faceUp: true, maxTP: 1500, currentTP: 1500);
+                cardId: "TST-0005", instanceId: "atk", faceUp: true, maxTP: 1500);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "victim", faceUp: true);
             state.Player1Repository =
             [

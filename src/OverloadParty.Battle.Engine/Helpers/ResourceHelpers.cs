@@ -89,16 +89,12 @@ public static class ResourceHelpers
         if (card.IsComputeType && card.ComputeStats is { } cs)
         {
             resource.MaxAV = cs.Availability;
-            resource.CurrentAV = cs.Availability;
             resource.MaxTP = cs.Throughput;
-            resource.CurrentTP = cs.Throughput;
         }
         else if (card.IsDataResource && card.DataResourceStats is { } ds)
         {
             resource.MaxAV = ds.Availability;
-            resource.CurrentAV = ds.Availability;
             resource.MaxYield = ds.Yield;
-            resource.CurrentYield = ds.Yield;
         }
 
         return resource;
@@ -269,15 +265,11 @@ public static class ResourceHelpers
         {
             if (card.IsComputeType)
             {
-                long newTP = StatCalculator.RecalculateMaxTP(resource, card);
-                resource.MaxTP = newTP;
-                resource.CurrentTP = newTP;
+                resource.MaxTP = StatCalculator.RecalculateMaxTP(resource, card);
             }
             if (card.IsDataResource)
             {
-                long newYield = StatCalculator.RecalculateMaxYield(resource, card);
-                resource.MaxYield = newYield;
-                resource.CurrentYield = newYield;
+                resource.MaxYield = StatCalculator.RecalculateMaxYield(resource, card);
             }
         }
     }

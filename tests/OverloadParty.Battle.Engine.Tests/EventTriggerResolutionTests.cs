@@ -104,9 +104,9 @@ public class EventTriggerResolutionTests
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "ATK", instanceId: "atk", faceUp: true, maxTP: 5000, currentTP: 5000);
+                cardId: "ATK", instanceId: "atk", faceUp: true, maxTP: 5000);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "DEF", instanceId: "def", faceUp: true, maxAV: 100, currentAV: 100);
+                cardId: "DEF", instanceId: "def", faceUp: true, maxAV: 100);
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "watcher",
@@ -234,7 +234,7 @@ public class EventTriggerResolutionTests
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(
                 cardId: "ATK", instanceId: "atk", faceUp: true);
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
-                cardId: "DEF", instanceId: "def", faceUp: true, maxAV: 1400, currentAV: 1400);
+                cardId: "DEF", instanceId: "def", faceUp: true, maxAV: 1400);
             state.Player2Field.Support[0] = new DeployedSupport
             {
                 InstanceID = "watcher",

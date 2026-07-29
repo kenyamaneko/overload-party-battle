@@ -37,7 +37,7 @@ public class NpcAi : INpcStrategy
         _ignition = new IgnitionStrategy(cc, effects);
         _initiative = initiatives is null ? null : new InitiativeStrategy(initiatives, effects, cc);
         _scaleUp = new ScaleUpStrategy(config, cc);
-        _monetize = new MonetizeStrategy(config, cc);
+        _monetize = new MonetizeStrategy(config);
     }
 
     // ═══════════════════════════════════════════════════════════════

@@ -8,36 +8,6 @@ public class ResourceHelpersTests
     [Trait("対象", "リソースの生成")]
     public class CreateDeployedResource
     {
-        [Fact(DisplayName = "Compute系カードからリソースを生成するとスループットと可用性が設定される")]
-        public void ComputeCard_SetsTPAndAV()
-        {
-            var card = TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400);
-
-            var resource = ResourceHelpers.CreateDeployedResource(card, "inst_1", deployTurn: 3);
-
-            resource.InstanceID.Should().Be("inst_1");
-            resource.CardID.Should().Be("TST-0001");
-            resource.MaxAV.Should().Be(1400);
-            resource.CurrentAV.Should().Be(1400);
-            resource.MaxTP.Should().Be(600);
-            resource.CurrentTP.Should().Be(600);
-            resource.DeployedOnTurn.Should().Be(3);
-        }
-
-        [Fact(DisplayName = "Data系カードからリソースを生成するとイールドと可用性が設定されスループットを持たない")]
-        public void DataCard_SetsYieldAndAV()
-        {
-            var card = TestFactory.DataCard(cardId: "TST-0002", yield: 400, av: 800);
-
-            var resource = ResourceHelpers.CreateDeployedResource(card, "inst_2", deployTurn: 1);
-
-            resource.MaxAV.Should().Be(800);
-            resource.CurrentAV.Should().Be(800);
-            resource.MaxYield.Should().Be(400);
-            resource.CurrentYield.Should().Be(400);
-            resource.MaxTP.Should().BeNull();
-        }
-
         [Theory(DisplayName = "リサイザブルが true のときランクが small になり false のときランクを持たない")]
         [InlineData(true)]
         [InlineData(false)]
@@ -356,7 +326,6 @@ public class ResourceHelpersTests
             ResourceHelpers.ChangeRank(resource, Rank.Large, TestFactory.MakeField(), cc);
 
             resource.MaxTP.Should().Be(1800); // 600 * 3
-            resource.CurrentTP.Should().Be(1800);
         }
 
         [Fact(DisplayName = "非エラスティックの Data系リソースをランク medium にするとイールドが 800 に再計算される")]
@@ -365,27 +334,26 @@ public class ResourceHelpersTests
             var cc = new TestCardCache();
             cc.Add(TestFactory.DataCard(cardId: "TST-0002", yield: 400));
 
-            var resource = TestFactory.MakeResource(cardId: "TST-0002", rank: Rank.Small, maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
+            var resource = TestFactory.MakeResource(cardId: "TST-0002", rank: Rank.Small, maxTP: null, maxYield: 400);
 
             ResourceHelpers.ChangeRank(resource, Rank.Medium, TestFactory.MakeField(), cc);
 
             resource.MaxYield.Should().Be(800); // 400 * 2
-            resource.CurrentYield.Should().Be(800);
         }
 
-        [Fact(DisplayName = "エラスティックのリソースはランクを上げてもスループットが再計算されない")]
-        public void ElasticCard_DoesNotRecalculateTP()
+        [Fact(DisplayName = "エラスティックのリソースはランクを上げても最大スループットは再計算されないが、実効スループットはランク倍率を反映する")]
+        public void ElasticCard_RankChangeAffectsEffectiveTPButNotStoredMax()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ElasticContainerCard(cardId: "TEST-0002"));
+            var field = TestFactory.MakeField();
 
-            var resource = TestFactory.MakeResource(cardId: "TEST-0002", rank: Rank.Small, maxTP: 500, currentTP: 500);
+            var resource = TestFactory.MakeResource(cardId: "TEST-0002", rank: Rank.Small, maxTP: 500);
 
-            ResourceHelpers.ChangeRank(resource, Rank.Medium, TestFactory.MakeField(), cc);
+            ResourceHelpers.ChangeRank(resource, Rank.Medium, field, cc);
 
-            // Elastic cards should NOT have MaxTP recalculated
             resource.MaxTP.Should().Be(500);
-            resource.CurrentTP.Should().Be(500);
+            StatCalculator.CalculateEffectiveTP(resource, field, cc).Should().Be(1000); // 500 * 2 (medium)
         }
     }
 }

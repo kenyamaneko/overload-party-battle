@@ -203,7 +203,7 @@ public class MonetizeProcessorTests
             var state = TestFactory.MakeGameState(turn: 2);
             var res1 = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
             var res2 = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "be_2", faceUp: true,
-                maxTP: 400, currentTP: 400);
+                maxTP: 400);
             state.Player1Field.Backend[0] = res1;
             state.Player1Field.Backend[1] = res2;
             state.SetInsightPool(1, 800);
@@ -250,7 +250,7 @@ public class MonetizeProcessorTests
             var state = TestFactory.MakeGameState(turn: 2);
             state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: true);
             state.Player1Field.Backend[1] = TestFactory.MakeResource(
-                cardId: "TST-0005", instanceId: "be_2", faceUp: true, maxTP: 400, currentTP: 400);
+                cardId: "TST-0005", instanceId: "be_2", faceUp: true, maxTP: 400);
             state.SetInsightPool(1, 800);
 
             var result = MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 300), Dist("be_2", 150)), cc);

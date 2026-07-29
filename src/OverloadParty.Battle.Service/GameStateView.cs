@@ -1,6 +1,7 @@
 using System.Linq;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Helpers;
 using OverloadParty.Battle.Models;
 
 using GD = OverloadParty.GameState;
@@ -61,13 +62,13 @@ public static class GameStateView
             Budget = budget,
             InsightPool = insightPool,
             TimeBank = state.GetTimeBank(playerNum),
-            Field = MapField(myField),
+            Field = MapField(myField, cc),
             Hand = myHand.Select(MapUndeployedCard).ToList(),
             RepoCount = myRepo.Count,
             TrashCount = myTrash.Count,
             Trash = myTrash.Select(MapUndeployedCard).ToList(),
             AvailableActions = availableActions,
-            PendingSlotSelect = MapPendingSlotSelect(state, playerNum),
+            PendingSlotSelect = MapPendingSlotSelect(state, playerNum, myField, cc),
         };
 
         var oppView = new GD.OpponentView
@@ -76,7 +77,7 @@ public static class GameStateView
             Budget = state.GetBudget(oppNum),
             InsightPool = state.GetInsightPool(oppNum),
             TimeBank = state.GetTimeBank(oppNum),
-            Field = BuildOpponentField(oppField, playerNum),
+            Field = BuildOpponentField(oppField, playerNum, cc),
             HandCount = oppHand.Count,
             RepoCount = oppRepo.Count,
             TrashCount = oppTrash.Count,
@@ -97,13 +98,13 @@ public static class GameStateView
         };
     }
 
-    private static GD.PendingSlotSelectView? MapPendingSlotSelect(BattleGameState state, long playerNum)
+    private static GD.PendingSlotSelectView? MapPendingSlotSelect(BattleGameState state, long playerNum, Field field, ICardCache cc)
     {
         var pending = state.PendingSlotSelects.FirstOrDefault(p => p.PlayerNum == playerNum);
         if (pending is null) { return null; }
         return new GD.PendingSlotSelectView
         {
-            Resource = MapResource(pending.Resource),
+            Resource = MapResource(pending.Resource, field, cc),
             ValidZones = pending.ValidZones.ToList(),
         };
     }
@@ -130,20 +131,21 @@ public static class GameStateView
 
     // ─── Mapping helpers (Models → GameData) ────────────────
 
-    private static GD.Field MapField(Field field)
+    private static GD.Field MapField(Field field, ICardCache cc)
     {
         // Zone<T>.IEnumerable は null スロットを除外するため、ToArray() で
         // 元の固定容量配列を取り出してから Select する。
         return new GD.Field
         {
-            Frontend = field.Frontend.ToArray().Select(r => r is null ? null : MapResource(r)).ToList(),
-            Backend = field.Backend.ToArray().Select(r => r is null ? null : MapResource(r)).ToList(),
+            Frontend = field.Frontend.ToArray().Select(r => r is null ? null : MapResource(r, field, cc)).ToList(),
+            Backend = field.Backend.ToArray().Select(r => r is null ? null : MapResource(r, field, cc)).ToList(),
             Support = field.Support.ToArray().Select(s => s is null ? null : MapSupport(s)).ToList(),
         };
     }
 
-    private static GD.DeployedResource MapResource(DeployedResource r)
+    private static GD.DeployedResource MapResource(DeployedResource r, Field field, ICardCache cc)
     {
+        var card = cc.MustGet(r.CardID);
         return new GD.DeployedResource
         {
             InstanceID = r.InstanceID,
@@ -153,11 +155,11 @@ public static class GameStateView
             InstanceFamily = r.InstanceFamily?.ToWireString(),
             FaceUp = r.FaceUp,
             DeployingTurnsLeft = r.DeployingTurnsLeft,
-            CurrentAV = r.CurrentAV,
+            CurrentAV = r.EffectiveAV,
             MaxAV = r.MaxAV,
-            CurrentTP = r.CurrentTP,
+            CurrentTP = card.IsComputeType ? StatCalculator.CalculateEffectiveTP(r, field, cc) : null,
             MaxTP = r.MaxTP,
-            CurrentYield = r.CurrentYield,
+            CurrentYield = card.IsDataResource ? StatCalculator.CalculateEffectiveInsight(r, field, cc) : null,
             MaxYield = r.MaxYield,
             Damage = r.Damage,
             TemporaryEffects = r.TemporaryEffects.Select(MapTemporaryEffect).ToList(),
@@ -265,14 +267,14 @@ public static class GameStateView
 
     // ─── Opponent field with info hiding ────────────────────
 
-    private static GD.OpponentField BuildOpponentField(Field field, long viewerPlayerNum)
+    private static GD.OpponentField BuildOpponentField(Field field, long viewerPlayerNum, ICardCache cc)
     {
         // Zone<T>.IEnumerable は null スロットを除外するため、ToArray() で
         // 固定容量配列を取り出してから Select する。
         return new GD.OpponentField
         {
-            Frontend = field.Frontend.ToArray().Select(HideResourceIfFaceDown).ToList(),
-            Backend = field.Backend.ToArray().Select(HideResourceIfFaceDown).ToList(),
+            Frontend = field.Frontend.ToArray().Select(r => HideResourceIfFaceDown(r, field, cc)).ToList(),
+            Backend = field.Backend.ToArray().Select(r => HideResourceIfFaceDown(r, field, cc)).ToList(),
             Support = field.Support.ToArray().Select(sup =>
             {
                 if (sup is null) { return null; }
@@ -290,17 +292,17 @@ public static class GameStateView
         };
     }
 
-    private static GD.DeployedResource? HideResourceIfFaceDown(DeployedResource? res)
+    private static GD.DeployedResource? HideResourceIfFaceDown(DeployedResource? res, Field field, ICardCache cc)
     {
         if (res is null) { return null; }
-        if (res.FaceUp) { return MapResource(res); }
+        if (res.FaceUp) { return MapResource(res, field, cc); }
 
-        // Hide all stats for face-down (still deploying) resources.
-        // CardID は required スキーマだが face-down では公開しないため空文字を入れる。
+        // カード名はデプロイ中も公開されるため CardID / ArtNo は残し、ステータス類のみ既定値で伏せる。
         return new GD.DeployedResource
         {
             InstanceID = res.InstanceID,
-            CardID = "",
+            CardID = res.CardID,
+            ArtNo = res.ArtNo,
             FaceUp = false,
             DeployingTurnsLeft = res.DeployingTurnsLeft,
         };

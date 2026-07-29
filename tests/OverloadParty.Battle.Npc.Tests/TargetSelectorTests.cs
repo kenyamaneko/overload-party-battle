@@ -92,7 +92,7 @@ public class TargetSelectorTests
             field.Frontend[0] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "low_tp", currentTP: 300);
             field.Frontend[1] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "high_tp", currentTP: 900);
 
-            var result = TargetSelector.StrongestInZone(field, Zones.Frontend, _cc);
+            var result = TargetSelector.StrongestInZone(field, Zones.Frontend);
 
             result.Should().Be("high_tp");
         }
@@ -106,7 +106,7 @@ public class TargetSelectorTests
             field.Backend[1] = TestFactory.MakeWireResource(
                 cardId: "TST-0001", instanceId: "compute_res", currentTP: 200, currentYield: null);
 
-            var result = TargetSelector.StrongestInZone(field, Zones.Backend, _cc);
+            var result = TargetSelector.StrongestInZone(field, Zones.Backend);
 
             result.Should().Be("data_res");
         }
@@ -116,9 +116,21 @@ public class TargetSelectorTests
         {
             var field = TestFactory.MakeWireField();
 
-            var result = TargetSelector.StrongestInZone(field, Zones.Frontend, _cc);
+            var result = TargetSelector.StrongestInZone(field, Zones.Frontend);
 
             result.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "基礎スループット 600 にバフ +800 を持つリソースと基礎スループット 1000 のリソースが並ぶとき、実効値 1400 の前者を強いリソースとして評価する")]
+        public void StrongestInZone_PrefersBuffedResourceOverHigherBaseThroughput()
+        {
+            var field = TestFactory.MakeWireField();
+            field.Frontend[0] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "buffed", currentTP: 1400);
+            field.Frontend[1] = TestFactory.MakeWireResource(cardId: "TST-0001", instanceId: "unbuffed", currentTP: 1000);
+
+            var result = TargetSelector.StrongestInZone(field, Zones.Frontend);
+
+            result.Should().Be("buffed");
         }
     }
 
@@ -332,35 +344,34 @@ public class TargetSelectorTests
     [Trait("対象", "リソース比較値の算出")]
     public class ResourceValue : Base
     {
-        [Fact(DisplayName = "現在スループットがあるとき、その値を比較値にする")]
-        public void ResourceValue_CurrentTP_ReturnsTP()
+        [Fact(DisplayName = "実効スループットがあるとき、その値を比較値にする")]
+        public void ResourceValue_EffectiveTP_ReturnsTP()
         {
             var res = TestFactory.MakeWireResource(cardId: "TST-0001", currentTP: 700);
 
-            var value = TargetSelector.CalculateResourceValue(res, _cc);
+            var value = TargetSelector.CalculateResourceValue(res);
 
             value.Should().Be(700);
         }
 
-        [Fact(DisplayName = "現在イールドがあるとき、その値を比較値にする")]
-        public void ResourceValue_CurrentYield_ReturnsYield()
+        [Fact(DisplayName = "実効イールドがあるとき、その値を比較値にする")]
+        public void ResourceValue_EffectiveYield_ReturnsYield()
         {
             var res = TestFactory.MakeWireResource(cardId: "TST-0002", currentTP: null, currentYield: 500, maxYield: 500);
 
-            var value = TargetSelector.CalculateResourceValue(res, _cc);
+            var value = TargetSelector.CalculateResourceValue(res);
 
             value.Should().Be(500);
         }
 
-        [Fact(DisplayName = "現在ステータスが無いとき、カード定義の基礎値を比較値にする")]
-        public void ResourceValue_NoCurrentStats_FallsBackToCardDefinition()
+        [Fact(DisplayName = "実効スループット 0 のリソースは価値 0 と評価される")]
+        public void ResourceValue_ZeroEffectiveTP_ReturnsZero()
         {
-            var res = TestFactory.MakeWireResource(cardId: "TST-0001", currentTP: null, currentYield: null);
+            var res = TestFactory.MakeWireResource(cardId: "TST-0001", currentTP: 0, currentYield: null);
 
-            var value = TargetSelector.CalculateResourceValue(res, _cc);
+            var value = TargetSelector.CalculateResourceValue(res);
 
-            // Card 1 is Compute with BaseThroughput = 600
-            value.Should().Be(600);
+            value.Should().Be(0);
         }
     }
 }

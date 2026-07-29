@@ -549,9 +549,7 @@ public class PgGameRepositoryTests
                 Rank = Rank.Small,
                 FaceUp = true,
                 MaxAV = 1400,
-                CurrentAV = 1400,
                 MaxTP = 600,
-                CurrentTP = 600,
             };
             state.Player2Field.Backend[0] = new DeployedResource
             {
@@ -560,9 +558,7 @@ public class PgGameRepositoryTests
                 FaceUp = false,
                 DeployingTurnsLeft = 1,
                 MaxAV = 800,
-                CurrentAV = 800,
                 MaxYield = 400,
-                CurrentYield = 400,
             };
 
             await repo.CreateGame(game, state);
@@ -578,5 +574,44 @@ public class PgGameRepositoryTests
             p2Back[0]!.InstanceID.Should().Be("inst_1");
             p2Back[0]!.DeployingTurnsLeft.Should().Be(1);
         }
+    }
+}
+
+[Trait("対象", "廃止済み JSONB キーとの後方互換性")]
+public class FieldJsonBackwardCompatibilityTests
+{
+    [Fact(DisplayName = "current_av 等の廃止済みキーを含む旧 JSONB を読み込んでも例外にならず既存キーの値を保持する")]
+    public void Field_DeserializesLegacyJsonbWithRemovedCurrentKeys()
+    {
+        var legacyJson = """
+            {
+                "frontend": [
+                    {
+                        "instance_id": "inst_0",
+                        "card_id": "TST-0001",
+                        "face_up": true,
+                        "max_av": 1400,
+                        "current_av": 1400,
+                        "max_tp": 600,
+                        "current_tp": 600,
+                        "damage": 200
+                    },
+                    null,
+                    null
+                ],
+                "backend": [null, null, null],
+                "support": [null, null, null]
+            }
+            """;
+
+        var field = System.Text.Json.JsonSerializer.Deserialize<Field>(
+            legacyJson, OverloadParty.Battle.Data.Json.DbJsonOptions.Default);
+
+        field.Should().NotBeNull();
+        var resource = field!.Frontend.ToArray()[0];
+        resource.Should().NotBeNull();
+        resource!.MaxAV.Should().Be(1400);
+        resource.MaxTP.Should().Be(600);
+        resource.Damage.Should().Be(200);
     }
 }

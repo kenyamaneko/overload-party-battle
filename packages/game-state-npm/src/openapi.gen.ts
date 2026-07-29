@@ -449,6 +449,7 @@ export interface components {
         /** @description フィールドに展開済みのリソースカードインスタンス。 */
         DeployedResource: {
             instanceID: string;
+            /** @description カード ID (裏向き・デプロイ中でも公開される) */
             cardID: string;
             /** Format: int64 */
             artNo: number;
@@ -462,20 +463,23 @@ export interface components {
              * @description デプロイ残りターン数 (0=アクティブ)
              */
             deployingTurnsLeft: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description 実効可用性 (MaxAV - Damage)
+             */
             currentAV: number;
             /** Format: int64 */
             maxAV: number;
             /**
              * Format: int64
-             * @description 現在のスループット (Compute のみ)
+             * @description 実効スループット (バフ・Elastic ボーナス・ランク/ファミリー倍率適用後、Compute のみ)
              */
             currentTP?: number | null;
             /** Format: int64 */
             maxTP?: number | null;
             /**
              * Format: int64
-             * @description 現在のイールド (Data のみ)
+             * @description 実効イールド (バフ・Elastic ボーナス・ランク/ファミリー倍率適用後、Data のみ)
              */
             currentYield?: number | null;
             /** Format: int64 */

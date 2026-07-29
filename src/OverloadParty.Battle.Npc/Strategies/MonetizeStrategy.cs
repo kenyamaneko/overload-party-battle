@@ -12,12 +12,10 @@ namespace OverloadParty.Battle.Npc.Strategies;
 internal sealed class MonetizeStrategy
 {
     private readonly AiConfig _config;
-    private readonly ICardCache _cc;
 
-    public MonetizeStrategy(AiConfig config, ICardCache cc)
+    public MonetizeStrategy(AiConfig config)
     {
         _config = config;
-        _cc = cc;
     }
 
     /// <summary>
@@ -31,7 +29,7 @@ internal sealed class MonetizeStrategy
             return [];
         }
 
-        var sorted = TargetSelector.OrderActions(yieldActions, a => a.SourceInstanceID, _config.Monetize.OrderBy, ctx.Field, _cc);
+        var sorted = TargetSelector.OrderActions(yieldActions, a => a.SourceInstanceID, _config.Monetize.OrderBy, ctx.Field);
 
         var reserve = (long)(insightPool * _config.Monetize.ReserveRatio);
         var distributable = insightPool - reserve;
