@@ -5,18 +5,14 @@ namespace OverloadParty.Battle.Tests.Engine;
 
 public class ActionRequestDeserializationTests
 {
-    /// <summary>Shared setup for action-request deserialization tests (camelCase, case-insensitive JSON options).</summary>
-    public abstract class Base
+    private static readonly JsonSerializerOptions JsonOpts = new()
     {
-        protected static readonly JsonSerializerOptions JsonOpts = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        };
-    }
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true,
+    };
 
     [Trait("対象", "カードプレイ要求のデシリアライズ")]
-    public class PlayCardRequestDeserialization : Base
+    public class PlayCardRequestDeserialization
     {
         [Fact(DisplayName = "position をネストした JSON から zone frontend と index 0 を読み取る")]
         public void PlayCardRequest_NestedPosition_DeserializesCorrectly()
@@ -56,7 +52,7 @@ public class ActionRequestDeserializationTests
     }
 
     [Trait("対象", "スケールアップ要求のデシリアライズ")]
-    public class ScaleUpRequestDeserialization : Base
+    public class ScaleUpRequestDeserialization
     {
         [Fact(DisplayName = "componentInstanceId をインスタンス ID にマッピングする")]
         public void ScaleUpRequest_ComponentInstanceId_MapsToInstanceID()
@@ -93,7 +89,7 @@ public class ActionRequestDeserializationTests
     }
 
     [Trait("対象", "収益化要求のデシリアライズ")]
-    public class MonetizeRequestDeserialization : Base
+    public class MonetizeRequestDeserialization
     {
         [Fact(DisplayName = "distributions の componentInstanceId と amount を順序どおり読み取る")]
         public void MonetizeRequest_WithComponentInstanceId_DeserializesCorrectly()
@@ -133,7 +129,7 @@ public class ActionRequestDeserializationTests
     }
 
     [Trait("対象", "攻撃要求のデシリアライズ")]
-    public class AttackRequestDeserialization : Base
+    public class AttackRequestDeserialization
     {
         [Fact(DisplayName = "attackerInstanceId と targetInstanceId を読み取る")]
         public void AttackRequest_DeserializesCorrectly()
@@ -159,7 +155,7 @@ public class ActionRequestDeserializationTests
     }
 
     [Trait("対象", "起動効果使用要求のデシリアライズ")]
-    public class UseIgnitionRequestDeserialization : Base
+    public class UseIgnitionRequestDeserialization
     {
         [Fact(DisplayName = "instanceId を読み取る")]
         public void UseIgnitionRequest_DeserializesCorrectly()
@@ -184,7 +180,7 @@ public class ActionRequestDeserializationTests
     }
 
     [Trait("対象", "手札破棄要求のデシリアライズ")]
-    public class DiscardHandRequestDeserialization : Base
+    public class DiscardHandRequestDeserialization
     {
         [Fact(DisplayName = "cardInstanceIds の配列を読み取る")]
         public void DiscardHandRequest_DeserializesCorrectly()
