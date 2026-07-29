@@ -1,8 +1,41 @@
 using OverloadParty.Battle.Engine;
+using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
+
+[Trait("対象", "スロット選択待ちの生成から解決まで")]
+public class SelectSlotProcessorSurfacingTests
+{
+    [Fact(DisplayName = "起動効果でリポジトリからのスロット選択待ちが生成され、スロットを選ぶとリソースが配置される")]
+    public void Ignition_RequestsSlotFromRepo_ThenSelect_PlacesResource()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.DataCard(cardId: "TST-0009", subtype: "Database"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        var effects = new EffectRegistry();
+        effects.RegisterComposed("TST-0009", TriggerType.Ignition, new RequestSlotFromRepoOp());
+
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "src", faceUp: true);
+        state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" }];
+
+        UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+            new UseIgnitionRequest { InstanceID = "src" }, cc, effects);
+        state.PendingSlotSelects.Should().ContainSingle().Which.ValidZones.Should().Contain("frontend_0");
+
+        var result = SelectSlotProcessor.Process(state, TestFactory.MakeGame(), 1,
+            new SelectSlotRequest { Zone = "frontend", Index = 0 }, cc, effects);
+
+        state.Player1Field.Frontend[0].Should().NotBeNull();
+        state.Player1Field.Frontend[0]!.CardID.Should().Be("TST-0001");
+        state.PendingSlotSelects.Should().BeEmpty();
+        state.Player1Repository.Should().BeEmpty();
+        result.Events.Should().Contain(e => e.EventType == ActionTypes.SelectSlot);
+    }
+}
 
 [Trait("対象", "スロット選択")]
 public class SelectSlotProcessorTests
