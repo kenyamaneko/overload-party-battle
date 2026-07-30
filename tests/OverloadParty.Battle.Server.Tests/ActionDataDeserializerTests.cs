@@ -1,29 +1,21 @@
 using System.Text.Json;
 using OverloadParty.Battle.Engine.Processors;
+using OverloadParty.Battle.Models;
 
-namespace OverloadParty.Battle.Tests.Service;
+namespace OverloadParty.Battle.Tests.Server;
 
-/// <summary>GameService.DeserializeNpcActionData と同じ変換経路 (Dictionary&lt;string, object&gt; → JsonElement → 型付きリクエスト) をたどって検証する。</summary>
-public class GameServiceDeserializationTests
+/// <summary>action_type ごとの JSON ペイロードが、本番の ActionDataDeserializer.Deserialize を通して対応するリクエスト型に変換されることを検証する。</summary>
+public class ActionDataDeserializerTests
 {
-    /// <summary>Shared setup for NPC action data deserialization tests (serializer options and round-trip helper).</summary>
-    public abstract class Base
-    {
-        protected static readonly JsonSerializerOptions Opts = new()
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            PropertyNameCaseInsensitive = true,
-        };
-
-        protected static T SerializeAndDeserialize<T>(Dictionary<string, object> data)
-        {
-            var json = JsonSerializer.SerializeToElement(data, Opts);
-            return json.Deserialize<T>(Opts)!;
-        }
-    }
+    /// <summary>Dictionary で組み立てたペイロードを本番の ActionDataDeserializer.Deserialize に通す。</summary>
+    /// <param name="actionType">デシリアライズ対象のアクション種別。</param>
+    /// <param name="data">JSON ペイロードの元になる Dictionary。</param>
+    /// <returns>デシリアライズされたリクエスト。</returns>
+    private static T Deserialize<T>(ActionType actionType, Dictionary<string, object> data) =>
+        (T)ActionDataDeserializer.Deserialize(actionType, JsonSerializer.SerializeToElement(data));
 
     [Trait("対象", "play_card のデシリアライズ")]
-    public class PlayCard : Base
+    public class PlayCard
     {
         [Fact(DisplayName = "入れ子 position を持つ play_card がゾーン frontend・index 0 のカードプレイ要求になる")]
         public void WithNestedPosition_DeserializesToPlayCardRequest()
@@ -34,7 +26,7 @@ public class GameServiceDeserializationTests
                 ["position"] = new { zone = "frontend", index = 0 },
             };
 
-            var result = SerializeAndDeserialize<PlayCardRequest>(data);
+            var result = Deserialize<PlayCardRequest>(ActionType.PlayCard, data);
 
             result.CardInstanceID.Should().Be("h1");
             result.Zone.Should().Be("frontend");
@@ -50,7 +42,7 @@ public class GameServiceDeserializationTests
                 ["position"] = new { zone = "backend", index = 2 },
             };
 
-            var result = SerializeAndDeserialize<PlayCardRequest>(data);
+            var result = Deserialize<PlayCardRequest>(ActionType.PlayCard, data);
 
             result.Zone.Should().Be("backend");
             result.Index.Should().Be(2);
@@ -58,7 +50,7 @@ public class GameServiceDeserializationTests
     }
 
     [Trait("対象", "attack のデシリアライズ")]
-    public class Attack : Base
+    public class Attack
     {
         [Fact(DisplayName = "attack データが attacker・target の instance id を持つ攻撃要求になる")]
         public void DeserializesToAttackRequest()
@@ -69,7 +61,7 @@ public class GameServiceDeserializationTests
                 ["targetInstanceId"] = "t1",
             };
 
-            var result = SerializeAndDeserialize<AttackRequest>(data);
+            var result = Deserialize<AttackRequest>(ActionType.Attack, data);
 
             result.AttackerInstanceID.Should().Be("a1");
             result.TargetInstanceID.Should().Be("t1");
@@ -77,7 +69,7 @@ public class GameServiceDeserializationTests
     }
 
     [Trait("対象", "scale_up のデシリアライズ")]
-    public class ScaleUp : Base
+    public class ScaleUp
     {
         [Fact(DisplayName = "scale_up の componentInstanceId がスケールアップ要求のインスタンス ID にマップされる")]
         public void WithComponentInstanceId_MapsToInstanceID()
@@ -88,7 +80,7 @@ public class GameServiceDeserializationTests
                 ["targetRank"] = "medium",
             };
 
-            var result = SerializeAndDeserialize<ScaleUpRequest>(data);
+            var result = Deserialize<ScaleUpRequest>(ActionType.ScaleUp, data);
 
             result.InstanceID.Should().Be("inst_1");
             result.TargetRank.Should().Be("medium");
@@ -104,7 +96,7 @@ public class GameServiceDeserializationTests
                 ["instanceFamily"] = "C",
             };
 
-            var result = SerializeAndDeserialize<ScaleUpRequest>(data);
+            var result = Deserialize<ScaleUpRequest>(ActionType.ScaleUp, data);
 
             result.InstanceID.Should().Be("inst_2");
             result.TargetRank.Should().Be("large");
@@ -113,7 +105,7 @@ public class GameServiceDeserializationTests
     }
 
     [Trait("対象", "monetize のデシリアライズ")]
-    public class Monetize : Base
+    public class Monetize
     {
         [Fact(DisplayName = "monetize の distributions が componentInstanceId をインスタンス ID にマップして変換される")]
         public void WithComponentInstanceId_MapsToInstanceID()
@@ -127,7 +119,7 @@ public class GameServiceDeserializationTests
                 },
             };
 
-            var result = SerializeAndDeserialize<MonetizeRequest>(data);
+            var result = Deserialize<MonetizeRequest>(ActionType.Monetize, data);
 
             result.Distributions.Should().HaveCount(2);
             result.Distributions[0].InstanceID.Should().Be("inst_back_1");
@@ -138,7 +130,7 @@ public class GameServiceDeserializationTests
     }
 
     [Trait("対象", "use_ignition のデシリアライズ")]
-    public class UseIgnition : Base
+    public class UseIgnition
     {
         [Fact(DisplayName = "instanceId を持つ use_ignition が起動効果使用要求にデシリアライズされる")]
         public void DeserializesToUseIgnitionRequest()
@@ -148,7 +140,7 @@ public class GameServiceDeserializationTests
                 ["instanceId"] = "e1",
             };
 
-            var result = SerializeAndDeserialize<UseIgnitionRequest>(data);
+            var result = Deserialize<UseIgnitionRequest>(ActionType.UseIgnition, data);
 
             result.InstanceID.Should().Be("e1");
         }
@@ -162,7 +154,7 @@ public class GameServiceDeserializationTests
                 ["targetInstanceId"] = "target_1",
             };
 
-            var result = SerializeAndDeserialize<UseIgnitionRequest>(data);
+            var result = Deserialize<UseIgnitionRequest>(ActionType.UseIgnition, data);
 
             result.InstanceID.Should().Be("e2");
             result.TargetInstanceID.Should().Be("target_1");
@@ -170,7 +162,7 @@ public class GameServiceDeserializationTests
     }
 
     [Trait("対象", "discard_hand のデシリアライズ")]
-    public class DiscardHand : Base
+    public class DiscardHand
     {
         [Fact(DisplayName = "複数の cardInstanceIds を持つ discard_hand が全 ID を含めて変換される")]
         public void DeserializesToDiscardHandRequest()
@@ -180,7 +172,7 @@ public class GameServiceDeserializationTests
                 ["cardInstanceIds"] = new[] { "c1", "c2" },
             };
 
-            var result = SerializeAndDeserialize<DiscardHandRequest>(data);
+            var result = Deserialize<DiscardHandRequest>(ActionType.DiscardHand, data);
 
             result.CardInstanceIDs.Should().HaveCount(2);
             result.CardInstanceIDs.Should().Contain("c1");
@@ -195,7 +187,7 @@ public class GameServiceDeserializationTests
                 ["cardInstanceIds"] = new[] { "c_only" },
             };
 
-            var result = SerializeAndDeserialize<DiscardHandRequest>(data);
+            var result = Deserialize<DiscardHandRequest>(ActionType.DiscardHand, data);
 
             result.CardInstanceIDs.Should().ContainSingle().Which.Should().Be("c_only");
         }
