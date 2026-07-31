@@ -2,6 +2,8 @@
 
 C# ゲームエンジン。Gateway から HTTP RPC で呼ばれ、NPC / PvP 対戦のゲーム作成・アクション処理・状態管理を行う。カード定義は card service から起動時にロードする。
 
+[テスト観点カタログ](https://kenyamaneko.github.io/overload-party-battle/): テスト名から生成した、テスト済みの観点の一覧。
+
 ## サービス間連携
 
 ```
