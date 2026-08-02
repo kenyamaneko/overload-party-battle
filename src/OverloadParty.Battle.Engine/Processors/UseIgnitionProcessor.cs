@@ -68,9 +68,14 @@ public static class UseIgnitionProcessor
             CardCache = cc,
             ChoiceData = req.ChoiceData,
             Effects = effects,
+            Trigger = TriggerType.Ignition,
+            EffectCardId = card.CardId,
+            EffectInstanceId = source.InstanceID,
         };
 
         var result = handler(ctx);
+        // 選択待ちを捨てると、選択を要する起動効果が何も起きずに使用済みになる。
+        state.PendingEffectChoice = result.PendingChoice ?? state.PendingEffectChoice;
         source.EffectUsedThisTurn = true;
 
         var events = new List<GameEvent>(result.Events);
@@ -112,9 +117,12 @@ public static class UseIgnitionProcessor
             CardCache = cc,
             ChoiceData = req.ChoiceData,
             Effects = effects,
+            Trigger = TriggerType.Ignition,
         };
 
         var result = handler(ctx);
+        // 選択待ちを捨てると、選択を要する起動効果が何も起きずに使用済みになる。
+        state.PendingEffectChoice = result.PendingChoice ?? state.PendingEffectChoice;
         support.EffectUsedThisTurn = true;
 
         var events = new List<GameEvent>(result.Events);

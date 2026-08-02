@@ -232,6 +232,7 @@ public static class EffectClassifier
             case HealDamageOp:
             case FullHealOp:
                 info.AddCategory(EffectCategory.Heal);
+                ClassifyHealTarget(info, op);
                 break;
 
             // カード移動
@@ -341,6 +342,15 @@ public static class EffectClassifier
             default:
                 info.AddCategory(EffectCategory.SingleDamage);
                 break;
+        }
+    }
+
+    private static void ClassifyHealTarget(EffectInfo info, IEffectOp op)
+    {
+        if (GetSelector(op) is ByChoiceSelector bcs)
+        {
+            info.TargetType = EffectTargetType.Choice;
+            info.TargetZone = bcs.Zone;
         }
     }
 

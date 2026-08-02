@@ -357,7 +357,7 @@ export interface components {
             effectCardId: string;
             /** @description 発動中の効果を持つカードのインスタンス ID */
             effectInstanceId: string;
-            /** @description 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。 */
+            /** @description 選択対象の種別 (hand_card / field_target / deck_top / branch / face_down_reactive)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。 */
             choiceKind: string;
         };
         /**
@@ -651,7 +651,7 @@ export interface components {
         ResolvePendingChoiceAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
             /** @description 発動中の効果を持つカードの ID */
             effectCardId?: string;
-            /** @description 選択対象の種別 (hand_card / field_target / deck_top)。 */
+            /** @description 選択対象の種別 (hand_card / field_target / deck_top / branch / face_down_reactive)。 */
             choiceKind?: string;
             choiceOptions?: components["schemas"]["ChoiceOption"][];
             /** @description deck_top 選択で選択するプレイヤーにだけ開示するデッキ上端カード。各 instanceID が choiceOptions[].key に対応する。 */

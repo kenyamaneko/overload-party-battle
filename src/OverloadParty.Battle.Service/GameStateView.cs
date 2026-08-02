@@ -50,7 +50,7 @@ public static class GameStateView
         if (game.Status == GameStatus.Playing && (isActivePlayer || isChooser))
         {
             availableActions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, myHand, budget, insightPool, cc, effects, initiatives)
+                state, playerNum, myField, oppField, myHand, budget, insightPool, cc, effects, initiatives)
                 .Select(MapAvailableAction)
                 .ToList();
         }

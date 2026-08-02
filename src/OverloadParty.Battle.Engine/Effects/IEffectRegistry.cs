@@ -68,8 +68,8 @@ public class EffectContext
     public required IEffectRegistry Effects { get; init; }
 
     /// <summary>
-    /// 発動中のトリガー種別。EventTriggerFiring.Fire 経由の reactive ハンドラ実行時にのみ
-    /// セットされる。choice op が選択待ちを state に保存するときに使う。
+    /// 発動中のトリガー種別。choice op が選択待ちを state に保存するときに使う。
+    /// 選択待ちに入りうる経路では必ずセットする。
     /// </summary>
     public TriggerType? Trigger { get; set; }
 

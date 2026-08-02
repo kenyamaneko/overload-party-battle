@@ -78,6 +78,9 @@ public static class ChoiceKinds
 
     /// <summary>効果の分岐肢のうち 1 つを選ぶ。</summary>
     public const string Branch = "branch";
+
+    /// <summary>相手のサポートゾーンに伏せられた裏向きリアクティブカードを 1 枚選ぶ。</summary>
+    public const string FaceDownReactive = "face_down_reactive";
 }
 
 /// <summary>

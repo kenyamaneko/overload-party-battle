@@ -238,7 +238,9 @@ public class NpcAi : INpcStrategy
         var chosenId = pending.ChoiceKind switch
         {
             ChoiceKinds.Branch => ResolveBranchChoice(pending.EffectCardId, options),
+            // 裏向きリアクティブは候補の中身が見えず優劣を付けられないので、デッキ上端と同じ扱いにする。
             ChoiceKinds.DeckTop or ChoiceKinds.HandCard or ChoiceKinds.FieldTarget
+                or ChoiceKinds.FaceDownReactive
                 => SelectFirstChoice(options),
             _ => throw new InvalidOperationException(
                 $"Unknown choice kind '{pending.ChoiceKind}' for card '{pending.EffectCardId}'"),

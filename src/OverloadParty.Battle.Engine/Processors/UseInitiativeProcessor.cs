@@ -52,6 +52,15 @@ public static class UseInitiativeProcessor
         var handler = effects.Get(initiative.EffectSourceId, TriggerType.Ignition)
             ?? throw new GameRuleException($"no handler for initiative '{initiative.InitiativeId}'");
 
+        // 対象を選ぶ施策は、選択値が無いと対象 0 件のまま静かに完了する。
+        // コストと使用回数を消費してから空振りするので、実行前に拒否する。
+        var effectInfo = effects.GetEffectInfo(initiative.EffectSourceId, TriggerType.Ignition);
+        if (effectInfo?.TargetType == EffectTargetType.Choice && req.ChoiceData is null)
+        {
+            throw new GameRuleException(
+                $"initiative '{initiative.InitiativeId}' requires a target choice");
+        }
+
         state.SetInsightPool(playerNum, pool - initiative.InsightCost);
 
         var ctx = new EffectContext
@@ -63,8 +72,14 @@ public static class UseInitiativeProcessor
             ChoiceData = req.ChoiceData,
             Effects = effects,
             Trigger = TriggerType.Ignition,
+            // 施策は盤面に実体を持たないので、選択待ちからの再開に使う同定情報を施策 ID で与える。
+            EffectCardId = initiative.EffectSourceId,
+            EffectInstanceId = initiative.InitiativeId,
         };
         var result = handler(ctx);
+
+        // 選択待ちを捨てると、選択を要する施策がコストだけ払って何も起きずに終わる。
+        state.PendingEffectChoice = result.PendingChoice ?? state.PendingEffectChoice;
 
         MarkUsed(state, playerNum, initiative.Kind);
 

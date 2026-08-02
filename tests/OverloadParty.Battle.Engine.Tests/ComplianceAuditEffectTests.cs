@@ -77,16 +77,17 @@ public class ComplianceAuditEffectTests
             state.Player1Budget.Should().Be(800, "myself pays 200");
         }
 
-        [Fact(DisplayName = "バジェットが 100 で 200 を支払えないとき発動条件を満たさずバジェットは変わらない")]
-        public void Ignite_InsufficientBudget_GuardFails()
+        [Fact(DisplayName = "バジェットが 100 で 200 を支払えないとき起動は拒否され、双方のバジェットは変わらない")]
+        public void Ignite_InsufficientBudget_IsRejected()
         {
             var state = TestFactory.MakeGameState(p1Budget: 100, p2Budget: 2000);
             AddComplianceAuditSupport(state, playerNum: 1);
 
-            Ignite(state, playerNum: 1);
+            var act = () => Ignite(state, playerNum: 1);
 
-            state.Player1Budget.Should().Be(100, "budget should not change when guard fails");
-            state.Player2Budget.Should().Be(2000, "opponent budget should not change when guard fails");
+            act.Should().Throw<GameRuleException>().WithMessage("*guard failed*");
+            state.Player1Budget.Should().Be(100);
+            state.Player2Budget.Should().Be(2000);
         }
     }
 

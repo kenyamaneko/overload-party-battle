@@ -140,6 +140,70 @@ public class IgnitionEffectTests
 
             state.Player2Field.Support[0]!.FaceUp.Should().BeTrue();
         }
+
+        /// <summary>発動元と、相手の伏せリアクティブを指定枚数だけ並べた状態を作る。</summary>
+        /// <param name="faceDownCount">相手のサポートゾーンに伏せる枚数。</param>
+        /// <returns>ゲーム状態。</returns>
+        private static BattleGameState StateWithFaceDownReactives(int faceDownCount)
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "src", faceUp: true);
+            for (int i = 0; i < faceDownCount; i++)
+            {
+                state.Player2Field.Support[i] = new DeployedSupport
+                {
+                    InstanceID = $"sup_{i + 1}",
+                    CardID = "TST-0400",
+                    FaceUp = false,
+                };
+            }
+            return state;
+        }
+
+        [Fact(DisplayName = "相手の伏せリアクティブが 2 枚あるとき、どちらを確認するかの選択待ちへ遷移し、まだ開示されない")]
+        public void Ignition_MultipleFaceDown_SuspendsForChoice()
+        {
+            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new RevealReactiveOp());
+            var state = StateWithFaceDownReactives(2);
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+
+            state.PendingEffectChoice.Should().NotBeNull();
+            state.PendingEffectChoice!.ChoiceKind.Should().Be(ChoiceKinds.FaceDownReactive);
+            state.PendingEffectChoice.Candidates.Should().Equal("sup_1", "sup_2");
+            state.Player2Field.Support.Where(s => s is not null).Should().OnlyContain(s => !s.FaceUp);
+        }
+
+        [Fact(DisplayName = "伏せリアクティブが 2 枚あるとき、選んだ 2 枚目が開示される")]
+        public void Ignition_MultipleFaceDown_RevealsChosenCard()
+        {
+            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new RevealReactiveOp());
+            var state = StateWithFaceDownReactives(2);
+
+            var game = TestFactory.MakeGame();
+            UseIgnitionProcessor.Process(state, game, 1, Use("src"), cc, effects);
+            ResolvePendingChoiceProcessor.Process(
+                state, game, 1, new ResolvePendingChoiceRequest { ChosenId = "sup_2" },
+                cc, effects, new FakeClock());
+
+            state.Player2Field.Support[1]!.FaceUp.Should().BeTrue();
+            state.Player2Field.Support[0]!.FaceUp.Should().BeFalse();
+            state.PendingEffectChoice.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "相手に伏せリアクティブが無いとき、選択待ちにならず起動効果は使用済みになって終わる")]
+        public void Ignition_NoFaceDown_CompletesWithoutSuspending()
+        {
+            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new RevealReactiveOp());
+            var state = StateWithFaceDownReactives(0);
+
+            var result = UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+
+            state.PendingEffectChoice.Should().BeNull();
+            result.Events.Should().Contain(e => e.EventType == ActionTypes.UseIgnition);
+            state.Player1Field.Frontend[0]!.EffectUsedThisTurn.Should().BeTrue();
+        }
     }
 
     [Trait("対象", "destroy_platform の起動効果")]
@@ -438,6 +502,26 @@ public class IgnitionEffectTests
             sup.FaceUp.Should().BeFalse("覗き見はカードを表向きにしない");
             sup.PeekedBy.Should().Contain(1);
         }
+
+        [Fact(DisplayName = "伏せリアクティブが 2 枚あるとき、選んだ 2 枚目だけを覗き見る")]
+        public void Ignition_MultipleFaceDown_PeeksChosenCardOnly()
+        {
+            var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new PeekReactiveOp());
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "src", faceUp: true);
+            state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0400", FaceUp = false };
+            state.Player2Field.Support[1] = new DeployedSupport { InstanceID = "sup_2", CardID = "TST-0400", FaceUp = false };
+
+            var game = TestFactory.MakeGame();
+            UseIgnitionProcessor.Process(state, game, 1, Use("src"), cc, effects);
+            ResolvePendingChoiceProcessor.Process(
+                state, game, 1, new ResolvePendingChoiceRequest { ChosenId = "sup_2" },
+                cc, effects, new FakeClock());
+
+            state.Player2Field.Support[1]!.PeekedBy.Should().Contain(1);
+            state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty();
+        }
     }
 
     [Trait("対象", "効果量のステータス参照")]
@@ -583,7 +667,7 @@ public class IgnitionEffectTests
             field.Frontend[0] = TestFactory.MakeResource(cardId: SourceCard, instanceId: "src", faceUp: true);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, field, TestFactory.MakeField(), [], 5000, 0, cc, effects);
+                state, 1, field, TestFactory.MakeField(), [], 5000, 0, cc, effects);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }

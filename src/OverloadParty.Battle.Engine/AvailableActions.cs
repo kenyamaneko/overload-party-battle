@@ -94,9 +94,10 @@ public static class AvailableActions
     /// <param name="cc">Card definitions cache.</param>
     /// <param name="effects">Effect registry (may be null).</param>
     /// <param name="initiatives">Initiative catalog (may be null; use_initiative actions are omitted when null).</param>
+    /// <param name="playerNum">アクションを列挙する対象のプレイヤー番号。</param>
     /// <returns>A list of all valid actions.</returns>
     public static List<AvailableAction> GetAllAvailableActions(
-        BattleGameState state,
+        BattleGameState state, long playerNum,
         Field myField, Field oppField, List<UndeployedCard> hand,
         long budget, long insightPool,
         ICardCache cc, IEffectRegistry effects, IInitiativeCatalog? initiatives = null)
@@ -105,9 +106,13 @@ public static class AvailableActions
 
         // reactive 選択待ちのときは、選択者のみが選択を解決するアクションを提示する。
         // 非選択者は空アクションになるが「相手の割り込み処理中」フラグは別レイヤー (TurnControls) で伝える。
+        // 解決アクションには相手に伏せている情報 (deck_top の開示) が載るため、
+        // 上位レイヤーのゲートに頼らずここで選択者に限定する。
         if (state.PendingEffectChoice is { } pendingChoice)
         {
-            return EnumerateResolvePendingChoiceActions(state, pendingChoice);
+            return pendingChoice.ChooserPlayerNum == playerNum
+                ? EnumerateResolvePendingChoiceActions(state, pendingChoice)
+                : [];
         }
 
         switch (state.CurrentPhase)

@@ -528,7 +528,7 @@ components:
           x-go-name: EffectInstanceId
         choiceKind:
           type: string
-          description: 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
+          description: 選択対象の種別 (hand_card / field_target / deck_top / branch / face_down_reactive)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
 
     PlayerSummary:
       type: object
@@ -1104,7 +1104,7 @@ components:
               x-csharp-name: EffectCardId
             choiceKind:
               type: string
-              description: 選択対象の種別 (hand_card / field_target / deck_top)。
+              description: 選択対象の種別 (hand_card / field_target / deck_top / branch / face_down_reactive)。
             choiceOptions:
               type: array
               items:

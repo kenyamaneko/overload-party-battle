@@ -134,7 +134,7 @@ public class KeepOneFromDeckTopTests
             PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(),
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(),
                 new List<UndeployedCard>(), 0, 0, cc, registry);
 
             var resolve = actions.Should().ContainSingle(a => a.Type == ActionTypes.ResolvePendingChoice).Subject;

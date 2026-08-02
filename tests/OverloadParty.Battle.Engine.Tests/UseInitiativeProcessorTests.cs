@@ -184,6 +184,136 @@ public class UseInitiativeProcessorTests
         }
     }
 
+    [Trait("対象", "対象を選ぶ施策のコスト")]
+    public class ChoiceRequiredCost : Base
+    {
+        /// <summary>相手のフロントエンドから選んだ 1 体に 300 ダメージを与える routine を用意する。</summary>
+        /// <returns>効果レジストリと施策カタログ。</returns>
+        private static (IEffectRegistry Effects, InitiativeCatalog Catalog) SetupChoiceRoutine() => Setup(Initiatives(
+            routineCost: 100,
+            routineJson: """{"ops":[{"deal_damage":{"selector":{"owner":"opponent","zone":"frontend","pick":"choice"},"amount":300}}]}""",
+            specialCost: 0,
+            specialJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}"""));
+
+        [Fact(DisplayName = "対象を選ぶ施策を選択なしで使用すると拒否され、インサイトも使用回数も消費されない")]
+        public void ChoiceRoutine_WithoutChoice_IsRejectedAndConsumesNothing()
+        {
+            var (effects, catalog) = SetupChoiceRoutine();
+            var state = MakeState(insight: 1000);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "o1", faceUp: true);
+
+            var act = () => Use(state, InitiativeKinds.Routine, effects, catalog);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*requires a target choice*");
+            state.Player1InsightPool.Should().Be(1000);
+            state.GetRoutineUsedThisTurn(1).Should().BeFalse();
+            state.Player2Field.Frontend[0]!.Damage.Should().Be(0);
+        }
+
+        [Fact(DisplayName = "対象を選ぶ施策を選択付きで使用すると、選んだリソースに 300 ダメージが入りインサイトが 100 減る")]
+        public void ChoiceRoutine_WithChoice_AppliesDamageAndPaysCost()
+        {
+            var (effects, catalog) = SetupChoiceRoutine();
+            var state = MakeState(insight: 1000);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "o1", faceUp: true);
+
+            Use(state, InitiativeKinds.Routine, effects, catalog,
+                new Dictionary<string, object> { ["instanceId"] = "o1" });
+
+            state.Player2Field.Frontend[0]!.Damage.Should().Be(300);
+            state.Player1InsightPool.Should().Be(900);
+            state.GetRoutineUsedThisTurn(1).Should().BeTrue();
+        }
+
+        /// <summary>自分のリソースから選んだ 1 体の可用性を 300 回復する routine を用意する。</summary>
+        /// <returns>効果レジストリと施策カタログ。</returns>
+        private static (IEffectRegistry Effects, InitiativeCatalog Catalog) SetupHealChoiceRoutine() => Setup(Initiatives(
+            routineCost: 300,
+            routineJson: """{"ops":[{"heal_damage":{"selector":{"owner":"myself","pick":"choice"},"amount":300}}]}""",
+            specialCost: 0,
+            specialJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}"""));
+
+        [Fact(DisplayName = "回復する対象を選ぶ施策を選択なしで使用すると拒否され、インサイトも使用回数も消費されない")]
+        public void HealChoiceRoutine_WithoutChoice_IsRejectedAndConsumesNothing()
+        {
+            var (effects, catalog) = SetupHealChoiceRoutine();
+            var state = MakeState(insight: 1000);
+            var wounded = TestFactory.MakeResource(instanceId: "m1", faceUp: true, damage: 500);
+            state.Player1Field.Frontend[0] = wounded;
+
+            var act = () => Use(state, InitiativeKinds.Routine, effects, catalog);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*requires a target choice*");
+            state.Player1InsightPool.Should().Be(1000);
+            state.GetRoutineUsedThisTurn(1).Should().BeFalse();
+            wounded.Damage.Should().Be(500);
+        }
+
+        [Fact(DisplayName = "回復する対象を選ぶ施策を選択付きで使用すると、選んだリソースのダメージが 300 回復する")]
+        public void HealChoiceRoutine_WithChoice_HealsChosenResource()
+        {
+            var (effects, catalog) = SetupHealChoiceRoutine();
+            var state = MakeState(insight: 1000);
+            var wounded = TestFactory.MakeResource(instanceId: "m1", faceUp: true, damage: 500);
+            state.Player1Field.Frontend[0] = wounded;
+
+            Use(state, InitiativeKinds.Routine, effects, catalog,
+                new Dictionary<string, object> { ["instanceId"] = "m1" });
+
+            wounded.Damage.Should().Be(200);
+            state.Player1InsightPool.Should().Be(700);
+        }
+
+    }
+
+    [Trait("対象", "伏せリアクティブを確認する施策")]
+    public class PeekInitiative : Base
+    {
+        /// <summary>相手の伏せリアクティブ 1 枚を確認する routine と、伏せカード 2 枚の盤面を用意する。</summary>
+        /// <returns>効果レジストリ・施策カタログ・ゲーム状態。</returns>
+        private (IEffectRegistry Effects, InitiativeCatalog Catalog, BattleGameState State) SetupPeekRoutine()
+        {
+            var (effects, catalog) = Setup(Initiatives(
+                routineCost: 150,
+                routineJson: """{"ops":[{"peek_reactive":{}}]}""",
+                specialCost: 0,
+                specialJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}"""));
+            var state = MakeState(insight: 1000);
+            state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0400", FaceUp = false };
+            state.Player2Field.Support[1] = new DeployedSupport { InstanceID = "sup_2", CardID = "TST-0400", FaceUp = false };
+            return (effects, catalog, state);
+        }
+
+        [Fact(DisplayName = "相手に伏せカードが 2 枚あるとき選択待ちへ遷移し、その時点でインサイトと使用回数が確定する")]
+        public void MultipleFaceDown_SuspendsForChoice_AndConsumesCost()
+        {
+            var (effects, catalog, state) = SetupPeekRoutine();
+
+            Use(state, InitiativeKinds.Routine, effects, catalog);
+
+            state.PendingEffectChoice.Should().NotBeNull();
+            state.PendingEffectChoice!.ChoiceKind.Should().Be(ChoiceKinds.FaceDownReactive);
+            state.PendingEffectChoice.Candidates.Should().Equal("sup_1", "sup_2");
+            state.Player1InsightPool.Should().Be(850);
+            state.GetRoutineUsedThisTurn(1).Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "選択を解決すると、選んだ 2 枚目だけを覗き見る")]
+        public void ResolvingChoice_PeeksChosenCardOnly()
+        {
+            var (effects, catalog, state) = SetupPeekRoutine();
+
+            Use(state, InitiativeKinds.Routine, effects, catalog);
+            ResolvePendingChoiceProcessor.Process(
+                state, _game, 1, new ResolvePendingChoiceRequest { ChosenId = "sup_2" },
+                _cc, effects, new FakeClock());
+
+            state.Player2Field.Support[1]!.PeekedBy.Should().Contain(1);
+            state.Player2Field.Support[0]!.PeekedBy.Should().BeEmpty();
+            state.PendingEffectChoice.Should().BeNull();
+        }
+    }
+
     [Trait("対象", "施策の効果")]
     public class Effects : Base
     {
