@@ -243,6 +243,8 @@ public static class EndPhaseProcessor
 
         foreach (var support in FieldHelpers.AllSupports(field))
         {
+            // アタッチメントは装着先リソースと同じ順で発動させるため、上のリソース側で拾っている。
+            if (support.TargetInstanceID is not null) { continue; }
             if (!support.FaceUp || support.DeployingTurnsLeft > 0) { continue; }
             if (HasEndPhaseHandler(effects, support.CardID))
             {

@@ -100,7 +100,7 @@ public static class ResolvePendingChoiceProcessor
         var events = new List<GameEvent>(result.Events);
         events.AddRange(DestructionSweep.Run(state, game, cc, effects));
 
-        events.AddRange(ResumeSuspendedAttack(state, game, cc, effects, pending, source, target, result));
+        events.AddRange(ResumeSuspendedAttack(state, game, cc, effects, pending, result));
 
         // エンドフェーズ効果の途中で止まっていたなら、残りの効果と精算を続きから進める。
         // 破壊の後始末で新たな選択待ちが立つこともあるので、state を見て停止中かを判定する。
@@ -133,24 +133,30 @@ public static class ResolvePendingChoiceProcessor
     /// <param name="cc">カード定義キャッシュ。</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
     /// <param name="pending">解決した選択待ち。</param>
-    /// <param name="source">盤面上の実体に引き直した効果発火元。</param>
-    /// <param name="target">盤面上の実体に引き直した効果対象。</param>
     /// <param name="result">効果を再実行した結果。</param>
     /// <returns>攻撃の確定で生じたイベント。攻撃が保留されていなければ空。</returns>
     private static List<GameEvent> ResumeSuspendedAttack(
         BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects,
-        PendingEffectChoice pending, DeployedResource? source, DeployedResource? target, EffectResult result)
+        PendingEffectChoice pending, EffectResult result)
     {
         if (pending.Trigger != TriggerType.OnAttackDeclared || state.PendingEffectChoice is not null)
         {
             return [];
         }
 
-        if (source is not { } attacker || target is not { } defender
+        if (pending.Source is null || pending.Target is null
             || pending.EventOwnerNum is not { } attackerPlayerNum || pending.EventDamage is not { } rawDamage)
         {
             throw new InvalidOperationException(
                 "suspended attack requires the attacker, the defender, the attacking player and the declared damage");
+        }
+
+        // 選択の解決で攻撃したリソースか攻撃対象が盤面を離れたなら、攻撃は不発に終わる。
+        // 盤面にないリソースへ書き込んでも何も起きず、攻撃だけが成立したように見えてしまう。
+        if (FindOnField(state, pending.OwnerPlayerNum, pending.Source) is not { } attacker
+            || FindOnField(state, pending.OwnerPlayerNum, pending.Target) is not { } defender)
+        {
+            return [];
         }
 
         return AttackProcessor.ResumeAfterDeclaredChoice(
@@ -168,11 +174,24 @@ public static class ResolvePendingChoiceProcessor
     private static DeployedResource? ResolveOnField(
         BattleGameState state, long ownerPlayerNum, DeployedResource? snapshot)
     {
+        // 破壊された発火元から再開する on_destroy があるため、盤面を離れていても保存分で続行する。
+        return FindOnField(state, ownerPlayerNum, snapshot) ?? snapshot;
+    }
+
+    /// <summary>
+    /// 選択待ちに保存しておいたリソースと同じインスタンスを、両プレイヤーの盤面から探します。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="ownerPlayerNum">効果の所有者プレイヤー番号。</param>
+    /// <param name="snapshot">選択待ちに保存されていたリソース。</param>
+    /// <returns>盤面上の実体。盤面に無ければ null。</returns>
+    private static DeployedResource? FindOnField(
+        BattleGameState state, long ownerPlayerNum, DeployedResource? snapshot)
+    {
         if (snapshot is null) { return null; }
 
         return FieldHelpers.FindResourceByID(state.GetField(ownerPlayerNum), snapshot.InstanceID)
             ?? FieldHelpers.FindResourceByID(
-                state.GetField(state.OpponentOf(ownerPlayerNum)), snapshot.InstanceID)
-            ?? snapshot;
+                state.GetField(state.OpponentOf(ownerPlayerNum)), snapshot.InstanceID);
     }
 }

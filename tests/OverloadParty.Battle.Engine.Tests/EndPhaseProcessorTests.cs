@@ -610,6 +610,29 @@ public class EndPhaseProcessorTests
             fired.Should().Be(1, "エンドフェーズに パッシブ効果 が発動する");
         }
 
+        [Fact(DisplayName = "リソースに装着したアタッチメントのエンドフェーズ効果は、1 ターンに 1 回だけ発動する")]
+        public void AttachmentEndPhaseEffect_FiresOncePerTurn()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            AddRepo(state, 2);
+            state.Player1Field.Frontend[0] = OrderedResource("TST-0001", "r_1", 1);
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "att_1",
+                CardID = "TST-0002",
+                FaceUp = true,
+                TargetInstanceID = "r_1",
+            };
+
+            int fired = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0002", TriggerType.OnEndPhase, _ => { fired++; return new EffectResult(); });
+
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects, new FakeClock());
+
+            fired.Should().Be(1);
+        }
+
         [Fact(DisplayName = "エンドフェーズ効果が選択を要求すると、選択待ちへ遷移する")]
         public void EndPhaseEffectRequestingChoice_Suspends()
         {

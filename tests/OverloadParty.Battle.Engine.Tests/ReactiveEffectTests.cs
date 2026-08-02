@@ -202,6 +202,21 @@ public class ReactiveEffectTests
             FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(600);
         }
 
+        [Fact(DisplayName = "再ダメージで攻撃したリソースが壊れたとき、攻撃は不発になり攻撃対象にダメージが入らない")]
+        public void Resolve_AttackerDestroyedByRedirect_LeavesTargetUndamaged()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 1);
+            // 移された 600 のダメージで攻撃したリソース自身が壊れる耐久にする
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.MaxAV = 600;
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "atk" }, cc, effects, new FakeClock());
+
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk").Should().BeNull("再ダメージで壊れる");
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(0);
+        }
+
         /// <summary>保存・復元を経た選択待ちを模して、盤面とは別インスタンスのリソースに差し替える。</summary>
         /// <param name="resource">選択待ちに保存されているリソース。</param>
         /// <returns>同じ内容を持つ別インスタンス。</returns>
