@@ -115,22 +115,24 @@ public class CheckUseLimitOp(bool perGame) : IEffectOp
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        if (perGame)
+        bool used = perGame
+            ? (ctx.Source?.EffectUsedThisGame ?? false) || (ctx.SupSource?.EffectUsedThisGame ?? false)
+            : (ctx.Source?.EffectUsedThisTurn ?? false) || (ctx.SupSource?.EffectUsedThisTurn ?? false);
+
+        if (!used)
         {
-            bool used = (ctx.Source?.EffectUsedThisGame ?? false) || (ctx.SupSource?.EffectUsedThisGame ?? false);
-            if (used)
-            {
-                throw new GameRuleException("Effect already used this game");
-            }
+            return;
         }
-        else
+
+        // 起動効果はプレイヤーが自分で使用を選ぶため、使用済みでの到達は不正なリクエストとして例外にする。
+        // 誘発効果は契機イベントが勝手に来るため、使用済みは発動条件の不成立として扱い契機のアクションを拒否しない。
+        if (ctx.Ctx.Trigger == TriggerType.Ignition)
         {
-            bool used = (ctx.Source?.EffectUsedThisTurn ?? false) || (ctx.SupSource?.EffectUsedThisTurn ?? false);
-            if (used)
-            {
-                throw new GameRuleException("Effect already used this turn");
-            }
+            throw new GameRuleException(
+                perGame ? "Effect already used this game" : "Effect already used this turn");
         }
+
+        ctx.AbortAsConditionUnmet();
     }
 }
 

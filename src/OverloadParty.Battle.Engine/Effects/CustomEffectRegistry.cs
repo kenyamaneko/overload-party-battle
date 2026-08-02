@@ -10,6 +10,9 @@ namespace OverloadParty.Battle.Engine.Effects;
 /// </summary>
 public class CustomEffectRegistry
 {
+    /// <summary>cancel_nth_deploy が無効化する、そのターンの何体目のデプロイか。</summary>
+    private const int CancelNthDeployTargetCount = 3;
+
     private readonly Dictionary<string, Func<Dictionary<string, JsonElement>?, Action<OpContext>?>> _factories = new()
     {
         // Phase 2-2: 既存カスタム（EffectInit から移行）
@@ -247,29 +250,20 @@ public class CustomEffectRegistry
     /// <param name="octx">効果実行コンテキスト。</param>
     public static void CancelNthDeploy(OpContext octx)
     {
-        if (octx.SupSource is { EffectUsedThisTurn: true })
-        {
-            throw new GameRuleException("Already used this turn");
-        }
-
         long deployerNum = octx.State.OpponentOf(octx.PlayerNum);
         var field = octx.GetField(deployerNum);
         int count = FieldHelpers.AllResources(field).Count(r => r.DeployedOnTurn == octx.State.CurrentTurn);
-        if (count != 3)
+        if (count != CancelNthDeployTargetCount)
         {
-            throw new GameRuleException($"Not the 3rd deploy (count={count})");
-        }
-
-        if (octx.SupSource is not null)
-        {
-            octx.SupSource.EffectUsedThisTurn = true;
+            octx.AbortAsConditionUnmet();
+            return;
         }
 
         octx.CancelAction();
     }
 
     /// <summary>
-    /// Validate redirect target is opponent's frontend.
+    /// 攻撃側のフロントエンドから選ばせたリソースへ、攻撃したリソースのスループット分のダメージを移す。
     /// </summary>
     /// <param name="octx">効果実行コンテキスト。</param>
     public static void RedirectAttack(OpContext octx)
@@ -299,6 +293,18 @@ public class CustomEffectRegistry
         if (FieldHelpers.FindResourceZone(oppField, instanceId) != Zone.Frontend)
         {
             throw new GameRuleException("Redirect target must be opponent's frontend");
+        }
+
+        var target = FieldHelpers.FindResourceByID(oppField, instanceId)
+            ?? throw new GameRuleException($"Redirect target {instanceId} not found");
+        long damage = octx.EventDamage
+            ?? throw new GameRuleException("Redirect requires the declared attack damage");
+
+        DamageApplication.Apply(octx, target, damage);
+
+        foreach (var evt in DestructionSweep.Run(octx.State, octx.Game, octx.CardCache, octx.Effects))
+        {
+            octx.AddEvent(evt);
         }
     }
 
@@ -351,11 +357,17 @@ public class CustomEffectRegistry
 
             SlotRequestHelpers.DeployFromHand(octx, choiceCardId);
 
+            // 効果のコストとして発動元をトラッシュへ送る。破壊ではないため SLA ペナルティは伴わない。
             if (octx.SupSource is not null)
             {
                 FieldHelpers.DestroySupport(
                     octx.State, octx.Game, octx.PlayerNum, octx.MyField, octx.SupSource.InstanceID,
                     octx.CardCache, octx.Effects);
+            }
+            else if (octx.Source is not null)
+            {
+                ResourceHelpers.MoveResourceToTrash(
+                    octx.State, octx.PlayerNum, octx.MyField, octx.Source);
             }
         };
     }
@@ -446,11 +458,9 @@ public class CustomEffectRegistry
             throw new GameRuleException("Source attacked last turn");
         }
 
-        // Elastic カードの維持コストを算出して同額の reduction を付与
+        // 徴収される維持コストと同額の軽減を付与して、そのターンの徴収を 0 にする。
         var card = octx.CardCache.MustGet(octx.Source.CardID);
-        long intrinsic = card.IsComputeType ? card.BaseThroughput : card.BaseYield;
-        long scaledStat = intrinsic * BattleConstants.GetRankMultiplier(octx.Source.Rank) + octx.Source.ElasticBonus;
-        long maintenanceCost = Math.Max(0, scaledStat - card.FreeTier) * card.CostPerRequest / 100;
+        long maintenanceCost = StatCalculator.CalculateBaseMaintenanceCost(octx.Source, card);
 
         if (maintenanceCost <= 0) { return; }
 

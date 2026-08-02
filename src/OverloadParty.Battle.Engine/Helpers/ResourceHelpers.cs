@@ -236,9 +236,23 @@ public static class ResourceHelpers
         long budget = state.GetBudget(ownerNum);
         state.SetBudget(ownerNum, budget - penalty);
 
+        MoveResourceToTrash(state, ownerNum, field, resource);
+        return true;
+    }
+
+    /// <summary>
+    /// リソースを装備中のアタッチメントごとトラッシュへ移し、フィールドから除去する。
+    /// SLAペナルティは伴わないため、破壊ではなく効果のコストとしてフィールドを離れる場合に使う。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="ownerNum">リソースの所有プレイヤー番号。</param>
+    /// <param name="field">対象が置かれているフィールド。</param>
+    /// <param name="resource">トラッシュへ送るリソース。</param>
+    public static void MoveResourceToTrash(
+        BattleGameState state, long ownerNum, Field field, DeployedResource resource)
+    {
         var attachments = field.Support.Where(a => a.TargetInstanceID == resource.InstanceID).ToList();
 
-        // ホスト＋アタッチメントをトラッシュに移動
         CardMoveHelpers.AddToTrash(state, ownerNum, resource.CardID, resource.InstanceID, resource.ArtNo);
         foreach (var att in attachments)
         {
@@ -246,9 +260,7 @@ public static class ResourceHelpers
         }
         field.Support.RemoveAll(a => a.TargetInstanceID == resource.InstanceID);
 
-        // フィールドから除去
         FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
-        return true;
     }
 
     /// <summary>

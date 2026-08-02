@@ -465,3 +465,174 @@ public class UnknownValueRejectionTests
         act.Should().Throw<InvalidOperationException>().WithMessage("*must have an id*");
     }
 }
+
+[Trait("対象", "カスタム効果に併記した発動条件・op・回数制限の合成")]
+public class CustomEffectCompositionTests
+{
+    private const string CardId = "TST-9300";
+    private const string GainAmount = "700";
+
+    private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement;
+
+    /// <summary>
+    /// cancel_nth_deploy に指定の発動条件・op・回数制限を併記したデプロイ時効果を読み込む。
+    /// </summary>
+    /// <param name="guardJson">併記する発動条件。省略時は併記しない。</param>
+    /// <param name="useLimit">併記する回数制限。省略時は併記しない。</param>
+    /// <returns>カードキャッシュと組み立てられた handler。</returns>
+    private static (TestCardCache Cc, EffectHandler Handler) LoadCustomWithOps(
+        string? guardJson = null, string? useLimit = null)
+    {
+        var card = TestFactory.ComputeCard(cardId: CardId);
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "on_deploy",
+                Custom = CustomEffects.CancelNthDeploy,
+                Guard = guardJson is null ? null : [Parse(guardJson)],
+                UseLimit = useLimit,
+                Ops = [Parse($$"""{ "gain_budget": { "target": "myself", "amount": {{GainAmount}} } }""")],
+            },
+        ];
+
+        var cc = new TestCardCache();
+        cc.Add(card);
+        var registry = new EffectRegistry();
+        EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+
+        return (cc, registry.Get(CardId, TriggerType.OnDeploy)
+            ?? throw new InvalidOperationException("handler not registered"));
+    }
+
+    /// <summary>相手フィールドにそのターンのデプロイを指定体数だけ並べた状態を作る。</summary>
+    /// <param name="deployedThisTurn">相手がこのターンにデプロイした体数。</param>
+    /// <returns>ゲーム状態。</returns>
+    private static BattleGameState MakeStateWithOpponentDeploys(int deployedThisTurn)
+    {
+        var state = TestFactory.MakeGameState(turn: 4, p1Budget: 1000);
+        for (int i = 0; i < deployedThisTurn; i++)
+        {
+            var resource = TestFactory.MakeResource(cardId: CardId, instanceId: $"opp_{i}", faceUp: true);
+            resource.DeployedOnTurn = state.CurrentTurn;
+            state.Player2Field.Frontend[i] = resource;
+        }
+        return state;
+    }
+
+    /// <summary>デプロイ時効果を発動する。</summary>
+    /// <param name="handler">発動する handler。</param>
+    /// <param name="state">対象のゲーム状態。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="source">効果の発動元。</param>
+    /// <param name="eventOwnerNum">イベントを起こしたプレイヤー番号。</param>
+    /// <returns>効果の実行結果。</returns>
+    private static EffectResult Fire(
+        EffectHandler handler, BattleGameState state, TestCardCache cc,
+        DeployedResource source, long eventOwnerNum) =>
+        handler(new EffectContext
+        {
+            State = state,
+            Game = TestFactory.MakeGame(),
+            PlayerNum = 1,
+            Source = source,
+            CardCache = cc,
+            Effects = new EffectRegistry(),
+            EventOwnerNum = eventOwnerNum,
+            Trigger = TriggerType.OnDeploy,
+        });
+
+    [Fact(DisplayName = "カスタム効果に op を併記すると、発動時にカスタム効果と併記した op の両方が実行される")]
+    public void CustomWithOps_RunsBoth()
+    {
+        var (cc, handler) = LoadCustomWithOps();
+        var state = MakeStateWithOpponentDeploys(3);
+        var source = TestFactory.MakeResource(cardId: CardId, instanceId: "src");
+
+        var result = Fire(handler, state, cc, source, eventOwnerNum: 2);
+
+        result.ShouldCancelAction.Should().BeTrue();
+        state.Player1Budget.Should().Be(1700);
+    }
+
+    [Fact(DisplayName = "カスタム効果に相手のイベント限定の発動条件を併記すると、自分のイベントでは発動しない")]
+    public void CustomWithGuard_OwnEvent_DoesNotActivate()
+    {
+        var (cc, handler) = LoadCustomWithOps(guardJson: """{ "event_owner": "opponent" }""");
+        var state = MakeStateWithOpponentDeploys(3);
+        var source = TestFactory.MakeResource(cardId: CardId, instanceId: "src");
+
+        var result = Fire(handler, state, cc, source, eventOwnerNum: 1);
+
+        result.HasGuardFailed.Should().BeTrue();
+        result.ShouldCancelAction.Should().BeFalse();
+        state.Player1Budget.Should().Be(1000);
+    }
+
+    [Fact(DisplayName = "カスタム効果に相手のイベント限定の発動条件を併記すると、相手のイベントでは発動する")]
+    public void CustomWithGuard_OpponentEvent_Activates()
+    {
+        var (cc, handler) = LoadCustomWithOps(guardJson: """{ "event_owner": "opponent" }""");
+        var state = MakeStateWithOpponentDeploys(3);
+        var source = TestFactory.MakeResource(cardId: CardId, instanceId: "src");
+
+        var result = Fire(handler, state, cc, source, eventOwnerNum: 2);
+
+        result.HasGuardFailed.Should().BeFalse();
+        result.ShouldCancelAction.Should().BeTrue();
+        state.Player1Budget.Should().Be(1700);
+    }
+
+    [Fact(DisplayName = "カスタム効果に 1 ターン 1 回の回数制限を併記すると、同じターンの 2 回目は発動しない")]
+    public void CustomWithUseLimit_SecondActivationInSameTurn_DoesNotActivate()
+    {
+        var (cc, handler) = LoadCustomWithOps(useLimit: UseLimits.OncePerTurn);
+        var state = MakeStateWithOpponentDeploys(3);
+        var source = TestFactory.MakeResource(cardId: CardId, instanceId: "src");
+
+        Fire(handler, state, cc, source, eventOwnerNum: 2);
+        var second = Fire(handler, state, cc, source, eventOwnerNum: 2);
+
+        second.HasGuardFailed.Should().BeTrue();
+        second.ShouldCancelAction.Should().BeFalse();
+        state.Player1Budget.Should().Be(1700);
+    }
+
+    [Fact(DisplayName = "回数制限のあるブロックと制限のないブロックが並ぶとき、2 回目は制限のないブロックだけが実行される")]
+    public void MultipleBlocks_UseLimitReached_RunsOnlyTheUnlimitedBlock()
+    {
+        var card = TestFactory.ComputeCard(cardId: CardId);
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "on_deploy",
+                Id = "limited",
+                UseLimit = UseLimits.OncePerTurn,
+                Ops = [Parse("""{ "gain_budget": { "target": "myself", "amount": 700 } }""")],
+            },
+            new EffectDef
+            {
+                Trigger = "on_deploy",
+                Id = "unlimited",
+                Ops = [Parse("""{ "gain_budget": { "target": "myself", "amount": 50 } }""")],
+            },
+        ];
+        var cc = new TestCardCache();
+        cc.Add(card);
+        var registry = new EffectRegistry();
+        EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+        var handler = registry.Get(CardId, TriggerType.OnDeploy)!;
+
+        var state = TestFactory.MakeGameState(turn: 4, p1Budget: 1000);
+        var source = TestFactory.MakeResource(cardId: CardId, instanceId: "src");
+
+        Fire(handler, state, cc, source, eventOwnerNum: 2);
+        state.Player1Budget.Should().Be(1750);
+
+        var second = Fire(handler, state, cc, source, eventOwnerNum: 2);
+
+        second.HasGuardFailed.Should().BeFalse();
+        state.Player1Budget.Should().Be(1800);
+    }
+}

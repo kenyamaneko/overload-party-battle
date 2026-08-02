@@ -63,8 +63,12 @@ public class TriggeredEffectTests
     [Trait("対象", "相手の 3 体目のデプロイキャンセル")]
     public class CancelNthDeploy
     {
-        [Fact(DisplayName = "同一ターンの 3 体目のデプロイはキャンセルされる")]
-        public void OnDeploy_CancelsThirdDeploy()
+        private const long Turn = 4;
+
+        /// <summary>相手が当ターン既に指定体数をデプロイし、こちらがリアクティブを伏せた状態を作る。</summary>
+        /// <param name="alreadyDeployed">相手が当ターン既にデプロイした体数。</param>
+        /// <returns>カードキャッシュ・効果レジストリ・ゲーム状態。</returns>
+        private static (TestCardCache Cc, EffectRegistry Effects, BattleGameState State) Setup(int alreadyDeployed)
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
@@ -72,17 +76,69 @@ public class TriggeredEffectTests
             var effects = new EffectRegistry();
             effects.RegisterComposed("TST-0400", TriggerType.OnDeploy, Custom(CustomEffects.CancelNthDeploy));
 
-            var state = TestFactory.MakeGameState(turn: 4, phase: Phase.Main, activePlayer: 1);
-            // P1 は当ターン既に 2 体デプロイ済み
-            state.Player1Field.Frontend[0] = DeployedThisTurn("d_0", 4);
-            state.Player1Field.Frontend[1] = DeployedThisTurn("d_1", 4);
-            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_3", CardID = "TST-0001" });
+            var state = TestFactory.MakeGameState(turn: Turn, phase: Phase.Main, activePlayer: 1);
+            for (int i = 0; i < alreadyDeployed; i++)
+            {
+                state.Player1Field.Frontend[i] = DeployedThisTurn($"d_{i}", Turn);
+            }
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_next", CardID = "TST-0001" });
             state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "watcher", CardID = "TST-0400", FaceUp = false };
 
-            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1,
-                new PlayCardRequest { CardInstanceID = "h_3", Zone = Zones.Frontend, Index = 2 }, cc, effects);
+            return (cc, effects, state);
+        }
 
-            state.Player1Field.Frontend[2].Should().BeNull("3 体目のデプロイはキャンセルされる");
+        /// <summary>手札のカードを指定のフロントエンドスロットへデプロイする。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="cc">カード定義キャッシュ。</param>
+        /// <param name="effects">効果ハンドラのレジストリ。</param>
+        /// <param name="index">配置先のスロット番号。</param>
+        private static void Deploy(BattleGameState state, TestCardCache cc, EffectRegistry effects, int index) =>
+            PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new PlayCardRequest { CardInstanceID = "h_next", Zone = Zones.Frontend, Index = index }, cc, effects);
+
+        [Fact(DisplayName = "同一ターンの 2 体目のデプロイは成立し、フロントエンドに残る")]
+        public void OnDeploy_SecondDeploy_Succeeds()
+        {
+            var (cc, effects, state) = Setup(alreadyDeployed: 1);
+
+            Deploy(state, cc, effects, index: 1);
+
+            state.Player1Field.Frontend[1].Should().NotBeNull();
+        }
+
+        [Fact(DisplayName = "同一ターンの 2 体目のデプロイでは、リアクティブは裏向きでサポートゾーンに残る")]
+        public void OnDeploy_SecondDeploy_DoesNotConsumeReactive()
+        {
+            var (cc, effects, state) = Setup(alreadyDeployed: 1);
+
+            Deploy(state, cc, effects, index: 1);
+
+            var watcher = state.Player2Field.Support.FirstOrDefault(s => s.InstanceID == "watcher");
+            watcher.Should().NotBeNull();
+            watcher!.FaceUp.Should().BeFalse();
+            state.Player2Trash.Should().BeEmpty();
+        }
+
+        [Fact(DisplayName = "同一ターンの 3 体目のデプロイは無効化され、そのリソースはフロントエンドに残らずトラッシュへ送られる")]
+        public void OnDeploy_ThirdDeploy_IsCancelledAndTrashed()
+        {
+            var (cc, effects, state) = Setup(alreadyDeployed: 2);
+
+            Deploy(state, cc, effects, index: 2);
+
+            state.Player1Field.Frontend[2].Should().BeNull();
+            state.Player1Trash.Should().ContainSingle(c => c.CardID == "TST-0001");
+        }
+
+        [Fact(DisplayName = "3 体目のデプロイを無効化したリアクティブは、表向きでトラッシュへ送られる")]
+        public void OnDeploy_ThirdDeploy_ConsumesReactive()
+        {
+            var (cc, effects, state) = Setup(alreadyDeployed: 2);
+
+            Deploy(state, cc, effects, index: 2);
+
+            state.Player2Field.Support.Should().NotContain(s => s.InstanceID == "watcher");
+            state.Player2Trash.Should().ContainSingle(c => c.InstanceID == "watcher");
         }
 
         private static DeployedResource DeployedThisTurn(string id, long turn)

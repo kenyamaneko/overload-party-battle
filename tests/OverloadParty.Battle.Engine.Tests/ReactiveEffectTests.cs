@@ -80,8 +80,10 @@ public class ReactiveEffectTests
     [Trait("対象", "redirect_attack リアクティブ")]
     public class RedirectAttack
     {
-        [Fact(DisplayName = "redirect_attack リアクティブが再ダメージ先を選ぶ選択待ちへ遷移する")]
-        public void Reactive_SuspendsForRedirectTargetChoice()
+        /// <summary>redirect_attack を伏せた防御側 P2 と、攻撃側 P1 のフロントエンドを用意する。</summary>
+        /// <param name="attackerFrontendCount">攻撃側フロントエンドに並べるリソースの数。</param>
+        /// <returns>カードキャッシュ・効果レジストリ・ゲーム状態。</returns>
+        private static (TestCardCache Cc, EffectRegistry Effects, BattleGameState State) Setup(int attackerFrontendCount)
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
@@ -92,16 +94,58 @@ public class ReactiveEffectTests
 
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle);
             // リアクティブ所有者 (防御側 P2) から見た相手 = 攻撃側 P1 のフロントエンドが再ダメージ先候補になる
-            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk", faceUp: true);
-            state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_fe", faceUp: true);
-            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def", faceUp: true);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "atk", faceUp: true, maxAV: 2000, currentAV: 2000);
+            for (int i = 1; i < attackerFrontendCount; i++)
+            {
+                state.Player1Field.Frontend[i] = TestFactory.MakeResource(
+                    cardId: "TST-0001", instanceId: $"my_fe_{i}", faceUp: true, maxAV: 2000, currentAV: 2000);
+            }
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "def", faceUp: true, maxAV: 2000, currentAV: 2000);
             PlaceReactive(state, "TST-0400");
+
+            return (cc, effects, state);
+        }
+
+        [Fact(DisplayName = "攻撃を宣言すると、攻撃側が再ダメージ先を選ぶ選択待ちへ遷移する")]
+        public void Reactive_SuspendsForRedirectTargetChoice()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
 
             AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
 
-            state.PendingEffectChoice.Should().NotBeNull("再ダメージ先の選択待ちへ遷移する");
+            state.PendingEffectChoice.Should().NotBeNull();
             state.PendingEffectChoice!.ChoiceKind.Should().Be(ChoiceKinds.FieldTarget);
-            state.PendingEffectChoice.Candidates.Should().Contain("atk");
+            state.PendingEffectChoice.ChooserPlayerNum.Should().Be(1);
+            state.PendingEffectChoice.Candidates.Should().BeEquivalentTo(["atk", "my_fe_1"]);
+        }
+
+        [Fact(DisplayName = "再ダメージ先に攻撃リソース以外を選ぶと、そのリソースに攻撃リソースのスループット分 600 のダメージが入る")]
+        public void Resolve_DealsAttackerThroughputToChosenFrontend()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects);
+
+            FieldHelpers.FindResourceByID(state.Player1Field, "my_fe_1")!.Damage.Should().Be(600);
+            state.PendingEffectChoice.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "攻撃側フロントエンドが攻撃リソース 1 枚だけのとき、その攻撃リソース自身に 600 のダメージが入る")]
+        public void Resolve_SingleFrontend_DealsDamageToAttackerItself()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 1);
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+
+            state.PendingEffectChoice!.Candidates.Should().BeEquivalentTo(["atk"]);
+
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "atk" }, cc, effects);
+
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.Damage.Should().Be(600);
         }
     }
 

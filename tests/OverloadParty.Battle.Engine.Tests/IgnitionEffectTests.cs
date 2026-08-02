@@ -200,19 +200,84 @@ public class IgnitionEffectTests
     [Trait("対象", "scale_to_zero の起動効果")]
     public class ScaleToZero
     {
-        [Fact(DisplayName = "scale_to_zero を起動効果で発動するとエラスティックリソースに維持コスト軽減 60 が付与される")]
-        public void Ignition_AddsMaintenanceReduction()
+        /// <summary>エンドフェーズまで進めて維持コストを徴収させる。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="cc">カード定義キャッシュ。</param>
+        /// <param name="effects">効果ハンドラのレジストリ。</param>
+        private static void CollectMaintenanceCost(BattleGameState state, TestCardCache cc, EffectRegistry effects)
+        {
+            state.CurrentPhase = Phase.Battle;
+            state.Player2Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects);
+        }
+
+        [Fact(DisplayName = "エラスティックリソースを置いたままターンを終えると、維持コスト 39 がバジェットから引かれる")]
+        public void WithoutIgnition_CollectsMaintenanceCost()
         {
             var (cc, effects) = Env(TestFactory.ElasticContainerCard(cardId: "TST-0003"), Custom(CustomEffects.ScaleToZero));
-            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main);
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main, p1Budget: 5000);
+            var src = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "src", faceUp: true, elasticBonus: 600);
+            src.DeployedOnTurn = 1;
+            src.LastAttackTurn = 0;
+            state.Player1Field.Frontend[0] = src;
+
+            CollectMaintenanceCost(state, cc, effects);
+
+            state.GetBudget(1).Should().Be(4961);
+        }
+
+        [Fact(DisplayName = "エラスティックリソースに scale_to_zero を使うと、そのターンの維持コストが引かれない")]
+        public void Ignition_ZeroesMaintenanceCost()
+        {
+            var (cc, effects) = Env(TestFactory.ElasticContainerCard(cardId: "TST-0003"), Custom(CustomEffects.ScaleToZero));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main, p1Budget: 5000);
             var src = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "src", faceUp: true, elasticBonus: 600);
             src.DeployedOnTurn = 1;
             src.LastAttackTurn = 0;
             state.Player1Field.Frontend[0] = src;
 
             UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+            CollectMaintenanceCost(state, cc, effects);
 
-            src.TemporaryEffects.Should().Contain(e => e.EffectType == BuffTypes.MaintenanceReduction && e.Value == 60);
+            state.GetBudget(1).Should().Be(5000);
+        }
+
+        [Fact(DisplayName = "ランクとインスタンスファミリーで倍率のかかるリソースに scale_to_zero を使っても、そのターンの維持コストが引かれない")]
+        public void Ignition_ZeroesMaintenanceCost_WithRankAndFamilyMultipliers()
+        {
+            var scalable = TestFactory.ComputeCard(
+                cardId: "TST-0003", tp: 600, mc: 0, deployTurns: 0,
+                resizable: true, elastic: true, elasticIncrement: 100, freeTier: 600, costPerRequest: 10);
+            var (cc, effects) = Env(scalable, Custom(CustomEffects.ScaleToZero));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main, p1Budget: 5000);
+            var src = TestFactory.MakeResource(
+                cardId: "TST-0003", instanceId: "src", rank: Rank.Medium, family: InstanceFamily.C, faceUp: true);
+            src.DeployedOnTurn = 1;
+            src.LastAttackTurn = 0;
+            state.Player1Field.Frontend[0] = src;
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+            CollectMaintenanceCost(state, cc, effects);
+
+            state.GetBudget(1).Should().Be(5000);
+        }
+
+        [Fact(DisplayName = "維持コストが 0 のリソースに scale_to_zero を使うと、維持コスト軽減は付与されない")]
+        public void Ignition_NoMaintenanceCost_AddsNoReduction()
+        {
+            var (cc, effects) = Env(TestFactory.ServerlessCard(cardId: "TST-0003"), Custom(CustomEffects.ScaleToZero));
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Main);
+            var src = TestFactory.MakeResource(cardId: "TST-0003", instanceId: "src", faceUp: true);
+            src.DeployedOnTurn = 1;
+            src.LastAttackTurn = 0;
+            state.Player1Field.Frontend[0] = src;
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, Use("src"), cc, effects);
+
+            src.TemporaryEffects.Should().BeEmpty();
         }
     }
 
@@ -266,6 +331,55 @@ public class IgnitionEffectTests
             state.GetBudget(1).Should().Be(5300);
             state.PendingSlotSelects.Should().ContainSingle();
             state.Player1Field.Support.Select(s => s.InstanceID).Should().NotContain("sup_1");
+        }
+
+        [Fact(DisplayName = "cloud_shift をリソースの起動効果で発動すると手札からデプロイ要求が出て発動元リソースがトラッシュへ送られる")]
+        public void Ignition_FromResource_DeploysFromHandAndSelfTrashes()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0004", name: "ShiftableCompute"));
+            var meta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(
+                """{"faction":"SHE","deploy_discount":300}""");
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0004", TriggerType.Ignition,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.CloudShift, meta)!));
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 5000);
+            state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0004", instanceId: "src", faceUp: true);
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }), cc, effects);
+
+            state.GetBudget(1).Should().Be(5300);
+            state.PendingSlotSelects.Should().ContainSingle();
+            state.Player1Field.Frontend[0].Should().BeNull();
+            state.Player1Trash.Should().ContainSingle(c => c.InstanceID == "src");
+        }
+
+        [Fact(DisplayName = "cloud_shift でトラッシュへ送られた発動元リソースには SLA ペナルティがかからない")]
+        public void Ignition_FromResource_ChargesNoSlaPenalty()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0004", slaPenalty: 400, name: "ShiftableCompute"));
+            var meta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(
+                """{"faction":"SHE"}""");
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0004", TriggerType.Ignition,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.CloudShift, meta)!));
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 5000);
+            state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0004", instanceId: "src", faceUp: true);
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }), cc, effects);
+
+            state.GetBudget(1).Should().Be(5000);
         }
     }
 

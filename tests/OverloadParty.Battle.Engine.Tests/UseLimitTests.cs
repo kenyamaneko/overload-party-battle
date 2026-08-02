@@ -17,7 +17,8 @@ public class UseLimitTests
             BattleGameState state,
             long playerNum,
             DeployedResource? source = null,
-            DeployedSupport? supSource = null)
+            DeployedSupport? supSource = null,
+            TriggerType trigger = TriggerType.Ignition)
         {
             var cc = new TestCardCache();
             var ctx = new EffectContext
@@ -29,6 +30,7 @@ public class UseLimitTests
                 SupSource = supSource,
                 CardCache = cc,
                 Effects = new EffectRegistry(),
+                Trigger = trigger,
             };
             return new OpContext(ctx);
         }
@@ -37,7 +39,7 @@ public class UseLimitTests
     [Trait("対象", "1 ターン 1 回の使用制限チェック")]
     public class CheckUseLimitPerTurn : Base
     {
-        [Fact(DisplayName = "このターン既に使用済みのリソースを再使用しようとすると例外になる")]
+        [Fact(DisplayName = "このターン既に使用済みのリソースの起動効果を使おうとすると例外になる")]
         public void CheckUseLimitOp_Throws_WhenEffectAlreadyUsedThisTurn()
         {
             var state = TestFactory.MakeGameState();
@@ -65,9 +67,10 @@ public class UseLimitTests
             var act = () => op.Execute(opCtx);
 
             act.Should().NotThrow();
+            opCtx.Result.HasGuardFailed.Should().BeFalse();
         }
 
-        [Fact(DisplayName = "このターン既に使用済みのサポートカードを再使用しようとすると例外になる")]
+        [Fact(DisplayName = "このターン既に使用済みのサポートカードの起動効果を使おうとすると例外になる")]
         public void CheckUseLimitOp_Throws_WhenSupSourceUsedThisTurn()
         {
             var state = TestFactory.MakeGameState();
@@ -85,6 +88,22 @@ public class UseLimitTests
             var act = () => op.Execute(opCtx);
 
             act.Should().Throw<GameRuleException>().WithMessage("*turn*");
+        }
+
+        [Fact(DisplayName = "このターン既に使用済みのリソースの誘発効果が再び発動しかけたときは、例外にならず発動条件の不成立として打ち切られる")]
+        public void CheckUseLimitOp_Triggered_AbortsWithoutThrowing()
+        {
+            var state = TestFactory.MakeGameState();
+            var source = TestFactory.MakeResource(instanceId: "r1");
+            source.EffectUsedThisTurn = true;
+
+            var opCtx = MakeOpContext(state, playerNum: 1, source: source, trigger: TriggerType.OnDeploy);
+            var op = new CheckUseLimitOp(perGame: false);
+
+            var act = () => op.Execute(opCtx);
+
+            act.Should().NotThrow();
+            opCtx.Result.HasGuardFailed.Should().BeTrue();
         }
     }
 
@@ -130,7 +149,7 @@ public class UseLimitTests
     [Trait("対象", "1 ゲーム 1 回の使用制限チェック")]
     public class CheckUseLimitPerGame : Base
     {
-        [Fact(DisplayName = "このゲームで既に使用済みのリソースを再使用しようとすると例外になる")]
+        [Fact(DisplayName = "このゲームで既に使用済みのリソースの起動効果を使おうとすると例外になる")]
         public void CheckUseLimitOp_PerGame_Throws_WhenAlreadyUsed()
         {
             var state = TestFactory.MakeGameState();
@@ -158,6 +177,23 @@ public class UseLimitTests
             var act = () => op.Execute(opCtx);
 
             act.Should().NotThrow();
+            opCtx.Result.HasGuardFailed.Should().BeFalse();
+        }
+
+        [Fact(DisplayName = "このゲームで既に使用済みのリソースの誘発効果が再び発動しかけたときは、例外にならず発動条件の不成立として打ち切られる")]
+        public void CheckUseLimitOp_PerGame_Triggered_AbortsWithoutThrowing()
+        {
+            var state = TestFactory.MakeGameState();
+            var source = TestFactory.MakeResource(instanceId: "r1");
+            source.EffectUsedThisGame = true;
+
+            var opCtx = MakeOpContext(state, playerNum: 1, source: source, trigger: TriggerType.OnDeploy);
+            var op = new CheckUseLimitOp(perGame: true);
+
+            var act = () => op.Execute(opCtx);
+
+            act.Should().NotThrow();
+            opCtx.Result.HasGuardFailed.Should().BeTrue();
         }
     }
 

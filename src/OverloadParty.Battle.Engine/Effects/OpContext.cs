@@ -169,6 +169,12 @@ public class OpContext
     public void CancelAction() => Result.ShouldCancelAction = true;
 
     /// <summary>
+    /// 発動条件を満たさなかったものとして、以降の op を実行せずに効果を打ち切る。
+    /// 契機となったアクションは拒否されず、リアクティブも消費されない。
+    /// </summary>
+    public void AbortAsConditionUnmet() => Result.HasGuardFailed = true;
+
+    /// <summary>
     /// Tracks success/failure of named effect groups within this pipeline execution.
     /// Used by <see cref="Ops.DependentEffectOp"/> to check whether the parent group succeeded.
     /// </summary>

@@ -54,6 +54,23 @@ public static class StatCalculator
     }
 
     /// <summary>
+    /// 軽減を適用する前の維持コストを算出します。
+    /// </summary>
+    /// <param name="instance">対象リソース。</param>
+    /// <param name="card">対象のカード定義。</param>
+    /// <returns>軽減前の維持コスト。</returns>
+    public static long CalculateBaseMaintenanceCost(DeployedResource instance, CardDefinition card)
+    {
+        if (!card.Elastic)
+        {
+            return card.MaintenanceCost * BattleConstants.GetRankMultiplier(instance.Rank);
+        }
+
+        long intrinsicStat = CalculateIntrinsicStat(instance, card);
+        return Math.Max(0, intrinsicStat - card.FreeTier) * card.CostPerRequest / 100;
+    }
+
+    /// <summary>
     /// Calculate effective throughput for a resource, including all bonuses.
     /// </summary>
     /// <param name="instance">対象リソース。</param>
