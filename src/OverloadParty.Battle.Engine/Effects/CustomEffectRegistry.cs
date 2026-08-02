@@ -368,6 +368,7 @@ public class CustomEffectRegistry
             {
                 ResourceHelpers.MoveResourceToTrash(
                     octx.State, octx.PlayerNum, octx.MyField, octx.Source);
+                PassiveRecalculator.Recalculate(octx.State, octx.Game, octx.CardCache, octx.Effects);
             }
         };
     }
