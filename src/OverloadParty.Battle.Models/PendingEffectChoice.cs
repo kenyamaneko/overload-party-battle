@@ -49,6 +49,11 @@ public class PendingEffectChoice
 
     /// <summary>on_attack_declared トリガー時の攻撃ダメージ値。</summary>
     public long? EventDamage { get; set; }
+
+    /// <summary>
+    /// 効果を中断した op の位置。再開はここから始めるため、手前の op は再実行されない。
+    /// </summary>
+    public int ResumeOpIndex { get; set; }
 }
 
 /// <summary>

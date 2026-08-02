@@ -14,6 +14,9 @@ public class OpContext
     /// <summary>Accumulated result of the pipeline execution.</summary>
     public EffectResult Result { get; } = new();
 
+    /// <summary>実行中の op の位置。選択待ちに入ったとき、再開位置として記録する。</summary>
+    public int CurrentOpIndex { get; set; }
+
     private readonly Dictionary<long, Field> _fieldCache = new();
 
     /// <summary>
@@ -138,6 +141,7 @@ public class OpContext
             EventOwnerNum = EventOwnerNum,
             IncidentCardId = IncidentCard?.CardId,
             EventDamage = EventDamage,
+            ResumeOpIndex = CurrentOpIndex,
         };
     }
 

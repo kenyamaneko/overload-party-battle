@@ -181,6 +181,44 @@ public class PendingEffectChoiceTests
             pendingSlot.Resource.CardID.Should().Be(HandDummyCardId);
         }
 
+        [Fact(DisplayName = "選択より前にバジェットを増やす手順がある効果は、選択を解決してもバジェットが再び増えない")]
+        public void Resolve_DoesNotRerunOpsBeforeTheChoice()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: HandDummyCardId, subtype: "VM"));
+            cc.Add(TestFactory.ComputeCard(cardId: AttackerCardId, tp: 1500, av: 1400, name: "StrongCompute"));
+            cc.Add(TestFactory.ReactiveCard(cardId: ReactiveDummyCardId));
+
+            var effects = new EffectRegistry();
+            effects.RegisterComposed(ReactiveDummyCardId, TriggerType.OnDestroy,
+                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(300)),
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.DeploySameTypeFromHand, null)!));
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, activePlayer: 2, p1Budget: 5000);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: AttackerCardId, instanceId: "atk", faceUp: true, maxTP: 1500, currentTP: 1500);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: HandDummyCardId, instanceId: "victim", faceUp: true, maxAV: 1400);
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = ReactiveDummyCardId,
+                FaceUp = false,
+                DeployOrder = 1,
+            };
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = HandDummyCardId });
+
+            // 破壊で SLA ペナルティ 400 が引かれ、選択待ちに入るまでに効果の +300 が 1 回適用される。
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 2, Atk("atk", "victim"), cc, effects);
+            state.GetBudget(1).Should().Be(4900);
+
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = HandDummyCardId }, cc, effects);
+
+            state.GetBudget(1).Should().Be(4900);
+            state.PendingSlotSelects.Should().ContainSingle();
+        }
+
         [Fact(DisplayName = "選択者と異なるプレイヤーが解決しようとすると拒否される")]
         public void Resolve_WithWrongChooser_Throws()
         {

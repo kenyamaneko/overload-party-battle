@@ -73,6 +73,7 @@ public static class ResolvePendingChoiceProcessor
             Trigger = pending.Trigger,
             EffectCardId = pending.EffectCardId,
             EffectInstanceId = pending.EffectInstanceId,
+            ResumeFromOpIndex = pending.ResumeOpIndex,
         };
 
         var result = handler(ctx);
