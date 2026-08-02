@@ -12,3 +12,4 @@ global using DeployedSupport = OverloadParty.Battle.Models.DeployedSupport;
 global using UndeployedCard = OverloadParty.Battle.Models.UndeployedCard;
 global using TemporaryEffect = OverloadParty.Battle.Models.TemporaryEffect;
 global using OverloadParty.Battle.Engine.Effects;
+global using OverloadParty.Battle.Tests.Fakes;

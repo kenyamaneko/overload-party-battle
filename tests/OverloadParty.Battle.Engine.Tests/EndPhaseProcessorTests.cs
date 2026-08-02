@@ -43,7 +43,7 @@ public class EndPhaseProcessorTests
             state.Player1Field.Backend[0] = db;
             state.SetInsightPool(1, 0);
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.Player1InsightPool.Should().Be(0, "dormant DB does not generate yield");
         }
@@ -61,7 +61,7 @@ public class EndPhaseProcessorTests
             });
             state.Player1Field.Frontend[0] = res;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             FieldHelpers.HasTemporaryEffect(res, BuffTypes.Dormant).Should().BeFalse();
         }
@@ -75,7 +75,7 @@ public class EndPhaseProcessorTests
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.CurrentPhase.Should().Be(Phase.Battle);
             result.GameOver.Should().BeNull();
@@ -86,7 +86,7 @@ public class EndPhaseProcessorTests
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.ActivePlayer.Should().Be(1);
             state.CurrentTurn.Should().Be(2);
@@ -97,7 +97,7 @@ public class EndPhaseProcessorTests
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             result.Events.Should().ContainSingle();
             result.Events[0].EventType.Should().Be(EventTypes.PhaseChange);
@@ -116,7 +116,7 @@ public class EndPhaseProcessorTests
             var state = TestFactory.MakeGameState(turn: 1, phase: Phase.Main, activePlayer: 1);
             AddRepoCards(state, 2);
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             // End phase processing → turn switch → draw → main
             state.CurrentPhase.Should().Be(Phase.Main);
@@ -134,7 +134,7 @@ public class EndPhaseProcessorTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
             AddRepoCards(state, 2);
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             // End phase processing → turn switch → draw phase → advance to main
             state.ActivePlayer.Should().Be(2);
@@ -153,13 +153,13 @@ public class EndPhaseProcessorTests
             AddRepoCards(state, 2);
 
             // First end_phase: Main → Battle
-            var result1 = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result1 = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
             state.CurrentPhase.Should().Be(Phase.Battle);
             state.ActivePlayer.Should().Be(1);
             state.CurrentTurn.Should().Be(2);
 
             // Second end_phase: Battle → End → turn switch → draw → main
-            var result2 = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result2 = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
             state.ActivePlayer.Should().Be(2);
             state.CurrentTurn.Should().Be(3);
             state.CurrentPhase.Should().Be(Phase.Main);
@@ -183,7 +183,7 @@ public class EndPhaseProcessorTests
                 });
             }
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             result.ShouldDiscard.Should().BeTrue();
             // Phase stays at End, no turn switch yet
@@ -207,7 +207,7 @@ public class EndPhaseProcessorTests
                 });
             }
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             result.ShouldDiscard.Should().BeFalse();
             // Turn switches normally
@@ -228,7 +228,7 @@ public class EndPhaseProcessorTests
             var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res_1", faceUp: true);
             state.Player1Field.Frontend[0] = resource;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             // Budget should be reduced by maintenance cost (150)
             state.Player1Budget.Should().Be(5000 - 150);
@@ -252,7 +252,7 @@ public class EndPhaseProcessorTests
                 maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200);
             state.Player1Field.Frontend[0] = resource;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             // With no elastic bonus beyond base, MC should be 0
             state.Player1Budget.Should().Be(5000);
@@ -275,7 +275,7 @@ public class EndPhaseProcessorTests
                 maxTP: 500, currentTP: 500, maxAV: 1200, currentAV: 1200, elasticBonus: 300);
             state.Player1Field.Frontend[0] = resource;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.Player1Budget.Should().Be(5000 - 23);
         }
@@ -296,7 +296,7 @@ public class EndPhaseProcessorTests
                 maxTP: 1560, currentTP: 1560, maxAV: 3600, currentAV: 3600);
             state.Player1Field.Frontend[0] = resource;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.Player1Budget.Should().Be(5000 - 96);
         }
@@ -314,7 +314,7 @@ public class EndPhaseProcessorTests
                 maxTP: 300, currentTP: 300, maxAV: 600, currentAV: 600, elasticBonus: 500);
             state.Player1Field.Frontend[0] = resource;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.Player1Budget.Should().Be(5000);
         }
@@ -338,7 +338,7 @@ public class EndPhaseProcessorTests
 
             long insightBefore = state.Player1InsightPool;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.Player1InsightPool.Should().Be(insightBefore + 400);
         }
@@ -358,7 +358,7 @@ public class EndPhaseProcessorTests
 
             long insightBefore = state.Player1InsightPool;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.Player1InsightPool.Should().Be(insightBefore);
         }
@@ -376,7 +376,7 @@ public class EndPhaseProcessorTests
                 maxAV: 800, currentAV: 800, maxYield: 300, currentYield: 300, maxTP: null, currentTP: null);
             state.Player1Field.Backend[0] = resource;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             resource.ElasticBonus.Should().Be(50);
         }
@@ -401,7 +401,7 @@ public class EndPhaseProcessorTests
             });
             state.Player1Field.Frontend[0] = resource;
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             resource.TemporaryEffects.Should().BeEmpty();
         }
@@ -424,7 +424,7 @@ public class EndPhaseProcessorTests
 
             state.SetIncidentPlayedThisTurn(1, true);
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             resource.HasAttacked.Should().BeFalse();
             resource.EffectUsedThisTurn.Should().BeFalse();
@@ -451,7 +451,7 @@ public class EndPhaseProcessorTests
                 EffectUsedThisTurn = true
             };
 
-            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             state.Player1Field.Support[0]!.EffectUsedThisTurn.Should().BeFalse();
         }
@@ -469,7 +469,7 @@ public class EndPhaseProcessorTests
             // Player has never deployed (HasOperated = false)
             state.SetHasOperated(1, false);
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             result.GameOver.Should().NotBeNull();
             result.GameOver!.WinnerNum.Should().Be(2);
@@ -486,13 +486,14 @@ public class EndPhaseProcessorTests
                 state.Player1Hand.Add(new UndeployedCard { InstanceID = $"hand_{i}", CardID = "TST-0001" });
             }
 
-            var endResult = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var endResult = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             endResult.ShouldDiscard.Should().BeTrue("手札超過のため判定は保留され破棄が要求される");
             endResult.GameOver.Should().BeNull();
 
             var discardResult = DiscardProcessor.Process(
-                state, _game, 1, new DiscardHandRequest { CardInstanceIDs = ["hand_6", "hand_7"] }, _cc, new EffectRegistry());
+                state, _game, 1, new DiscardHandRequest { CardInstanceIDs = ["hand_6", "hand_7"] }, _cc,
+                new EffectRegistry(), new FakeClock());
 
             discardResult.GameOver.Should().NotBeNull("破棄解決時にローンチ失敗判定が走る");
             discardResult.GameOver!.WinnerNum.Should().Be(2);
@@ -509,7 +510,7 @@ public class EndPhaseProcessorTests
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
             AddRepoCards(state, 2);
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             result.Events.Should().Contain(e => e.EventType == EventTypes.TurnEnd);
         }
@@ -527,7 +528,7 @@ public class EndPhaseProcessorTests
             // But make sure player 1's end-phase logic works
             // After turn switch, player 2 (active) has empty repo
 
-            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry());
+            var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
             // Player 2 can't draw → game over, player 1 wins
             result.GameOver.Should().NotBeNull();
@@ -586,7 +587,7 @@ public class EndPhaseProcessorTests
             var effects = new TestEffectRegistry();
             effects.Register("TST-0001", TriggerType.OnEndPhase, _ => { fired++; return new EffectResult(); });
 
-            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects, new FakeClock());
 
             fired.Should().Be(1, "エンドフェーズに エンドフェーズ効果 が発動する");
         }
@@ -602,7 +603,7 @@ public class EndPhaseProcessorTests
             var effects = new TestEffectRegistry();
             effects.Register("TST-0001", TriggerType.Passive, _ => { fired++; return new EffectResult(); });
 
-            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects, new FakeClock());
 
             fired.Should().Be(1, "エンドフェーズに パッシブ効果 が発動する");
         }

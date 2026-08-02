@@ -142,7 +142,7 @@ public class TriggeredEffectTests
             res.DeployedOnTurn = 1; // 経過 2 ターン == turns
             state.Player1Field.Frontend[0] = res;
 
-            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects, new FakeClock());
 
             FieldHelpers.FindResourceByID(state.Player1Field, "spot").Should().BeNull("自壊する");
         }
@@ -165,7 +165,7 @@ public class TriggeredEffectTests
             state.Player1Field.Frontend[0] = res;
             long budgetBefore = state.Player1Budget;
 
-            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects, new FakeClock());
 
             state.Player1Budget.Should().Be(budgetBefore - 400, "SLA ペナルティが減算される");
             onDestroyFired.Should().BeTrue("自壊した本体の on_destroy が発火する");
@@ -207,7 +207,7 @@ public class TriggeredEffectTests
             StatCalculator.CalculateEffectiveTP(watcher, state.Player1Field, cc).Should().Be(
                 800, "スポットが場にいる間はパッシブ効果で+200される");
 
-            EndPhaseProcessor.Process(state, game, 1, cc, effects);
+            EndPhaseProcessor.Process(state, game, 1, cc, effects, new FakeClock());
 
             StatCalculator.CalculateEffectiveTP(watcher, state.Player1Field, cc).Should().Be(
                 600, "スポット失効の自壊で発動条件を失い基礎値に戻る");

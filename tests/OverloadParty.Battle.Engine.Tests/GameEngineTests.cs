@@ -3,13 +3,12 @@ using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
-using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
 public class GameEngineTests
 {
-    /// <summary>Shared setup for GameEngine tests (repository, card cache, engine, and single-card deck helper).</summary>
+    /// <summary>Shared setup for GameEngine tests (repository, card cache, engine, and deck helper).</summary>
     public abstract class Base
     {
         protected readonly FakeGameRepository _repo = new();
@@ -19,17 +18,17 @@ public class GameEngineTests
         protected Base()
         {
             _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600, av: 1400, slaPenalty: 400, deployTurns: 0));
-            _cc.Add(TestFactory.ComputeCard(cardId: "TEST-0002", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
+            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0003", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
             _cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
-            _engine = new GameEngine(_repo, _cc, new EffectRegistry(), new InitiativeCatalog([]));
+            _engine = new GameEngine(_repo, _cc, new EffectRegistry(), new InitiativeCatalog([]), new FakeClock());
         }
 
-        /// <summary>Builds a deck composed entirely of a single card.</summary>
-        /// <param name="cardId">The card ID to fill the deck with.</param>
-        /// <returns>A deck snapshot of the single card.</returns>
-        protected DeckSnapshot MakeSingleCardDeck(string cardId)
+        /// <summary>指定カードを含むデッキ規約どおりの 30 枚デッキを組む。</summary>
+        /// <param name="cardId">デッキに入れるカードの ID。</param>
+        /// <returns>30 枚のデッキスナップショット。</returns>
+        protected DeckSnapshot MakeDeckWith(string cardId)
         {
-            return TestFactory.MakeDeck(cardId);
+            return TestFactory.MakeDeck(_cc, cardId);
         }
     }
 
@@ -39,7 +38,7 @@ public class GameEngineTests
         [Fact(DisplayName = "ゲームを作成すると、ゲーム ID を返し初期ターン・フェーズ・バジェット・手札・デッキを初期化する")]
         public async Task CreateNewGame_ReturnsGameID_And_InitializesState()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
 
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
@@ -64,14 +63,15 @@ public class GameEngineTests
             // Repository should have remaining cards
             state.Player1Repository.Should().HaveCount(InitialValues.DeckSize - BattleConstants.InitialHandSize);
 
-            // All hand cards should reference the correct card
-            state.Player1Hand.Should().AllSatisfy(h => h.CardID.Should().Be("TST-0001"));
+            // All hand cards should come from the deck
+            var deckCardIds = deck.Cards.Select(c => c.CardId).ToHashSet();
+            state.Player1Hand.Should().AllSatisfy(h => deckCardIds.Should().Contain(h.CardID));
         }
 
         [Fact(DisplayName = "先攻をプレイヤー 2 で作成すると、アクティブプレイヤーが 2 になる")]
         public async Task CreateNewGame_FirstPlayer2_SetsActivePlayer2()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
 
             var gameID = await _engine.CreateNewGame(deck, deck, 2);
 
@@ -82,7 +82,7 @@ public class GameEngineTests
         [Fact(DisplayName = "エンジンバージョンとカードデータバージョンがゲームに記録される")]
         public async Task CreateNewGame_RecordsVersions()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1,
                 engineVersion: "1.2.3", cardDataVersion: "4.5.6");
 
@@ -98,7 +98,7 @@ public class GameEngineTests
         [Fact(DisplayName = "ドローフェーズで自動進行すると、1 枚引いてメインフェーズへ進む")]
         public async Task RunAutoAdvance_DrawPhase_DrawsCardAndAdvancesToMain()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             var state = await _repo.GetGameState(gameID);
@@ -123,7 +123,7 @@ public class GameEngineTests
         [Fact(DisplayName = "カードプレイアクションで手札のカードをフィールドに出し、カードプレイイベントを返す")]
         public async Task ProcessAction_PlayCard_PlaysCardAndReturnsEvents()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             // Advance past draw phase
@@ -133,10 +133,10 @@ public class GameEngineTests
             var state = await _repo.GetGameState(gameID);
             state!.CurrentPhase.Should().Be(Phase.Main);
 
-            var cardToPlay = state.Player1Hand.First();
+            var cardInstanceId = TestFactory.ReplaceFirstHandCard(state, 1, "TST-0001");
             var req = new PlayCardRequest
             {
-                CardInstanceID = cardToPlay.InstanceID,
+                CardInstanceID = cardInstanceId,
                 Zone = Zones.Frontend,
                 Index = 0,
             };
@@ -149,7 +149,7 @@ public class GameEngineTests
             result.Events.Should().Contain(e => e.EventType == ActionTypes.PlayCard);
 
             // Card removed from hand
-            state.Player1Hand.Should().NotContain(h => h.InstanceID == cardToPlay.InstanceID);
+            state.Player1Hand.Should().NotContain(h => h.InstanceID == cardInstanceId);
 
             // Card placed on field (deployTurns=0 → face-up)
             state.Player1Field.Frontend[0].Should().NotBeNull();
@@ -163,7 +163,7 @@ public class GameEngineTests
         [Fact(DisplayName = "攻撃アクションで対象に 600 ダメージを与え、攻撃イベントを返して永続化する")]
         public async Task ProcessAction_Attack_DealsDamageAndReturnsEvents()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             // Set up the game state directly for attack testing
@@ -209,7 +209,7 @@ public class GameEngineTests
         [Fact(DisplayName = "自分のターンでないプレイヤーがアクションすると、GameRuleException を投げる")]
         public async Task ProcessAction_WrongPlayer_Throws()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -234,7 +234,7 @@ public class GameEngineTests
         [Fact(DisplayName = "NPC モデル取得に不正なプレイヤー番号 0 を渡すと、ArgumentOutOfRangeException を投げる")]
         public async Task GetNpcModel_InvalidPlayer_Throws()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             var game = await _repo.GetGame(gameID);
@@ -247,7 +247,7 @@ public class GameEngineTests
         [Fact(DisplayName = "プレイヤー 1 が強制決着すると、相手を勝者・理由 Surrender としてゲームが即座に終了する")]
         public async Task Forfeit_EndsGameImmediately()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             var game = await _repo.GetGame(gameID);
@@ -266,7 +266,7 @@ public class GameEngineTests
         [Fact(DisplayName = "終了済みゲームにアクションすると、GameRuleException を投げる")]
         public async Task ProcessAction_FinishedGame_Throws()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             // Forfeit to finish the game
@@ -288,7 +288,7 @@ public class GameEngineTests
         [Fact(DisplayName = "両者強制決着すると、勝者なし・理由 Disconnect としてゲームが即座に終了する")]
         public async Task ForfeitBoth_EndsGameAsDraw()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             var game = await _repo.GetGame(gameID);
@@ -307,7 +307,7 @@ public class GameEngineTests
         [Fact(DisplayName = "終了済みゲームで両者強制決着すると、GameRuleException を投げる")]
         public async Task ForfeitBoth_FinishedGame_Throws()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             var game = await _repo.GetGame(gameID);
@@ -326,7 +326,7 @@ public class GameEngineTests
         [Fact(DisplayName = "ゲーム進行で状態が変化しても、保存された初期状態は元のバジェットと手札枚数を保つ")]
         public async Task GetInitialState_ReturnsOriginalState_AfterMutations()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             var initialState = await _repo.GetInitialState(gameID);
@@ -353,7 +353,7 @@ public class GameEngineTests
         [Fact(DisplayName = "スロット選択待ちのプレイヤーが別アクションをすると、GameRuleException を投げる")]
         public async Task ProcessAction_PendingSlotSelect_BlocksOtherActions()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -376,7 +376,7 @@ public class GameEngineTests
         [Fact(DisplayName = "スロット選択待ち中にスロットを選択すると、選択したスロットへ配置し待ちが解消される")]
         public async Task ProcessAction_PendingSlotSelect_AllowsSelectSlot()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -402,7 +402,7 @@ public class GameEngineTests
         [Fact(DisplayName = "相手がスロット選択待ちでも、ターンプレイヤーは通常どおりアクションできる")]
         public async Task ProcessAction_PendingSlotSelect_DoesNotBlockOtherPlayer()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -434,7 +434,7 @@ public class GameEngineTests
         [Fact(DisplayName = "スロット選択待ちが生じた後の次アクションは、GameRuleException を投げる")]
         public async Task ProcessAction_WhilePendingSlotSelect_BlocksNextAction()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -476,7 +476,7 @@ public class GameEngineTests
         [Fact(DisplayName = "スロット選択待ちが 2 件あるとき、1 件目の解決では選択継続を示し 2 件目で解消される")]
         public async Task ProcessAction_SelectSlot_ResolvesAndReturnsNeedsSlotSelectTrue_WhenQueueRemains()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -544,7 +544,7 @@ public class GameEngineTests
         [Fact(DisplayName = "効果中選択の待ちがある選択者が別のアクションを送ると、GameRuleException になる")]
         public async Task PendingChoice_ChooserSendsOtherAction_Throws()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -567,8 +567,8 @@ public class GameEngineTests
             var effects = new EffectRegistry();
             effects.RegisterComposed(ChoiceCardId, TriggerType.Ignition,
                 new InlineOp(octx => new GainInsightOp(new StaticAmount(300)).Execute(octx)));
-            var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog([]));
-            var deck = TestFactory.MakeDeck("TST-0001");
+            var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog([]), new FakeClock());
+            var deck = TestFactory.MakeDeck(cc, "TST-0001");
             var gameID = await engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await engine.RunAutoAdvance(game!);
@@ -588,7 +588,7 @@ public class GameEngineTests
         [Fact(DisplayName = "メインフェーズに攻撃を送ると、GameRuleException になる")]
         public async Task MainPhase_Attack_Throws()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -608,7 +608,7 @@ public class GameEngineTests
         [Fact(DisplayName = "バトルフェーズにカードプレイを送ると、GameRuleException になる")]
         public async Task BattlePhase_PlayCard_Throws()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -629,7 +629,7 @@ public class GameEngineTests
         [Fact(DisplayName = "エンジン経由でスケールアップを処理すると、ランクが上がる")]
         public async Task ScaleUp_ThroughEngine_RaisesRank()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -651,7 +651,7 @@ public class GameEngineTests
         [Fact(DisplayName = "エンジン経由で収益化を処理すると、バジェットが増えインサイトプールが減る")]
         public async Task Monetize_ThroughEngine_ConvertsInsightToBudget()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -680,8 +680,8 @@ public class GameEngineTests
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
             var effects = new EffectRegistry();
             effects.RegisterComposed("TST-0001", TriggerType.Ignition, new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)));
-            var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog([]));
-            var deck = TestFactory.MakeDeck("TST-0001");
+            var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog([]), new FakeClock());
+            var deck = TestFactory.MakeDeck(cc, "TST-0001");
             var gameID = await engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await engine.RunAutoAdvance(game!);
@@ -724,9 +724,9 @@ public class GameEngineTests
             var customs = new CustomEffectRegistry();
             InitiativeEffects.LoadIntoRegistry([initiative], registry, customs);
             var catalog = new InitiativeCatalog([initiative]);
-            var engine = new GameEngine(_repo, _cc, registry, catalog);
+            var engine = new GameEngine(_repo, _cc, registry, catalog, new FakeClock());
 
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await engine.RunAutoAdvance(game!);
@@ -752,7 +752,7 @@ public class GameEngineTests
         [Fact(DisplayName = "終了済みゲームを投了すると、GameRuleException になる")]
         public async Task Forfeit_FinishedGame_Throws()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.Forfeit(game!, 1, WinReason.Surrender);
@@ -766,7 +766,7 @@ public class GameEngineTests
         [Fact(DisplayName = "プレイヤー 2 が投了すると、プレイヤー 1 の勝ち・勝因 surrender で終了する")]
         public async Task Forfeit_Player2_Player1WinsWithSurrender()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
 
@@ -783,7 +783,7 @@ public class GameEngineTests
         [Fact(DisplayName = "デッキが空のプレイヤーのドローフェーズ自動進行は、相手の勝ち・勝因 deck_out で決着しゲームが finished で保存される")]
         public async Task RunAutoAdvance_EmptyDeck_OpponentWinsWithDeckOut()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
 
             var state = await _repo.GetGameState(gameID);

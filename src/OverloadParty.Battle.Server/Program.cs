@@ -64,6 +64,8 @@ var initiatives = new List<Initiative>();
 
 // ─── Engine ─────────────────────────────────────────────────
 
+builder.Services.AddSingleton<IClock, SystemClock>();
+
 builder.Services.AddSingleton(sp =>
 {
     var gameRepo = sp.GetRequiredService<IGameRepository>();
@@ -75,7 +77,9 @@ builder.Services.AddSingleton(sp =>
     EffectYamlLoader.LoadEffectSources(cc.All().Values, registry, customEffects);
     InitiativeEffects.LoadIntoRegistry(initiatives, registry, customEffects);
 
-    return new GameEngine(gameRepo, cc, registry, new InitiativeCatalog(initiatives));
+    return new GameEngine(
+        gameRepo, cc, registry, new InitiativeCatalog(initiatives),
+        sp.GetRequiredService<IClock>());
 });
 
 // ─── Services ───────────────────────────────────────────────

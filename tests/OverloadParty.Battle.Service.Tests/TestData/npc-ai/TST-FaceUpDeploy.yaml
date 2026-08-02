@@ -4,9 +4,30 @@ routine_id: IN-0001
 special_id: IN-0002
 display_name: 表向きリソースのみのデッキ
 
+# デプロイターンが 0 のリソースだけで 30 枚を組む (同名 3 枚まで)。
+# 該当する Compute は 9 種しかないため、残り 3 枚はデプロイターン 0 のデータリソースで埋める。
+# 10 種を揃えるため、宣言陣営に属さないカードも混ぜている。
 deck:
   - card_id: SH-0002
-    copies: 30
+    copies: 3
+  - card_id: SH-0005
+    copies: 3
+  - card_id: TK-0003
+    copies: 3
+  - card_id: TK-0006
+    copies: 3
+  - card_id: SL-0003
+    copies: 3
+  - card_id: SL-0005
+    copies: 3
+  - card_id: TN-0003
+    copies: 3
+  - card_id: TN-0005
+    copies: 3
+  - card_id: TN-0006
+    copies: 3
+  - card_id: SH-0008
+    copies: 3
 
 budget:
   low_threshold: 1500
@@ -16,9 +37,12 @@ deploy:
   priorities:
     - card_type: Compute
       priority: 50
+    - card_type: DataResource
+      priority: 40
 
   zone_preferences:
     Compute: [frontend, backend]
+    DataResource: [backend]
 
 scale_up:
   instance_family: M

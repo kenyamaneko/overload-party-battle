@@ -17,10 +17,11 @@ public static class DiscardProcessor
     /// <param name="req">The discard request containing card instance IDs to discard.</param>
     /// <param name="cc">The card definition cache.</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <param name="clock">現在時刻の供給元。</param>
     /// <returns>The action result containing discard events and possible game-over result.</returns>
     public static ActionResult Process(
         BattleGameState state, Game game, long playerNum,
-        DiscardHandRequest req, ICardCache cc, IEffectRegistry effects)
+        DiscardHandRequest req, ICardCache cc, IEffectRegistry effects, IClock clock)
     {
         var hand = state.GetHand(playerNum);
         int requiredDiscards = hand.Count - BattleConstants.HandLimit;
@@ -61,7 +62,7 @@ public static class DiscardProcessor
             return result;
         }
 
-        TurnManager.SwitchActivePlayer(state);
+        TurnManager.SwitchActivePlayer(state, clock);
         var gameOverResult = DrawPhaseProcessor.Process(state, game, cc, effects);
 
         if (gameOverResult is not null)

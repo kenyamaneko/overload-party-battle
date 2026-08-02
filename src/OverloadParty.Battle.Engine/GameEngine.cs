@@ -14,18 +14,23 @@ public class GameEngine
     private readonly ICardCache _cardCache;
     private readonly IEffectRegistry _effects;
     private readonly IInitiativeCatalog _initiatives;
+    private readonly IClock _clock;
 
     /// <summary>Initializes a new instance of <see cref="GameEngine"/>.</summary>
     /// <param name="repo">The game persistence layer.</param>
     /// <param name="cardCache">Read-only card definitions.</param>
     /// <param name="effects">The effect registry (card effect handlers).</param>
     /// <param name="initiatives">ID から施策を解決するカタログ。</param>
-    public GameEngine(IGameRepository repo, ICardCache cardCache, IEffectRegistry effects, IInitiativeCatalog initiatives)
+    /// <param name="clock">タイムバンクの計測に使う時刻の供給元。</param>
+    public GameEngine(
+        IGameRepository repo, ICardCache cardCache, IEffectRegistry effects,
+        IInitiativeCatalog initiatives, IClock clock)
     {
         _repo = repo;
         _cardCache = cardCache;
         _effects = effects;
         _initiatives = initiatives;
+        _clock = clock;
     }
 
     /// <summary>Gets the configured effect registry.</summary>
@@ -55,7 +60,7 @@ public class GameEngine
     {
         var gameID = Guid.NewGuid().ToString("N");
         var (game, state) = GameInitializer.CreateNewGame(
-            gameID, deck1, deck2, firstPlayer, _cardCache);
+            gameID, deck1, deck2, firstPlayer, _cardCache, _clock);
 
         game.Npc1Model = npc1Model;
         game.Npc2Model = npc2Model;
@@ -173,7 +178,7 @@ public class GameEngine
                 throw new GameRuleException("not your turn");
             }
 
-            DeductElapsedTime(state);
+            DeductElapsedTime(state, _clock);
 
             var timeoutResult = WinConditionChecker.CheckTimeout(state);
             if (timeoutResult is not null)
@@ -224,9 +229,9 @@ public class GameEngine
                     ActionType.Monetize => MonetizeProcessor.Process(
                         state, game, playerNum, (MonetizeRequest)actionData, _cardCache),
                     ActionType.EndPhase => EndPhaseProcessor.Process(
-                        state, game, playerNum, _cardCache, _effects),
+                        state, game, playerNum, _cardCache, _effects, _clock),
                     ActionType.DiscardHand => DiscardProcessor.Process(
-                        state, game, playerNum, (DiscardHandRequest)actionData, _cardCache, _effects),
+                        state, game, playerNum, (DiscardHandRequest)actionData, _cardCache, _effects, _clock),
                     ActionType.UseIgnition => UseIgnitionProcessor.Process(
                         state, game, playerNum, (UseIgnitionRequest)actionData, _cardCache, _effects),
                     ActionType.UseInitiative => UseInitiativeProcessor.Process(
@@ -266,20 +271,23 @@ public class GameEngine
     }
 
     /// <summary>
-    /// Deducts elapsed time since TurnStartedAt from the active player's TimeBank
-    /// and resets TurnStartedAt to now.
+    /// ターン開始時刻からの経過秒数をターンプレイヤーのタイムバンクから差し引く。
     /// </summary>
     /// <param name="state">対象のゲーム状態。</param>
-    internal static void DeductElapsedTime(BattleGameState state)
+    /// <param name="clock">現在時刻の供給元。</param>
+    internal static void DeductElapsedTime(BattleGameState state, IClock clock)
     {
-        var now = DateTime.UtcNow;
-        var elapsed = (long)(now - state.TurnStartedAt).TotalSeconds;
-        if (elapsed > 0)
+        // 1 秒未満の端数を切り捨てたまま基準時刻を進めると、短い間隔の操作を繰り返す限り
+        // タイムバンクが減らなくなるため、差し引いた分だけ基準時刻を進めて端数を持ち越す。
+        var elapsed = (long)(clock.UtcNow - state.TurnStartedAt).TotalSeconds;
+        if (elapsed <= 0)
         {
-            var remaining = state.GetTimeBank(state.ActivePlayer) - elapsed;
-            state.SetTimeBank(state.ActivePlayer, remaining);
+            return;
         }
-        state.TurnStartedAt = now;
+
+        var remaining = state.GetTimeBank(state.ActivePlayer) - elapsed;
+        state.SetTimeBank(state.ActivePlayer, remaining);
+        state.TurnStartedAt = state.TurnStartedAt.AddSeconds(elapsed);
     }
 
     /// <summary>

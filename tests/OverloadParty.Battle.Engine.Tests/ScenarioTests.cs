@@ -1,7 +1,6 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
-using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
@@ -26,23 +25,23 @@ public class ScenarioTests
             _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
             var effects = new TestEffectRegistry();
             effects.Register("TST-0007", TriggerType.OnDeploy, _ => { _onDeployFired = true; return new EffectResult(); });
-            _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]));
+            _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]), new FakeClock());
         }
 
         [Fact(DisplayName = "デプロイターン 2 のリソースは所有者の 2 回目のドローフェーズで表向きになり、デプロイ時効果が発動する")]
         public async Task BecomesOperational_AfterOwnersSecondDrawPhase()
         {
             var gameID = await _engine.CreateNewGame(
-                TestFactory.MakeDeck("TST-0007"), TestFactory.MakeDeck("TST-0001"), firstPlayer: 1);
+                TestFactory.MakeDeck(_cc, "TST-0007"), TestFactory.MakeDeck(_cc, "TST-0001"), firstPlayer: 1);
 
             // P1 ターン 1: ドローフェーズを通過し、メインフェーズでデプロイターン 2 のカードをデプロイする。
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
-            var state = await _repo.GetGameState(gameID);
-            var card = state!.Player1Hand.First(c => c.CardID == "TST-0007");
+            var state = (await _repo.GetGameState(gameID))!;
+            var cardInstanceId = TestFactory.ReplaceFirstHandCard(state, 1, "TST-0007");
             game = await _repo.GetGame(gameID);
             await _engine.ProcessAction(game!, 1, ActionType.PlayCard,
-                new PlayCardRequest { CardInstanceID = card.InstanceID, Zone = Zones.Frontend, Index = 0 });
+                new PlayCardRequest { CardInstanceID = cardInstanceId, Zone = Zones.Frontend, Index = 0 });
 
             // FakeGameRepository は状態をその場で更新するため、この参照は以降の進行でも生き続ける。
             var deployed = state.Player1Field.Frontend[0]!;

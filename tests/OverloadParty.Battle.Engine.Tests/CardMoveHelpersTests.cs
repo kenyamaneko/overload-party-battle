@@ -229,7 +229,7 @@ public class CardMoveHelpersTests
             state.Player1Trash.Select(c => c.CardID).Should().Contain(new[] { "TST-0001", "TST-0003" });
         }
 
-        [Fact(DisplayName = "手札に無いカードを指定すると、GameRuleException を投げる")]
+        [Fact(DisplayName = "手札に無いカードを指定すると、手札にないことを理由に拒否され手札もトラッシュも変わらない")]
         public void CardNotInHand_Throws()
         {
             var state = TestFactory.MakeGameState();
@@ -237,7 +237,26 @@ public class CardMoveHelpersTests
 
             var act = () => CardMoveHelpers.DiscardCards(state, 1, ["h_1", "h_missing"]);
 
-            act.Should().Throw<GameRuleException>();
+            act.Should().Throw<GameRuleException>().WithMessage("*not found in hand: h_missing*");
+            state.Player1Hand.Should().HaveCount(1);
+            state.Player1Trash.Should().BeEmpty();
+        }
+
+        [Fact(DisplayName = "同じカードを 2 回指定すると、重複を理由に拒否され手札もトラッシュも変わらない")]
+        public void DuplicateCard_Throws()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Hand.AddRange(new[]
+            {
+                new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" },
+                new UndeployedCard { InstanceID = "h_2", CardID = "TST-0002" },
+            });
+
+            var act = () => CardMoveHelpers.DiscardCards(state, 1, ["h_1", "h_1"]);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*duplicate cards specified: h_1*");
+            state.Player1Hand.Should().HaveCount(2);
+            state.Player1Trash.Should().BeEmpty();
         }
 
         [Fact(DisplayName = "空リストを渡すと、何も破棄せず手札もトラッシュも変わらない")]
