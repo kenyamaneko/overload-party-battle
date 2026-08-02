@@ -134,6 +134,48 @@ public class ReactiveEffectTests
             state.PendingEffectChoice.Should().BeNull();
         }
 
+        [Fact(DisplayName = "選択待ちの間は、元の攻撃対象にダメージが入らない")]
+        public void Suspended_DoesNotDamageOriginalTargetYet()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(0);
+        }
+
+        [Fact(DisplayName = "再ダメージ先を選んで解決すると攻撃は無効になり、元の攻撃対象のダメージは 0 のまま確定する")]
+        public void Resolve_CancelsAttack_OriginalTargetTakesNoDamage()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            // NT-0024 と同じく、再ダメージ先の選択に続けて攻撃を無効にする
+            effects.RegisterComposed("TST-0400", TriggerType.OnAttackDeclared,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.RedirectAttack, null)!),
+                SetCancelActionOp.Instance);
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects);
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(0);
+            FieldHelpers.FindResourceByID(state.Player1Field, "my_fe_1")!.Damage.Should().Be(600);
+        }
+
+        [Fact(DisplayName = "攻撃が無効に確定しても、攻撃したリソースの攻撃権は消費される")]
+        public void Resolve_CancelledAttack_StillConsumesAttackRight()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            effects.RegisterComposed("TST-0400", TriggerType.OnAttackDeclared,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.RedirectAttack, null)!),
+                SetCancelActionOp.Instance);
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects);
+
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.HasAttacked.Should().BeTrue();
+        }
+
         [Fact(DisplayName = "攻撃側フロントエンドが攻撃リソース 1 枚だけのとき、その攻撃リソース自身に 600 のダメージが入る")]
         public void Resolve_SingleFrontend_DealsDamageToAttackerItself()
         {

@@ -84,9 +84,43 @@ public static class ResolvePendingChoiceProcessor
         var events = new List<GameEvent>(result.Events);
         events.AddRange(DestructionSweep.Run(state, game, cc, effects));
 
+        events.AddRange(ResumeSuspendedAttack(state, game, cc, effects, pending, result));
+
         return new ActionResult
         {
             Events = events,
         };
+    }
+
+    /// <summary>
+    /// 攻撃宣言時の選択で保留していた攻撃を、解決結果を反映して確定させます。
+    /// 多段選択でまだ選択待ちが残っている間は確定させません。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <param name="pending">解決した選択待ち。</param>
+    /// <param name="result">効果を再実行した結果。</param>
+    /// <returns>攻撃の確定で生じたイベント。攻撃が保留されていなければ空。</returns>
+    private static List<GameEvent> ResumeSuspendedAttack(
+        BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects,
+        PendingEffectChoice pending, EffectResult result)
+    {
+        if (pending.Trigger != TriggerType.OnAttackDeclared || result.PendingChoice is not null)
+        {
+            return [];
+        }
+
+        if (pending.Source is not { } attacker || pending.Target is not { } defender
+            || pending.EventOwnerNum is not { } attackerPlayerNum || pending.EventDamage is not { } rawDamage)
+        {
+            throw new InvalidOperationException(
+                "suspended attack requires the attacker, the defender, the attacking player and the declared damage");
+        }
+
+        return AttackProcessor.ResumeAfterDeclaredChoice(
+            state, game, attackerPlayerNum, attacker, defender, rawDamage,
+            result.ShouldCancelAction, cc, effects);
     }
 }

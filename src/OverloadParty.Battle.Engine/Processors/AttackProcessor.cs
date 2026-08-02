@@ -39,26 +39,79 @@ public static class AttackProcessor
             state, game, playerNum, opponentNum, oppField, attacker, defender, rawDamage, cc, effects);
         events.AddRange(reactiveEvents);
 
-        if (cancelled)
+        // 攻撃宣言のリアクティブが選択待ちに入ったら、ダメージ以降は選択解決まで保留する。
+        // 解決結果によって攻撃が無効になりうるので、ここで確定させると取り消せない。
+        if (state.PendingEffectChoice is not null)
         {
-            // リアクティブでキャンセルされたが、攻撃者の攻撃権は消費される
-            attacker.HasAttacked = true;
-            events.Add(new GameEvent
-            {
-                GameID = game.GameID,
-                EventType = ActionTypes.Attack,
-                PlayerNum = playerNum,
-                EventData = new AttackEventData
-                {
-                    AttackerId = req.AttackerInstanceID,
-                    TargetId = req.TargetInstanceID,
-                    Damage = 0,
-                    Destroyed = false,
-                    Cancelled = true,
-                },
-            });
             return new ActionResult { Events = events };
         }
+
+        if (cancelled)
+        {
+            events.Add(MakeCancelledAttackEvent(game, playerNum, attacker, defender));
+            return new ActionResult { Events = events };
+        }
+
+        events.AddRange(ApplyAttack(state, game, playerNum, attacker, defender, rawDamage, cc, effects));
+        return new ActionResult { Events = events };
+    }
+
+    /// <summary>
+    /// 攻撃宣言時の選択が解決された後に、保留していた攻撃を確定させます。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    /// <param name="playerNum">攻撃したプレイヤー番号。</param>
+    /// <param name="attacker">攻撃したリソース。</param>
+    /// <param name="defender">攻撃対象のリソース。</param>
+    /// <param name="rawDamage">攻撃宣言時に算出した軽減前ダメージ。</param>
+    /// <param name="cancelled">選択の解決で攻撃が無効になったか。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <returns>攻撃の確定で生じたイベント。</returns>
+    public static List<GameEvent> ResumeAfterDeclaredChoice(
+        BattleGameState state, Game game, long playerNum,
+        DeployedResource attacker, DeployedResource defender, long rawDamage,
+        bool cancelled, ICardCache cc, IEffectRegistry effects)
+    {
+        if (cancelled)
+        {
+            return [MakeCancelledAttackEvent(game, playerNum, attacker, defender)];
+        }
+
+        return ApplyAttack(state, game, playerNum, attacker, defender, rawDamage, cc, effects);
+    }
+
+    /// <summary>攻撃が無効になったことを記録する。攻撃権は消費される。</summary>
+    private static GameEvent MakeCancelledAttackEvent(
+        Game game, long playerNum, DeployedResource attacker, DeployedResource defender)
+    {
+        attacker.HasAttacked = true;
+        return new GameEvent
+        {
+            GameID = game.GameID,
+            EventType = ActionTypes.Attack,
+            PlayerNum = playerNum,
+            EventData = new AttackEventData
+            {
+                AttackerId = attacker.InstanceID,
+                TargetId = defender.InstanceID,
+                Damage = 0,
+                Destroyed = false,
+                Cancelled = true,
+            },
+        };
+    }
+
+    /// <summary>ダメージ適用から破壊判定までの、攻撃の確定処理をまとめて行う。</summary>
+    private static List<GameEvent> ApplyAttack(
+        BattleGameState state, Game game, long playerNum,
+        DeployedResource attacker, DeployedResource defender, long rawDamage,
+        ICardCache cc, IEffectRegistry effects)
+    {
+        long opponentNum = state.OpponentOf(playerNum);
+        var oppField = state.GetField(opponentNum);
+        var events = new List<GameEvent>();
 
         // ダメージを適用（防御者の attack_damage_reduction バフで軽減）し、on_damaged を発火
         long damage = FieldHelpers.ApplyReduction(
@@ -68,6 +121,7 @@ public static class AttackProcessor
         attacker.LastAttackTurn = state.CurrentTurn;
 
         // OnAttack トリガーを発動
+        var attackerCard = cc.MustGet(attacker.CardID);
         if (effects.Has(attackerCard.CardId, TriggerType.OnAttack))
         {
             var handler = effects.Get(attackerCard.CardId, TriggerType.OnAttack)!;
@@ -86,8 +140,7 @@ public static class AttackProcessor
         }
 
         // 防御者とそのアタッチメントの OnHit 効果を発動
-        var onHitEvents = FireOnHit(state, game, opponentNum, defender, cc, effects);
-        events.AddRange(onHitEvents);
+        events.AddRange(FireOnHit(state, game, opponentNum, defender, cc, effects));
 
         var defCard = cc.MustGet(defender.CardID);
 
@@ -114,15 +167,15 @@ public static class AttackProcessor
             PlayerNum = playerNum,
             EventData = new AttackEventData
             {
-                AttackerId = req.AttackerInstanceID,
-                TargetId = req.TargetInstanceID,
+                AttackerId = attacker.InstanceID,
+                TargetId = defender.InstanceID,
                 Damage = damage,
                 Destroyed = destroyed,
                 SlaPenalty = slaPenalty,
             },
         });
 
-        return new ActionResult { Events = events };
+        return events;
     }
 
     private static (DeployedResource Attacker, CardDefinition Card) ValidateAttacker(
