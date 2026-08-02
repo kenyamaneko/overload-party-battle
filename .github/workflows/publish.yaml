@@ -85,19 +85,11 @@ jobs:
           role: reader
           formats: "nuget,npm"
       - name: Go vet + build (all modules)
-        run: |
-          for mod in packages/game-logic-constants-go packages/api-battle-rpc-go; do
-            echo "::group::go vet $mod"
-            (cd "$mod" && go vet ./... && go build ./...)
-            echo "::endgroup::"
-          done
+        run: bash .github/scripts/publish/vet-and-build-go-modules.sh
       - name: .NET restore + build (sln)
         run: dotnet build OverloadParty.Battle.slnx -c Release --nologo -v quiet
       - name: Build npm packages
-        run: |
-          npm install
-          npm run build -w @kenyamaneko/overload-party-game-logic-constants
-          npm run build -w @kenyamaneko/overload-party-game-state
+        run: bash .github/scripts/publish/build-npm-packages.sh
 
   publish-go:
     name: Publish Go modules
@@ -138,10 +130,10 @@ jobs:
           format: nuget
           package-path: packages/game-logic-constants-dotnet/nupkg/OverloadParty.GameLogicConstants.${{ needs.detect.outputs.game_logic_constants_dotnet_version }}.nupkg
       - name: Tag game-logic-constants-dotnet
-        run: |
-          tag="packages/game-logic-constants-dotnet/v${{ needs.detect.outputs.game_logic_constants_dotnet_version }}"
-          git tag "$tag"
-          git push origin "$tag"
+        env:
+          PACKAGE: game-logic-constants-dotnet
+          VERSION: ${{ needs.detect.outputs.game_logic_constants_dotnet_version }}
+        run: bash .github/scripts/publish/tag-package.sh
 
   publish-npm:
     name: Publish npm packages (Cloudsmith)
@@ -168,9 +160,9 @@ jobs:
       - name: Build & version Layer 1 (game-logic-constants-npm)
         if: needs.detect.outputs.game_logic_constants_npm == 'true'
         working-directory: packages/game-logic-constants-npm
-        run: |
-          npm version ${{ needs.detect.outputs.game_logic_constants_npm_version }} --no-git-tag-version
-          npm run build
+        env:
+          VERSION: ${{ needs.detect.outputs.game_logic_constants_npm_version }}
+        run: bash ../../.github/scripts/publish/build-and-version-npm.sh
       - name: Publish Layer 1 to Cloudsmith
         if: needs.detect.outputs.game_logic_constants_npm == 'true'
         uses: kenyamaneko/overload-party-common/.github/actions/publish-to-cloudsmith@main
@@ -179,19 +171,19 @@ jobs:
           package-path: packages/game-logic-constants-npm
       - name: Tag Layer 1
         if: needs.detect.outputs.game_logic_constants_npm == 'true'
-        run: |
-          tag="packages/game-logic-constants-npm/v${{ needs.detect.outputs.game_logic_constants_npm_version }}"
-          git tag "$tag"
-          git push origin "$tag"
+        env:
+          PACKAGE: game-logic-constants-npm
+          VERSION: ${{ needs.detect.outputs.game_logic_constants_npm_version }}
+        run: bash .github/scripts/publish/tag-package.sh
       - name: Build Layer 1 if not published (Layer 2 が型定義を参照するため)
         if: needs.detect.outputs.game_logic_constants_npm != 'true' && needs.detect.outputs.game_state_npm == 'true'
         run: npm run build -w @kenyamaneko/overload-party-game-logic-constants
       - name: Build & version Layer 2 (game-state-npm)
         if: needs.detect.outputs.game_state_npm == 'true'
         working-directory: packages/game-state-npm
-        run: |
-          npm version ${{ needs.detect.outputs.game_state_npm_version }} --no-git-tag-version
-          npm run build
+        env:
+          VERSION: ${{ needs.detect.outputs.game_state_npm_version }}
+        run: bash ../../.github/scripts/publish/build-and-version-npm.sh
       - name: Publish Layer 2 to Cloudsmith
         if: needs.detect.outputs.game_state_npm == 'true'
         uses: kenyamaneko/overload-party-common/.github/actions/publish-to-cloudsmith@main
@@ -200,7 +192,7 @@ jobs:
           package-path: packages/game-state-npm
       - name: Tag Layer 2
         if: needs.detect.outputs.game_state_npm == 'true'
-        run: |
-          tag="packages/game-state-npm/v${{ needs.detect.outputs.game_state_npm_version }}"
-          git tag "$tag"
-          git push origin "$tag"
+        env:
+          PACKAGE: game-state-npm
+          VERSION: ${{ needs.detect.outputs.game_state_npm_version }}
+        run: bash .github/scripts/publish/tag-package.sh
