@@ -34,21 +34,53 @@ public class ScaleToRankOp(string rank) : IEffectOp
 }
 
 /// <summary>
-/// Reveals the first hidden reactive card in the opponent's support zone.
+/// 相手のサポートゾーンにある裏向きリアクティブカードから、確認する 1 枚を決める。
+/// </summary>
+internal static class FaceDownReactiveTarget
+{
+    /// <summary>選択値を ChoiceData で受け渡す key。</summary>
+    private const string ChoiceKey = "instanceId";
+
+    /// <summary>
+    /// 確認対象を決めます。候補が複数あって選択値が無ければ選択待ちに入ります。
+    /// </summary>
+    /// <param name="ctx">効果実行コンテキスト。</param>
+    /// <returns>確認対象のカード。候補が無い場合と選択待ちに入った場合は null。</returns>
+    public static DeployedSupport? Resolve(OpContext ctx)
+    {
+        var faceDown = ctx.OpponentField.Support.Where(s => !s.FaceUp).ToList();
+        if (faceDown.Count == 0) { return null; }
+        if (faceDown.Count == 1) { return faceDown[0]; }
+
+        if (ctx.ChoiceData?.GetValueOrDefault(ChoiceKey)?.ToString() is not { } chosenId)
+        {
+            ctx.SuspendForChoice(
+                ChoiceKey, ChoiceKinds.FaceDownReactive,
+                faceDown.Select(s => s.InstanceID).ToList(), ctx.PlayerNum);
+            return null;
+        }
+
+        return faceDown.FirstOrDefault(s => s.InstanceID == chosenId)
+            ?? throw new GameRuleException($"Face-down reactive {chosenId} not found on the opponent's field");
+    }
+}
+
+/// <summary>
+/// Reveals a face-down reactive card chosen from the opponent's support zone.
 /// </summary>
 public class RevealReactiveOp : IEffectOp
 {
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        var oppField = ctx.OpponentField;
-        var hidden = oppField.Support.FirstOrDefault(s => !s.FaceUp);
-        hidden?.FaceUp = true;
+        if (FaceDownReactiveTarget.Resolve(ctx) is not { } target) { return; }
+
+        target.FaceUp = true;
     }
 }
 
 /// <summary>
-/// Peeks at the first hidden reactive card in the opponent's support zone.
+/// Peeks at a face-down reactive card chosen from the opponent's support zone.
 /// The card stays face-down but becomes visible to the activating player.
 /// </summary>
 public class PeekReactiveOp : IEffectOp
@@ -56,13 +88,11 @@ public class PeekReactiveOp : IEffectOp
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        var oppField = ctx.OpponentField;
-        var hidden = oppField.Support.FirstOrDefault(s => !s.FaceUp);
-        if (hidden is null) { return; }
+        if (FaceDownReactiveTarget.Resolve(ctx) is not { } target) { return; }
 
-        if (!hidden.PeekedBy.Contains(ctx.PlayerNum))
+        if (!target.PeekedBy.Contains(ctx.PlayerNum))
         {
-            hidden.PeekedBy.Add(ctx.PlayerNum);
+            target.PeekedBy.Add(ctx.PlayerNum);
         }
     }
 }
