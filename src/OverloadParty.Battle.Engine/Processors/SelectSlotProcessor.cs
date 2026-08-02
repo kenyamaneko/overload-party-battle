@@ -27,12 +27,15 @@ public static class SelectSlotProcessor
             throw new GameRuleException("No pending slot selection");
         }
 
-        var pending = state.PendingSlotSelects[0];
-
-        if (pending.PlayerNum != playerNum)
+        // 双方に選択が溜まりうるので、キュー先頭ではなく送信者自身の最も古い選択を解決する。
+        // 先頭だけを見ると、相手の選択が詰まっている間は自分の選択も解決できなくなる。
+        int pendingIndex = state.PendingSlotSelects.FindIndex(p => p.PlayerNum == playerNum);
+        if (pendingIndex < 0)
         {
             throw new GameRuleException("Slot selection is for a different player");
         }
+
+        var pending = state.PendingSlotSelects[pendingIndex];
 
         string slotKey = $"{req.Zone}_{req.Index}";
         if (!pending.ValidZones.Contains(slotKey))
@@ -44,7 +47,7 @@ public static class SelectSlotProcessor
         ValidateAndPlace(field, pending.Resource, req.Zone, req.Index);
         PassiveRecalculator.Recalculate(state, game, cc, effects);
 
-        state.PendingSlotSelects.RemoveAt(0);
+        state.PendingSlotSelects.RemoveAt(pendingIndex);
 
         var events = new List<GameEvent>
         {
