@@ -170,8 +170,8 @@ else
     using var cardHttp = isLocalDev
         ? new HttpClient()
         : await RunAuthHttpClientFactory.CreateAsync(cardServiceUrl);
-    // One-shot startup fetch. If the call fails we log and exit(1); Cloud Run restarts the
-    // instance, which gives us bounded retry-with-backoff instead of a hidden loop here.
+    // 起動時に 1 度だけ取得する。失敗したら例外を伝搬させてプロセスを落とし、Cloud Run の
+    // 再起動を間隔付きの再試行として使う。ここで再試行ループを抱えると滞留が見えなくなる。
     using var cardClient = new CardServiceClient(cardServiceUrl, cardHttp);
     try
     {
@@ -184,9 +184,10 @@ else
     }
     catch (Exception ex)
     {
-        app.Logger.LogCritical(
-            ex, "Failed to load master data from card service at {Url}; exiting", cardServiceUrl);
-        Environment.Exit(1);
+        // ロガーは書き込みをキューに積み、プロセスの終了に間に合わないことがあるため、
+        // 送出してランタイムに stderr へ同期で書かせる。
+        throw new InvalidOperationException(
+            $"Failed to load master data from card service at {cardServiceUrl}", ex);
     }
 }
 
