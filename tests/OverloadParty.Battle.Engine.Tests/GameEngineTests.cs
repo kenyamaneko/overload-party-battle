@@ -399,8 +399,8 @@ public class GameEngineTests
             state.Player1Field.Frontend[1].Should().NotBeNull();
         }
 
-        [Fact(DisplayName = "相手がスロット選択待ちでも、ターンプレイヤーは通常どおりアクションできる")]
-        public async Task ProcessAction_PendingSlotSelect_DoesNotBlockOtherPlayer()
+        [Fact(DisplayName = "相手がスロット選択待ちのとき、ターンプレイヤーのカードプレイは拒否される")]
+        public async Task ProcessAction_OpponentPendingSlotSelect_BlocksTurnPlayer()
         {
             var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
@@ -408,7 +408,7 @@ public class GameEngineTests
             await _engine.RunAutoAdvance(game!);
 
             var state = await _repo.GetGameState(gameID);
-            // Player 2 is awaiting slot select, but it's Player 1's turn
+            // 手番は P1 だが、P2 にスロット選択が残っている
             state!.PendingSlotSelects.Add(new AwaitingSlotSelect
             {
                 PlayerNum = 2,
@@ -416,10 +416,9 @@ public class GameEngineTests
                 ValidZones = ["frontend_0"],
             });
 
-            // Player 1 should still be able to act
             var cardToPlay = state.Player1Hand.First();
             game = await _repo.GetGame(gameID);
-            var result = await _engine.ProcessAction(
+            var act = async () => await _engine.ProcessAction(
                 game!, 1, ActionType.PlayCard,
                 new PlayCardRequest
                 {
@@ -428,7 +427,66 @@ public class GameEngineTests
                     Index = 0,
                 });
 
-            result.Events.Should().Contain(e => e.EventType == ActionTypes.PlayCard);
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*slot selection required*");
+        }
+
+        [Fact(DisplayName = "相手ターン中に自分に割り当てられたスロット選択は、自分で解決できる")]
+        public async Task ProcessAction_OwnSlotSelect_ResolvableOnOpponentTurn()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+
+            var state = await _repo.GetGameState(gameID);
+            // 手番は P1 だが、選択の所有者は P2
+            state!.PendingSlotSelects.Add(new AwaitingSlotSelect
+            {
+                PlayerNum = 2,
+                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
+                ValidZones = ["frontend_0"],
+            });
+
+            game = await _repo.GetGame(gameID);
+            var result = await _engine.ProcessAction(
+                game!, 2, ActionType.SelectSlot,
+                new SelectSlotRequest { Zone = Zones.Frontend, Index = 0 });
+
+            result.Events.Should().Contain(e => e.EventType == ActionTypes.SelectSlot);
+            state.Player2Field.Frontend[0].Should().NotBeNull();
+            state.PendingSlotSelects.Should().BeEmpty();
+        }
+
+        [Fact(DisplayName = "相手の選択がキュー先頭にあっても、自分の選択を解決できる")]
+        public async Task ProcessAction_OwnSlotSelect_ResolvableBehindOpponentsQueuedOne()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+
+            var state = await _repo.GetGameState(gameID);
+            state!.PendingSlotSelects.Add(new AwaitingSlotSelect
+            {
+                PlayerNum = 2,
+                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_pending"),
+                ValidZones = ["frontend_0"],
+            });
+            state.PendingSlotSelects.Add(new AwaitingSlotSelect
+            {
+                PlayerNum = 1,
+                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_pending"),
+                ValidZones = ["frontend_1"],
+            });
+
+            game = await _repo.GetGame(gameID);
+            await _engine.ProcessAction(
+                game!, 1, ActionType.SelectSlot,
+                new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
+
+            state.Player1Field.Frontend[1]!.InstanceID.Should().Be("my_pending");
+            state.PendingSlotSelects.Should().ContainSingle()
+                .Which.Resource.InstanceID.Should().Be("opp_pending");
         }
 
         [Fact(DisplayName = "スロット選択待ちが生じた後の次アクションは、GameRuleException を投げる")]
@@ -556,6 +614,64 @@ public class GameEngineTests
             var act = () => _engine.ProcessAction(game!, 1, ActionType.EndPhase, new object());
 
             await act.Should().ThrowAsync<GameRuleException>().WithMessage("*reactive choice required*");
+        }
+
+        [Fact(DisplayName = "相手が効果中選択の選択者のとき、ターンプレイヤーの攻撃は拒否される")]
+        public async Task PendingChoice_OpponentIsChooser_BlocksTurnPlayerAttack()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+
+            var state = await _repo.GetGameState(gameID);
+            state!.CurrentPhase = Phase.Battle;
+            state.CurrentTurn = 2;
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "atk", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "def", faceUp: true);
+            // 選択者は非手番の P2
+            state.PendingEffectChoice = MakePending(2);
+
+            game = await _repo.GetGame(gameID);
+            var act = () => _engine.ProcessAction(game!, 1, ActionType.Attack,
+                new AttackRequest { AttackerInstanceID = "atk", TargetInstanceID = "def" });
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*reactive choice required*");
+        }
+
+        [Fact(DisplayName = "相手が効果中選択の選択者のとき、ターンプレイヤーのフェーズ終了は拒否される")]
+        public async Task PendingChoice_OpponentIsChooser_BlocksTurnPlayerEndPhase()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+
+            var state = await _repo.GetGameState(gameID);
+            state!.PendingEffectChoice = MakePending(2);
+
+            game = await _repo.GetGame(gameID);
+            var act = () => _engine.ProcessAction(game!, 1, ActionType.EndPhase, new object());
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*reactive choice required*");
+        }
+
+        [Fact(DisplayName = "選択者以外が効果中選択を解決しようとすると拒否される")]
+        public async Task PendingChoice_NonChooserResolve_IsRejected()
+        {
+            var deck = MakeSingleCardDeck("TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+
+            var state = await _repo.GetGameState(gameID);
+            state!.PendingEffectChoice = MakePending(2);
+
+            game = await _repo.GetGame(gameID);
+            var act = () => _engine.ProcessAction(game!, 1, ActionType.ResolvePendingChoice,
+                new ResolvePendingChoiceRequest { ChosenId = "cand_1" });
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*different player*");
         }
 
         [Fact(DisplayName = "相手ターン中でも、選択者は効果中選択の解決アクションを送れる")]

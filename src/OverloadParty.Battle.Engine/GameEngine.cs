@@ -169,11 +169,14 @@ public class GameEngine
 
         await _repo.UpdateGameState(game.GameID, state =>
         {
-            // reactive 選択待ちの間は ActivePlayer 以外の chooser が解決アクションを送るため、
-            // ResolvePendingChoice は「自分のターン」チェックから除外して chooser 一致で判定する。
-            bool isChooserResolving = actionType == ActionType.ResolvePendingChoice
-                && state.PendingEffectChoice?.ChooserPlayerNum == playerNum;
-            if (!isChooserResolving && state.ActivePlayer != playerNum)
+            // 選択待ちは相手ターン中にも発生するため、自分に割り当てられた選択の解決は
+            // 「自分のターン」チェックから除外し、選択の所有者一致で判定する。
+            bool isResolvingOwnChoice =
+                (actionType == ActionType.ResolvePendingChoice
+                    && state.PendingEffectChoice?.ChooserPlayerNum == playerNum)
+                || (actionType == ActionType.SelectSlot
+                    && state.PendingSlotSelects.Any(p => p.PlayerNum == playerNum));
+            if (!isResolvingOwnChoice && state.ActivePlayer != playerNum)
             {
                 throw new GameRuleException("not your turn");
             }
@@ -187,16 +190,14 @@ public class GameEngine
                 return Task.FromResult<IReadOnlyList<GameEvent>>(actionResult.Events);
             }
 
-            if (state.PendingSlotSelects.Count > 0
-                && state.PendingSlotSelects[0].PlayerNum == playerNum
-                && actionType != ActionType.SelectSlot)
+            // 選択待ちの間は盤面を変えられない。選択は変異前の盤面を前提に候補を出しており、
+            // 手番プレイヤーが先に進めると、解決したときには前提が崩れている。
+            if (state.PendingSlotSelects.Count > 0 && actionType != ActionType.SelectSlot)
             {
                 throw new GameRuleException("slot selection required");
             }
 
-            if (state.PendingEffectChoice is { } pendingChoice
-                && pendingChoice.ChooserPlayerNum == playerNum
-                && actionType != ActionType.ResolvePendingChoice)
+            if (state.PendingEffectChoice is not null && actionType != ActionType.ResolvePendingChoice)
             {
                 throw new GameRuleException("reactive choice required");
             }
