@@ -1,17 +1,12 @@
 name: Publish Packages
 
+# 桁は後方互換を壊すかどうかの判断であり変更内容から導けないため、人が選んで実行する。
 on:
-  push:
-    branches: [main]
-    paths:
-      - "packages/**"
-      - "scripts/ci/**"
-      - ".github/scripts/publish/**"
   workflow_dispatch:
     inputs:
       bump:
         description: "Version bump level"
-        required: false
+        required: true
         default: "patch"
         type: choice
         options:
@@ -20,7 +15,7 @@ on:
           - major
       target:
         description: "Package to publish (auto = detect changes)"
-        required: false
+        required: true
         default: "auto"
         type: choice
         options:
@@ -59,7 +54,7 @@ jobs:
           fetch-depth: 0
       - name: Detect changes and compute versions
         id: detect
-        run: bash scripts/ci/detect-changes.sh "${{ inputs.target || 'auto' }}" "${{ inputs.bump || 'patch' }}"
+        run: bash scripts/ci/detect-changes.sh "${{ inputs.target }}" "${{ inputs.bump }}"
 
   build:
     name: Build & validate
