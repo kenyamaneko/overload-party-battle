@@ -333,7 +333,7 @@ type OpponentView struct {
 
 // PendingEffectChoiceView pendingEffectChoice の client 公開ビュー。
 type PendingEffectChoiceView struct {
-	// ChoiceKind 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
+	// ChoiceKind 選択対象の種別 (hand_card / field_target / deck_top / branch / face_down_reactive)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
 	ChoiceKind string `json:"choiceKind"`
 
 	// ChooserPlayerNum 選択を行うプレイヤー番号
@@ -467,7 +467,7 @@ type ReactiveRevealedEventData struct {
 
 // ResolvePendingChoiceAction defines model for ResolvePendingChoiceAction.
 type ResolvePendingChoiceAction struct {
-	// ChoiceKind 選択対象の種別 (hand_card / field_target / deck_top)。
+	// ChoiceKind 選択対象の種別 (hand_card / field_target / deck_top / branch / face_down_reactive)。
 	ChoiceKind    *string         `json:"choiceKind,omitempty"`
 	ChoiceOptions *[]ChoiceOption `json:"choiceOptions,omitempty"`
 

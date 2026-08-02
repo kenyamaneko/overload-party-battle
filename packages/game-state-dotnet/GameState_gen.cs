@@ -128,7 +128,7 @@ namespace OverloadParty.GameState
         public string EffectInstanceId { get; set; } = default!;
 
         /// <summary>
-        /// 選択対象の種別 (hand_card / field_target / deck_top)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
+        /// 選択対象の種別 (hand_card / field_target / deck_top / branch / face_down_reactive)。選択肢の提示は resolve_pending_choice アクションの choiceOptions が担う。
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("choiceKind")]
         public string ChoiceKind { get; set; } = default!;
@@ -843,7 +843,7 @@ namespace OverloadParty.GameState
         public string EffectCardId { get; set; } = default!;
 
         /// <summary>
-        /// 選択対象の種別 (hand_card / field_target / deck_top)。
+        /// 選択対象の種別 (hand_card / field_target / deck_top / branch / face_down_reactive)。
         /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("choiceKind")]
         public string ChoiceKind { get; set; } = default!;

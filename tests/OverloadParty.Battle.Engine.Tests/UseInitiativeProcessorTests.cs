@@ -184,6 +184,48 @@ public class UseInitiativeProcessorTests
         }
     }
 
+    [Trait("対象", "対象を選ぶ施策のコスト")]
+    public class ChoiceRequiredCost : Base
+    {
+        /// <summary>相手のフロントエンドから選んだ 1 体に 300 ダメージを与える routine を用意する。</summary>
+        /// <returns>効果レジストリと施策カタログ。</returns>
+        private static (IEffectRegistry Effects, InitiativeCatalog Catalog) SetupChoiceRoutine() => Setup(Initiatives(
+            routineCost: 100,
+            routineJson: """{"ops":[{"deal_damage":{"selector":{"owner":"opponent","zone":"frontend","pick":"choice"},"amount":300}}]}""",
+            specialCost: 0,
+            specialJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}"""));
+
+        [Fact(DisplayName = "対象を選ぶ施策を選択なしで使用すると拒否され、インサイトも使用回数も消費されない")]
+        public void ChoiceRoutine_WithoutChoice_IsRejectedAndConsumesNothing()
+        {
+            var (effects, catalog) = SetupChoiceRoutine();
+            var state = MakeState(insight: 1000);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "o1", faceUp: true);
+
+            var act = () => Use(state, InitiativeKinds.Routine, effects, catalog);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*requires a target choice*");
+            state.Player1InsightPool.Should().Be(1000);
+            state.GetRoutineUsedThisTurn(1).Should().BeFalse();
+            state.Player2Field.Frontend[0]!.Damage.Should().Be(0);
+        }
+
+        [Fact(DisplayName = "対象を選ぶ施策を選択付きで使用すると、選んだリソースに 300 ダメージが入りインサイトが 100 減る")]
+        public void ChoiceRoutine_WithChoice_AppliesDamageAndPaysCost()
+        {
+            var (effects, catalog) = SetupChoiceRoutine();
+            var state = MakeState(insight: 1000);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(instanceId: "o1", faceUp: true);
+
+            Use(state, InitiativeKinds.Routine, effects, catalog,
+                new Dictionary<string, object> { ["instanceId"] = "o1" });
+
+            state.Player2Field.Frontend[0]!.Damage.Should().Be(300);
+            state.Player1InsightPool.Should().Be(900);
+            state.GetRoutineUsedThisTurn(1).Should().BeTrue();
+        }
+    }
+
     [Trait("対象", "施策の効果")]
     public class Effects : Base
     {
