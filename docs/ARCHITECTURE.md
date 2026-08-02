@@ -12,7 +12,7 @@
 
 | フェーズ | 内容 |
 |------|------|
-| `draw` | リポジトリから手札に1枚ドロー |
+| `draw` | デッキアウト判定 → 手札に1枚ドロー → デプロイターン経過処理 |
 | `main` | カードプレイ・スケールアップ・アタッチメント等 |
 | `battle` | 攻撃実行 |
 | `end` | エンドフェーズ処理、ターン切り替え |
@@ -31,12 +31,15 @@ draw → main → battle → end → (ActivePlayer切替) → draw ...
 |------|------|------|
 | 1 | Passive / OnEndPhase 効果の発火 | `FirePassiveEffects`：フィールドのカードを `DeployOrder` 昇順で走査し、`TriggerType.Passive` / `OnEndPhase` ハンドラを実行 |
 | 2 | 維持コスト徴収 | `CollectMaintenanceCost`：全表向きリソースの維持コストを合算し budget から減算（Elastic カードは `BaseThroughput/Yield * RankMultiplier + ElasticBonus` を超過した分のみ従量課金） |
-| 3 | Insight 生成 & Elastic ボーナス累積 | `GenerateInsight`：バックエンドの Data 系リソースが `StatCalculator.CalculateEffectiveInsight` で yield を計算し Insight プールに加算。続けて `StatCalculator.ApplyElasticBonus` で `ElasticBonus` を `elasticIncrement` ぶん**累積**（リセットではない。逓減は `CalculateEffectiveElasticBonus` が対数スケールで処理） |
-| 4 | 一時効果の終了 | `ExpireTemporaryEffects`：`duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
-| 5 | ターン単位フラグのリセット | `ResetPerTurnFlags`：`HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |
-| 6 | 手札上限チェック | 手札が **6枚** を超過していなければ手順 7 を飛ばして手順 8 へ進む。超過していれば `EndPhaseProcessor` が `phase_end`（`needsDiscard: true`）イベントを返し、手順 8 のターン交代を保留する |
-| 7 | プレイヤーが破棄カードを選択（手順 6 で超過時のみ） | `TurnControlsMessage.DiscardRequired`（手札枚数 − 6、`AvailableActions.ComputeTurnControls`）を見たクライアントが `discard_hand` で破棄するカードを送信。`DiscardProcessor` が枚数を、`CardMoveHelpers.DiscardCards` が指定カードの重複と手札への実在を検証し、いずれかに反すれば手札もトラッシュも変えずに拒否する。個別のタイムアウトは持たず、ターン全体のタイムバンクが時間の上限として働く |
-| 8 | ターン切り替え | 手順 6 で超過が無ければ `EndPhaseProcessor`、超過があれば手順 7 の `DiscardProcessor` が、`WinConditionChecker.CheckLaunchFailure` → 問題なければ `TurnManager.SwitchActivePlayer` → 次プレイヤーの `DrawPhaseProcessor.Process` を起動 |
+| 3 | 維持コスト徴収後の敗北判定 | `WinConditionChecker.CheckBudgetZero` → `CheckSystemDown` の順に判定し、成立したらそこで決着する。以降の手順は行わず、手札が上限を超えていても破棄を要求しない |
+| 4 | Insight 生成 & Elastic ボーナス累積 | `GenerateInsight`：バックエンドの Data 系リソースが `StatCalculator.CalculateEffectiveInsight` で yield を計算し Insight プールに加算。続けて `StatCalculator.ApplyElasticBonus` で `ElasticBonus` を `elasticIncrement` ぶん**累積**（リセットではない。逓減は `CalculateEffectiveElasticBonus` が対数スケールで処理） |
+| 5 | 一時効果の終了 | `ExpireTemporaryEffects`：`duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
+| 6 | ターン単位フラグのリセット | `ResetPerTurnFlags`：`HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |
+| 7 | 手札上限チェック | 手札が **6枚** を超過していなければ手順 8 を飛ばして手順 9 へ進む。超過していれば `EndPhaseProcessor` が `phase_end`（`needsDiscard: true`）イベントを返し、手順 9 のターン交代を保留する |
+| 8 | プレイヤーが破棄カードを選択（手順 7 で超過時のみ） | `TurnControlsMessage.DiscardRequired`（手札枚数 − 6、`AvailableActions.ComputeTurnControls`）を見たクライアントが `discard_hand` で破棄するカードを送信。`DiscardProcessor` が枚数を、`CardMoveHelpers.DiscardCards` が指定カードの重複と手札への実在を検証し、いずれかに反すれば手札もトラッシュも変えずに拒否する。個別のタイムアウトは持たず、ターン全体のタイムバンクが時間の上限として働く |
+| 9 | 手札調整後の判定とターン切り替え | 手順 7 で超過が無ければ `EndPhaseProcessor`、超過があれば手順 8 の `DiscardProcessor` が `EndPhaseProcessor.AdvanceAfterHandAdjustment` を呼び、`WinConditionChecker.CheckLaunchFailure` → `CheckTurnLimit` → どちらも成立しなければ `TurnManager.SwitchActivePlayer` → 次プレイヤーの `DrawPhaseProcessor.Process` を起動 |
+
+> Note: ターンリミット（T30）は手順 9 でのみ成立する。アクション解決後の汎用判定 (`WinConditionChecker.Check`) に含めると T30 のプレイヤーが行動できなくなるため、`Check` は Budget Zero → System-Down → Timeout だけを見る。
 
 > Note: 旧バージョンのドキュメントには「Elastic 値のリセット」手順が存在したが、実装上 `ElasticBonus` は毎ターン累積する設計（逓減は `StatCalculator.CalculateEffectiveElasticBonus` の対数スケーリングで表現）のため、リセットステップは存在しない。
 

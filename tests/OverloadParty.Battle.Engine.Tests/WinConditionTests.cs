@@ -3,14 +3,6 @@ using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
-/// <summary>
-/// Tests for WinConditionChecker based on RULEBOOK.md §10:
-/// 1. Budget ≤ 0 → 敗北 (budget_zero)
-/// 2. 表向きリソース 0 体（稼働実績あり）→ 敗北 (system_down)
-/// 3. T30 → Budget 多い方が勝ち / 同額なら引き分け (turn_limit)
-/// 4. TimeBank ≤ 0 → 敗北 (timeout)
-/// 5. 3ターン目終了時に稼働実績なし → 敗北 (launch_failure)
-/// </summary>
 public class WinConditionTests
 {
     [Trait("対象", "バジェットゼロ敗北判定")]
@@ -94,49 +86,33 @@ public class WinConditionTests
     [Trait("対象", "ターンリミット決着判定")]
     public class ByTurnLimit
     {
-        [Fact(DisplayName = "ターン 30 到達時にバジェットが多いプレイヤー 1 が勝者になる")]
-        public void HigherBudgetWins()
+        [Theory(DisplayName = "ターン 30 のとき、残りバジェットで勝敗を判定する (多い方が勝ち、同額なら引き分け)")]
+        [InlineData(3000, 2000, 1, "turn_limit")]
+        [InlineData(1000, 4000, 2, "turn_limit")]
+        [InlineData(2500, 2500, 0, "draw")]
+        public void DecidesByRemainingBudget(long p1Budget, long p2Budget, long winner, string reason)
         {
-            var state = TestFactory.MakeGameState(turn: 30, p1Budget: 3000, p2Budget: 2000);
-            var game = TestFactory.MakeGame();
+            var state = TestFactory.MakeGameState(turn: 30, p1Budget: p1Budget, p2Budget: p2Budget);
 
-            var result = WinConditionChecker.Check(state, game);
+            var result = WinConditionChecker.CheckTurnLimit(state);
 
             result.Should().NotBeNull();
-            result!.WinnerNum.Should().Be(1);
-            result.Reason.Should().Be("turn_limit");
-        }
-
-        [Fact(DisplayName = "ターン 30 到達時にバジェットが多いプレイヤー 2 が勝者になる")]
-        public void Player2HigherBudget()
-        {
-            var state = TestFactory.MakeGameState(turn: 30, p1Budget: 1000, p2Budget: 4000);
-            var game = TestFactory.MakeGame();
-
-            var result = WinConditionChecker.Check(state, game);
-
-            result.Should().NotBeNull();
-            result!.WinnerNum.Should().Be(2);
-            result.Reason.Should().Be("turn_limit");
-        }
-
-        [Fact(DisplayName = "ターン 30 到達時にバジェットが同額なら引き分けになる")]
-        public void EqualBudget_Draw()
-        {
-            var state = TestFactory.MakeGameState(turn: 30, p1Budget: 2500, p2Budget: 2500);
-            var game = TestFactory.MakeGame();
-
-            var result = WinConditionChecker.Check(state, game);
-
-            result.Should().NotBeNull();
-            result!.WinnerNum.Should().Be(0);
-            result.Reason.Should().Be("draw");
+            result!.WinnerNum.Should().Be(winner);
+            result.Reason.Should().Be(reason);
         }
 
         [Fact(DisplayName = "ターン 29 ではターンリミットに達しておらず、勝敗が決まらない")]
         public void BeforeTurnLimit_NoGameOver()
         {
-            var state = TestFactory.MakeGameState(turn: 29);
+            var state = TestFactory.MakeGameState(turn: 29, p1Budget: 3000, p2Budget: 2000);
+
+            WinConditionChecker.CheckTurnLimit(state).Should().BeNull();
+        }
+
+        [Fact(DisplayName = "ターン 30 でも、アクション解決後の判定ではターンリミットが成立せずゲームが続行する")]
+        public void NotSettledByPostActionCheck()
+        {
+            var state = TestFactory.MakeGameState(turn: 30, p1Budget: 3000, p2Budget: 2000);
             var game = TestFactory.MakeGame();
 
             WinConditionChecker.Check(state, game).Should().BeNull();

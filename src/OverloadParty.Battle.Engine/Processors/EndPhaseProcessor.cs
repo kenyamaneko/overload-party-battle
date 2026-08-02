@@ -62,13 +62,51 @@ public static class EndPhaseProcessor
         return ProcessEndPhaseTransition(state, game, playerNum, cc, effects, clock, [], firedInstanceIds);
     }
 
+    /// <summary>手札調整が済んだ後の判定とターン交代の結果。</summary>
+    /// <param name="GameOver">確定した勝敗。未確定なら null。</param>
+    /// <param name="TurnSwitched">ターンが相手へ移ったなら true。</param>
+    internal readonly record struct HandAdjustmentAdvance(GameOverResult? GameOver, bool TurnSwitched);
+
+    /// <summary>
+    /// 手札調整が済んだ後の敗北判定とターン交代を行います。
+    /// ローンチ失敗とターンリミットの順に判定し、どちらも成立しなければ相手のドローフェーズまで進めます。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    /// <param name="playerNum">ターンを終えようとしているプレイヤー番号。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <param name="clock">現在時刻の供給元。</param>
+    /// <returns>確定した勝敗と、ターンが交代したかどうか。</returns>
+    internal static HandAdjustmentAdvance AdvanceAfterHandAdjustment(
+        BattleGameState state, Game game, long playerNum,
+        ICardCache cc, IEffectRegistry effects, IClock clock)
+    {
+        if (WinConditionChecker.CheckLaunchFailure(state, playerNum))
+        {
+            return new HandAdjustmentAdvance(
+                new GameOverResult(state.OpponentOf(playerNum), WinReason.LaunchFailure.ToWireString()),
+                TurnSwitched: false);
+        }
+
+        if (WinConditionChecker.CheckTurnLimit(state) is { } turnLimitResult)
+        {
+            return new HandAdjustmentAdvance(turnLimitResult, TurnSwitched: false);
+        }
+
+        TurnManager.SwitchActivePlayer(state, clock);
+        return new HandAdjustmentAdvance(
+            DrawPhaseProcessor.Process(state, game, cc, effects), TurnSwitched: true);
+    }
+
     private static ActionResult ProcessEndPhaseTransition(
         BattleGameState state, Game game, long playerNum, ICardCache cc,
         IEffectRegistry effects, IClock clock, List<GameEvent> events,
         List<string>? firedInstanceIds = null)
     {
-        if (!ProcessEndPhaseLogic(
-                state, game, playerNum, cc, effects, events, firedInstanceIds ?? [], out bool needsDiscard))
+        var outcome = ProcessEndPhaseLogic(
+            state, game, playerNum, cc, effects, events, firedInstanceIds ?? []);
+        if (outcome is null)
         {
             // 選択待ちに入ったので、維持コスト徴収から先は選択が解決されるまで進めない。
             return new ActionResult { Events = events };
@@ -76,7 +114,14 @@ public static class EndPhaseProcessor
 
         var result = new ActionResult { Events = events };
 
-        if (needsDiscard)
+        if (outcome.Value.GameOver is { } settledByMaintenance)
+        {
+            result.GameOver = settledByMaintenance;
+            events.Add(MakeTurnEndEvent(game.GameID, playerNum, state));
+            return result;
+        }
+
+        if (outcome.Value.NeedsDiscard)
         {
             result.ShouldDiscard = true;
             events.Add(new GameEvent
@@ -93,53 +138,54 @@ public static class EndPhaseProcessor
             return result;
         }
 
-        if (WinConditionChecker.CheckLaunchFailure(state, playerNum))
-        {
-            result.GameOver = new GameOverResult(
-                state.OpponentOf(playerNum),
-                WinReason.LaunchFailure.ToWireString());
-            events.Add(MakeTurnEndEvent(game.GameID, playerNum, state));
-            return result;
-        }
-
-        TurnManager.SwitchActivePlayer(state, clock);
-        var gameOverResult = DrawPhaseProcessor.Process(state, game, cc, effects);
+        var advance = AdvanceAfterHandAdjustment(state, game, playerNum, cc, effects, clock);
+        result.GameOver = advance.GameOver;
 
         events.Add(MakeTurnEndEvent(game.GameID, playerNum, state));
-        events.Add(MakeTurnStartEvent(game.GameID, state));
-
-        if (gameOverResult is not null)
+        if (advance.TurnSwitched)
         {
-            result.GameOver = gameOverResult;
+            events.Add(MakeTurnStartEvent(game.GameID, state));
         }
 
         return result;
     }
 
+    /// <summary>エンドフェーズの精算結果。</summary>
+    /// <param name="GameOver">維持コスト徴収の直後に確定した勝敗。未確定なら null。</param>
+    /// <param name="NeedsDiscard">手札が上限を超え、破棄が必要なら true。</param>
+    private readonly record struct EndPhaseOutcome(GameOverResult? GameOver, bool NeedsDiscard);
+
     /// <summary>
-    /// エンドフェーズの効果発動と各種精算を行います。効果が選択待ちに入った場合は精算前に打ち切ります。
+    /// エンドフェーズの効果発動と各種精算を行い、維持コスト徴収の直後に敗北判定を挟みます。
+    /// 効果が選択待ちに入った場合は精算前に打ち切ります。
     /// </summary>
-    /// <param name="needsDiscard">手札が上限を超え、破棄が必要なら true。</param>
-    /// <returns>最後まで進めば true、選択待ちで中断したら false。</returns>
-    static bool ProcessEndPhaseLogic(
+    /// <returns>エンドフェーズの精算結果。選択待ちで中断したら null。</returns>
+    static EndPhaseOutcome? ProcessEndPhaseLogic(
         BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects,
-        List<GameEvent> events, List<string> firedInstanceIds, out bool needsDiscard)
+        List<GameEvent> events, List<string> firedInstanceIds)
     {
-        needsDiscard = false;
         var field = state.GetField(playerNum);
 
         if (!FirePassiveEffects(state, game, playerNum, field, cc, effects, events, firedInstanceIds))
         {
-            return false;
+            return null;
         }
 
         CollectMaintenanceCost(state, playerNum, field, cc);
+
+        var settledByMaintenance =
+            WinConditionChecker.CheckBudgetZero(state) ?? WinConditionChecker.CheckSystemDown(state);
+        if (settledByMaintenance is not null)
+        {
+            return new EndPhaseOutcome(settledByMaintenance, NeedsDiscard: false);
+        }
+
         GenerateInsight(state, playerNum, field, cc);
         ExpireTemporaryEffects(field);
         ResetPerTurnFlags(state, playerNum, field);
 
-        needsDiscard = state.GetHand(playerNum).Count > BattleConstants.HandLimit;
-        return true;
+        return new EndPhaseOutcome(
+            GameOver: null, state.GetHand(playerNum).Count > BattleConstants.HandLimit);
     }
 
     static long CalculateMaintenanceCost(DeployedResource resource, CardDefinition card)
