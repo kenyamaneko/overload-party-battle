@@ -178,6 +178,46 @@ public class DrawPhaseProcessorTests
         }
     }
 
+    [Trait("対象", "デッキアウト判定とドロー・デプロイ経過処理の順序")]
+    public class ProcessOrder
+    {
+        [Fact(DisplayName = "デッキが 0 枚で残り 1 ターンの裏向きカードがあるとき、ターンが始まると、デッキアウトで敗北しカードは裏向きのままでデプロイ時効果も発動しない")]
+        public void DeckOut_LeavesDeployCountdownUntouched()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 1);
+            state.Player1Field.Frontend[0] = res;
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            var result = DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
+
+            result.Should().NotBeNull();
+            result!.WinnerNum.Should().Be(2);
+            result.Reason.Should().Be(WinReasons.DeckOut);
+            res.FaceUp.Should().BeFalse();
+            res.DeployingTurnsLeft.Should().Be(1);
+            fired.Should().BeFalse();
+        }
+
+        [Fact(DisplayName = "デッキが 1 枚で残り 1 ターンの裏向きカードがあるとき、ターンが始まると、1 枚引いてカードが表向きになる")]
+        public void DrawsThenCompletesDeploy()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: false, deployLeft: 1);
+            state.Player1Field.Frontend[0] = res;
+
+            var result = DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), new EffectRegistry());
+
+            result.Should().BeNull();
+            state.Player1Hand.Should().HaveCount(1);
+            res.FaceUp.Should().BeTrue();
+        }
+    }
+
     [Trait("対象", "ドロー後の勝敗判定")]
     public class WinCheckAfterDraw
     {

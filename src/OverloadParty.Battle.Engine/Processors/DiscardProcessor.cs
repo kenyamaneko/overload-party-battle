@@ -52,24 +52,13 @@ public static class DiscardProcessor
             },
         });
 
-        var result = new ActionResult { Events = events };
+        var advance = EndPhaseProcessor.AdvanceAfterHandAdjustment(
+            state, game, playerNum, cc, effects, clock);
 
-        if (WinConditionChecker.CheckLaunchFailure(state, playerNum))
+        return new ActionResult
         {
-            result.GameOver = new GameOverResult(
-                state.OpponentOf(playerNum),
-                WinReason.LaunchFailure.ToWireString());
-            return result;
-        }
-
-        TurnManager.SwitchActivePlayer(state, clock);
-        var gameOverResult = DrawPhaseProcessor.Process(state, game, cc, effects);
-
-        if (gameOverResult is not null)
-        {
-            result.GameOver = gameOverResult;
-        }
-
-        return result;
+            Events = events,
+            GameOver = advance.GameOver,
+        };
     }
 }

@@ -10,7 +10,7 @@ namespace OverloadParty.Battle.Engine.Processors;
 public static class DrawPhaseProcessor
 {
     /// <summary>
-    /// Executes draw phase logic: counts down deploy timers, draws a card, and checks win conditions.
+    /// ドローフェーズを、デッキアウト判定・ドロー・デプロイターン経過処理の順に進め、最後に勝敗を判定します。
     /// </summary>
     /// <param name="state">The current game state.</param>
     /// <param name="game">The game metadata.</param>
@@ -21,8 +21,6 @@ public static class DrawPhaseProcessor
     {
         if (state.CurrentPhase != Phase.Draw) { return null; }
 
-        ProcessDeployCountdown(state, game, cc, effects);
-
         if (!CanDraw(state))
         {
             return new GameOverResult(
@@ -31,6 +29,8 @@ public static class DrawPhaseProcessor
         }
 
         CardMoveHelpers.DrawCards(state, state.ActivePlayer, 1);
+
+        ProcessDeployCountdown(state, game, cc, effects);
 
         TurnManager.AdvancePhase(state);
 

@@ -525,15 +525,15 @@ public class EndPhaseProcessorTests
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
             state.SetHasOperated(1, true);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "res_1", faceUp: true);
             // Do NOT add repo cards for player 2 (next draw will fail)
-            // But make sure player 1's end-phase logic works
-            // After turn switch, player 2 (active) has empty repo
 
             var result = EndPhaseProcessor.Process(state, _game, 1, _cc, new EffectRegistry(), new FakeClock());
 
-            // Player 2 can't draw → game over, player 1 wins
             result.GameOver.Should().NotBeNull();
             result.GameOver!.WinnerNum.Should().Be(1);
+            result.GameOver.Reason.Should().Be(WinReasons.DeckOut);
         }
     }
 
@@ -573,6 +573,186 @@ public class EndPhaseProcessorTests
         var repo = state.GetRepository(playerNum);
         repo.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
         repo.Add(new UndeployedCard { InstanceID = "repo_2", CardID = "TST-0001" });
+    }
+
+    [Trait("対象", "エンドフェーズの段階別勝敗判定")]
+    public class StagedWinConditions
+    {
+        private const string HighMaintenanceCardId = "TST-0011";
+        private const string SupportCardId = "TST-0210";
+
+        /// <summary>維持コスト 300 のリソースと、稼働実績を伴わないサポートを登録したキャッシュを作る。</summary>
+        /// <returns>段階判定テスト用のキャッシュ。</returns>
+        private static TestCardCache StagedCc()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            cc.Add(TestFactory.ComputeCard(cardId: HighMaintenanceCardId, mc: 300));
+            cc.Add(TestFactory.PlatformCard(cardId: SupportCardId));
+            return cc;
+        }
+
+        /// <summary>プレイヤー 1 のフロントエンドに維持コスト 300 の表向きリソースを置く。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        private static void PlaceHighMaintenanceResource(BattleGameState state)
+        {
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: HighMaintenanceCardId, instanceId: "res_1", faceUp: true);
+        }
+
+        /// <summary>プレイヤー 1 のサポートゾーンに、稼働実績を伴わない表向きサポートを置く。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        private static void PlaceSupport(BattleGameState state)
+        {
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = SupportCardId,
+                FaceUp = true,
+                DeployingTurnsLeft = 0,
+            };
+        }
+
+        /// <summary>指定プレイヤーのバジェットを 0 にするエンドフェーズ効果を登録したレジストリを作る。</summary>
+        /// <param name="cardId">効果を持つカードの ID。</param>
+        /// <param name="targetPlayerNum">バジェットを 0 にする対象のプレイヤー番号。</param>
+        /// <returns>エンドフェーズ効果を 1 件だけ持つレジストリ。</returns>
+        private static TestEffectRegistry BudgetDrainingEffect(string cardId, long targetPlayerNum)
+        {
+            var effects = new TestEffectRegistry();
+            effects.Register(cardId, TriggerType.OnEndPhase, ctx =>
+            {
+                ctx.State.SetBudget(targetPlayerNum, 0);
+                return new EffectResult();
+            });
+            return effects;
+        }
+
+        /// <summary>プレイヤー 1 のエンドフェーズを終了させる。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="effects">効果ハンドラのレジストリ。</param>
+        /// <returns>アクション結果。</returns>
+        private static ActionResult EndPhase(BattleGameState state, IEffectRegistry effects) =>
+            EndPhaseProcessor.Process(
+                state, TestFactory.MakeGame(), 1, StagedCc(), effects, new FakeClock());
+
+        [Fact(DisplayName = "維持コスト 300 のリソースを持ちバジェットが 300 のとき、エンドフェーズを終えると、バジェット 0 で自分がバジェットゼロ敗北になる")]
+        public void MaintenanceCostReachesZero_LosesByBudgetZero()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 300);
+            AddRepo(state, 2);
+            PlaceHighMaintenanceResource(state);
+
+            var result = EndPhase(state, new EffectRegistry());
+
+            state.Player1Budget.Should().Be(0);
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(2);
+            result.GameOver.Reason.Should().Be(WinReasons.BudgetZero);
+        }
+
+        [Fact(DisplayName = "維持コスト 300 のリソースを持ちバジェットが 301 のとき、エンドフェーズを終えると、バジェット 1 でゲームが続行しターンが相手へ移る")]
+        public void MaintenanceCostLeavesBudget_ContinuesGame()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 301);
+            AddRepo(state, 2);
+            PlaceHighMaintenanceResource(state);
+
+            var result = EndPhase(state, new EffectRegistry());
+
+            state.Player1Budget.Should().Be(1);
+            result.GameOver.Should().BeNull();
+            state.ActivePlayer.Should().Be(2);
+        }
+
+        [Fact(DisplayName = "維持コストで自分のバジェットが 0 になり相手のデッキが 0 枚のとき、エンドフェーズを終えると、デッキアウトではなく自分のバジェットゼロ敗北になる")]
+        public void BudgetZeroPrecedesOpponentDeckOut()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 300);
+            PlaceHighMaintenanceResource(state);
+
+            var result = EndPhase(state, new EffectRegistry());
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(2);
+            result.GameOver.Reason.Should().Be(WinReasons.BudgetZero);
+        }
+
+        [Fact(DisplayName = "エンドフェーズ効果で相手のバジェットが 0 になり維持コストで自分のバジェットも 0 になるとき、エンドフェーズを終えると、引き分けになる")]
+        public void BothBudgetsReachZero_Draw()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 300);
+            AddRepo(state, 2);
+            PlaceHighMaintenanceResource(state);
+
+            var result = EndPhase(state, BudgetDrainingEffect(HighMaintenanceCardId, targetPlayerNum: 2));
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(0);
+            result.GameOver.Reason.Should().Be(WinReasons.Draw);
+        }
+
+        [Fact(DisplayName = "稼働実績があり表向きリソースが 0 体で相手のデッキが 0 枚のとき、エンドフェーズを終えると、デッキアウトではなく自分のシステムダウン敗北になる")]
+        public void SystemDownPrecedesOpponentDeckOut()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            state.SetHasOperated(1, true);
+
+            var result = EndPhase(state, new EffectRegistry());
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(2);
+            result.GameOver.Reason.Should().Be(WinReasons.SystemDown);
+        }
+
+        [Fact(DisplayName = "自分の 3 ターン目で稼働実績がないプレイヤーのエンドフェーズ効果で相手のバジェットが 0 になるとき、エンドフェーズを終えると、ローンチ失敗ではなく相手のバジェットゼロ敗北になる")]
+        public void OpponentBudgetZeroPrecedesOwnLaunchFailure()
+        {
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle, activePlayer: 1);
+            AddRepo(state, 2);
+            state.SetHasOperated(1, false);
+            PlaceSupport(state);
+
+            var result = EndPhase(state, BudgetDrainingEffect(SupportCardId, targetPlayerNum: 2));
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(1);
+            result.GameOver.Reason.Should().Be(WinReasons.BudgetZero);
+        }
+
+        [Fact(DisplayName = "自分の 3 ターン目で稼働実績がなくバジェットに変化がないとき、エンドフェーズを終えると、ローンチ失敗で敗北する")]
+        public void NoBudgetChange_LosesByLaunchFailure()
+        {
+            var state = TestFactory.MakeGameState(turn: 5, phase: Phase.Battle, activePlayer: 1);
+            AddRepo(state, 2);
+            state.SetHasOperated(1, false);
+            PlaceSupport(state);
+
+            var result = EndPhase(state, new EffectRegistry());
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(2);
+            result.GameOver.Reason.Should().Be(WinReasons.LaunchFailure);
+        }
+
+        [Fact(DisplayName = "手札が 8 枚あり維持コストでバジェットが 0 になるとき、エンドフェーズを終えると、破棄を要求せずバジェットゼロ敗北になる")]
+        public void BudgetZeroWithHandOverLimit_SkipsDiscard()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 300);
+            AddRepo(state, 2);
+            PlaceHighMaintenanceResource(state);
+            foreach (var i in Enumerable.Range(0, 8))
+            {
+                state.Player1Hand.Add(new UndeployedCard { InstanceID = $"hand_{i}", CardID = "TST-0001" });
+            }
+
+            var result = EndPhase(state, new EffectRegistry());
+
+            result.ShouldDiscard.Should().BeFalse();
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(2);
+            result.GameOver.Reason.Should().Be(WinReasons.BudgetZero);
+        }
     }
 
     [Trait("対象", "エンドフェーズ効果とパッシブ効果の発動")]
