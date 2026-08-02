@@ -6,6 +6,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Google.Apis.Auth" Version="1.71.0" />
     <PackageReference Include="Npgsql" Version="10.0.1" />
     <PackageReference Include="OverloadParty.ApiCard" Version="0.1.0" />
   </ItemGroup>

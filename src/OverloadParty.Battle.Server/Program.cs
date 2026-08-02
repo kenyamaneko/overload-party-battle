@@ -160,9 +160,15 @@ if (!string.IsNullOrEmpty(localCardsPath))
 else
 {
     var cardServiceUrl = Environment.GetEnvironmentVariable("CARD_SERVICE_URL") ?? "http://card:9003";
-    // One-shot startup fetch. If the call fails we log and exit(1); k8s restarts the pod,
-    // which gives us bounded retry-with-backoff via the cluster instead of a hidden loop here.
-    using var cardClient = new CardServiceClient(cardServiceUrl);
+    // Cloud Run の呼び出し IAM は audience ごとの ID トークンを見るため、下流を呼ぶ経路は
+    // トークンを付与する HttpClient を通す。ローカルの card は Cloud Run ではなく
+    // 呼び出し IAM が無いため素の HttpClient を使う。
+    using var cardHttp = isLocalDev
+        ? new HttpClient()
+        : await RunAuthHttpClientFactory.CreateAsync(cardServiceUrl);
+    // One-shot startup fetch. If the call fails we log and exit(1); Cloud Run restarts the
+    // instance, which gives us bounded retry-with-backoff instead of a hidden loop here.
+    using var cardClient = new CardServiceClient(cardServiceUrl, cardHttp);
     try
     {
         var cards = await cardClient.ListAllCardsAsync();
