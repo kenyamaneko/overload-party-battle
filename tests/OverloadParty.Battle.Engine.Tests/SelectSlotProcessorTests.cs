@@ -176,8 +176,8 @@ public class SelectSlotProcessorTests
         act.Should().Throw<GameRuleException>();
     }
 
-    [Fact(DisplayName = "選択待ちが複数あるとき先頭を配置し残りのスロット選択を要求する")]
-    public void Process_MultiplePending_ConsumesFirstAndKeepsNeedsSlotSelect()
+    [Fact(DisplayName = "自分の選択待ちが複数あるとき、古いほうを配置し残りのスロット選択を要求する")]
+    public void Process_MultipleOwnPending_ConsumesOldestAndKeepsNeedsSlotSelect()
     {
         var state = MakeStateWithPending("frontend", 0);
         state.PendingSlotSelects.Add(new AwaitingSlotSelect
