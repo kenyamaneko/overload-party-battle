@@ -55,6 +55,9 @@ public class ByChoiceSelector : ISelector
     /// <summary>Card type filter, or null for any type.</summary>
     public string? CardType { get; init; }
 
+    /// <summary>Subtype filter list, or null for any subtype.</summary>
+    public List<string>? Subtypes { get; init; }
+
     /// <summary>Owner of the target: "myself" or "opponent".</summary>
     public string Owner { get; init; } = "myself";
 
@@ -97,6 +100,15 @@ public class ByChoiceSelector : ISelector
         {
             var card = ctx.CardCache.MustGet(resource.CardID);
             if (!EffectHelpers.MatchesCardType(card, cardType))
+            {
+                return [];
+            }
+        }
+
+        if (Subtypes is { Count: > 0 } subtypes)
+        {
+            var card = ctx.CardCache.MustGet(resource.CardID);
+            if (!EffectHelpers.MatchesAnySubtype(card, subtypes))
             {
                 return [];
             }
