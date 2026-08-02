@@ -45,7 +45,11 @@ public static class EffectComposer
     {
         var octx = new OpContext(ctx);
 
-        foreach (var guard in block.Guards)
+        // 再開時は発動条件を判定済みなので、中断した op から続きを実行する。
+        // 手前の op を再実行すると、選択の前に済ませた副作用が二重に適用される。
+        bool isResuming = ctx.ResumeFromOpIndex > 0;
+
+        foreach (var guard in isResuming ? [] : block.Guards)
         {
             if (!guard.Check(ctx))
             {
@@ -61,9 +65,10 @@ public static class EffectComposer
             }
         }
 
-        foreach (var op in block.Ops)
+        for (int i = ctx.ResumeFromOpIndex; i < block.Ops.Length; i++)
         {
-            op.Execute(octx);
+            octx.CurrentOpIndex = i;
+            block.Ops[i].Execute(octx);
             // choice op が ChoiceData 不足を検知して PendingChoice を立てたら、以降の op は実行しない。
             if (octx.Result.PendingChoice is not null) { break; }
             // op が発動条件の不成立を検知したら、以降の op は実行しない。
