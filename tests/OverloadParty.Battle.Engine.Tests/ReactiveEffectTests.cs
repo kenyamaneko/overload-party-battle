@@ -189,6 +189,42 @@ public class ReactiveEffectTests
 
             FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.Damage.Should().Be(600);
         }
+
+        [Fact(DisplayName = "攻撃が無効にならない選択を解決すると、元の攻撃対象にもスループット分 600 のダメージが入る")]
+        public void Resolve_AttackContinues_DamagesOriginalTarget()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(600);
+        }
+
+        /// <summary>保存・復元を経た選択待ちを模して、盤面とは別インスタンスのリソースに差し替える。</summary>
+        /// <param name="resource">選択待ちに保存されているリソース。</param>
+        /// <returns>同じ内容を持つ別インスタンス。</returns>
+        private static DeployedResource ReloadedApart(DeployedResource resource) =>
+            System.Text.Json.JsonSerializer.Deserialize<DeployedResource>(
+                System.Text.Json.JsonSerializer.Serialize(resource))!;
+
+        [Fact(DisplayName = "攻撃宣言と選択解決の間に状態を保存・復元しても、続行した攻撃のダメージが盤面の攻撃対象に入る")]
+        public void Resolve_AfterStateReload_DamagesOriginalTargetOnField()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+
+            var pending = state.PendingEffectChoice!;
+            pending.Source = ReloadedApart(pending.Source!);
+            pending.Target = ReloadedApart(pending.Target!);
+
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(600);
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.HasAttacked.Should().BeTrue();
+        }
     }
 
     [Trait("対象", "chain_attack_bonus 誘発効果")]
