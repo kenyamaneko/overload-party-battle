@@ -72,6 +72,12 @@ public class EffectContext
     /// セットされる。choice op が選択待ちを state に保存するときに使う。
     /// </summary>
     public TriggerType? Trigger { get; set; }
+
+    /// <summary>
+    /// 選択の解決で効果を再開するときの開始位置。中断した op を指す。
+    /// 手前の op は実行済みなので飛ばす。0 なら先頭からの通常実行。
+    /// </summary>
+    public int ResumeFromOpIndex { get; init; }
 }
 
 /// <summary>

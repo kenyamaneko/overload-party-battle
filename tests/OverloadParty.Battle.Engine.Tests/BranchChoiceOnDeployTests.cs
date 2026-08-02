@@ -80,7 +80,7 @@ public class BranchChoiceOnDeployTests
             PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "beta" };
-            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry, new FakeClock());
 
             state.PendingEffectChoice.Should().BeNull();
             state.Player1InsightPool.Should().Be(222);

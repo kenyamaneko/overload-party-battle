@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using OverloadParty.Battle.Engine;
+using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 using OverloadParty.Battle.Npc;
@@ -15,6 +16,7 @@ public class GameServiceTests
     {
         protected readonly FakeGameRepository _repo = new();
         protected readonly TestCardCache _cc = new();
+        protected readonly EffectRegistry _effects = new();
         protected readonly GameEngine _engine;
         protected readonly GameService _svc;
 
@@ -24,7 +26,7 @@ public class GameServiceTests
             _cc.Add(TestFactory.ComputeCard(cardId: "TST-0003", tp: 800, av: 1600, slaPenalty: 500, deployTurns: 1, name: "SlowCompute"));
             _cc.Add(TestFactory.DataCard(cardId: "TST-0002"));
             _engine = new GameEngine(
-                _repo, _cc, new EffectRegistry(), new InitiativeCatalog(TestFactory.StandardInitiatives()), new FakeClock());
+                _repo, _cc, _effects, new InitiativeCatalog(TestFactory.StandardInitiatives()), new FakeClock());
             var npcDeck = TestFactory.MakeDeck(_cc, "TST-0001").Cards
                 .GroupBy(c => c.CardId)
                 .Select(g => new DeckEntry { CardId = g.Key, Copies = g.Count() })
@@ -448,6 +450,54 @@ public class GameServiceTests
             var after = await _repo.GetGameState(game.GameID);
             after!.CurrentTurn.Should().Be(before!.CurrentTurn);
             after.CurrentPhase.Should().Be(before.CurrentPhase);
+        }
+
+        [Fact(DisplayName = "相手ターン中に NPC 側へ積まれたスロット選択は、NPC ターンの進行で解決される")]
+        public async Task NpcOwnedSlotSelect_DuringPlayerTurn_IsResolved()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", Factions.SHE, NpcPlayerSummaries);
+
+            var state = await _repo.GetGameState(game.GameID);
+            state!.ActivePlayer = 1;
+            state.PendingSlotSelects.Add(new AwaitingSlotSelect
+            {
+                PlayerNum = 2,
+                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "npc_pending"),
+                ValidZones = ["frontend_0"],
+            });
+
+            await _svc.AdvanceNpcTurn(game.GameID);
+
+            var after = await _repo.GetGameState(game.GameID);
+            after!.PendingSlotSelects.Should().BeEmpty();
+            after.Player2Field.Frontend[0]!.InstanceID.Should().Be("npc_pending");
+        }
+
+        [Fact(DisplayName = "人間のアクションで NPC 側にスロット選択が積まれたとき、NPC の進行が必要だと返る")]
+        public async Task ActionLeavingNpcOwnedSlotSelect_ReportsNpcPending()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", Factions.SHE, NpcPlayerSummaries);
+
+            var state = await _repo.GetGameState(game.GameID);
+            state!.ActivePlayer = 1;
+            state.CurrentTurn = 2;
+            state.CurrentPhase = Phase.Battle;
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0001", instanceId: "atk", faceUp: true);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0002", instanceId: "def", faceUp: true, maxAV: 100, currentAV: 100);
+            state.Player2Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
+            // 破壊された NPC のリソースが、自分のスロット選択を残す
+            _effects.RegisterComposed("TST-0002", TriggerType.OnDestroy, new RequestSlotFromRepoOp());
+
+            var result = await _svc.ProcessAction(game.GameID, 1, ActionType.Attack,
+                new AttackRequest { AttackerInstanceID = "atk", TargetInstanceID = "def" });
+
+            var after = await _repo.GetGameState(game.GameID);
+            after!.PendingSlotSelects.Should().ContainSingle().Which.PlayerNum.Should().Be(2);
+            result.IsNpcPending.Should().BeTrue();
         }
     }
 }

@@ -71,6 +71,8 @@ public class BranchOnChoiceOp(Dictionary<string, List<IEffectOp>> branches) : IE
         foreach (var op in ops)
         {
             op.Execute(ctx);
+            if (ctx.Result.PendingChoice is not null) { return; }
+            if (ctx.Result.HasGuardFailed) { return; }
         }
     }
 }
@@ -94,6 +96,8 @@ public class IfConditionOp(Func<OpContext, bool> cond, List<IEffectOp> then) : I
         foreach (var op in then)
         {
             op.Execute(ctx);
+            if (ctx.Result.PendingChoice is not null) { return; }
+            if (ctx.Result.HasGuardFailed) { return; }
         }
     }
 }

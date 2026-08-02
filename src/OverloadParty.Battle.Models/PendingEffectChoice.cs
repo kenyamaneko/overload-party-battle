@@ -49,6 +49,17 @@ public class PendingEffectChoice
 
     /// <summary>on_attack_declared トリガー時の攻撃ダメージ値。</summary>
     public long? EventDamage { get; set; }
+
+    /// <summary>
+    /// 効果を中断した op の位置。再開はここから始めるため、手前の op は再実行されない。
+    /// </summary>
+    public int ResumeOpIndex { get; set; }
+
+    /// <summary>エンドフェーズ効果の途中で中断した場合の、フェーズを終えようとしているプレイヤー番号。</summary>
+    public long? EndPhasePlayerNum { get; set; }
+
+    /// <summary>中断までに発動を終えたエンドフェーズ効果のインスタンス ID。再開時はこれらを飛ばす。</summary>
+    public List<string> EndPhaseFiredInstanceIds { get; set; } = [];
 }
 
 /// <summary>

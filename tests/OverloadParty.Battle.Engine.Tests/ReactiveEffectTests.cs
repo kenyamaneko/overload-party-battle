@@ -128,10 +128,52 @@ public class ReactiveEffectTests
             AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
 
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
-                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects);
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
 
             FieldHelpers.FindResourceByID(state.Player1Field, "my_fe_1")!.Damage.Should().Be(600);
             state.PendingEffectChoice.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "選択待ちの間は、元の攻撃対象にダメージが入らない")]
+        public void Suspended_DoesNotDamageOriginalTargetYet()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(0);
+        }
+
+        [Fact(DisplayName = "再ダメージ先を選んで解決すると攻撃は無効になり、元の攻撃対象のダメージは 0 のまま確定する")]
+        public void Resolve_CancelsAttack_OriginalTargetTakesNoDamage()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            // NT-0024 と同じく、再ダメージ先の選択に続けて攻撃を無効にする
+            effects.RegisterComposed("TST-0400", TriggerType.OnAttackDeclared,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.RedirectAttack, null)!),
+                SetCancelActionOp.Instance);
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(0);
+            FieldHelpers.FindResourceByID(state.Player1Field, "my_fe_1")!.Damage.Should().Be(600);
+        }
+
+        [Fact(DisplayName = "攻撃が無効に確定しても、攻撃したリソースの攻撃権は消費される")]
+        public void Resolve_CancelledAttack_StillConsumesAttackRight()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            effects.RegisterComposed("TST-0400", TriggerType.OnAttackDeclared,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.RedirectAttack, null)!),
+                SetCancelActionOp.Instance);
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
+
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.HasAttacked.Should().BeTrue();
         }
 
         [Fact(DisplayName = "攻撃側フロントエンドが攻撃リソース 1 枚だけのとき、その攻撃リソース自身に 600 のダメージが入る")]
@@ -143,9 +185,60 @@ public class ReactiveEffectTests
             state.PendingEffectChoice!.Candidates.Should().BeEquivalentTo(["atk"]);
 
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
-                new ResolvePendingChoiceRequest { ChosenId = "atk" }, cc, effects);
+                new ResolvePendingChoiceRequest { ChosenId = "atk" }, cc, effects, new FakeClock());
 
             FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.Damage.Should().Be(600);
+        }
+
+        [Fact(DisplayName = "攻撃が無効にならない選択を解決すると、元の攻撃対象にもスループット分 600 のダメージが入る")]
+        public void Resolve_AttackContinues_DamagesOriginalTarget()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(600);
+        }
+
+        [Fact(DisplayName = "再ダメージで攻撃したリソースが壊れたとき、攻撃は不発になり攻撃対象にダメージが入らない")]
+        public void Resolve_AttackerDestroyedByRedirect_LeavesTargetUndamaged()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 1);
+            // 移された 600 のダメージで攻撃したリソース自身が壊れる耐久にする
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.MaxAV = 600;
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "atk" }, cc, effects, new FakeClock());
+
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk").Should().BeNull("再ダメージで壊れる");
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(0);
+        }
+
+        /// <summary>保存・復元を経た選択待ちを模して、盤面とは別インスタンスのリソースに差し替える。</summary>
+        /// <param name="resource">選択待ちに保存されているリソース。</param>
+        /// <returns>同じ内容を持つ別インスタンス。</returns>
+        private static DeployedResource ReloadedApart(DeployedResource resource) =>
+            System.Text.Json.JsonSerializer.Deserialize<DeployedResource>(
+                System.Text.Json.JsonSerializer.Serialize(resource))!;
+
+        [Fact(DisplayName = "攻撃宣言と選択解決の間に状態を保存・復元しても、続行した攻撃のダメージが盤面の攻撃対象に入る")]
+        public void Resolve_AfterStateReload_DamagesOriginalTargetOnField()
+        {
+            var (cc, effects, state) = Setup(attackerFrontendCount: 2);
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
+
+            var pending = state.PendingEffectChoice!;
+            pending.Source = ReloadedApart(pending.Source!);
+            pending.Target = ReloadedApart(pending.Target!);
+
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
+
+            FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(600);
+            FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.HasAttacked.Should().BeTrue();
         }
     }
 
