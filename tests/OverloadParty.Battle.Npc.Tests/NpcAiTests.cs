@@ -528,6 +528,38 @@ public class NpcAiTests
         ((ResolvePendingChoiceRequest)action.Data).ChosenId.Should().Be("TST-0001");
     }
 
+    [Fact(DisplayName = "裏向きリアクティブを確認する選択で、先頭の候補を選ぶ")]
+    public void PendingEffectChoice_FaceDownReactive_PicksFirstCandidate()
+    {
+        var ai = new NpcAi(MakeConfig(), _cc, _effects);
+        var pending = new GD.PendingEffectChoiceView
+        {
+            ChooserPlayerNum = 1,
+            EffectCardId = "initiative:IN-TST",
+            EffectInstanceId = "IN-TST",
+            ChoiceKind = ChoiceKinds.FaceDownReactive,
+        };
+        var available = new List<GD.AvailableAction>
+        {
+            new GD.ResolvePendingChoiceAction
+            {
+                EffectCardId = "initiative:IN-TST",
+                ChoiceKind = ChoiceKinds.FaceDownReactive,
+                ChoiceOptions =
+                [
+                    new GD.ChoiceOption { Key = "sup_1" },
+                    new GD.ChoiceOption { Key = "sup_2" },
+                ],
+            },
+        };
+        var state = BuildState(pendingEffectChoice: pending, available: available);
+
+        var action = ai.DecidePendingEffectChoice(state);
+
+        action.Should().NotBeNull();
+        ((ResolvePendingChoiceRequest)action!.Data).ChosenId.Should().Be("sup_1");
+    }
+
     [Fact(DisplayName = "選択者が自分でないとき、null を返す")]
     public void PendingEffectChoice_WrongChooser_ReturnsNull()
     {

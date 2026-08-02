@@ -264,8 +264,14 @@ public class UseInitiativeProcessorTests
             state.Player1InsightPool.Should().Be(700);
         }
 
-        [Fact(DisplayName = "伏せリアクティブを確認する施策は、相手に伏せカードが 2 枚あるとき選択待ちへ遷移する")]
-        public void PeekRoutine_MultipleFaceDown_SuspendsForChoice()
+    }
+
+    [Trait("対象", "伏せリアクティブを確認する施策")]
+    public class PeekInitiative : Base
+    {
+        /// <summary>相手の伏せリアクティブ 1 枚を確認する routine と、伏せカード 2 枚の盤面を用意する。</summary>
+        /// <returns>効果レジストリ・施策カタログ・ゲーム状態。</returns>
+        private (IEffectRegistry Effects, InitiativeCatalog Catalog, BattleGameState State) SetupPeekRoutine()
         {
             var (effects, catalog) = Setup(Initiatives(
                 routineCost: 150,
@@ -275,25 +281,27 @@ public class UseInitiativeProcessorTests
             var state = MakeState(insight: 1000);
             state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0400", FaceUp = false };
             state.Player2Field.Support[1] = new DeployedSupport { InstanceID = "sup_2", CardID = "TST-0400", FaceUp = false };
+            return (effects, catalog, state);
+        }
+
+        [Fact(DisplayName = "相手に伏せカードが 2 枚あるとき選択待ちへ遷移し、その時点でインサイトと使用回数が確定する")]
+        public void MultipleFaceDown_SuspendsForChoice_AndConsumesCost()
+        {
+            var (effects, catalog, state) = SetupPeekRoutine();
 
             Use(state, InitiativeKinds.Routine, effects, catalog);
 
             state.PendingEffectChoice.Should().NotBeNull();
             state.PendingEffectChoice!.ChoiceKind.Should().Be(ChoiceKinds.FaceDownReactive);
             state.PendingEffectChoice.Candidates.Should().Equal("sup_1", "sup_2");
+            state.Player1InsightPool.Should().Be(850);
+            state.GetRoutineUsedThisTurn(1).Should().BeTrue();
         }
 
-        [Fact(DisplayName = "伏せリアクティブを確認する施策の選択を解決すると、選んだ 2 枚目だけを覗き見る")]
-        public void PeekRoutine_ResolvingChoice_PeeksChosenCard()
+        [Fact(DisplayName = "選択を解決すると、選んだ 2 枚目だけを覗き見る")]
+        public void ResolvingChoice_PeeksChosenCardOnly()
         {
-            var (effects, catalog) = Setup(Initiatives(
-                routineCost: 150,
-                routineJson: """{"ops":[{"peek_reactive":{}}]}""",
-                specialCost: 0,
-                specialJson: """{"ops":[{"gain_budget":{"target":"myself","amount":0}}]}"""));
-            var state = MakeState(insight: 1000);
-            state.Player2Field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = "TST-0400", FaceUp = false };
-            state.Player2Field.Support[1] = new DeployedSupport { InstanceID = "sup_2", CardID = "TST-0400", FaceUp = false };
+            var (effects, catalog, state) = SetupPeekRoutine();
 
             Use(state, InitiativeKinds.Routine, effects, catalog);
             ResolvePendingChoiceProcessor.Process(
