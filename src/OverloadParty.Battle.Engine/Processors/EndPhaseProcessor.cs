@@ -16,9 +16,10 @@ public static class EndPhaseProcessor
     /// <param name="playerNum">The player number ending their phase.</param>
     /// <param name="cc">The card definition cache.</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <param name="clock">現在時刻の供給元。</param>
     /// <returns>The action result containing phase change events and possible game-over or discard requirements.</returns>
     public static ActionResult Process(
-        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects)
+        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects, IClock clock)
     {
         var previousPhase = TurnManager.AdvancePhase(state);
 
@@ -26,7 +27,7 @@ public static class EndPhaseProcessor
 
         if (state.CurrentPhase == Phase.End)
         {
-            return ProcessEndPhaseTransition(state, game, playerNum, cc, effects, events);
+            return ProcessEndPhaseTransition(state, game, playerNum, cc, effects, clock, events);
         }
 
         events.Add(new GameEvent
@@ -45,7 +46,7 @@ public static class EndPhaseProcessor
 
     private static ActionResult ProcessEndPhaseTransition(
         BattleGameState state, Game game, long playerNum, ICardCache cc,
-        IEffectRegistry effects, List<GameEvent> events)
+        IEffectRegistry effects, IClock clock, List<GameEvent> events)
     {
         bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects);
         var result = new ActionResult { Events = events };
@@ -76,7 +77,7 @@ public static class EndPhaseProcessor
             return result;
         }
 
-        TurnManager.SwitchActivePlayer(state);
+        TurnManager.SwitchActivePlayer(state, clock);
         var gameOverResult = DrawPhaseProcessor.Process(state, game, cc, effects);
 
         events.Add(MakeTurnEndEvent(game.GameID, playerNum, state));

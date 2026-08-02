@@ -465,18 +465,59 @@ public static class TestFactory
     }
 
     /// <summary>
-    /// Build a DeckSnapshot with 30 cards (repeating the given card IDs).
+    /// デッキ規約 (30 枚ちょうど・同名 3 枚まで) を満たす DeckSnapshot を組む。
+    /// 指定カードを 3 枚ずつ入れ、30 枚に満たない分は埋め草カードで埋めて <paramref name="cc"/> に登録する。
     /// </summary>
-    public static DeckSnapshot MakeDeck(params string[] cardIds)
+    /// <param name="cc">埋め草カードの登録先。</param>
+    /// <param name="cardIds">3 枚ずつデッキに入れるカード ID。</param>
+    /// <returns>30 枚のデッキスナップショット。</returns>
+    public static DeckSnapshot MakeDeck(TestCardCache cc, params string[] cardIds)
     {
         var cards = new List<DeckSnapshotCard>();
-        int idx = 0;
+
+        foreach (var cardId in cardIds)
+        {
+            for (int i = 0; i < BattleConstants.MaxCopiesPerCardName; i++)
+            {
+                cards.Add(new DeckSnapshotCard { CardId = cardId });
+            }
+        }
+
+        if (cards.Count > InitialValues.DeckSize)
+        {
+            throw new ArgumentException(
+                $"{cardIds.Length} 種 × {BattleConstants.MaxCopiesPerCardName} 枚はデッキ上限 {InitialValues.DeckSize} 枚を超える",
+                nameof(cardIds));
+        }
+
+        int fillerNo = 1;
         while (cards.Count < InitialValues.DeckSize)
         {
-            cards.Add(new DeckSnapshotCard { CardId = cardIds[idx % cardIds.Length] });
-            idx++;
+            var fillerId = $"TST-9{fillerNo:D3}";
+            cc.Add(ComputeCard(cardId: fillerId, name: $"Filler{fillerNo}"));
+            int copies = Math.Min(BattleConstants.MaxCopiesPerCardName, InitialValues.DeckSize - cards.Count);
+            for (int i = 0; i < copies; i++)
+            {
+                cards.Add(new DeckSnapshotCard { CardId = fillerId });
+            }
+            fillerNo++;
         }
+
         return new DeckSnapshot { DeckID = "deck-1", Cards = cards };
+    }
+
+    /// <summary>
+    /// 対象プレイヤーの手札の先頭を指定カードに差し替える。シャッフルに左右されず特定カードを持たせたいときに使う。
+    /// </summary>
+    /// <param name="state">対象のゲーム状態。</param>
+    /// <param name="playerNum">対象プレイヤー番号 (1 または 2)。</param>
+    /// <param name="cardId">差し替え後のカード ID。</param>
+    /// <returns>差し替えたカードのインスタンス ID。</returns>
+    public static string ReplaceFirstHandCard(BattleGameState state, long playerNum, string cardId)
+    {
+        var instanceId = state.NextInstanceID();
+        state.GetHand(playerNum)[0] = new UndeployedCard { InstanceID = instanceId, CardID = cardId };
+        return instanceId;
     }
 
     /// <summary>テスト用の標準施策カタログ要素 (4 プロダクト × routine/special = 8 件)。</summary>

@@ -4,9 +4,28 @@ routine_id: IN-0001
 special_id: IN-0002
 display_name: リアクティブのみのデッキ
 
+# リアクティブだけで 30 枚を組む (同名 3 枚まで)。
 deck:
+  - card_id: NT-0022
+    copies: 3
   - card_id: NT-0023
-    copies: 30
+    copies: 3
+  - card_id: NT-0024
+    copies: 3
+  - card_id: NT-0027
+    copies: 3
+  - card_id: NT-0028
+    copies: 3
+  - card_id: NT-0034
+    copies: 3
+  - card_id: SH-0021
+    copies: 3
+  - card_id: TK-0023
+    copies: 3
+  - card_id: TK-0024
+    copies: 3
+  - card_id: TK-0025
+    copies: 3
 
 budget:
   low_threshold: 1500
@@ -20,7 +39,16 @@ scale_up:
 reactive:
   max_slots: 2
   priorities:
+    NT-0022: 70
     NT-0023: 70
+    NT-0024: 70
+    NT-0027: 70
+    NT-0028: 70
+    NT-0034: 70
+    SH-0021: 70
+    TK-0023: 70
+    TK-0024: 70
+    TK-0025: 70
 
 slot_select:
   strategy: left_fill

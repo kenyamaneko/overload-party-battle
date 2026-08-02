@@ -1,7 +1,6 @@
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
-using OverloadParty.Battle.Tests.Fakes;
 
 namespace OverloadParty.Battle.Tests.Engine;
 
@@ -10,31 +9,42 @@ public class TurnTimerTests
     [Trait("対象", "タイムバンクからの経過時間の減算")]
     public class DeductElapsedTime
     {
-        [Fact(DisplayName = "経過 10 秒でアクティブプレイヤーのタイムバンクからおよそ 10 秒差し引く")]
+        /// <summary>ターン開始から指定秒だけ進んだ状態を作る。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="seconds">ターン開始からの経過秒数。</param>
+        /// <returns>進めた時計。</returns>
+        private static FakeClock ElapsedSince(BattleGameState state, double seconds)
+        {
+            var clock = new FakeClock();
+            state.TurnStartedAt = clock.UtcNow;
+            clock.Advance(seconds);
+            return clock;
+        }
+
+        [Fact(DisplayName = "経過 10 秒でターンプレイヤーのタイムバンクから 10 秒差し引く")]
         public void SubtractsElapsedSeconds()
         {
             var state = TestFactory.MakeGameState(activePlayer: 1);
             state.Player1TimeBank = 480;
-            state.TurnStartedAt = DateTime.UtcNow.AddSeconds(-10);
+            var clock = ElapsedSince(state, 10);
 
-            GameEngine.DeductElapsedTime(state);
+            GameEngine.DeductElapsedTime(state, clock);
 
-            state.Player1TimeBank.Should().BeInRange(469, 471);
-            state.TurnStartedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            state.Player1TimeBank.Should().Be(470);
         }
 
-        [Fact(DisplayName = "非アクティブプレイヤーのタイムバンクは変えずアクティブプレイヤーからのみ差し引く")]
+        [Fact(DisplayName = "非ターンプレイヤーのタイムバンクは変えずターンプレイヤーからのみ差し引く")]
         public void OnlyDeductsActivePlayer()
         {
             var state = TestFactory.MakeGameState(activePlayer: 2);
             state.Player1TimeBank = 480;
             state.Player2TimeBank = 300;
-            state.TurnStartedAt = DateTime.UtcNow.AddSeconds(-5);
+            var clock = ElapsedSince(state, 5);
 
-            GameEngine.DeductElapsedTime(state);
+            GameEngine.DeductElapsedTime(state, clock);
 
-            state.Player1TimeBank.Should().Be(480, "non-active player's TimeBank unchanged");
-            state.Player2TimeBank.Should().BeInRange(294, 296);
+            state.Player1TimeBank.Should().Be(480);
+            state.Player2TimeBank.Should().Be(295);
         }
 
         [Fact(DisplayName = "経過時間が 0 のときタイムバンクは変わらない")]
@@ -42,11 +52,39 @@ public class TurnTimerTests
         {
             var state = TestFactory.MakeGameState(activePlayer: 1);
             state.Player1TimeBank = 480;
-            state.TurnStartedAt = DateTime.UtcNow;
+            var clock = ElapsedSince(state, 0);
 
-            GameEngine.DeductElapsedTime(state);
+            GameEngine.DeductElapsedTime(state, clock);
 
             state.Player1TimeBank.Should().Be(480);
+        }
+
+        [Fact(DisplayName = "経過が 0.6 秒のときタイムバンクは変わらず、次の減算のためにターン開始時刻も動かない")]
+        public void SubSecondElapsed_KeepsRemainder()
+        {
+            var state = TestFactory.MakeGameState(activePlayer: 1);
+            state.Player1TimeBank = 480;
+            var clock = ElapsedSince(state, 0.6);
+            var turnStartedAt = state.TurnStartedAt;
+
+            GameEngine.DeductElapsedTime(state, clock);
+
+            state.Player1TimeBank.Should().Be(480);
+            state.TurnStartedAt.Should().Be(turnStartedAt);
+        }
+
+        [Fact(DisplayName = "経過が 1.6 秒のときタイムバンクは 1 秒減り、ターン開始時刻は 1 秒だけ進んで 0.6 秒の端数が残る")]
+        public void FractionalElapsed_CarriesRemainder()
+        {
+            var state = TestFactory.MakeGameState(activePlayer: 1);
+            state.Player1TimeBank = 480;
+            var clock = ElapsedSince(state, 1.6);
+            var turnStartedAt = state.TurnStartedAt;
+
+            GameEngine.DeductElapsedTime(state, clock);
+
+            state.Player1TimeBank.Should().Be(479);
+            state.TurnStartedAt.Should().Be(turnStartedAt.AddSeconds(1));
         }
 
         [Fact(DisplayName = "経過時間がタイムバンクを超えるとタイムバンクは負になる")]
@@ -54,11 +92,11 @@ public class TurnTimerTests
         {
             var state = TestFactory.MakeGameState(activePlayer: 1);
             state.Player1TimeBank = 5;
-            state.TurnStartedAt = DateTime.UtcNow.AddSeconds(-10);
+            var clock = ElapsedSince(state, 10);
 
-            GameEngine.DeductElapsedTime(state);
+            GameEngine.DeductElapsedTime(state, clock);
 
-            state.Player1TimeBank.Should().BeNegative();
+            state.Player1TimeBank.Should().Be(-5);
         }
     }
 
@@ -109,15 +147,17 @@ public class TurnTimerTests
     [Trait("対象", "ターン切り替え時のタイマーリセット")]
     public class SwitchActivePlayer
     {
-        [Fact(DisplayName = "アクティブプレイヤーを切り替えるとターン開始時刻がリセットされる")]
+        [Fact(DisplayName = "ターンプレイヤーを切り替えるとターン開始時刻が切り替え時点にリセットされる")]
         public void ResetsTurnStartedAt()
         {
             var state = TestFactory.MakeGameState(activePlayer: 1);
-            state.TurnStartedAt = DateTime.UtcNow.AddMinutes(-5);
+            var clock = new FakeClock();
+            state.TurnStartedAt = clock.UtcNow;
+            clock.Advance(300);
 
-            TurnManager.SwitchActivePlayer(state);
+            TurnManager.SwitchActivePlayer(state, clock);
 
-            state.TurnStartedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            state.TurnStartedAt.Should().Be(clock.UtcNow);
             state.ActivePlayer.Should().Be(2);
         }
     }
@@ -125,92 +165,111 @@ public class TurnTimerTests
     [Trait("対象", "新規ゲームのタイマー初期化")]
     public class CreateNewGame
     {
-        [Fact(DisplayName = "新規ゲーム作成時にターン開始時刻が設定され両者のタイムバンクが初期値になる")]
+        [Fact(DisplayName = "新規ゲーム作成時にターン開始時刻が作成時点になり両者のタイムバンクが初期値になる")]
         public void SetsTurnStartedAt()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
-            var deck = TestFactory.MakeDeck("TST-0001");
+            var deck = TestFactory.MakeDeck(cc, "TST-0001");
+            var clock = new FakeClock();
 
-            var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc);
+            var (_, state) = GameInitializer.CreateNewGame("g1", deck, deck, 1, cc, clock);
 
-            state.TurnStartedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+            state.TurnStartedAt.Should().Be(clock.UtcNow);
             state.Player1TimeBank.Should().Be(BattleConstants.InitialTimeBank);
             state.Player2TimeBank.Should().Be(BattleConstants.InitialTimeBank);
         }
     }
 
-    [Trait("対象", "アクション処理時のタイムアウト")]
+    [Trait("対象", "アクション処理時のタイムバンク消費")]
     public class ProcessAction
     {
+        private readonly TestCardCache _cc = new();
+        private readonly FakeGameRepository _repo = new();
+        private readonly FakeClock _clock = new();
+        private readonly GameEngine _engine;
+
+        public ProcessAction()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
+            _engine = new GameEngine(_repo, _cc, new EffectRegistry(), new InitiativeCatalog([]), _clock);
+        }
+
+        /// <summary>ドローフェーズまで進めたゲームを用意する。</summary>
+        /// <returns>ゲーム ID とゲーム状態。</returns>
+        private async Task<(string GameID, BattleGameState State)> StartGame()
+        {
+            var deck = TestFactory.MakeDeck(_cc, "TST-0001");
+            var gameID = await _engine.CreateNewGame(deck, deck, 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+            var state = await _repo.GetGameState(gameID);
+            return (gameID, state!);
+        }
+
+        /// <summary>手札の先頭のカードを指定スロットにデプロイする。</summary>
+        /// <param name="gameID">対象ゲームの ID。</param>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="zone">配置先のゾーン。</param>
+        /// <param name="index">配置先のスロット番号。</param>
+        /// <returns>アクション結果。</returns>
+        private async Task<ActionResult> DeployFirstHandCard(
+            string gameID, BattleGameState state, string zone, int index)
+        {
+            var instanceId = TestFactory.ReplaceFirstHandCard(state, 1, "TST-0001");
+            var game = await _repo.GetGame(gameID);
+            return await _engine.ProcessAction(game!, 1, ActionType.PlayCard,
+                new PlayCardRequest { CardInstanceID = instanceId, Zone = zone, Index = index });
+        }
+
         [Fact(DisplayName = "タイムバンクを使い切った状態でアクションするとゲームが turn_timeout で終了し相手が勝つ")]
         public async Task TimeBankExpired_ReturnsTimeout()
         {
-            var cc = new TestCardCache();
-            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
-            var repo = new FakeGameRepository();
-            var engine = new GameEngine(repo, cc, new EffectRegistry(), new InitiativeCatalog([]));
-            var deck = TestFactory.MakeDeck("TST-0001");
-
-            var gameID = await engine.CreateNewGame(deck, deck, 1);
-            var game = await repo.GetGame(gameID);
-            await engine.RunAutoAdvance(game!);
-
-            // Simulate time running out: set TurnStartedAt far in the past
-            var state = await repo.GetGameState(gameID);
-            state!.TurnStartedAt = DateTime.UtcNow.AddSeconds(-500);
+            var (gameID, state) = await StartGame();
             state.Player1TimeBank = 480;
+            _clock.Advance(500);
 
-            // Player tries to play a card, but time has expired
-            var cardToPlay = state.Player1Hand.First();
-            var req = new PlayCardRequest
-            {
-                CardInstanceID = cardToPlay.InstanceID,
-                Zone = Zones.Frontend,
-                Index = 0,
-            };
-
-            game = await repo.GetGame(gameID);
-            var result = await engine.ProcessAction(game!, 1, ActionType.PlayCard, req);
+            var result = await DeployFirstHandCard(gameID, state, Zones.Frontend, 0);
 
             result.GameOver.Should().NotBeNull();
             result.GameOver!.Reason.Should().Be("turn_timeout");
-            result.GameOver.WinnerNum.Should().Be(2, "opponent wins on timeout");
+            result.GameOver.WinnerNum.Should().Be(2);
 
-            game = await repo.GetGame(gameID);
+            var game = await _repo.GetGame(gameID);
             game!.Status.Should().Be(GameStatus.Finished);
         }
 
-        [Fact(DisplayName = "タイムバンクに余裕がある状態でアクションするとゲームは終了せずおよそ 10 秒差し引かれる")]
+        [Fact(DisplayName = "タイムバンクに余裕がある状態で 10 秒後にアクションするとゲームは終了せず 10 秒差し引かれる")]
         public async Task SufficientTimeBank_Succeeds()
         {
-            var cc = new TestCardCache();
-            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", deployTurns: 0));
-            var repo = new FakeGameRepository();
-            var engine = new GameEngine(repo, cc, new EffectRegistry(), new InitiativeCatalog([]));
-            var deck = TestFactory.MakeDeck("TST-0001");
+            var (gameID, state) = await StartGame();
+            state.Player1TimeBank = 480;
+            _clock.Advance(10);
 
-            var gameID = await engine.CreateNewGame(deck, deck, 1);
-            var game = await repo.GetGame(gameID);
-            await engine.RunAutoAdvance(game!);
+            var result = await DeployFirstHandCard(gameID, state, Zones.Frontend, 0);
 
-            // Set TurnStartedAt 10 seconds ago (well within TimeBank)
-            var state = await repo.GetGameState(gameID);
-            state!.TurnStartedAt = DateTime.UtcNow.AddSeconds(-10);
+            result.GameOver.Should().BeNull();
+            state.Player1TimeBank.Should().Be(470);
+        }
 
-            var cardToPlay = state.Player1Hand.First();
-            var req = new PlayCardRequest
+        [Fact(DisplayName = "0.6 秒間隔でアクションを 5 回続けると、タイムバンクから合計 3 秒差し引かれる")]
+        public async Task SubSecondIntervals_AccumulateDeduction()
+        {
+            var (gameID, state) = await StartGame();
+            state.Player1TimeBank = 480;
+            (string Zone, int Index)[] slots =
+            [
+                (Zones.Frontend, 0), (Zones.Frontend, 1), (Zones.Frontend, 2),
+                (Zones.Backend, 0), (Zones.Backend, 1),
+            ];
+
+            foreach (var (zone, index) in slots)
             {
-                CardInstanceID = cardToPlay.InstanceID,
-                Zone = Zones.Frontend,
-                Index = 0,
-            };
+                _clock.Advance(0.6);
+                await DeployFirstHandCard(gameID, state, zone, index);
+            }
 
-            game = await repo.GetGame(gameID);
-            var result = await engine.ProcessAction(game!, 1, ActionType.PlayCard, req);
-
-            result.GameOver.Should().BeNull("game should not be over");
-            state.Player1TimeBank.Should().BeInRange(469, 471, "~10 seconds deducted");
+            state.Player1TimeBank.Should().Be(477);
         }
     }
 

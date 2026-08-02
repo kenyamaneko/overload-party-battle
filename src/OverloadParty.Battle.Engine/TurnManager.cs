@@ -53,11 +53,12 @@ public static class TurnManager
     /// Switch active player and start the next turn at Draw phase.
     /// </summary>
     /// <param name="state">対象のゲーム状態。</param>
-    public static void SwitchActivePlayer(BattleGameState state)
+    /// <param name="clock">現在時刻の供給元。</param>
+    public static void SwitchActivePlayer(BattleGameState state, IClock clock)
     {
         state.ActivePlayer = state.OpponentOf(state.ActivePlayer);
         state.CurrentTurn++;
         state.CurrentPhase = Phase.Draw;
-        state.TurnStartedAt = DateTime.UtcNow;
+        state.TurnStartedAt = clock.UtcNow;
     }
 }

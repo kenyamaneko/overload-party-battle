@@ -94,7 +94,7 @@ public class TurnManagerExtendedTests
         {
             var state = TestFactory.MakeGameState(turn: 5, activePlayer: 1);
 
-            TurnManager.SwitchActivePlayer(state);
+            TurnManager.SwitchActivePlayer(state, new FakeClock());
 
             state.CurrentTurn.Should().Be(6);
         }
@@ -104,7 +104,7 @@ public class TurnManagerExtendedTests
         {
             var state = TestFactory.MakeGameState(turn: 5, phase: Phase.End, activePlayer: 1);
 
-            TurnManager.SwitchActivePlayer(state);
+            TurnManager.SwitchActivePlayer(state, new FakeClock());
 
             state.CurrentPhase.Should().Be(Phase.Draw);
         }

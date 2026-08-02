@@ -4,9 +4,28 @@ routine_id: IN-0001
 special_id: IN-0002
 display_name: 裏向きリソースのみのデッキ
 
+# デプロイターンが 1 以上の Compute だけで 30 枚を組む (同名 3 枚まで)。
 deck:
   - card_id: SH-0001
-    copies: 30
+    copies: 3
+  - card_id: SH-0003
+    copies: 3
+  - card_id: SH-0004
+    copies: 3
+  - card_id: NT-0030
+    copies: 3
+  - card_id: NT-0032
+    copies: 3
+  - card_id: TK-0001
+    copies: 3
+  - card_id: TK-0002
+    copies: 3
+  - card_id: TK-0004
+    copies: 3
+  - card_id: SL-0001
+    copies: 3
+  - card_id: SL-0002
+    copies: 3
 
 budget:
   low_threshold: 1500

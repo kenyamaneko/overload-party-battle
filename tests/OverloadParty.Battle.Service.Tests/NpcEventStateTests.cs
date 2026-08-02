@@ -16,6 +16,7 @@ public class NpcEventStateTests
     {
         protected readonly FakeGameRepository _repo = new();
         protected readonly GameService _svc;
+        private readonly ICardCache _cc;
 
         /// <summary>Uses the production NPC AI config directory.</summary>
         protected Base() : this(npcDataDirOverride: null)
@@ -26,7 +27,9 @@ public class NpcEventStateTests
         protected Base(string? npcDataDirOverride)
         {
             var (effects, cc) = TestEffectSetup.Get();
-            var engine = new GameEngine(_repo, cc, effects, new InitiativeCatalog(TestFactory.StandardInitiatives()));
+            _cc = cc;
+            var engine = new GameEngine(
+                _repo, cc, effects, new InitiativeCatalog(TestFactory.StandardInitiatives()), new FakeClock());
 
             var npcDataDir = npcDataDirOverride
                 ?? FindNpcDataDir()
@@ -45,7 +48,7 @@ public class NpcEventStateTests
         {
             for (int i = 0; i < 20; i++)
             {
-                var cards = MakePlayerCards("SH-0001");
+                var cards = MakePlayerCards();
                 var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", "SHE-easy", NpcPlayerSummaries);
                 var state = await _repo.GetGameState(game.GameID);
                 if (state!.ActivePlayer == 1)
@@ -87,7 +90,7 @@ public class NpcEventStateTests
         /// <param name="npcModel">対戦相手となる NPC モデル ID。</param>
         protected async Task<GameActionResult> RunNpcTurn(string npcModel = "SHE-easy")
         {
-            var cards = MakePlayerCards("SH-0001");
+            var cards = MakePlayerCards();
             var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", npcModel, NpcPlayerSummaries);
 
             var state = await _repo.GetGameState(game.GameID);
@@ -113,11 +116,22 @@ public class NpcEventStateTests
             };
         }
 
-        protected static List<DeckSnapshotCard> MakePlayerCards(string cardId)
+        /// <summary>
+        /// デッキ規約 (30 枚ちょうど・同名 3 枚まで) を満たすプレイヤーデッキを組む。
+        /// 手札の任意のカードを対象指定なしでデプロイできるよう、コンピュート系リソースだけで構成する。
+        /// </summary>
+        /// <returns>30 枚分のデッキカード。</returns>
+        protected List<DeckSnapshotCard> MakePlayerCards()
         {
-            return Enumerable.Range(0, InitialValues.DeckSize)
-                .Select(_ => new DeckSnapshotCard { CardId = cardId })
-                .ToList();
+            var cardIds = _cc.All().Values
+                .Where(c => c.IsComputeType)
+                .Select(c => c.CardId)
+                .OrderBy(id => id)
+                .Take(InitialValues.DeckSize / BattleConstants.MaxCopiesPerCardName);
+
+            return [.. cardIds.SelectMany(id => Enumerable
+                .Range(0, BattleConstants.MaxCopiesPerCardName)
+                .Select(_ => new DeckSnapshotCard { CardId = id }))];
         }
 
         protected static readonly List<PlayerSummarySnapshot> NpcPlayerSummaries =

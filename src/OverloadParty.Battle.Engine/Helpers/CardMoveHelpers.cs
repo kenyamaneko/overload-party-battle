@@ -114,26 +114,40 @@ public static class CardMoveHelpers
     /// </summary>
     /// <param name="state">現在のゲーム状態。</param>
     /// <param name="playerNum">対象プレイヤー番号 (1 または 2)。</param>
-    /// <param name="cardInstanceIDs">捨てるカードのインスタンス ID 一覧。</param>
+    /// <param name="cardInstanceIDs">捨てるカードのインスタンス ID 一覧。重複不可。</param>
     /// <returns>実際に捨てた枚数。</returns>
     public static int DiscardCards(BattleGameState state, long playerNum, List<string> cardInstanceIDs)
     {
+        var duplicates = cardInstanceIDs
+            .GroupBy(id => id)
+            .Where(g => g.Count() > 1)
+            .Select(g => g.Key)
+            .ToList();
+
+        if (duplicates.Count > 0)
+        {
+            throw new GameRuleException($"duplicate cards specified: {string.Join(", ", duplicates)}");
+        }
+
         var hand = state.GetHand(playerNum);
-        var discardSet = new HashSet<string>(cardInstanceIDs);
+        var handIDs = hand.Select(c => c.InstanceID).ToHashSet();
+        var notInHand = cardInstanceIDs.Where(id => !handIDs.Contains(id)).ToList();
+
+        if (notInHand.Count > 0)
+        {
+            throw new GameRuleException($"some cards not found in hand: {string.Join(", ", notInHand)}");
+        }
+
+        var discardSet = cardInstanceIDs.ToHashSet();
         var discardedCards = new List<UndeployedCard>();
 
         for (int i = hand.Count - 1; i >= 0; i--)
         {
-            if (discardSet.Remove(hand[i].InstanceID))
+            if (discardSet.Contains(hand[i].InstanceID))
             {
                 discardedCards.Add(hand[i]);
                 hand.RemoveAt(i);
             }
-        }
-
-        if (discardSet.Count > 0)
-        {
-            throw new GameRuleException($"some cards not found in hand: {string.Join(", ", discardSet)}");
         }
 
         foreach (var card in discardedCards)

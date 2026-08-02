@@ -11,6 +11,7 @@ public static class BattleConstants
     public const int HandLimit = 6;
     public const int InitialTimeBank = 480;
     public const int SlotsPerZone = 3;
+    public const int MaxCopiesPerCardName = 3;
 
     public const int MaxTurns = 30;
     public const int LaunchFailureTurn = 3;

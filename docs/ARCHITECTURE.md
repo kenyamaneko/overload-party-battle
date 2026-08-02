@@ -35,7 +35,7 @@ draw → main → battle → end → (ActivePlayer切替) → draw ...
 | 4 | 一時効果の終了 | `ExpireTemporaryEffects`：`duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
 | 5 | ターン単位フラグのリセット | `ResetPerTurnFlags`：`HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |
 | 6 | 手札上限チェック | 手札が **6枚** を超過していなければ手順 7 を飛ばして手順 8 へ進む。超過していれば `EndPhaseProcessor` が `phase_end`（`needsDiscard: true`）イベントを返し、手順 8 のターン交代を保留する |
-| 7 | プレイヤーが破棄カードを選択（手順 6 で超過時のみ） | `TurnControlsMessage.DiscardRequired`（手札枚数 − 6、`AvailableActions.ComputeTurnControls`）を見たクライアントが `discard_hand` で破棄するカードを送信。`DiscardProcessor` が枚数を検証し破棄を実行する。個別のタイムアウトは持たず、ターン全体のタイムバンクが時間の上限として働く |
+| 7 | プレイヤーが破棄カードを選択（手順 6 で超過時のみ） | `TurnControlsMessage.DiscardRequired`（手札枚数 − 6、`AvailableActions.ComputeTurnControls`）を見たクライアントが `discard_hand` で破棄するカードを送信。`DiscardProcessor` が枚数を、`CardMoveHelpers.DiscardCards` が指定カードの重複と手札への実在を検証し、いずれかに反すれば手札もトラッシュも変えずに拒否する。個別のタイムアウトは持たず、ターン全体のタイムバンクが時間の上限として働く |
 | 8 | ターン切り替え | 手順 6 で超過が無ければ `EndPhaseProcessor`、超過があれば手順 7 の `DiscardProcessor` が、`WinConditionChecker.CheckLaunchFailure` → 問題なければ `TurnManager.SwitchActivePlayer` → 次プレイヤーの `DrawPhaseProcessor.Process` を起動 |
 
 > Note: 旧バージョンのドキュメントには「Elastic 値のリセット」手順が存在したが、実装上 `ElasticBonus` は毎ターン累積する設計（逓減は `StatCalculator.CalculateEffectiveElasticBonus` の対数スケーリングで表現）のため、リセットステップは存在しない。

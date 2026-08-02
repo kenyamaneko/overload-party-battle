@@ -16,24 +16,28 @@ public static class GameInitializer
     /// <param name="deck2">プレイヤー 2 のデッキスナップショット。</param>
     /// <param name="firstPlayer">先攻プレイヤー番号 (1 または 2)。</param>
     /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="clock">現在時刻の供給元。</param>
     /// <returns>初期化された Game とゲーム状態。</returns>
     public static (Game Game, BattleGameState State) CreateNewGame(
         string gameID,
         DeckSnapshot deck1,
         DeckSnapshot deck2,
         long firstPlayer,
-        ICardCache cc)
+        ICardCache cc,
+        IClock clock)
     {
         ValidateDeck(1, deck1, cc);
         ValidateDeck(2, deck2, cc);
+
+        var now = clock.UtcNow;
 
         var game = new Game
         {
             GameID = gameID,
             Status = GameStatus.Playing,
             FirstPlayer = (int)firstPlayer,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow,
+            CreatedAt = now,
+            UpdatedAt = now,
         };
 
         var state = new BattleGameState
@@ -53,9 +57,9 @@ public static class GameInitializer
             Player2TimeBank = BattleConstants.InitialTimeBank,
             Player2RoutineId = deck2.RoutineId,
             Player2SpecialId = deck2.SpecialId,
-            TurnStartedAt = DateTime.UtcNow,
+            TurnStartedAt = now,
             NextInstanceSeq = 1,
-            UpdatedAt = DateTime.UtcNow,
+            UpdatedAt = now,
         };
 
         // 両プレイヤーにシャッフルして配る
@@ -79,6 +83,24 @@ public static class GameInitializer
         {
             throw new GameRuleException(
                 $"deck for player {playerNum} references unknown card_id(s): {string.Join(", ", missing)}");
+        }
+
+        if (deck.Cards.Count != InitialValues.DeckSize)
+        {
+            throw new GameRuleException(
+                $"deck for player {playerNum} has {deck.Cards.Count} cards, must be exactly {InitialValues.DeckSize}");
+        }
+
+        var overCopies = deck.Cards
+            .GroupBy(c => c.CardId)
+            .Where(g => g.Count() > BattleConstants.MaxCopiesPerCardName)
+            .Select(g => $"{g.Key} x{g.Count()}")
+            .ToList();
+
+        if (overCopies.Count > 0)
+        {
+            throw new GameRuleException(
+                $"deck for player {playerNum} exceeds the {BattleConstants.MaxCopiesPerCardName} copy limit: {string.Join(", ", overCopies)}");
         }
     }
 
