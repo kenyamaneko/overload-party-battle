@@ -540,12 +540,14 @@ public static class EffectYamlLoader
                 string? zone = element.GetStringOrNull("zone");
                 string? faction = element.GetStringOrNull("faction");
                 var cardTypes = ParseCardTypes(element);
+                var subtypes = ParseSubtypes(element);
 
                 return new ByChoiceSelector
                 {
                     Zone = zone,
                     Faction = faction,
                     CardType = cardTypes is { Count: 1 } ? cardTypes[0] : null,
+                    Subtypes = subtypes,
                     Owner = owner ?? PlayerRefs.Myself,
                 };
             }
