@@ -349,13 +349,16 @@ public class CustomEffectRegistry
                 throw new GameRuleException($"Card type {card.CardType} not allowed");
             }
 
+            SlotRequestHelpers.DeployFromHand(octx, choiceCardId);
+
+            // 移設先のスロットがなく移設が成立しなかったので、割引も発動元の除去も行わず不発で終える。
+            if (octx.Result.HasGuardFailed) { return; }
+
             if (discount > 0)
             {
                 long budget = octx.State.GetBudget(octx.PlayerNum);
                 octx.State.SetBudget(octx.PlayerNum, budget + discount);
             }
-
-            SlotRequestHelpers.DeployFromHand(octx, choiceCardId);
 
             // 効果のコストとして発動元をトラッシュへ送る。破壊ではないため SLA ペナルティは伴わない。
             if (octx.SupSource is not null)

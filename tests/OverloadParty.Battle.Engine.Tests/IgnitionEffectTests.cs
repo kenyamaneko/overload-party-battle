@@ -208,7 +208,7 @@ public class IgnitionEffectTests
         {
             state.CurrentPhase = Phase.Battle;
             state.Player2Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = "TST-0001" });
-            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, cc, effects, new FakeClock());
         }
 
         [Fact(DisplayName = "エラスティックリソースを置いたままターンを終えると、維持コスト 39 がバジェットから引かれる")]
@@ -379,6 +379,44 @@ public class IgnitionEffectTests
             UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
                 Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }), cc, effects);
 
+            state.GetBudget(1).Should().Be(5000);
+        }
+
+        [Fact(DisplayName = "移設先の空きスロットがないとき、移設は不発になり発動元リソース・手札・バジェットのいずれも変わらない")]
+        public void Ignition_FromResource_NoEmptySlot_LeavesEverythingUnchanged()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0004", name: "ShiftableCompute"));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", name: "Occupier"));
+            var meta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(
+                """{"faction":"SHE","deploy_discount":300}""");
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0004", TriggerType.Ignition,
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.CloudShift, meta)!));
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 5000);
+            state.Player1Hand = [new UndeployedCard { InstanceID = "h_1", CardID = "TST-0001" }];
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0004", instanceId: "src", faceUp: true);
+            for (int i = 1; i < BattleConstants.SlotsPerZone; i++)
+            {
+                state.Player1Field.Frontend[i] = TestFactory.MakeResource(
+                    cardId: "TST-0005", instanceId: $"fe_{i}", faceUp: true);
+            }
+            for (int i = 0; i < BattleConstants.SlotsPerZone; i++)
+            {
+                state.Player1Field.Backend[i] = TestFactory.MakeResource(
+                    cardId: "TST-0005", instanceId: $"be_{i}", faceUp: true);
+            }
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = "TST-0001" }), cc, effects);
+
+            state.PendingSlotSelects.Should().BeEmpty();
+            state.Player1Field.Frontend[0]!.InstanceID.Should().Be("src");
+            state.Player1Hand.Should().ContainSingle(c => c.CardID == "TST-0001");
+            state.Player1Trash.Should().BeEmpty();
             state.GetBudget(1).Should().Be(5000);
         }
     }
