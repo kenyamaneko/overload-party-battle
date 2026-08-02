@@ -22,12 +22,9 @@ public class ServerTestFixture : IAsyncLifetime
     {
         await _container.StartAsync();
 
-        var csb = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
-        {
-            SearchPath = "battle",
-        };
+        var connectionString = _container.GetConnectionString();
 
-        await using (var dataSource = NpgsqlDataSource.Create(csb.ConnectionString))
+        await using (var dataSource = NpgsqlDataSource.Create(connectionString))
         {
             var schemaPath = Path.Combine(AppContext.BaseDirectory, "db", "schema.sql");
             var schemaSql = await File.ReadAllTextAsync(schemaPath);
@@ -36,7 +33,7 @@ public class ServerTestFixture : IAsyncLifetime
             await cmd.ExecuteNonQueryAsync();
         }
 
-        Environment.SetEnvironmentVariable("DATABASE_CONN", csb.ConnectionString);
+        Environment.SetEnvironmentVariable("DATABASE_CONN", connectionString);
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         Environment.SetEnvironmentVariable("CARDS_JSON_PATH", FindCardsJson());
         Environment.SetEnvironmentVariable("INITIATIVES_JSON_PATH",

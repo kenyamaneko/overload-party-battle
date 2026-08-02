@@ -24,7 +24,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
 
         // games テーブル（セッション情報のみ）
         await using (var cmd = new NpgsqlCommand(@"
-            INSERT INTO games (
+            INSERT INTO battle.games (
                 game_id, status, first_player,
                 winning_player_num, win_reason,
                 engine_version, card_data_version,
@@ -74,7 +74,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             .ToList();
 
         await using var cmd = new NpgsqlCommand(@"
-            INSERT INTO game_decks (game_id, player_num, deck_snapshot)
+            INSERT INTO battle.game_decks (game_id, player_num, deck_snapshot)
             VALUES ($1, $2, $3)", conn, tx);
         cmd.Parameters.AddWithValue(gameID);
         cmd.Parameters.AddWithValue((short)playerNum);
@@ -88,7 +88,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         CancellationToken ct)
     {
         await using var cmd = new NpgsqlCommand(@"
-            INSERT INTO game_npcs (game_id, player_num, npc_model)
+            INSERT INTO battle.game_npcs (game_id, player_num, npc_model)
             VALUES ($1, $2, $3)", conn, tx);
         cmd.Parameters.AddWithValue(gameID);
         cmd.Parameters.AddWithValue((short)playerNum);
@@ -109,9 +109,9 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                    g.created_at, g.updated_at, g.finished_at,
                    g.engine_version, g.card_data_version,
                    n1.npc_model, n2.npc_model
-            FROM games g
-            LEFT JOIN game_npcs n1 ON g.game_id = n1.game_id AND n1.player_num = 1
-            LEFT JOIN game_npcs n2 ON g.game_id = n2.game_id AND n2.player_num = 2
+            FROM battle.games g
+            LEFT JOIN battle.game_npcs n1 ON g.game_id = n1.game_id AND n1.player_num = 1
+            LEFT JOIN battle.game_npcs n2 ON g.game_id = n2.game_id AND n2.player_num = 2
             WHERE g.game_id = $1", conn);
         cmd.Parameters.AddWithValue(gameID);
 
@@ -170,7 +170,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         state.UpdatedAt = DateTime.UtcNow;
 
         await using (var cmd = new NpgsqlCommand(@"
-            UPDATE game_states SET
+            UPDATE battle.game_states SET
                 version = $1, current_turn = $2, current_phase = $3, active_player = $4,
                 player1_budget = $5, player1_insight_pool = $6, player1_field = $7, player1_hand = $8,
                 player1_repository = $9, player1_trash = $10, player1_time_bank = $11,
@@ -196,11 +196,11 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         if (pendingAction is not null)
         {
             await using var cmd = new NpgsqlCommand(@"
-                INSERT INTO game_actions (
+                INSERT INTO battle.game_actions (
                     game_id, seq, player_num, action_type, action_data, created_at
                 ) VALUES (
                     $1,
-                    COALESCE((SELECT MAX(seq) FROM game_actions WHERE game_id = $1), 0) + 1,
+                    COALESCE((SELECT MAX(seq) FROM battle.game_actions WHERE game_id = $1), 0) + 1,
                     $2, $3, $4, $5
                 )", conn, tx);
             cmd.Parameters.AddWithValue(gameID);
@@ -220,11 +220,11 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     {
         evt.CreatedAt = DateTime.UtcNow;
         await using var cmd = new NpgsqlCommand(@"
-            INSERT INTO game_events (
+            INSERT INTO battle.game_events (
                 game_id, sequence_number, event_type, player_num, event_data, created_at
             ) VALUES (
                 $1,
-                COALESCE((SELECT MAX(sequence_number) FROM game_events WHERE game_id = $1), 0) + 1,
+                COALESCE((SELECT MAX(sequence_number) FROM battle.game_events WHERE game_id = $1), 0) + 1,
                 $2, $3, $4, $5
             )
             RETURNING sequence_number", conn, tx);
@@ -247,8 +247,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         var now = DateTime.UtcNow;
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
-            UPDATE games SET status = $1, winning_player_num = $2, win_reason = $3,
-                             finished_at = $4, updated_at = $5
+            UPDATE battle.games SET status = $1, winning_player_num = $2, win_reason = $3,
+                                    finished_at = $4, updated_at = $5
             WHERE game_id = $6", conn);
         cmd.Parameters.AddWithValue(GameStatus.Finished.ToWireString());
         cmd.Parameters.AddWithValue((short)winnerNum);
@@ -268,7 +268,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
             SELECT game_id, sequence_number, event_type, player_num, event_data, created_at
-            FROM game_events
+            FROM battle.game_events
             WHERE game_id = $1
             ORDER BY sequence_number", conn);
         cmd.Parameters.AddWithValue(gameID);
@@ -300,7 +300,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
     {
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(
-            "SELECT initial_state FROM game_states WHERE game_id = $1", conn);
+            "SELECT initial_state FROM battle.game_states WHERE game_id = $1", conn);
         cmd.Parameters.AddWithValue(gameID);
 
         await using var reader = await cmd.ExecuteReaderAsync(ct);
@@ -326,7 +326,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                current_action_timer, next_instance_seq,
                turn_started_at, next_deploy_order_seq,
                pending_slot_selects, pending_effect_choice, updated_at
-        FROM game_states WHERE game_id = $1";
+        FROM battle.game_states WHERE game_id = $1";
 
     // ─── Helpers ─────────────────────────────────────────────────
 
@@ -403,7 +403,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         var stateJson = JsonSerializer.Serialize(state, DbJsonOptions.Default);
 
         await using var cmd = new NpgsqlCommand(@"
-            INSERT INTO game_states (
+            INSERT INTO battle.game_states (
                 game_id, initial_state, version, current_turn, current_phase, active_player,
                 player1_budget, player1_insight_pool, player1_field, player1_hand,
                 player1_repository, player1_trash, player1_time_bank,
@@ -485,7 +485,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         foreach (var s in summaries)
         {
             await using var cmd = new NpgsqlCommand(@"
-                INSERT INTO player_summary (game_id, player_num, name, level)
+                INSERT INTO battle.player_summary (game_id, player_num, name, level)
                 VALUES ($1, $2, $3, $4)", conn, tx);
             cmd.Parameters.AddWithValue(gameID);
             cmd.Parameters.AddWithValue((short)s.PlayerNum);
@@ -505,7 +505,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         await using var conn = await ds.OpenConnectionAsync(ct);
         await using var cmd = new NpgsqlCommand(@"
             SELECT player_num, name, level
-            FROM player_summary
+            FROM battle.player_summary
             WHERE game_id = $1
             ORDER BY player_num", conn);
         cmd.Parameters.AddWithValue(gameID);
