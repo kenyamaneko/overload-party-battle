@@ -119,6 +119,9 @@ public static class ScaleUpProcessor
                 Source = source,
                 CardCache = cc,
                 Effects = effects,
+                Trigger = TriggerType.OnScaleUp,
+                // 効果はスケールアップしたリソース自身とそのアタッチメントの双方が持つので、収集時の CardId で同定する。
+                EffectCardId = cardId,
             });
             if (!result.HasGuardFailed) { events.AddRange(result.Events); }
         }

@@ -134,6 +134,9 @@ public static class AttackProcessor
                 Target = defender,
                 CardCache = cc,
                 Effects = effects,
+                Trigger = TriggerType.OnAttack,
+                EffectCardId = attackerCard.CardId,
+                EffectInstanceId = attacker.InstanceID,
             };
             var result = handler(ctx);
             events.AddRange(result.Events);
@@ -265,6 +268,8 @@ public static class AttackProcessor
                 EventDamage = damage,
                 CardCache = cc,
                 Effects = effects,
+                Trigger = TriggerType.OnAttackDeclared,
+                EffectCardId = candidate.CardId,
             });
     }
 
@@ -288,6 +293,9 @@ public static class AttackProcessor
                 Target = defender,
                 CardCache = cc,
                 Effects = effects,
+                Trigger = TriggerType.OnHit,
+                EffectCardId = defender.CardID,
+                EffectInstanceId = defender.InstanceID,
             });
             if (!result.HasGuardFailed) { allEvents.AddRange(result.Events); }
         }
@@ -308,6 +316,10 @@ public static class AttackProcessor
                     Target = defender,
                     CardCache = cc,
                     Effects = effects,
+                    Trigger = TriggerType.OnHit,
+                    // 効果を持つのは装備先リソースではなくアタッチメント自身なので、その CardID で同定する。
+                    EffectCardId = att.CardID,
+                    EffectInstanceId = att.InstanceID,
                 });
                 if (!result.HasGuardFailed) { allEvents.AddRange(result.Events); }
             }

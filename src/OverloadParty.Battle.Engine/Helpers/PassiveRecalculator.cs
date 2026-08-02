@@ -117,6 +117,9 @@ public static class PassiveRecalculator
                     SupSource = owner.SupSource,
                     CardCache = cc,
                     Effects = effects,
+                    Trigger = TriggerType.OnFieldChange,
+                    EffectCardId = owner.CardId,
+                    EffectInstanceId = owner.OwnInstanceId,
                 };
 
                 if (!def.Guards.All(guard => guard.Check(ctx))) { continue; }

@@ -41,6 +41,8 @@ public class EffectRegistrationTests
                 PlayerNum = playerNum,
                 CardCache = _cardCache,
                 Effects = new EffectRegistry(),
+                Trigger = trigger,
+                EffectCardId = cardId,
             };
 
             return handler(ctx);
@@ -276,18 +278,18 @@ public class EffectRegistrationTests
             state.Player1Budget.Should().Be(1400, "NT-0010 grants +400 budget");
         }
 
-        [Fact(DisplayName = "NT-0026 はバジェットが 1000 を超えると発動条件を満たさず、バジェットが変わらない")]
+        [Fact(DisplayName = "NT-0026 はバジェットが 1000 を超えると発動条件を満たさず拒否され、バジェットが変わらない")]
         public void NT0026_Ignite_FailsIfBudgetOver1000()
         {
             var state = TestFactory.MakeGameState(p1Budget: 2000);
 
-            var result = ExecuteEffect(state, "NT-0026", TriggerType.Ignition, playerNum: 1);
+            var act = () => ExecuteEffect(state, "NT-0026", TriggerType.Ignition, playerNum: 1);
 
-            result.HasGuardFailed.Should().BeTrue("NT-0026 requires budget <= 1000");
+            act.Should().Throw<GameRuleException>().WithMessage("*guard failed*");
             state.Player1Budget.Should().Be(2000, "budget should not change when guard fails");
         }
 
-        [Fact(DisplayName = "SH-0019 はフィールドの SHE カードが 3 体未満だと発動条件を満たさず、バジェットが変わらない")]
+        [Fact(DisplayName = "SH-0019 はフィールドの SHE カードが 3 体未満だと発動条件を満たさず拒否され、バジェットが変わらない")]
         public void SH0019_Ignite_FailsIfFewerThan3SHE()
         {
             var state = TestFactory.MakeGameState(p1Budget: 1000);
@@ -295,9 +297,9 @@ public class EffectRegistrationTests
             state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "SH-0001", instanceId: "r1");
             state.Player1Field.Frontend[1] = TestFactory.MakeResource(cardId: "SH-0002", instanceId: "r2");
 
-            var result = ExecuteEffect(state, "SH-0019", TriggerType.Ignition, playerNum: 1);
+            var act = () => ExecuteEffect(state, "SH-0019", TriggerType.Ignition, playerNum: 1);
 
-            result.HasGuardFailed.Should().BeTrue("SH-0019 requires 3+ SHE cards on field");
+            act.Should().Throw<GameRuleException>().WithMessage("*guard failed*");
             state.Player1Budget.Should().Be(1000, "budget should not change when guard fails");
         }
     }
@@ -323,6 +325,8 @@ public class EffectRegistrationTests
                 CardCache = _cardCache,
                 ChoiceData = new Dictionary<string, object> { ["option"] = "memcached" },
                 Effects = _registry,
+                Trigger = TriggerType.OnDeploy,
+                EffectCardId = "SH-0010",
             };
             handler(ctx);
 
@@ -401,6 +405,8 @@ public class EffectRegistrationTests
                 PlayerNum = 1,
                 CardCache = _cardCache,
                 Effects = new EffectRegistry(),
+                Trigger = TriggerType.OnDeploy,
+                EffectCardId = "TK-0025",
             };
             handler(ctx);
 
@@ -475,6 +481,8 @@ public class EffectRegistrationTests
                 PlayerNum = 1,
                 CardCache = _cardCache,
                 Effects = new EffectRegistry(),
+                Trigger = TriggerType.OnIncident,
+                EffectCardId = "TST-0001",
             });
 
             op.Execute(opCtx);

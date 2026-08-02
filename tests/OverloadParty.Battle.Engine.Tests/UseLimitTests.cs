@@ -31,6 +31,7 @@ public class UseLimitTests
                 CardCache = cc,
                 Effects = new EffectRegistry(),
                 Trigger = trigger,
+                EffectCardId = "TST-0001",
             };
             return new OpContext(ctx);
         }
