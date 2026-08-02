@@ -44,9 +44,18 @@ public static class PriorityResolver
     /// <summary>
     /// Evaluates a card's effect and returns (priority, shouldUse, choiceData).
     /// </summary>
+    /// <param name="cardId">評価する効果のカード ID。</param>
+    /// <param name="trigger">トリガー種別。</param>
+    /// <param name="ctx">現在の判断コンテキスト。</param>
+    /// <param name="config">適用する AI 設定。</param>
+    /// <param name="effects">効果レジストリ。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <param name="validTargets">エンジンが提示した有効な対象。提示が無い効果では null で、その場合は絞り込まない。</param>
+    /// <returns>優先度・使用するか・選択データ。</returns>
     public static (int Priority, bool Use, Dictionary<string, object>? ChoiceData) Evaluate(
         string cardId, TriggerType trigger, DecisionContext ctx,
-        AiConfig config, IEffectRegistry effects, ICardCache cc)
+        AiConfig config, IEffectRegistry effects, ICardCache cc,
+        IReadOnlyList<string>? validTargets)
     {
         var info = effects.GetEffectInfo(cardId, trigger);
         if (info is null)
@@ -74,7 +83,7 @@ public static class PriorityResolver
         Dictionary<string, object>? choiceData = null;
         if (info.TargetType == EffectTargetType.Choice)
         {
-            var target = SelectTarget(info, ctx, config.TargetSelection, cc);
+            var target = SelectTarget(info, ctx, config.TargetSelection, cc, validTargets);
             if (target is null)
             {
                 return (0, false, null);
@@ -234,26 +243,34 @@ public static class PriorityResolver
     /// <summary>
     /// Target selection based on config TargetSpec definitions.
     /// </summary>
-    public static string? SelectTarget(EffectInfo info, DecisionContext ctx, TargetSelectionConfig targets, ICardCache cc)
+    /// <param name="info">対象効果の分類結果。</param>
+    /// <param name="ctx">現在の判断コンテキスト。</param>
+    /// <param name="targets">カテゴリごとの対象選択設定。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <param name="validTargets">エンジンが提示した有効な対象。提示が無い効果では null で、その場合は絞り込まない。</param>
+    /// <returns>選んだ対象の InstanceID。選べる対象が無ければ null。</returns>
+    public static string? SelectTarget(
+        EffectInfo info, DecisionContext ctx, TargetSelectionConfig targets, ICardCache cc,
+        IReadOnlyList<string>? validTargets)
     {
         if (info.HasCategory(EffectCategory.SingleDamage))
         {
-            return ResolveCategoryTarget(EffectCategory.SingleDamage, targets.SingleDamage, ctx, cc);
+            return ResolveCategoryTarget(EffectCategory.SingleDamage, targets.SingleDamage, ctx, cc, validTargets);
         }
 
         if (info.HasCategory(EffectCategory.Debuff))
         {
-            return ResolveCategoryTarget(EffectCategory.Debuff, targets.Debuff, ctx, cc);
+            return ResolveCategoryTarget(EffectCategory.Debuff, targets.Debuff, ctx, cc, validTargets);
         }
 
         if (info.HasCategory(EffectCategory.Heal))
         {
-            return ResolveCategoryTarget(EffectCategory.Heal, targets.Heal, ctx, cc);
+            return ResolveCategoryTarget(EffectCategory.Heal, targets.Heal, ctx, cc, validTargets);
         }
 
         if (info.HasCategory(EffectCategory.Buff))
         {
-            return ResolveCategoryTarget(EffectCategory.Buff, targets.Buff, ctx, cc);
+            return ResolveCategoryTarget(EffectCategory.Buff, targets.Buff, ctx, cc, validTargets);
         }
 
         if (info.HasCategory(EffectCategory.DestroyPlatform))
@@ -266,13 +283,16 @@ public static class PriorityResolver
     }
 
     private static string? ResolveCategoryTarget(
-        EffectCategory category, TargetSpec? spec, DecisionContext ctx, ICardCache cc)
+        EffectCategory category, TargetSpec? spec, DecisionContext ctx, ICardCache cc,
+        IReadOnlyList<string>? validTargets)
     {
         if (spec is null)
         {
             throw new InvalidOperationException(
                 $"SelectTarget: category {category} has no target spec configured");
         }
-        return TargetSelector.Resolve(spec, ctx.Field, ctx.OppField, cc);
+        return validTargets is null
+            ? TargetSelector.Resolve(spec, ctx.Field, ctx.OppField, cc)
+            : TargetSelector.ResolveFromValid(spec, validTargets, ctx.Field, ctx.OppField, cc);
     }
 }

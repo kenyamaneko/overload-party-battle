@@ -40,6 +40,9 @@ public class AvailableAction
     /// <summary>Remaining monetize capacity for the resource (monetize only).</summary>
     public long RemainingCapacity { get; set; }
 
+    /// <summary>プレイヤーが対象を選ぶことを表す <see cref="EffectTargetType"/> の値。</summary>
+    public const string ChoiceEffectTargetType = "Choice";
+
     /// <summary>The type of target the effect expects (use_ignition only).</summary>
     public string? EffectTargetType { get; set; }
 
@@ -246,7 +249,38 @@ public static class AvailableActions
 
         if (validTargets.Count == 0) { return false; }
 
-        action.EffectTargetType = "Choice";
+        action.EffectTargetType = AvailableAction.ChoiceEffectTargetType;
+        action.ValidTargets = validTargets;
+        return true;
+    }
+
+    /// <summary>
+    /// 盤面のリソースから対象を選ぶ効果について <see cref="AvailableAction.ValidTargets"/> と
+    /// <see cref="AvailableAction.EffectTargetType"/> を埋めます。選ぶ効果なのに絞り込みを満たす
+    /// リソースが 1 件も無いときは false を返す (使っても何も起きないためアクションを提示しない)。
+    /// </summary>
+    private static bool TryPopulateResourceChoice(
+        AvailableAction action, BattleGameState state, string cardId,
+        DeployedResource? source, DeployedSupport? supSource,
+        ICardCache cc, IEffectRegistry effects)
+    {
+        var ops = effects.GetOps(cardId, TriggerType.Ignition);
+        if (ops is null) { return true; }
+
+        var selector = ops
+            .Select(EffectClassifier.GetSelector)
+            .OfType<ByChoiceSelector>()
+            .FirstOrDefault();
+        if (selector is null) { return true; }
+
+        var opCtx = new OpContext(BuildIgnitionContext(state, source, supSource, cc, effects));
+        var validTargets = selector.EnumerateCandidates(opCtx)
+            .Select(r => r.InstanceID)
+            .ToList();
+
+        if (validTargets.Count == 0) { return false; }
+
+        action.EffectTargetType = AvailableAction.ChoiceEffectTargetType;
         action.ValidTargets = validTargets;
         return true;
     }
@@ -411,6 +445,7 @@ public static class AvailableActions
                 CardID = card.CardId,
             };
             if (!TryPopulateTrashChoice(action, state, card.CardId, cc, effects)) { continue; }
+            if (!TryPopulateResourceChoice(action, state, card.CardId, resource, supSource: null, cc, effects)) { continue; }
             yield return action;
         }
 
@@ -432,6 +467,7 @@ public static class AvailableActions
                 CardID = card.CardId,
             };
             if (!TryPopulateTrashChoice(action, state, card.CardId, cc, effects)) { continue; }
+            if (!TryPopulateResourceChoice(action, state, card.CardId, source: null, support, cc, effects)) { continue; }
             yield return action;
         }
     }
@@ -475,8 +511,13 @@ public static class AvailableActions
                 Cost = initiative.InsightCost,
             };
 
-            // 施策効果は EffectSourceId をキーに登録されるため、trash choice も同キーで引く。
+            // 施策効果は EffectSourceId をキーに登録されるため、選択候補も同キーで引く。
             if (!TryPopulateTrashChoice(action, state, initiative.EffectSourceId, cc, effects)) { continue; }
+            if (!TryPopulateResourceChoice(
+                action, state, initiative.EffectSourceId, source: null, supSource: null, cc, effects))
+            {
+                continue;
+            }
 
             yield return action;
         }
@@ -499,10 +540,24 @@ public static class AvailableActions
         var reg = registry.GetRegistration(cardId, TriggerType.Ignition);
         if (reg?.Block?.Guards is not { Length: > 0 } guards) { return true; }
 
-        // Ignition は手番プレイヤーのフィールド上のカードからのみ発動するため、
-        // PlayerNum = ActivePlayer で固定して述語を評価する。
-        // Game メタデータは guard 述語からは参照しないため GameID のみ埋めて他は default のままにする。
-        var ctx = new EffectContext
+        var ctx = BuildIgnitionContext(state, source, supSource, cc, effects);
+
+        return guards.All(g => g.Check(ctx));
+    }
+
+    /// <summary>
+    /// 効果を実行せずに guard 述語やセレクタを評価するためのコンテキストを組み立てます。
+    /// Ignition は手番プレイヤーのフィールド上のカードからのみ発動するため PlayerNum を
+    /// ActivePlayer で固定し、guard 述語とセレクタが参照しない Game メタデータは GameID だけ埋めます。
+    /// </summary>
+    private static EffectContext BuildIgnitionContext(
+        BattleGameState state,
+        DeployedResource? source,
+        DeployedSupport? supSource,
+        ICardCache cc,
+        IEffectRegistry effects)
+    {
+        return new EffectContext
         {
             State = state,
             Game = new Game { GameID = state.GameID },
@@ -514,8 +569,6 @@ public static class AvailableActions
             Trigger = TriggerType.Ignition,
             EffectCardId = cardId,
         };
-
-        return guards.All(g => g.Check(ctx));
     }
 
     /// <summary>

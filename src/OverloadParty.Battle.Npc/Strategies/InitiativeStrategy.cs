@@ -90,7 +90,8 @@ internal sealed class InitiativeStrategy
         Dictionary<string, object>? choiceData = null;
         if (info is not null && info.TargetType == EffectTargetType.Choice)
         {
-            var target = PriorityResolver.SelectTarget(info, ctx, activeConfig.TargetSelection, _cc);
+            var target = PriorityResolver.SelectTarget(
+                info, ctx, activeConfig.TargetSelection, _cc, action.ValidTargets);
             if (target is null)
             {
                 return null;
