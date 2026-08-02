@@ -72,8 +72,14 @@ public static class UseInitiativeProcessor
             ChoiceData = req.ChoiceData,
             Effects = effects,
             Trigger = TriggerType.Ignition,
+            // 施策は盤面に実体を持たないので、選択待ちからの再開に使う同定情報を施策 ID で与える。
+            EffectCardId = initiative.EffectSourceId,
+            EffectInstanceId = initiative.InitiativeId,
         };
         var result = handler(ctx);
+
+        // 選択待ちを捨てると、選択を要する施策がコストだけ払って何も起きずに終わる。
+        state.PendingEffectChoice = result.PendingChoice ?? state.PendingEffectChoice;
 
         MarkUsed(state, playerNum, initiative.Kind);
 
