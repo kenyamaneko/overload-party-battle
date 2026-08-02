@@ -192,14 +192,17 @@ public class GameEngine
 
             // 選択待ちの間は盤面を変えられない。選択は変異前の盤面を前提に候補を出しており、
             // 手番プレイヤーが先に進めると、解決したときには前提が崩れている。
-            if (state.PendingSlotSelects.Count > 0 && actionType != ActionType.SelectSlot)
+            // 効果中選択は実行途中の効果を止めているので、後始末であるスロット選択より先に解決させる。
+            if (state.PendingEffectChoice is not null)
+            {
+                if (actionType != ActionType.ResolvePendingChoice)
+                {
+                    throw new GameRuleException("reactive choice required");
+                }
+            }
+            else if (state.PendingSlotSelects.Count > 0 && actionType != ActionType.SelectSlot)
             {
                 throw new GameRuleException("slot selection required");
-            }
-
-            if (state.PendingEffectChoice is not null && actionType != ActionType.ResolvePendingChoice)
-            {
-                throw new GameRuleException("reactive choice required");
             }
 
             if (actionType == ActionType.SelectSlot)
@@ -210,7 +213,7 @@ public class GameEngine
             else if (actionType == ActionType.ResolvePendingChoice)
             {
                 actionResult = ResolvePendingChoiceProcessor.Process(
-                    state, game, playerNum, (ResolvePendingChoiceRequest)actionData, _cardCache, _effects);
+                    state, game, playerNum, (ResolvePendingChoiceRequest)actionData, _cardCache, _effects, _clock);
             }
             else
             {

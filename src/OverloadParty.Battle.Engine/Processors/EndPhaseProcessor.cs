@@ -44,11 +44,36 @@ public static class EndPhaseProcessor
         return new ActionResult { Events = events };
     }
 
+    /// <summary>
+    /// 選択の解決後に、中断していたエンドフェーズの残りを進めます。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="game">対象ゲームのメタデータ。</param>
+    /// <param name="playerNum">フェーズを終えようとしているプレイヤー番号。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <param name="clock">現在時刻の供給元。</param>
+    /// <param name="firedInstanceIds">中断までに発動を終えた効果のインスタンス ID。</param>
+    /// <returns>エンドフェーズの残りで生じたイベントを含むアクション結果。</returns>
+    public static ActionResult ResumeEndPhase(
+        BattleGameState state, Game game, long playerNum, ICardCache cc,
+        IEffectRegistry effects, IClock clock, List<string> firedInstanceIds)
+    {
+        return ProcessEndPhaseTransition(state, game, playerNum, cc, effects, clock, [], firedInstanceIds);
+    }
+
     private static ActionResult ProcessEndPhaseTransition(
         BattleGameState state, Game game, long playerNum, ICardCache cc,
-        IEffectRegistry effects, IClock clock, List<GameEvent> events)
+        IEffectRegistry effects, IClock clock, List<GameEvent> events,
+        List<string>? firedInstanceIds = null)
     {
-        bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects, events);
+        if (!ProcessEndPhaseLogic(
+                state, game, playerNum, cc, effects, events, firedInstanceIds ?? [], out bool needsDiscard))
+        {
+            // 選択待ちに入ったので、維持コスト徴収から先は選択が解決されるまで進めない。
+            return new ActionResult { Events = events };
+        }
+
         var result = new ActionResult { Events = events };
 
         if (needsDiscard)
@@ -92,21 +117,29 @@ public static class EndPhaseProcessor
     }
 
     /// <summary>
-    /// Returns true if the player needs to discard (hand > 6).
+    /// エンドフェーズの効果発動と各種精算を行います。効果が選択待ちに入った場合は精算前に打ち切ります。
     /// </summary>
+    /// <param name="needsDiscard">手札が上限を超え、破棄が必要なら true。</param>
+    /// <returns>最後まで進めば true、選択待ちで中断したら false。</returns>
     static bool ProcessEndPhaseLogic(
         BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects,
-        List<GameEvent> events)
+        List<GameEvent> events, List<string> firedInstanceIds, out bool needsDiscard)
     {
+        needsDiscard = false;
         var field = state.GetField(playerNum);
 
-        FirePassiveEffects(state, game, playerNum, field, cc, effects, events);
+        if (!FirePassiveEffects(state, game, playerNum, field, cc, effects, events, firedInstanceIds))
+        {
+            return false;
+        }
+
         CollectMaintenanceCost(state, playerNum, field, cc);
         GenerateInsight(state, playerNum, field, cc);
         ExpireTemporaryEffects(field);
         ResetPerTurnFlags(state, playerNum, field);
 
-        return state.GetHand(playerNum).Count > BattleConstants.HandLimit;
+        needsDiscard = state.GetHand(playerNum).Count > BattleConstants.HandLimit;
+        return true;
     }
 
     static long CalculateMaintenanceCost(DeployedResource resource, CardDefinition card)
@@ -183,26 +216,27 @@ public static class EndPhaseProcessor
         state.SetRoutineUsedThisTurn(playerNum, false);
     }
 
-    static void FirePassiveEffects(
+    /// <returns>全ての効果を発動し終えれば true、選択待ちで中断したら false。</returns>
+    static bool FirePassiveEffects(
         BattleGameState state, Game game, long playerNum, Field field,
-        ICardCache cc, IEffectRegistry effects, List<GameEvent> events)
+        ICardCache cc, IEffectRegistry effects, List<GameEvent> events, List<string> firedInstanceIds)
     {
 
         // リソース＋アタッチメント＋サポートを DeployOrder 昇順で収集
-        var triggers = new List<(string CardId, long DeployOrder, DeployedResource? Source, DeployedSupport? SupSource)>();
+        var triggers = new List<(string CardId, long DeployOrder, DeployedResource? Source, DeployedSupport? SupSource, string EffectOwnerId)>();
 
         foreach (var resource in FieldHelpers.AllFaceUpResources(field))
         {
             if (HasEndPhaseHandler(effects, resource.CardID))
             {
-                triggers.Add((resource.CardID, resource.DeployOrder, resource, null));
+                triggers.Add((resource.CardID, resource.DeployOrder, resource, null, resource.InstanceID));
             }
 
             foreach (var att in field.Support.Where(a => a.TargetInstanceID == resource.InstanceID))
             {
                 if (HasEndPhaseHandler(effects, att.CardID))
                 {
-                    triggers.Add((att.CardID, resource.DeployOrder, resource, null));
+                    triggers.Add((att.CardID, resource.DeployOrder, resource, null, att.InstanceID));
                 }
             }
         }
@@ -212,14 +246,17 @@ public static class EndPhaseProcessor
             if (!support.FaceUp || support.DeployingTurnsLeft > 0) { continue; }
             if (HasEndPhaseHandler(effects, support.CardID))
             {
-                triggers.Add((support.CardID, support.DeployOrder, null, support));
+                triggers.Add((support.CardID, support.DeployOrder, null, support, support.InstanceID));
             }
         }
 
         triggers.Sort((a, b) => a.DeployOrder.CompareTo(b.DeployOrder));
 
-        foreach (var (cardId, _, source, supSource) in triggers)
+        foreach (var (cardId, _, source, supSource, effectOwnerId) in triggers)
         {
+            // 中断前に発動を終えた効果は、再開時に二重発動させない。
+            if (firedInstanceIds.Contains(effectOwnerId)) { continue; }
+
             var trigger = effects.Has(cardId, TriggerType.OnEndPhase)
                 ? TriggerType.OnEndPhase
                 : TriggerType.Passive;
@@ -247,10 +284,17 @@ public static class EndPhaseProcessor
             // 選択待ちに入ったら、後続のエンドフェーズ効果は解決後に改めて発動させる。
             if (result.PendingChoice is not null)
             {
+                // 中断した効果は選択の解決で最後まで実行されるので、再開時に発動済みとして飛ばす。
+                result.PendingChoice.EndPhasePlayerNum = playerNum;
+                result.PendingChoice.EndPhaseFiredInstanceIds = [.. firedInstanceIds, effectOwnerId];
                 state.PendingEffectChoice = result.PendingChoice;
-                return;
+                return false;
             }
+
+            firedInstanceIds.Add(effectOwnerId);
         }
+
+        return true;
     }
 
     private static bool HasEndPhaseHandler(IEffectRegistry effects, string cardId)

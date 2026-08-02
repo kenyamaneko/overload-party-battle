@@ -561,6 +561,7 @@ public class EndPhaseProcessorTests
     {
         var cc = new TestCardCache();
         cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0002", name: "SecondEndPhase"));
         return cc;
     }
 
@@ -624,7 +625,7 @@ public class EndPhaseProcessorTests
                 new GainBudgetOp(PlayerRef.Myself, new StaticAmount(300)),
                 new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.KeepOneFromDeckTop, peekMeta)!));
 
-            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects, new FakeClock());
 
             state.PendingEffectChoice.Should().NotBeNull();
             state.PendingEffectChoice!.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
@@ -645,10 +646,111 @@ public class EndPhaseProcessorTests
                 new GainBudgetOp(PlayerRef.Myself, new StaticAmount(300)),
                 new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.KeepOneFromDeckTop, peekMeta)!));
 
-            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects, new FakeClock());
 
-            // 維持コスト 150 が引かれ、効果の +300 が 1 回だけ適用される
-            state.GetBudget(1).Should().Be(5150);
+            state.GetBudget(1).Should().Be(5300);
+        }
+
+        /// <summary>エンドフェーズ効果の発動順を決めるため、DeployOrder を指定してリソースを作る。</summary>
+        /// <param name="cardId">カード ID。</param>
+        /// <param name="instanceId">インスタンス ID。</param>
+        /// <param name="deployOrder">発動順。小さいほど先に発動する。</param>
+        /// <returns>DeployOrder を設定した表向きのリソース。</returns>
+        private static DeployedResource OrderedResource(string cardId, string instanceId, long deployOrder)
+        {
+            var resource = TestFactory.MakeResource(cardId: cardId, instanceId: instanceId, faceUp: true);
+            resource.DeployOrder = deployOrder;
+            return resource;
+        }
+
+        /// <summary>ChoiceData が無い間だけ選択待ちを返し、選択値が来たら成立するハンドラ。</summary>
+        /// <param name="instanceId">効果を持つリソースのインスタンス ID。</param>
+        /// <returns>選択待ちを 1 度だけ要求するハンドラ。</returns>
+        private static EffectHandler SuspendUntilChosen(string instanceId) => ctx =>
+            ctx.ChoiceData is null
+                ? new EffectResult
+                {
+                    PendingChoice = new PendingEffectChoice
+                    {
+                        ChooserPlayerNum = 1,
+                        OwnerPlayerNum = 1,
+                        EffectCardId = "TST-0001",
+                        EffectInstanceId = instanceId,
+                        Trigger = TriggerType.OnEndPhase,
+                        ChoiceKey = "instanceId",
+                        Candidates = ["choice_1"],
+                        ChoiceKind = ChoiceKinds.FieldTarget,
+                    },
+                }
+                : new EffectResult();
+
+        [Fact(DisplayName = "エンドフェーズ効果が選択待ちに入ったとき、後続の効果は発動せずターンも交代しない")]
+        public void EndPhaseEffectRequestingChoice_HoldsTurnProgression()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            AddRepo(state, 2);
+            state.Player1Field.Frontend[0] = OrderedResource("TST-0001", "r_1", 1);
+            state.Player1Field.Frontend[1] = OrderedResource("TST-0002", "r_2", 2);
+
+            int laterFired = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnEndPhase, SuspendUntilChosen("r_1"));
+            effects.Register("TST-0002", TriggerType.OnEndPhase, _ => { laterFired++; return new EffectResult(); });
+
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects, new FakeClock());
+
+            state.PendingEffectChoice.Should().NotBeNull();
+            laterFired.Should().Be(0);
+            state.ActivePlayer.Should().Be(1);
+            state.CurrentTurn.Should().Be(2);
+        }
+
+        [Fact(DisplayName = "選択を解決すると、残りのエンドフェーズ効果が発動しターンが交代する")]
+        public void ResolvingEndPhaseChoice_RunsRemainingEffectsAndAdvancesTurn()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            AddRepo(state, 2);
+            state.Player1Field.Frontend[0] = OrderedResource("TST-0001", "r_1", 1);
+            state.Player1Field.Frontend[1] = OrderedResource("TST-0002", "r_2", 2);
+
+            int laterFired = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0001", TriggerType.OnEndPhase, SuspendUntilChosen("r_1"));
+            effects.Register("TST-0002", TriggerType.OnEndPhase, _ => { laterFired++; return new EffectResult(); });
+
+            var game = TestFactory.MakeGame();
+            EndPhaseProcessor.Process(state, game, 1, EndPhaseCc(), effects, new FakeClock());
+
+            ResolvePendingChoiceProcessor.Process(
+                state, game, 1, new ResolvePendingChoiceRequest { ChosenId = "choice_1" },
+                EndPhaseCc(), effects, new FakeClock());
+
+            state.PendingEffectChoice.Should().BeNull();
+            laterFired.Should().Be(1);
+            state.ActivePlayer.Should().Be(2);
+        }
+
+        [Fact(DisplayName = "選択を解決したとき、中断前に発動を終えた効果は二重に発動しない")]
+        public void ResolvingEndPhaseChoice_DoesNotRefireAlreadyFiredEffects()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
+            AddRepo(state, 2);
+            state.Player1Field.Frontend[0] = OrderedResource("TST-0002", "r_2", 1);
+            state.Player1Field.Frontend[1] = OrderedResource("TST-0001", "r_1", 2);
+
+            int earlierFired = 0;
+            var effects = new TestEffectRegistry();
+            effects.Register("TST-0002", TriggerType.OnEndPhase, _ => { earlierFired++; return new EffectResult(); });
+            effects.Register("TST-0001", TriggerType.OnEndPhase, SuspendUntilChosen("r_1"));
+
+            var game = TestFactory.MakeGame();
+            EndPhaseProcessor.Process(state, game, 1, EndPhaseCc(), effects, new FakeClock());
+
+            ResolvePendingChoiceProcessor.Process(
+                state, game, 1, new ResolvePendingChoiceRequest { ChosenId = "choice_1" },
+                EndPhaseCc(), effects, new FakeClock());
+
+            earlierFired.Should().Be(1);
         }
     }
 }

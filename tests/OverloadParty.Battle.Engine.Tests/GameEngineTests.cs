@@ -433,7 +433,7 @@ public class GameEngineTests
         [Fact(DisplayName = "相手ターン中に自分に割り当てられたスロット選択は、自分で解決できる")]
         public async Task ProcessAction_OwnSlotSelect_ResolvableOnOpponentTurn()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -460,7 +460,7 @@ public class GameEngineTests
         [Fact(DisplayName = "相手の選択がキュー先頭にあっても、自分の選択を解決できる")]
         public async Task ProcessAction_OwnSlotSelect_ResolvableBehindOpponentsQueuedOne()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -619,7 +619,7 @@ public class GameEngineTests
         [Fact(DisplayName = "相手が効果中選択の選択者のとき、ターンプレイヤーの攻撃は拒否される")]
         public async Task PendingChoice_OpponentIsChooser_BlocksTurnPlayerAttack()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -642,7 +642,7 @@ public class GameEngineTests
         [Fact(DisplayName = "相手が効果中選択の選択者のとき、ターンプレイヤーのフェーズ終了は拒否される")]
         public async Task PendingChoice_OpponentIsChooser_BlocksTurnPlayerEndPhase()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
@@ -659,7 +659,7 @@ public class GameEngineTests
         [Fact(DisplayName = "選択者以外が効果中選択を解決しようとすると拒否される")]
         public async Task PendingChoice_NonChooserResolve_IsRejected()
         {
-            var deck = MakeSingleCardDeck("TST-0001");
+            var deck = MakeDeckWith("TST-0001");
             var gameID = await _engine.CreateNewGame(deck, deck, 1);
             var game = await _repo.GetGame(gameID);
             await _engine.RunAutoAdvance(game!);
