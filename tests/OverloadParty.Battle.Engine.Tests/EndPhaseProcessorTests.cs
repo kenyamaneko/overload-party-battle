@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Engine;
+using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
@@ -606,6 +607,48 @@ public class EndPhaseProcessorTests
             EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects, new FakeClock());
 
             fired.Should().Be(1, "エンドフェーズに パッシブ効果 が発動する");
+        }
+
+        [Fact(DisplayName = "エンドフェーズ効果が選択を要求すると、選択待ちへ遷移する")]
+        public void EndPhaseEffectRequestingChoice_Suspends()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+            AddRepo(state, 2);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+            AddRepo(state, 1);
+
+            var peekMeta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(
+                """{"peek":2}""");
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0001", TriggerType.OnEndPhase,
+                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(300)),
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.KeepOneFromDeckTop, peekMeta)!));
+
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
+
+            state.PendingEffectChoice.Should().NotBeNull();
+            state.PendingEffectChoice!.ChoiceKind.Should().Be(ChoiceKinds.DeckTop);
+        }
+
+        [Fact(DisplayName = "エンドフェーズ効果が選択待ちに入るまでに実行した手順の結果は、盤面に残る")]
+        public void EndPhaseEffectRequestingChoice_KeepsAlreadyAppliedOps()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1, p1Budget: 5000);
+            AddRepo(state, 2);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1", faceUp: true);
+            AddRepo(state, 1);
+
+            var peekMeta = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(
+                """{"peek":2}""");
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0001", TriggerType.OnEndPhase,
+                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(300)),
+                new CustomFnOp(new CustomEffectRegistry().Build(CustomEffects.KeepOneFromDeckTop, peekMeta)!));
+
+            EndPhaseProcessor.Process(state, TestFactory.MakeGame(), 1, EndPhaseCc(), effects);
+
+            // 維持コスト 150 が引かれ、効果の +300 が 1 回だけ適用される
+            state.GetBudget(1).Should().Be(5150);
         }
     }
 }

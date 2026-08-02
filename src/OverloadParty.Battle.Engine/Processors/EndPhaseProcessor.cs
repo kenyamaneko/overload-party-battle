@@ -48,7 +48,7 @@ public static class EndPhaseProcessor
         BattleGameState state, Game game, long playerNum, ICardCache cc,
         IEffectRegistry effects, IClock clock, List<GameEvent> events)
     {
-        bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects);
+        bool needsDiscard = ProcessEndPhaseLogic(state, game, playerNum, cc, effects, events);
         var result = new ActionResult { Events = events };
 
         if (needsDiscard)
@@ -94,11 +94,13 @@ public static class EndPhaseProcessor
     /// <summary>
     /// Returns true if the player needs to discard (hand > 6).
     /// </summary>
-    static bool ProcessEndPhaseLogic(BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects)
+    static bool ProcessEndPhaseLogic(
+        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects,
+        List<GameEvent> events)
     {
         var field = state.GetField(playerNum);
 
-        FirePassiveEffects(state, game, playerNum, field, cc, effects);
+        FirePassiveEffects(state, game, playerNum, field, cc, effects, events);
         CollectMaintenanceCost(state, playerNum, field, cc);
         GenerateInsight(state, playerNum, field, cc);
         ExpireTemporaryEffects(field);
@@ -183,7 +185,7 @@ public static class EndPhaseProcessor
 
     static void FirePassiveEffects(
         BattleGameState state, Game game, long playerNum, Field field,
-        ICardCache cc, IEffectRegistry effects)
+        ICardCache cc, IEffectRegistry effects, List<GameEvent> events)
     {
 
         // リソース＋アタッチメント＋サポートを DeployOrder 昇順で収集
@@ -218,10 +220,13 @@ public static class EndPhaseProcessor
 
         foreach (var (cardId, _, source, supSource) in triggers)
         {
+            var trigger = effects.Has(cardId, TriggerType.OnEndPhase)
+                ? TriggerType.OnEndPhase
+                : TriggerType.Passive;
             var handler = GetEndPhaseHandler(effects, cardId);
             if (handler is null) { continue; }
 
-            handler(new EffectContext
+            var result = handler(new EffectContext
             {
                 State = state,
                 Game = game,
@@ -230,7 +235,21 @@ public static class EndPhaseProcessor
                 SupSource = supSource,
                 CardCache = cc,
                 Effects = effects,
+                Trigger = trigger,
+                EffectCardId = cardId,
+                EffectInstanceId = source?.InstanceID ?? supSource?.InstanceID,
             });
+
+            if (result.HasGuardFailed) { continue; }
+
+            events.AddRange(result.Events);
+
+            // 選択待ちに入ったら、後続のエンドフェーズ効果は解決後に改めて発動させる。
+            if (result.PendingChoice is not null)
+            {
+                state.PendingEffectChoice = result.PendingChoice;
+                return;
+            }
         }
     }
 
