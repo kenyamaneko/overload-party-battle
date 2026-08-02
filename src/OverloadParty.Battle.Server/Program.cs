@@ -180,7 +180,7 @@ else
     }
     catch (Exception ex)
     {
-        // ロガーは書き込みをキューに積むため、Environment.Exit で落とすと理由が失われる。
+        // ロガーは書き込みをキューに積み、プロセスの終了に間に合わないことがあるため、
         // 送出してランタイムに stderr へ同期で書かせる。
         throw new InvalidOperationException(
             $"Failed to load master data from card service at {cardServiceUrl}", ex);
