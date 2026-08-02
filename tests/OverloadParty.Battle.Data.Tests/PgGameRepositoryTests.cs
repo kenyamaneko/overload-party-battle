@@ -458,7 +458,7 @@ public class PgGameRepositoryTests
 
             await using var conn = await _ds.OpenConnectionAsync();
             await using var cmd = new Npgsql.NpgsqlCommand(
-                "SELECT player_num, action_type FROM game_actions WHERE game_id = $1", conn);
+                "SELECT player_num, action_type FROM battle.game_actions WHERE game_id = $1", conn);
             cmd.Parameters.AddWithValue(game.GameID);
             await using var reader = await cmd.ExecuteReaderAsync();
 
@@ -491,7 +491,7 @@ public class PgGameRepositoryTests
 
             await using var conn = await _ds.OpenConnectionAsync();
             await using var cmd = new Npgsql.NpgsqlCommand(
-                "SELECT player_num, deck_snapshot FROM game_decks WHERE game_id = $1 ORDER BY player_num", conn);
+                "SELECT player_num, deck_snapshot FROM battle.game_decks WHERE game_id = $1 ORDER BY player_num", conn);
             cmd.Parameters.AddWithValue(game.GameID);
             await using var reader = await cmd.ExecuteReaderAsync();
 

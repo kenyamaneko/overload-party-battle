@@ -19,12 +19,7 @@ public class PgTestFixture : IAsyncLifetime
     {
         await _container.StartAsync();
 
-        var csb = new NpgsqlConnectionStringBuilder(_container.GetConnectionString())
-        {
-            // PgGameRepository の未修飾テーブル参照を battle スキーマで解決させる。
-            SearchPath = "battle",
-        };
-        _dataSource = NpgsqlDataSource.Create(csb.ConnectionString);
+        _dataSource = NpgsqlDataSource.Create(_container.GetConnectionString());
 
         var schemaPath = Path.Combine(AppContext.BaseDirectory, "db", "schema.sql");
         var schemaSql = await File.ReadAllTextAsync(schemaPath);
