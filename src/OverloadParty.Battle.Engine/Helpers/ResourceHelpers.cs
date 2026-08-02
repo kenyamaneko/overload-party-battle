@@ -60,6 +60,8 @@ public static class ResourceHelpers
                 EventOwnerNum = ownerNum,
                 CardCache = cc,
                 Effects = effects,
+                Trigger = TriggerType.OnDamaged,
+                EffectCardId = candidate.CardId,
             });
 
         return events;

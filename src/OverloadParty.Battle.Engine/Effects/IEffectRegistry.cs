@@ -43,10 +43,12 @@ public class EffectContext
     /// <summary>Support-zone source (for platform/reactive cards).</summary>
     public DeployedSupport? SupSource { get; init; }
 
-    /// <summary>SupSource を持たない起動効果経路で、選択待ち・再開時に効果を同定するカード ID。</summary>
-    public string? EffectCardId { get; init; }
+    /// <summary>実行中の効果を持つカードの ID。選択待ち・再開時に効果を同定する。</summary>
+    public required string EffectCardId { get; init; }
 
-    /// <summary>SupSource を持たない起動効果経路で、選択待ち・再開時に効果を同定するインスタンス ID。</summary>
+    /// <summary>
+    /// 実行中の効果を持つカードのインスタンス ID。SupSource から同定できる経路では省略できる。
+    /// </summary>
     public string? EffectInstanceId { get; init; }
 
     /// <summary>Card definition cache for lookups.</summary>
@@ -67,11 +69,8 @@ public class EffectContext
     /// <summary>入れ子のトリガー発火に使う効果レジストリ</summary>
     public required IEffectRegistry Effects { get; init; }
 
-    /// <summary>
-    /// 発動中のトリガー種別。choice op が選択待ちを state に保存するときに使う。
-    /// 選択待ちに入りうる経路では必ずセットする。
-    /// </summary>
-    public TriggerType? Trigger { get; set; }
+    /// <summary>実行中の効果ハンドラを引いたトリガー種別。</summary>
+    public required TriggerType Trigger { get; init; }
 
     /// <summary>
     /// 選択の解決で効果を再開するときの開始位置。中断した op を指す。

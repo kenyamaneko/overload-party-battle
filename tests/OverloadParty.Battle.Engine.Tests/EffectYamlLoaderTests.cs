@@ -71,13 +71,15 @@ public class EffectYamlLoaderTests
             PlayerNum = 1,
             CardCache = _cc,
             Effects = new EffectRegistry(),
+            Trigger = TriggerType.Ignition,
+            EffectCardId = "TST-0001",
         });
 
         result.HasGuardFailed.Should().BeFalse("max-only count guard should accept 0 resources");
         state.Player1Budget.Should().Be(1100);
     }
 
-    [Fact(DisplayName = "max のみ指定した count 発動条件は対象が max を超えると不成立で効果が実行されない")]
+    [Fact(DisplayName = "max のみ指定した count 発動条件は対象が max を超えると不成立になり、起動効果の実行が拒否される")]
     public void CountGuard_MaxOnly_RejectsCountOverMax()
     {
         var handler = LoadAndGetHandler(
@@ -101,20 +103,22 @@ public class EffectYamlLoaderTests
         state.Player1Field.Frontend[2] = TestFactory.MakeResource(cardId: "TN-A", instanceId: "t3");
         // フィールドに Tuners 3 体 (max=2 を超過)
 
-        var result = handler(new EffectContext
+        var act = () => handler(new EffectContext
         {
             State = state,
             Game = _game,
             PlayerNum = 1,
             CardCache = _cc,
             Effects = new EffectRegistry(),
+            Trigger = TriggerType.Ignition,
+            EffectCardId = "TST-0002",
         });
 
-        result.HasGuardFailed.Should().BeTrue("max-only count guard should reject when count exceeds max");
+        act.Should().Throw<GameRuleException>().WithMessage("*guard failed*");
         state.Player1Budget.Should().Be(1000);
     }
 
-    [Fact(DisplayName = "min のみ指定した count 発動条件は対象が min 未満だと不成立で効果が実行されない")]
+    [Fact(DisplayName = "min のみ指定した count 発動条件は対象が min 未満だと不成立になり、起動効果の実行が拒否される")]
     public void CountGuard_MinOnly_RequiresAtLeastMin()
     {
         // min 指定だけの count guard は従来通り min 以上必要 (0 体なら失敗)
@@ -135,16 +139,18 @@ public class EffectYamlLoaderTests
         var state = TestFactory.MakeGameState(p1Budget: 1000);
         // フィールドに Tuners 0 体 (min=2 を満たさない)
 
-        var result = handler(new EffectContext
+        var act = () => handler(new EffectContext
         {
             State = state,
             Game = _game,
             PlayerNum = 1,
             CardCache = _cc,
             Effects = new EffectRegistry(),
+            Trigger = TriggerType.Ignition,
+            EffectCardId = "TST-0003",
         });
 
-        result.HasGuardFailed.Should().BeTrue("min=2 should reject when count is 0");
+        act.Should().Throw<GameRuleException>().WithMessage("*guard failed*");
         state.Player1Budget.Should().Be(1000);
     }
 
@@ -171,16 +177,19 @@ public class EffectYamlLoaderTests
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "CP-A", instanceId: "c1");
         state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "DB-A", instanceId: "d1");
 
-        var result = handler(new EffectContext
+        var act = () => handler(new EffectContext
         {
             State = state,
             Game = _game,
             PlayerNum = 1,
             CardCache = _cc,
             Effects = new EffectRegistry(),
+            Trigger = TriggerType.Ignition,
+            EffectCardId = "TST-0004",
         });
 
-        result.HasGuardFailed.Should().BeTrue("Data系は数えられず Compute は 1 体分だけなので min=2 を満たさない");
+        act.Should().Throw<GameRuleException>()
+            .WithMessage("*guard failed*", "Data系は数えられず Compute は 1 体分だけなので min=2 を満たさない");
         state.Player1Budget.Should().Be(1000);
     }
 
@@ -213,6 +222,8 @@ public class EffectYamlLoaderTests
             PlayerNum = 1,
             CardCache = _cc,
             Effects = new EffectRegistry(),
+            Trigger = TriggerType.Ignition,
+            EffectCardId = "TST-0005",
         });
 
         result.HasGuardFailed.Should().BeFalse();
@@ -249,6 +260,8 @@ public class EffectYamlLoaderTests
             PlayerNum = 1,
             CardCache = _cc,
             Effects = new EffectRegistry(),
+            Trigger = TriggerType.Ignition,
+            EffectCardId = "TST-0006",
         });
 
         result.HasGuardFailed.Should().BeFalse();
@@ -358,6 +371,8 @@ public class PassiveClassificationTests
             PlayerNum = 1,
             CardCache = _cc,
             Effects = registry,
+            Trigger = TriggerType.OnDeploy,
+            EffectCardId = "TST-9104",
         });
 
         state.Player1Hand.Should().ContainSingle(c => c.InstanceID == "repo_1");
@@ -540,6 +555,7 @@ public class CustomEffectCompositionTests
             Effects = new EffectRegistry(),
             EventOwnerNum = eventOwnerNum,
             Trigger = TriggerType.OnDeploy,
+            EffectCardId = CardId,
         });
 
     [Fact(DisplayName = "カスタム効果に op を併記すると、発動時にカスタム効果と併記した op の両方が実行される")]

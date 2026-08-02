@@ -512,6 +512,7 @@ public static class AvailableActions
             CardCache = cc,
             Effects = effects,
             Trigger = TriggerType.Ignition,
+            EffectCardId = cardId,
         };
 
         return guards.All(g => g.Check(ctx));

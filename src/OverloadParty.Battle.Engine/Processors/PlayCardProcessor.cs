@@ -299,6 +299,9 @@ public static class PlayCardProcessor
                 CardCache = ctx.CC,
                 ChoiceData = req.ChoiceData,
                 Effects = ctx.Effects,
+                Trigger = TriggerType.OnDeploy,
+                EffectCardId = cardDef.CardId,
+                EffectInstanceId = attachInstanceID,
             };
             var effectResult = handler(effectCtx);
             events.AddRange(effectResult.Events);
@@ -417,6 +420,8 @@ public static class PlayCardProcessor
                 CardCache = ctx.CC,
                 Effects = ctx.Effects,
                 Trigger = TriggerType.OnDeploy,
+                EffectCardId = deployed.CardID,
+                EffectInstanceId = deployed.InstanceID,
             });
             events.AddRange(result.Events);
             if (result.PendingChoice is { } pendingChoice)
@@ -459,6 +464,8 @@ public static class PlayCardProcessor
                 EventOwnerNum = ctx.PlayerNum,
                 CardCache = ctx.CC,
                 Effects = ctx.Effects,
+                Trigger = TriggerType.OnDeploy,
+                EffectCardId = candidate.CardId,
             });
     }
 
@@ -503,6 +510,8 @@ public static class PlayCardProcessor
                     IncidentCard = incidentCard,
                     CardCache = ctx.CC,
                     Effects = ctx.Effects,
+                    Trigger = TriggerType.OnIncident,
+                    EffectCardId = candidate.CardId,
                 });
 
             allEvents.AddRange(events);

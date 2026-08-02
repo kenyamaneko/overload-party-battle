@@ -163,6 +163,8 @@ public static class DestructionSweep
                 EventOwnerNum = ownerNum,
                 CardCache = cc,
                 Effects = effects,
+                Trigger = TriggerType.OnDestroy,
+                EffectCardId = candidate.CardId,
             });
 
         return events;

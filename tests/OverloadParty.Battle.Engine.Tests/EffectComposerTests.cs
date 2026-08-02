@@ -18,6 +18,8 @@ public class EffectComposerTests
             PlayerNum = 1,
             CardCache = new TestCardCache(),
             Effects = new EffectRegistry(),
+            Trigger = TriggerType.Ignition,
+            EffectCardId = "TST-0001",
         };
 
     [Fact(DisplayName = "複数の op を渡すと、合成したハンドラが登録順に実行する")]

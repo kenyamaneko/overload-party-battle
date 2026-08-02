@@ -65,6 +65,8 @@ public class GuardOpTests
                 EventDamage = eventDamage,
                 CardCache = _cc,
                 Effects = new EffectRegistry(),
+                Trigger = TriggerType.Ignition,
+                EffectCardId = "TST-0001",
             };
         }
 

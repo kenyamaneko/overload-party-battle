@@ -76,7 +76,11 @@ public static class UseIgnitionProcessor
         var result = handler(ctx);
         // 選択待ちを捨てると、選択を要する起動効果が何も起きずに使用済みになる。
         state.PendingEffectChoice = result.PendingChoice ?? state.PendingEffectChoice;
-        source.EffectUsedThisTurn = true;
+        // 不発だった効果で使用済みにすると、何も起きないままそのターンの再使用が塞がれる。
+        if (!result.HasGuardFailed)
+        {
+            source.EffectUsedThisTurn = true;
+        }
 
         var events = new List<GameEvent>(result.Events);
         events.Insert(0, new GameEvent
@@ -118,12 +122,18 @@ public static class UseIgnitionProcessor
             ChoiceData = req.ChoiceData,
             Effects = effects,
             Trigger = TriggerType.Ignition,
+            EffectCardId = card.CardId,
+            EffectInstanceId = support.InstanceID,
         };
 
         var result = handler(ctx);
         // 選択待ちを捨てると、選択を要する起動効果が何も起きずに使用済みになる。
         state.PendingEffectChoice = result.PendingChoice ?? state.PendingEffectChoice;
-        support.EffectUsedThisTurn = true;
+        // 不発だった効果で使用済みにすると、何も起きないままそのターンの再使用が塞がれる。
+        if (!result.HasGuardFailed)
+        {
+            support.EffectUsedThisTurn = true;
+        }
 
         var events = new List<GameEvent>(result.Events);
         events.Insert(0, new GameEvent

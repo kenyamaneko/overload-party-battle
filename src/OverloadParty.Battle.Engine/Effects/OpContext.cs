@@ -104,7 +104,7 @@ public class OpContext
 
     /// <summary>
     /// choice op が ChoiceData 不足で選択待ちに遷移するときの状態を作って Result に格納する。
-    /// 効果の同定は SupSource、または EffectContext の EffectCardId/EffectInstanceId のいずれかで行う。
+    /// 効果インスタンスの同定は SupSource、または EffectContext の EffectInstanceId で行う。
     /// </summary>
     /// <param name="choiceKey">ChoiceData に詰める key。再開時のリクエストもこの key で値を解決する。</param>
     /// <param name="choiceKind">選択カテゴリ。<see cref="ChoiceKinds"/> の定数を渡す。</param>
@@ -113,26 +113,20 @@ public class OpContext
     public void SuspendForChoice(
         string choiceKey, string choiceKind, List<string> candidates, long chooserPlayerNum)
     {
-        string? effectCardId = SupSource?.CardID ?? Ctx.EffectCardId;
         string? effectInstanceId = SupSource?.InstanceID ?? Ctx.EffectInstanceId;
-        if (effectCardId is null || effectInstanceId is null)
+        if (effectInstanceId is null)
         {
             throw new InvalidOperationException(
-                "SuspendForChoice requires an effect source (SupSource or EffectCardId/EffectInstanceId)");
-        }
-        if (Ctx.Trigger is not { } trigger)
-        {
-            throw new InvalidOperationException(
-                "SuspendForChoice requires Trigger to be set on the context");
+                "SuspendForChoice requires an effect instance (SupSource or EffectInstanceId)");
         }
 
         Result.PendingChoice = new PendingEffectChoice
         {
             OwnerPlayerNum = PlayerNum,
             ChooserPlayerNum = chooserPlayerNum,
-            EffectCardId = effectCardId,
+            EffectCardId = SupSource?.CardID ?? Ctx.EffectCardId,
             EffectInstanceId = effectInstanceId,
-            Trigger = trigger,
+            Trigger = Ctx.Trigger,
             ChoiceKey = choiceKey,
             ChoiceKind = choiceKind,
             Candidates = candidates,

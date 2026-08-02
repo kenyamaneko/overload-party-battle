@@ -69,7 +69,7 @@ public static class EventTriggerFiring
     /// <param name="cc">カード定義キャッシュ。</param>
     /// <param name="trigger">発動させるトリガーの種別。</param>
     /// <param name="candidates">発動を確認するカード。</param>
-    /// <param name="buildContext">候補ごとに効果実行コンテキストを生成する関数。</param>
+    /// <param name="buildContext">候補ごとに効果実行コンテキストを生成する関数。<paramref name="trigger"/> と同じトリガー種別を設定する。</param>
     /// <returns>アクションが無効化されたかと、収集したイベント。</returns>
     public static (bool Cancelled, List<GameEvent> Events) Fire(
         BattleGameState state,
@@ -98,10 +98,7 @@ public static class EventTriggerFiring
             if (reactive is not null && reactiveActivated) { continue; }
 
             var handler = effects.Get(candidate.CardId, trigger)!;
-            var effectCtx = buildContext(candidate);
-            // 発動中の trigger を ctx に注入する。choice op が選択待ちを state に保存するときに参照される。
-            effectCtx.Trigger = trigger;
-            var result = handler(effectCtx);
+            var result = handler(buildContext(candidate));
 
             // 発動条件を満たさなかったリアクティブは発動扱いにせず（消費しない）、次の候補へ。
             if (result.HasGuardFailed) { continue; }
