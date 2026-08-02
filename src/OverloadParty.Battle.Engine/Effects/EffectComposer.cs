@@ -66,6 +66,8 @@ public static class EffectComposer
             op.Execute(octx);
             // choice op が ChoiceData 不足を検知して PendingChoice を立てたら、以降の op は実行しない。
             if (octx.Result.PendingChoice is not null) { break; }
+            // op が発動条件の不成立を検知したら、以降の op は実行しない。
+            if (octx.Result.HasGuardFailed) { break; }
         }
         return octx.Result;
     }

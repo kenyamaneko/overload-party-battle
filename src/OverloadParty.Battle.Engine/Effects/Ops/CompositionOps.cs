@@ -27,6 +27,13 @@ public class EffectGroupOp(string groupId, BuiltBlock block) : IEffectOp
         {
             op.Execute(ctx);
             if (ctx.Result.PendingChoice is not null) { return; }
+            // 発動条件の不成立はこのグループだけの結果なので、他の独立ブロックへ波及させずに打ち切る。
+            if (ctx.Result.HasGuardFailed)
+            {
+                ctx.Result.HasGuardFailed = false;
+                ctx.GroupResults[groupId] = false;
+                return;
+            }
         }
         ctx.GroupResults[groupId] = true;
     }
@@ -57,6 +64,12 @@ public class DependentEffectOp(string parentGroupId, BuiltBlock block) : IEffect
         {
             op.Execute(ctx);
             if (ctx.Result.PendingChoice is not null) { return; }
+            // 発動条件の不成立はこの従属ブロックだけの結果なので、親へ波及させずに打ち切る。
+            if (ctx.Result.HasGuardFailed)
+            {
+                ctx.Result.HasGuardFailed = false;
+                return;
+            }
         }
     }
 }

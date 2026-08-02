@@ -109,16 +109,7 @@ public static class EndPhaseProcessor
 
     static long CalculateMaintenanceCost(DeployedResource resource, CardDefinition card)
     {
-        long baseCost;
-        if (card.Elastic)
-        {
-            long intrinsicStat = StatCalculator.CalculateIntrinsicStat(resource, card);
-            baseCost = Math.Max(0, intrinsicStat - card.FreeTier) * card.CostPerRequest / 100;
-        }
-        else
-        {
-            baseCost = card.MaintenanceCost * BattleConstants.GetRankMultiplier(resource.Rank);
-        }
+        long baseCost = StatCalculator.CalculateBaseMaintenanceCost(resource, card);
 
         return FieldHelpers.ApplyReduction(
             resource.TemporaryEffects, BuffTypes.MaintenanceReduction, baseCost);

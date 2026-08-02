@@ -275,11 +275,6 @@ public static class EffectYamlLoader
         EffectDef def,
         CustomEffectRegistry customRegistry)
     {
-        if (def.Custom is { } customName)
-        {
-            return new BuiltBlock { Ops = BuildCustomBlock(customName, def.Meta, customRegistry).ToArray() };
-        }
-
         var guards = new List<IEffectGuard>();
         var ops = new List<IEffectOp>();
 
@@ -289,6 +284,13 @@ public static class EffectYamlLoader
             {
                 guards.Add(BuildGuard(guardElement));
             }
+        }
+
+        // custom は ops 列の先頭要素として扱う。同じ効果定義に併記された guard / ops / use_limit も
+        // 通常の効果定義と同じように合成する。
+        if (def.Custom is { } customName)
+        {
+            ops.AddRange(BuildCustomBlock(customName, def.Meta, customRegistry));
         }
 
         if (def.Choice is not null)
