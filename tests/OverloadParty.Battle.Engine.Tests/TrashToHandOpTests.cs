@@ -159,7 +159,7 @@ public class TrashToHandAvailableActionsTests
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TRASH-RET" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
-            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 100, _cc, registry);
+            state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 100, _cc, registry);
 
         var playAction = actions.Should().ContainSingle(a => a.Type == ActionTypes.PlayCard).Subject;
         playAction.EffectTargetType.Should().Be("Choice");
@@ -177,7 +177,7 @@ public class TrashToHandAvailableActionsTests
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TRASH-RET" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
-            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 100, _cc, registry);
+            state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 100, _cc, registry);
 
         actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
     }
@@ -193,7 +193,7 @@ public class TrashToHandAvailableActionsTests
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TRASH-RET" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
-            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 100, _cc, registry);
+            state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 100, _cc, registry);
 
         actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
     }
@@ -213,7 +213,7 @@ public class TrashToHandAvailableActionsTests
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TRASH-RET" } };
 
         var actions = AvailableActions.GetAllAvailableActions(
-            state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 100, _cc, registry);
+            state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 100, _cc, registry);
 
         var playAction = actions.Should().ContainSingle(a => a.Type == ActionTypes.PlayCard).Subject;
         playAction.EffectTargetType.Should().Be("Choice");
@@ -237,7 +237,7 @@ public class TrashToHandAvailableActionsTests
         field.Frontend[0] = TestFactory.MakeResource(cardId: SourceCard, instanceId: "src_1", faceUp: true);
 
         var actions = AvailableActions.GetAllAvailableActions(
-            state, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
+            state, 1, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
 
         var ignition = actions.Should().ContainSingle(a => a.Type == ActionTypes.UseIgnition).Subject;
         ignition.ValidTargets.Should().Equal("t_1");
@@ -256,7 +256,7 @@ public class TrashToHandAvailableActionsTests
         field.Frontend[0] = TestFactory.MakeResource(cardId: SourceCard, instanceId: "src_1", faceUp: true);
 
         var actions = AvailableActions.GetAllAvailableActions(
-            state, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
+            state, 1, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
 
         actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
     }
@@ -274,7 +274,7 @@ public class TrashToHandAvailableActionsTests
         field.Support[0] = new DeployedSupport { InstanceID = "sup_1", CardID = SourceCard, FaceUp = true };
 
         var actions = AvailableActions.GetAllAvailableActions(
-            state, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
+            state, 1, field, TestFactory.MakeField(), [], 5000, 0, _cc, registry);
 
         actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
     }
@@ -299,7 +299,7 @@ public class TrashToHandAvailableActionsTests
         state.Player1Trash = [];
 
         var actions = AvailableActions.GetAllAvailableActions(
-            state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 500, _cc, registry, catalog);
+            state, 1, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 500, _cc, registry, catalog);
 
         actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
     }

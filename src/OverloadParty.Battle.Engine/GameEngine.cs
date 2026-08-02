@@ -316,7 +316,7 @@ public class GameEngine
         long insightPool = state.GetInsightPool(playerNum);
 
         return AvailableActions.GetAllAvailableActions(
-            state, myField, oppField, hand, budget, insightPool, _cardCache, _effects, _initiatives);
+            state, playerNum, myField, oppField, hand, budget, insightPool, _cardCache, _effects, _initiatives);
     }
 
     /// <summary>

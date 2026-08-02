@@ -583,7 +583,7 @@ public class IgnitionEffectTests
             field.Frontend[0] = TestFactory.MakeResource(cardId: SourceCard, instanceId: "src", faceUp: true);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, field, TestFactory.MakeField(), [], 5000, 0, cc, effects);
+                state, 1, field, TestFactory.MakeField(), [], 5000, 0, cc, effects);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }

@@ -33,7 +33,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 100, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 100, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard);
             actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp);
@@ -56,7 +56,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.Attack);
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
@@ -92,7 +92,7 @@ public class AvailableActionsTests
             var state = MakeInitiativeState();
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
                 new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
 
             var inits = actions.Where(a => a.Type == ActionTypes.UseInitiative).ToList();
@@ -106,7 +106,7 @@ public class AvailableActionsTests
             var state = MakeInitiativeState();
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 150,
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 150,
                 new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
 
             var inits = actions.Where(a => a.Type == ActionTypes.UseInitiative).ToList();
@@ -122,7 +122,7 @@ public class AvailableActionsTests
             state.SetSpecialUsedThisGame(1, true);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
                 new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
@@ -134,7 +134,7 @@ public class AvailableActionsTests
             var state = MakeInitiativeState(turn: 1);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
                 new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
@@ -146,7 +146,7 @@ public class AvailableActionsTests
             var state = MakeInitiativeState();
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
                 new TestCardCache(), new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseInitiative);
@@ -159,7 +159,7 @@ public class AvailableActionsTests
             state.Player1RoutineId = "IN-NOPE"; // カタログに無い ID = データ整合性エラー
 
             var act = () => AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, insightPool: 1000,
                 new TestCardCache(), new EffectRegistry(), InitiativeCatalogWith(routineCost: 100, specialCost: 300));
 
             act.Should().Throw<GameRuleException>().WithMessage("*not found*");
@@ -179,7 +179,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
             playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
@@ -197,7 +197,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-0002" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_db");
             playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
@@ -214,7 +214,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_cache", CardID = "TST-0003" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_cache");
             playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
@@ -232,7 +232,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_os", CardID = "TST-0004" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_os");
             playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
@@ -250,7 +250,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_ai", CardID = "TST-0005" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_ai");
             playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
@@ -267,7 +267,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-0006" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_s");
             playAction.ValidZones.Should().BeNullOrEmpty();
@@ -283,7 +283,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_r", CardID = "TST-0007" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_r");
             playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
@@ -299,7 +299,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_p", CardID = "TEST-0200" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_p");
             playAction.ValidZones.Should().AllSatisfy(z => z.Should().StartWith("support_"));
@@ -329,7 +329,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
         }
@@ -350,7 +350,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-0006" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_s");
         }
@@ -369,7 +369,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
             playAction.ValidZones.Should().NotContain(z => z == "frontend_0");
@@ -392,7 +392,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-0008" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_i");
         }
@@ -407,7 +407,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-0008" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_i");
         }
@@ -426,7 +426,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_i", CardID = "TST-0008" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_i");
         }
@@ -450,7 +450,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
             playAction.ValidTargets.Should().Contain(t => t == "fe_1");
@@ -476,7 +476,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
         }
@@ -495,7 +495,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
         }
@@ -521,7 +521,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_att", CardID = "TEST-0300" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_att");
             playAction.ValidTargets.Should().Contain(t => t == "fe_1");
@@ -539,7 +539,7 @@ public class AvailableActionsTests
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
         }
@@ -563,7 +563,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "TST-0006" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 200, 0, cc, registry);
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 200, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_50");
         }
@@ -583,7 +583,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "hand_50", CardID = "TST-0006" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 600, 0, cc, registry);
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 600, 0, cc, registry);
 
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_50");
         }
@@ -603,7 +603,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "hand_60", CardID = "TST-0008" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 100, 0, cc, registry);
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 100, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "hand_60");
         }
@@ -628,7 +628,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
             playAction.ValidZones.Should().NotContain(z => z.StartsWith("frontend_"));
@@ -652,7 +652,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_db", CardID = "TST-0002" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_db");
         }
@@ -674,7 +674,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = "TST-0001" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_1");
         }
@@ -693,7 +693,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_c", CardID = "TEST-0002" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_c");
             playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
@@ -710,7 +710,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_s", CardID = "TST-0012" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_s");
             playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
@@ -727,7 +727,7 @@ public class AvailableActionsTests
             var hand = new List<UndeployedCard> { new() { InstanceID = "h_o", CardID = "TST-0013" } };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
+                state, 1, TestFactory.MakeField(), TestFactory.MakeField(), hand, 5000, 0, cc, new EffectRegistry());
 
             var playAction = actions.Single(a => a.Type == ActionTypes.PlayCard && a.HandInstanceID == "h_o");
             playAction.ValidZones.Should().Contain(z => z.StartsWith("frontend_"));
@@ -749,7 +749,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1", rank: Rank.Small);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             var scaleActions = actions.Where(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
             // Small → Medium×3 families + Small → Large×3 families = 6 options
@@ -774,7 +774,7 @@ public class AvailableActionsTests
                 cardId: "TST-0001", instanceId: "fe_1", rank: Rank.Medium, family: InstanceFamily.M);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             var scaleActions = actions.Where(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
             // Medium(M) can only scale up to Large with same family = 1 option
@@ -794,7 +794,7 @@ public class AvailableActionsTests
                 cardId: "TST-0001", instanceId: "fe_1", rank: Rank.Large, family: InstanceFamily.M);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             var scaleActions = actions.Where(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "fe_1").ToList();
             // Large is max rank — no scale up options
@@ -813,7 +813,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
@@ -832,7 +832,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = resource;
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
@@ -849,7 +849,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "fe_2");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
@@ -866,7 +866,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1", faceUp: false);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
         }
@@ -883,7 +883,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0013", instanceId: "orch_1", rank: Rank.Small);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "orch_1");
         }
@@ -901,7 +901,7 @@ public class AvailableActionsTests
                 cardId: "TST-0002", instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.ScaleUp && a.SourceInstanceID == "db_1");
         }
@@ -924,7 +924,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             var attack = actions.Single(a => a.Type == ActionTypes.Attack);
             attack.SourceInstanceID.Should().Be("my_1");
@@ -946,7 +946,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
@@ -968,7 +968,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "os_1");
         }
@@ -990,7 +990,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
@@ -1011,7 +1011,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
@@ -1032,7 +1032,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
@@ -1052,7 +1052,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1", faceUp: false);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             // No face-up targets → no attack actions
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
@@ -1075,7 +1075,7 @@ public class AvailableActionsTests
             oppField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_be");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             var attack = actions.Single(a => a.Type == ActionTypes.Attack);
             attack.ValidTargets.Should().Contain(t => t == "opp_be");
@@ -1098,7 +1098,7 @@ public class AvailableActionsTests
             oppField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_be");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             var attack = actions.Single(a => a.Type == ActionTypes.Attack);
             attack.ValidTargets.Should().Contain(t => t == "opp_fe");
@@ -1120,7 +1120,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
@@ -1140,7 +1140,7 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             actions.Count(a => a.Type == ActionTypes.Attack).Should().Be(2);
             actions.Should().Contain(a => a.Type == ActionTypes.Attack && a.SourceInstanceID == "my_1");
@@ -1173,7 +1173,7 @@ public class AvailableActionsTests
             };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
 
             var attack = actions.Single(a => a.Type == ActionTypes.Attack);
             attack.ValidTargets.Should().NotContain("shielded", "target_shield で保護された対象は攻撃候補から外れる");
@@ -1195,7 +1195,7 @@ public class AvailableActionsTests
             myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
 
             actions.Should().Contain(a => a.Type == ActionTypes.Monetize && a.SourceInstanceID == "be_1");
         }
@@ -1212,7 +1212,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
@@ -1230,7 +1230,7 @@ public class AvailableActionsTests
                 cardId: "TST-0002", instanceId: "db_1", maxTP: null, currentTP: null, maxYield: 400, currentYield: 400);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
@@ -1247,7 +1247,7 @@ public class AvailableActionsTests
             myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
@@ -1264,7 +1264,7 @@ public class AvailableActionsTests
             myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
@@ -1283,7 +1283,7 @@ public class AvailableActionsTests
             myField.Backend[0] = res;
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 1000, cc, new EffectRegistry());
 
             var yieldAction = actions.Single(a => a.Type == ActionTypes.Monetize);
             yieldAction.RemainingCapacity.Should().Be(400); // 600 - 200 = 400
@@ -1302,7 +1302,7 @@ public class AvailableActionsTests
             myField.Backend[0] = res;
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 1000, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
@@ -1319,7 +1319,7 @@ public class AvailableActionsTests
             myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1", faceUp: false);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
@@ -1338,7 +1338,7 @@ public class AvailableActionsTests
             myField.Backend[1] = TestFactory.MakeResource(cardId: "TEST-0002", instanceId: "be_2");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 1000, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 1000, cc, new EffectRegistry());
 
             actions.Count(a => a.Type == ActionTypes.Monetize).Should().Be(2);
             var a1 = actions.Single(a => a.Type == ActionTypes.Monetize && a.SourceInstanceID == "be_1");
@@ -1360,7 +1360,7 @@ public class AvailableActionsTests
             myField.Backend[0] = res;
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, new EffectRegistry());
 
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
@@ -1384,7 +1384,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
@@ -1403,7 +1403,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "fe_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
@@ -1426,7 +1426,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = resource;
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
@@ -1448,7 +1448,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = res;
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
@@ -1473,7 +1473,7 @@ public class AvailableActionsTests
             };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "sup_1");
         }
@@ -1499,7 +1499,7 @@ public class AvailableActionsTests
             };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
@@ -1525,7 +1525,7 @@ public class AvailableActionsTests
             };
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
@@ -1546,7 +1546,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
@@ -1566,7 +1566,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10", faceUp: false);
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
@@ -1591,7 +1591,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 300, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 300, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
@@ -1612,7 +1612,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0009", instanceId: "res_10");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 500, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 500, 0, cc, registry);
 
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
@@ -1633,7 +1633,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0010", instanceId: "res_120");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 1500, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 1500, 0, cc, registry);
 
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_120");
         }
@@ -1654,7 +1654,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0010", instanceId: "res_120");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 800, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 800, 0, cc, registry);
 
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_120");
         }
@@ -1674,7 +1674,7 @@ public class AvailableActionsTests
             myField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0011", instanceId: "res_30");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), [], 0, 0, cc, registry);
+                state, 1, myField, TestFactory.MakeField(), [], 0, 0, cc, registry);
 
             actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_30");
         }
@@ -1739,11 +1739,14 @@ public class AvailableActionsTests
     [Trait("対象", "選択待ちアクションの列挙")]
     public class ResolvePendingChoiceEnumeration
     {
+        private const long Chooser = 1;
+        private const long NonChooser = 2;
+
         private static PendingEffectChoice Pending(string choiceKind, params string[] candidates) =>
             new()
             {
-                ChooserPlayerNum = 1,
-                OwnerPlayerNum = 1,
+                ChooserPlayerNum = Chooser,
+                OwnerPlayerNum = Chooser,
                 EffectCardId = "TST-0001",
                 EffectInstanceId = "eff_inst",
                 Trigger = TriggerType.OnDestroy,
@@ -1752,15 +1755,17 @@ public class AvailableActionsTests
                 Candidates = [.. candidates],
             };
 
-        [Fact(DisplayName = "候補が 3 件の選択待ちのとき、効果カード ID と候補ごとの選択肢を持つ選択待ち解決アクションが 1 つだけ生成される")]
-        public void PendingChoice_EmitsSingleActionWithOptionPerCandidate()
+        private static List<AvailableAction> Enumerate(BattleGameState state, long playerNum, TestCardCache cc) =>
+            AvailableActions.GetAllAvailableActions(
+                state, playerNum, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+
+        [Fact(DisplayName = "候補が 3 件の選択待ちを選択者が列挙すると、効果カード ID と候補ごとの選択肢を持つ解決アクションが 1 つだけ返る")]
+        public void Chooser_EmitsSingleActionWithOptionPerCandidate()
         {
-            var cc = new TestCardCache();
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
             state.PendingEffectChoice = Pending(ChoiceKinds.FieldTarget, "c1", "c2", "c3");
 
-            var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+            var actions = Enumerate(state, Chooser, new TestCardCache());
 
             var action = actions.Should().ContainSingle().Subject;
             action.Type.Should().Be(ActionTypes.ResolvePendingChoice);
@@ -1768,23 +1773,21 @@ public class AvailableActionsTests
             action.ChoiceOptions!.Select(o => o.Key).Should().Equal("c1", "c2", "c3");
         }
 
-        [Fact(DisplayName = "選択待ちの種別が手札選択のとき、アクションが同じ種別と候補を持つ")]
-        public void PendingChoice_CarriesChoiceKind()
+        [Fact(DisplayName = "選択待ちの種別が手札選択のとき、選択者には同じ種別と候補が返る")]
+        public void Chooser_CarriesChoiceKind()
         {
-            var cc = new TestCardCache();
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
             state.PendingEffectChoice = Pending(ChoiceKinds.HandCard, "hand_card_1");
 
-            var actions = AvailableActions.GetAllAvailableActions(
-                state, TestFactory.MakeField(), TestFactory.MakeField(), [], 5000, 0, cc, new EffectRegistry());
+            var actions = Enumerate(state, Chooser, new TestCardCache());
 
             var action = actions.Should().ContainSingle().Subject;
             action.ChoiceKind.Should().Be(ChoiceKinds.HandCard);
             action.ChoiceOptions!.Select(o => o.Key).Should().Equal("hand_card_1");
         }
 
-        [Fact(DisplayName = "選択待ちがあるとき、他のアクションは列挙されず選択待ち解決だけになる")]
-        public void PendingChoice_ShortCircuitsOtherActions()
+        [Fact(DisplayName = "選択待ちがあるとき、選択者には他のアクションが返らず選択待ち解決だけになる")]
+        public void Chooser_ShortCircuitsOtherActions()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
@@ -1795,10 +1798,47 @@ public class AvailableActionsTests
             state.PendingEffectChoice = Pending(ChoiceKinds.FieldTarget, "c1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, myField, TestFactory.MakeField(), hand, 5000, 100, cc, new EffectRegistry());
+                state, Chooser, myField, TestFactory.MakeField(), hand, 5000, 100, cc, new EffectRegistry());
 
             actions.Should().OnlyContain(a => a.Type == ActionTypes.ResolvePendingChoice);
-            actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard || a.Type == ActionTypes.Monetize);
+        }
+
+        [Fact(DisplayName = "選択待ちがあるとき、選択者以外にはアクションが返らない")]
+        public void NonChooser_GetsNoActions()
+        {
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            state.PendingEffectChoice = Pending(ChoiceKinds.FieldTarget, "c1");
+
+            var actions = Enumerate(state, NonChooser, new TestCardCache());
+
+            actions.Should().BeEmpty();
+        }
+
+        /// <summary>デッキ上端の選択待ちと、開示対象になる選択者のリポジトリを用意する。</summary>
+        /// <returns>デッキ上端の選択待ちを持つゲーム状態。</returns>
+        private static BattleGameState StateWithDeckTopChoice()
+        {
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            state.GetRepository(Chooser).Add(new UndeployedCard { InstanceID = "top_1", CardID = "TST-0001" });
+            state.PendingEffectChoice = Pending(ChoiceKinds.DeckTop, "top_1");
+            return state;
+        }
+
+        [Fact(DisplayName = "デッキ上端の選択待ちを選択者が列挙すると、候補のカードが開示される")]
+        public void Chooser_DeckTopChoice_RevealsCandidateCards()
+        {
+            var actions = Enumerate(StateWithDeckTopChoice(), Chooser, new TestCardCache());
+
+            var action = actions.Should().ContainSingle().Subject;
+            action.RevealedDeckTop!.Select(c => c.InstanceID).Should().Equal("top_1");
+        }
+
+        [Fact(DisplayName = "デッキ上端の選択待ちを選択者以外が列挙すると、アクションが返らず上端のカードも開示されない")]
+        public void NonChooser_DeckTopChoice_RevealsNothing()
+        {
+            var actions = Enumerate(StateWithDeckTopChoice(), NonChooser, new TestCardCache());
+
+            actions.Should().BeEmpty();
         }
     }
 }
