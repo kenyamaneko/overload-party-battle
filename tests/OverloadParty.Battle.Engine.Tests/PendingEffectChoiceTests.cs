@@ -173,7 +173,7 @@ public class PendingEffectChoiceTests
             var (state, cc, effects) = Suspended();
 
             var req = new ResolvePendingChoiceRequest { ChosenId = HandDummyCardId };
-            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, req, cc, effects);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, req, cc, effects, new FakeClock());
 
             state.PendingEffectChoice.Should().BeNull();
             state.Player1Hand.Should().NotContain(c => c.InstanceID == "h_1");
@@ -213,7 +213,7 @@ public class PendingEffectChoiceTests
             state.GetBudget(1).Should().Be(4900);
 
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
-                new ResolvePendingChoiceRequest { ChosenId = HandDummyCardId }, cc, effects);
+                new ResolvePendingChoiceRequest { ChosenId = HandDummyCardId }, cc, effects, new FakeClock());
 
             state.GetBudget(1).Should().Be(4900);
             state.PendingSlotSelects.Should().ContainSingle();
@@ -225,7 +225,7 @@ public class PendingEffectChoiceTests
             var (state, cc, effects) = Suspended();
 
             var req = new ResolvePendingChoiceRequest { ChosenId = HandDummyCardId };
-            var act = () => ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 2, req, cc, effects);
+            var act = () => ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 2, req, cc, effects, new FakeClock());
 
             act.Should().Throw<GameRuleException>().WithMessage("*different player*");
         }
@@ -236,7 +236,7 @@ public class PendingEffectChoiceTests
             var (state, cc, effects) = Suspended();
 
             var req = new ResolvePendingChoiceRequest { ChosenId = "TST-9999" };
-            var act = () => ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, req, cc, effects);
+            var act = () => ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, req, cc, effects, new FakeClock());
 
             act.Should().Throw<GameRuleException>().WithMessage("*not in candidates*");
         }

@@ -128,7 +128,7 @@ public class ReactiveEffectTests
             AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
 
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
-                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects);
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
 
             FieldHelpers.FindResourceByID(state.Player1Field, "my_fe_1")!.Damage.Should().Be(600);
             state.PendingEffectChoice.Should().BeNull();
@@ -155,7 +155,7 @@ public class ReactiveEffectTests
 
             AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
-                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects);
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
 
             FieldHelpers.FindResourceByID(state.Player2Field, "def")!.Damage.Should().Be(0);
             FieldHelpers.FindResourceByID(state.Player1Field, "my_fe_1")!.Damage.Should().Be(600);
@@ -171,7 +171,7 @@ public class ReactiveEffectTests
 
             AttackProcessor.Process(state, TestFactory.MakeGame(), 1, Atk("atk", "def"), cc, effects);
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
-                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects);
+                new ResolvePendingChoiceRequest { ChosenId = "my_fe_1" }, cc, effects, new FakeClock());
 
             FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.HasAttacked.Should().BeTrue();
         }
@@ -185,7 +185,7 @@ public class ReactiveEffectTests
             state.PendingEffectChoice!.Candidates.Should().BeEquivalentTo(["atk"]);
 
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1,
-                new ResolvePendingChoiceRequest { ChosenId = "atk" }, cc, effects);
+                new ResolvePendingChoiceRequest { ChosenId = "atk" }, cc, effects, new FakeClock());
 
             FieldHelpers.FindResourceByID(state.Player1Field, "atk")!.Damage.Should().Be(600);
         }

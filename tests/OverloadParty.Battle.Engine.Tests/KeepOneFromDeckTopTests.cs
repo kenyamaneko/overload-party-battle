@@ -102,7 +102,7 @@ public class KeepOneFromDeckTopTests
             PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "d_2" };
-            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry, new FakeClock());
 
             state.PendingEffectChoice.Should().BeNull();
             state.Player1Hand.Select(c => c.InstanceID).Should().Equal("d_2");
@@ -117,7 +117,7 @@ public class KeepOneFromDeckTopTests
             PlayCardProcessor.Process(state, TestFactory.MakeGame(), 1, PlayReq(), cc, registry);
 
             var resolveReq = new ResolvePendingChoiceRequest { ChosenId = "d_2" };
-            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry);
+            ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, resolveReq, cc, registry, new FakeClock());
 
             state.Player1Trash.Select(c => c.InstanceID).Should().Contain("d_1");
         }
