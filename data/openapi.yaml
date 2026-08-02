@@ -470,7 +470,7 @@ components:
       properties:
         gameID:
           type: string
-          description: ゲーム ID (ULID)
+          description: ゲーム ID (UUID v7)
           x-go-name: GameID
           x-csharp-name: GameID
         currentTurn:

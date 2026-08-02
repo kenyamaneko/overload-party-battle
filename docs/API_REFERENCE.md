@@ -157,7 +157,7 @@ NPC のターンを進行させる。NPC 戦で `game_enter` 後に Gateway が�
 <!-- BEGIN GENERATED: ClientGameState -->
 | フィールド | 型 | JSON | 説明 |
 |---|---|---|---|
-| `GameID` | `string` | `gameID` | ゲームID（ULID） |
+| `GameID` | `string` | `gameID` | ゲームID（UUID v7） |
 | `CurrentTurn` | `int64` | `currentTurn` | 現在のターン番号 |
 | `CurrentPhase` | `string` | `currentPhase` | 現在のフェーズ（`draw` / `main` / `battle` / `end`） |
 | `ActivePlayer` | `int64` | `activePlayer` | アクティブプレイヤー番号（1 or 2） |

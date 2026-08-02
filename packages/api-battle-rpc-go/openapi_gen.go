@@ -111,7 +111,7 @@ type ClientGameState struct {
 	// CurrentTurn 現在のターン番号
 	CurrentTurn int64 `json:"currentTurn"`
 
-	// GameID ゲーム ID (ULID)
+	// GameID ゲーム ID (UUID v7)
 	GameID string `json:"gameID"`
 
 	// IsMyTurn 自分のターンか

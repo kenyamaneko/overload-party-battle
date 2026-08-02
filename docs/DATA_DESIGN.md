@@ -14,14 +14,14 @@ battle スキーマはゲームエンジンが管理するバトル進行デー�
 
 ゲーム管理。PvP・NPC 共通で 1 ゲーム = 1 行。
 
-- **PK:** `game_id` (VARCHAR(26), ULID)
+- **PK:** `game_id` (UUID, UUID v7)
 - **INDEX:** `idx_games_status` ON `(status, created_at DESC)`
 - **TRIGGER:** `updated_at` 自動更新
 
 <!-- BEGIN GENERATED: games -->
 | カラム名 | 型 | Nullable | 説明 |
 |---|---|---|---|
-| `game_id` | VARCHAR(26) | No | ULID |
+| `game_id` | UUID | No |  |
 | `status` | VARCHAR(20) | No | 'waiting' / 'playing' / 'finished' |
 | `first_player` | SMALLINT | No | 先攻プレイヤー番号 (1 or 2) |
 | `winning_player_num` | SMALLINT | Yes | NULL=進行中, 0=引分, 1=P1勝, 2=P2勝 |
@@ -45,7 +45,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 <!-- BEGIN GENERATED: game_npcs -->
 | カラム名 | 型 | Nullable | 説明 |
 |---|---|---|---|
-| `game_id` | VARCHAR(26) | No | 親テーブル参照 |
+| `game_id` | UUID | No | 親テーブル参照 |
 | `player_num` | SMALLINT | No | NPC が座っているスロット番号 (1 or 2) |
 | `npc_model` | VARCHAR | No | NPC モデル名 |
 <!-- END GENERATED: game_npcs -->
@@ -62,7 +62,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 <!-- BEGIN GENERATED: player_summary -->
 | カラム名 | 型 | Nullable | 説明 |
 |---|---|---|---|
-| `game_id` | VARCHAR(26) | No | 親テーブル参照 |
+| `game_id` | UUID | No | 親テーブル参照 |
 | `player_num` | SMALLINT | No | 1 or 2 |
 | `name` | TEXT | No | battle 開始時点の name snapshot |
 | `level` | INT | Yes | battle 開始時点の level snapshot (NPC は NULL) |
@@ -81,7 +81,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 <!-- BEGIN GENERATED: game_decks -->
 | カラム名 | 型 | Nullable | 説明 |
 |---|---|---|---|
-| `game_id` | VARCHAR(26) | No | 親テーブル参照 |
+| `game_id` | UUID | No | 親テーブル参照 |
 | `player_num` | SMALLINT | No | 1 or 2 |
 | `deck_snapshot` | JSONB | No | デッキスナップショット |
 <!-- END GENERATED: game_decks -->
@@ -99,7 +99,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 <!-- BEGIN GENERATED: game_states -->
 | カラム名 | 型 | Nullable | 説明 |
 |---|---|---|---|
-| `game_id` | VARCHAR(26) | No | 親テーブル参照 |
+| `game_id` | UUID | No | 親テーブル参照 |
 | `initial_state` | JSONB | No | ゲーム開始時の初期状態スナップショット（作成後は上書きされない） |
 | `version` | BIGINT | No | 更新回数カウンタ（行ロック下で更新ごとに +1） |
 | `current_turn` | BIGINT | No | 現在ターン数 |
@@ -144,7 +144,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 <!-- BEGIN GENERATED: game_actions -->
 | カラム名 | 型 | Nullable | 説明 |
 |---|---|---|---|
-| `game_id` | VARCHAR(26) | No | 親テーブル参照 |
+| `game_id` | UUID | No | 親テーブル参照 |
 | `seq` | INT | No | アクション連番 |
 | `player_num` | SMALLINT | No | アクション実行プレイヤー番号 (1 or 2) |
 | `action_type` | TEXT | No | アクション種別（play_card, attack, scale_up 等） |
@@ -164,7 +164,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 <!-- BEGIN GENERATED: game_events -->
 | カラム名 | 型 | Nullable | 説明 |
 |---|---|---|---|
-| `game_id` | VARCHAR(26) | No | 親テーブル参照 |
+| `game_id` | UUID | No | 親テーブル参照 |
 | `sequence_number` | BIGINT | No | イベント連番 |
 | `event_type` | VARCHAR(50) | No | イベント種別 |
 | `player_num` | SMALLINT | Yes | NULL=system event, 1 or 2=プレイヤーイベント |
