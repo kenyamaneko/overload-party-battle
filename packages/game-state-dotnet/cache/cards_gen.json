@@ -201,7 +201,7 @@
     "stats": {},
     "restriction": "limited",
     "is_active": true,
-    "effect_text": "リポジトリから1枚ドローし手札に加える。ただし、引いたカードが 調律部 カードならトラッシュに送る",
+    "effect_text": "リポジトリから1枚ドローし手札に加える",
     "effects": [
       {
         "trigger": "ignition",
@@ -231,18 +231,18 @@
     "stats": {},
     "restriction": "limited",
     "is_active": true,
-    "effect_text": "リポジトリから2枚ドローし、選択した1枚を手札に加える。残り1枚はトラッシュに送る。ただし、引いた 調律部 カードは全てトラッシュに送る",
+    "effect_text": "リポジトリから2枚ドローし、選択した1枚を手札に加える。残り1枚はトラッシュに送る",
     "effects": [
       {
         "trigger": "ignition",
         "use_limit": "once_per_turn",
-        "ops": [
-          {
-            "draw": {
-              "count": 2
-            }
-          }
-        ]
+        "custom": "keep_one_from_deck_top",
+        "meta": {
+          "categories": [
+            "draw"
+          ],
+          "peek": 2
+        }
       }
     ]
   },
@@ -652,7 +652,7 @@
     "stats": {},
     "restriction": "limited",
     "is_active": true,
-    "effect_text": "Budget 800 を払って発動できる。相手の Resource 1体を選択。次の相手ターン終了まで機能停止（Yield 0, スループット 0, 攻撃不可）",
+    "effect_text": "Budget 800 を払って発動できる。相手の Resource 1体を選択し、次のターン終了まで休止にする。",
     "effects": [
       {
         "trigger": "ignition",
@@ -664,7 +664,7 @@
                 "owner": "opponent",
                 "pick": "choice"
               },
-              "buff": "ransomware",
+              "buff": "dormant",
               "amount": 1,
               "duration": "until_next_turn_end"
             }
@@ -763,7 +763,7 @@
     "stats": {},
     "restriction": "unlimited",
     "is_active": true,
-    "effect_text": "相手がスループット 900 以上のコンピュート系/AI・ML系リソースをデプロイした時に自動発動する。そのリソースをこのターン機能停止にする。",
+    "effect_text": "相手がスループット 900 以上のコンピュート系/AI・ML系リソースをデプロイした時に自動発動する。そのリソースをこのターン休止にする。",
     "effects": [
       {
         "trigger": "on_deploy",
@@ -1682,7 +1682,7 @@
     "stats": {},
     "restriction": "unlimited",
     "is_active": true,
-    "effect_text": "相手フィールドのサポートゾーンの裏側のカード 1枚を選択して確認する。",
+    "effect_text": "相手フィールドの裏向きリアクティブカードを1枚選び、確認する。",
     "effects": [
       {
         "trigger": "ignition",

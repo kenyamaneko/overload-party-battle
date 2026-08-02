@@ -93,6 +93,46 @@ jobs:
           path: test-catalog-source.json
           retention-days: 7
 
+  # battle 内のキャッシュではなく card の SSoT を読む。キャッシュを読むと、card 側で
+  # 追加された未実装の効果を素通しして起動時まで検知できない。
+  card-master-data:
+    needs: changes
+    if: needs.changes.outputs.code == 'true'
+    runs-on: ubicloud-standard-2
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Create token for card repository
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.CROSS_REPO_DEPS_APP_ID }}
+          private-key: ${{ secrets.CROSS_REPO_DEPS_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: overload-party-card
+      - name: Checkout card master data
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/overload-party-card
+          token: ${{ steps.app-token.outputs.token }}
+          path: card-master-data
+          sparse-checkout: data/cache
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Configure Cloudsmith auth (NuGet)
+        uses: kenyamaneko/overload-party-common/.github/actions/setup-cloudsmith-auth@main
+        with:
+          role: reader
+          formats: "nuget"
+      - name: Verify card master data effects are implemented
+        run: dotnet test tests/OverloadParty.Battle.Engine.Tests --filter "FullyQualifiedName~MasterDataEffectLoadTests"
+        env:
+          CARDS_JSON_PATH: ${{ github.workspace }}/card-master-data/data/cache/cards_gen.json
+          INITIATIVES_JSON_PATH: ${{ github.workspace }}/card-master-data/data/cache/initiatives_gen.json
+
   codegen-sync:
     needs: changes
     if: needs.changes.outputs.code == 'true'
