@@ -87,6 +87,13 @@ public static class ResolvePendingChoiceProcessor
         var result = handler(ctx);
 
         // 再実行した効果がさらに選択を要求する多段選択を捨てずに繋ぐため、新たな選択待ちを伝播する。
+        // 中断したエンドフェーズの文脈は新しい選択待ちには載らないので、引き継がないと再開できなくなる。
+        if (result.PendingChoice is { } nextChoice && pending.EndPhasePlayerNum is { } endPhaseOwner)
+        {
+            nextChoice.EndPhasePlayerNum = endPhaseOwner;
+            nextChoice.EndPhaseFiredInstanceIds = pending.EndPhaseFiredInstanceIds;
+        }
+
         state.PendingEffectChoice = result.PendingChoice;
 
         // 中断していた on_destroy から再開したケースで、残っていた破壊対象を回収する。
@@ -96,7 +103,8 @@ public static class ResolvePendingChoiceProcessor
         events.AddRange(ResumeSuspendedAttack(state, game, cc, effects, pending, source, target, result));
 
         // エンドフェーズ効果の途中で止まっていたなら、残りの効果と精算を続きから進める。
-        if (result.PendingChoice is null && pending.EndPhasePlayerNum is { } endPhasePlayerNum)
+        // 破壊の後始末で新たな選択待ちが立つこともあるので、state を見て停止中かを判定する。
+        if (state.PendingEffectChoice is null && pending.EndPhasePlayerNum is { } endPhasePlayerNum)
         {
             var endPhase = EndPhaseProcessor.ResumeEndPhase(
                 state, game, endPhasePlayerNum, cc, effects, clock, pending.EndPhaseFiredInstanceIds);
@@ -133,7 +141,7 @@ public static class ResolvePendingChoiceProcessor
         BattleGameState state, Game game, ICardCache cc, IEffectRegistry effects,
         PendingEffectChoice pending, DeployedResource? source, DeployedResource? target, EffectResult result)
     {
-        if (pending.Trigger != TriggerType.OnAttackDeclared || result.PendingChoice is not null)
+        if (pending.Trigger != TriggerType.OnAttackDeclared || state.PendingEffectChoice is not null)
         {
             return [];
         }

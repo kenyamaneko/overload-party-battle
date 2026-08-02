@@ -211,7 +211,7 @@ public class GameService
             };
         }
 
-        var npcPending = await IsActivePlayerNpc(gameID, game, ct);
+        var npcPending = await IsNpcActionPending(gameID, game, ct);
         return new GameActionResult
         {
             State = clientState,
@@ -298,7 +298,7 @@ public class GameService
 
     // ─── Private helpers ────────────────────────────────────────
 
-    private async Task<bool> IsActivePlayerNpc(string gameID, Game game, CancellationToken ct)
+    private async Task<bool> IsNpcActionPending(string gameID, Game game, CancellationToken ct)
     {
         if (game.Npc1Model is null && game.Npc2Model is null)
         {
@@ -307,6 +307,18 @@ public class GameService
 
         var state = await _gameRepo.GetGameState(gameID, ct)
             ?? throw new InvalidOperationException($"game state {gameID} not found after ProcessAction");
+
+        // 選択待ちは手番ではなく所有者が解決する。所有者が人間なら盤面は
+        // その解決を待つので、手番が NPC でも NPC に進められる手番はない。
+        if (state.PendingEffectChoice is { } pending)
+        {
+            return game.GetNpcModel(pending.ChooserPlayerNum) is not null;
+        }
+
+        if (state.PendingSlotSelects.Count > 0)
+        {
+            return state.PendingSlotSelects.Any(p => game.GetNpcModel(p.PlayerNum) is not null);
+        }
 
         return game.GetNpcModel(state.ActivePlayer) is not null;
     }
