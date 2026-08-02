@@ -80,6 +80,23 @@ public class NpcRunner
                 game, state, pendingChoice.ChooserPlayerNum, chooserAI, ct);
         }
 
+        // スロット選択も ActivePlayer ではなく所有者が解決する。相手ターン中の誘発効果でも
+        // 積まれるため、ActivePlayer の NPC 判定より先に NPC 所有の選択を探す。
+        foreach (var pendingSlot in state.PendingSlotSelects)
+        {
+            if (ResolveNpcAIForPlayer(game, pendingSlot.PlayerNum) is not { } ownerAI) { continue; }
+
+            return await ProcessOneSlotSelect(
+                game, ownerAI, BuildClientState(state, game, pendingSlot.PlayerNum),
+                pendingSlot.PlayerNum, ct);
+        }
+
+        if (state.PendingSlotSelects.Count > 0)
+        {
+            // 残る選択が human のものだけなら、解決されるまで NPC に進められる手番はない。
+            return NpcAdvanceResult.Done();
+        }
+
         var npcAI = ResolveNpcAIForPlayer(game, state.ActivePlayer);
         if (npcAI is null)
         {
@@ -88,12 +105,6 @@ public class NpcRunner
 
         var npcPlayerNum = state.ActivePlayer;
         var clientState = BuildClientState(state, game, npcPlayerNum);
-
-        // 保留中のスロット選択を優先処理
-        if (clientState.MyView.PendingSlotSelect is not null)
-        {
-            return await ProcessOneSlotSelect(game, npcAI, clientState, npcPlayerNum, ct);
-        }
 
         // 現在のフェーズのアクションを決定
         var actions = DecideActions(npcAI, clientState, game.GameID);

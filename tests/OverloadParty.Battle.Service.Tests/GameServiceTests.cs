@@ -449,5 +449,27 @@ public class GameServiceTests
             after!.CurrentTurn.Should().Be(before!.CurrentTurn);
             after.CurrentPhase.Should().Be(before.CurrentPhase);
         }
+
+        [Fact(DisplayName = "相手ターン中に NPC 側へ積まれたスロット選択は、NPC ターンの進行で解決される")]
+        public async Task NpcOwnedSlotSelect_DuringPlayerTurn_IsResolved()
+        {
+            var cards = MakePlayerCards();
+            var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", Factions.SHE, NpcPlayerSummaries);
+
+            var state = await _repo.GetGameState(game.GameID);
+            state!.ActivePlayer = 1;
+            state.PendingSlotSelects.Add(new AwaitingSlotSelect
+            {
+                PlayerNum = 2,
+                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "npc_pending"),
+                ValidZones = ["frontend_0"],
+            });
+
+            await _svc.AdvanceNpcTurn(game.GameID);
+
+            var after = await _repo.GetGameState(game.GameID);
+            after!.PendingSlotSelects.Should().BeEmpty();
+            after.Player2Field.Frontend[0]!.InstanceID.Should().Be("npc_pending");
+        }
     }
 }
