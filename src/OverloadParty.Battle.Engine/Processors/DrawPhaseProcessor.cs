@@ -67,6 +67,7 @@ public static class DrawPhaseProcessor
                 support.DeployingTurnsLeft--;
                 if (support.DeployingTurnsLeft <= 0)
                 {
+                    support.FaceUp = true;
                     FireOnDeploy(state, game, playerNum, cc, effects, source: null, supSource: support);
                 }
             }

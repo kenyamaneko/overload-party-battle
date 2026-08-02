@@ -42,7 +42,7 @@ public static class ResourceHelpers
         {
             candidates.Add(EventTriggerCandidate.ForResource(res, ownerNum));
         }
-        foreach (var sup in FieldHelpers.AllSupports(ownerField))
+        foreach (var sup in FieldHelpers.AllTriggerableSupports(ownerField))
         {
             candidates.Add(EventTriggerCandidate.ForSupport(sup, ownerNum));
         }

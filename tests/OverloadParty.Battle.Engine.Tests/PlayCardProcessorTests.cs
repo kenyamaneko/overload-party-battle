@@ -30,6 +30,8 @@ public class PlayCardProcessorTests
             _cc.Add(new CardDefinition { CardId = "TEST-0502", CardName = "TestReactive", CardType = CardTypes.Reactive, DeployTurns = 0 });
             // Platform card
             _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
+            // Opponent watcher card
+            _cc.Add(new CardDefinition { CardId = "TEST-0600", CardName = "TestWatcher", CardType = CardTypes.Platform, DeployTurns = 0 });
         }
 
         /// <summary>Builds a PlayCardRequest targeting an explicit zone, index, and optional target.</summary>
@@ -221,6 +223,20 @@ public class PlayCardProcessorTests
 
             act.Should().Throw<GameRuleException>();
         }
+
+        [Fact(DisplayName = "裏向きの対象にアタッチメントをアタッチすると拒否される")]
+        public void Process_AttachmentCard_FaceDownTarget_Throws()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            var target = TestFactory.MakeResource(instanceId: "target_1", faceUp: false, deployLeft: 1);
+            state.Player1Field.Frontend[0] = target;
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0300" });
+
+            var act = () => PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_1", Zones.Support, 0, targetInstanceId: "target_1"), _cc, new EffectRegistry());
+
+            act.Should().Throw<GameRuleException>();
+        }
     }
 
     [Trait("対象", "インシデントの使用")]
@@ -302,8 +318,8 @@ public class PlayCardProcessorTests
     [Trait("対象", "プラットフォームのデプロイ")]
     public class Platform : Base
     {
-        [Fact(DisplayName = "プラットフォームをデプロイすると表向きで残りデプロイターンが2になる")]
-        public void Process_PlatformCard_SetsFaceUpWithDeployTurns()
+        [Fact(DisplayName = "デプロイターンが残っているプラットフォームをデプロイすると裏向きで残りデプロイターンが2になる")]
+        public void Process_PlatformCard_SetsFaceDownWithDeployTurns()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
             state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0200" });
@@ -312,8 +328,73 @@ public class PlayCardProcessorTests
                 state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, new EffectRegistry());
 
             state.Player1Field.Support[0].Should().NotBeNull();
-            state.Player1Field.Support[0]!.FaceUp.Should().BeTrue();
+            state.Player1Field.Support[0]!.FaceUp.Should().BeFalse();
             state.Player1Field.Support[0]!.DeployingTurnsLeft.Should().Be(2);
+        }
+
+        [Fact(DisplayName = "デプロイターンが0のプラットフォームをデプロイすると即座に表向きになる")]
+        public void Process_PlatformCardWithZeroDeployTurns_SetsFaceUpImmediately()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            _cc.Add(TestFactory.PlatformCard(cardId: "TEST-0201", deployTurns: 0));
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0201" });
+
+            PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, new EffectRegistry());
+
+            state.Player1Field.Support[0].Should().NotBeNull();
+            state.Player1Field.Support[0]!.FaceUp.Should().BeTrue();
+            state.Player1Field.Support[0]!.DeployingTurnsLeft.Should().Be(0);
+        }
+    }
+
+    [Trait("対象", "リアクティブ配置のデプロイ時効果中立化")]
+    public class ReactiveDeployNeutrality : Base
+    {
+        [Fact(DisplayName = "リアクティブを伏せたとき、相手のデプロイ時誘発は発動しない")]
+        public void PlayCard_Reactive_DoesNotFireOpponentOnDeploy()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TEST-0502" });
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "watcher_1",
+                CardID = "TEST-0600",
+                ArtNo = 0,
+                FaceUp = true,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TEST-0600", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_1", Zones.Support, 0), _cc, effects);
+
+            fired.Should().BeFalse("リアクティブを裏向きで伏せる行為はリソースのデプロイと異なり on_deploy の契機にしない");
+        }
+
+        [Fact(DisplayName = "リソースをデプロイしたとき、相手のデプロイ時誘発は発動する")]
+        public void PlayCard_Resource_FiresOpponentOnDeploy()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = "TST-0002" });
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "watcher_1",
+                CardID = "TEST-0600",
+                ArtNo = 0,
+                FaceUp = true,
+            };
+
+            bool fired = false;
+            var effects = new TestEffectRegistry();
+            effects.Register("TEST-0600", TriggerType.OnDeploy, _ => { fired = true; return new EffectResult(); });
+
+            PlayCardProcessor.Process(
+                state, _game, 1, MakeReq("h_1", Zones.Frontend, 0), _cc, effects);
+
+            fired.Should().BeTrue("リソースのデプロイは on_deploy の契機になる");
         }
     }
 

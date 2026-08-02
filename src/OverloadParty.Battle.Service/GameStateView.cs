@@ -278,13 +278,15 @@ public static class GameStateView
                 if (sup is null) { return null; }
 
                 bool peeked = !sup.FaceUp && sup.PeekedBy.Contains(viewerPlayerNum);
+                bool cardIdVisible = sup.FaceUp || peeked || sup.DeployingTurnsLeft > 0;
                 return new GD.HiddenDeployedSupport
                 {
                     InstanceID = sup.InstanceID,
                     FaceDown = !sup.FaceUp,
-                    CardID = sup.FaceUp || peeked ? sup.CardID : null,
-                    ArtNo = sup.FaceUp || peeked ? sup.ArtNo : 0,
+                    CardID = cardIdVisible ? sup.CardID : null,
+                    ArtNo = cardIdVisible ? sup.ArtNo : 0,
                     Peeked = peeked,
+                    DeployingTurnsLeft = sup.DeployingTurnsLeft,
                 };
             }).ToList(),
         };

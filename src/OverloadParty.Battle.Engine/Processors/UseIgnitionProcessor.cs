@@ -97,6 +97,10 @@ public static class UseIgnitionProcessor
     {
         var card = cc.MustGet(support.CardID);
 
+        if (support.DeployingTurnsLeft > 0)
+        {
+            throw new GameRuleException($"support {support.InstanceID} still has deploy turns remaining");
+        }
         if (!effects.Has(card.CardId, TriggerType.Ignition))
         {
             throw new GameRuleException($"support card {card.CardId} has no ignition effect");
@@ -138,6 +142,10 @@ public static class UseIgnitionProcessor
     {
         var card = cc.MustGet(source.CardID);
 
+        if (!source.FaceUp)
+        {
+            throw new GameRuleException($"resource {source.InstanceID} is face-down");
+        }
         if (!effects.Has(card.CardId, TriggerType.Ignition))
         {
             throw new GameRuleException($"card {card.CardId} has no ignition effect");

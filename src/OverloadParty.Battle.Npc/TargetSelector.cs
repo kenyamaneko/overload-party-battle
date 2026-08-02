@@ -116,7 +116,7 @@ public static class TargetSelector
     /// <returns>該当プラットフォームの InstanceID。なければ null。</returns>
     public static string? FindFirstPlatformId(GD.OpponentField field, ICardCache cc) =>
         WireFieldHelpers.AllSupports(field)
-            .Where(s => s.CardID is not null)
+            .Where(s => s.CardID is not null && !s.FaceDown)
             .FirstOrDefault(s => (cc.Get(s.CardID!)
                 ?? throw new InvalidOperationException($"Card '{s.CardID}' not found in card cache"))
                 .CardType == CardTypes.Platform)

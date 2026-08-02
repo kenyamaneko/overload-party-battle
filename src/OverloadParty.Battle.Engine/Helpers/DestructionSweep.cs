@@ -147,7 +147,7 @@ public static class DestructionSweep
 
         candidates.AddRange(FieldHelpers.AllFaceUpResources(ownerField)
             .Select(res => EventTriggerCandidate.ForResource(res, ownerNum)));
-        candidates.AddRange(FieldHelpers.AllSupports(ownerField)
+        candidates.AddRange(FieldHelpers.AllTriggerableSupports(ownerField)
             .Select(sup => EventTriggerCandidate.ForSupport(sup, ownerNum)));
 
         var (_, events) = EventTriggerFiring.Fire(

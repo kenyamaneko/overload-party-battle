@@ -28,6 +28,10 @@ public static class ScaleUpProcessor
             ?? throw new GameRuleException($"resource {req.InstanceID} not found");
         var card = cc.MustGet(resource.CardID);
 
+        if (!resource.FaceUp)
+        {
+            throw new GameRuleException($"resource {req.InstanceID} is face-down");
+        }
         if (FieldHelpers.HasTemporaryEffect(resource, BuffTypes.Dormant))
         {
             throw new GameRuleException("dormant resource cannot scale up");
