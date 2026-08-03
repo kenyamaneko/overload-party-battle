@@ -40,13 +40,13 @@ internal sealed class ImmediateActionStrategy
             (a, card) =>
             {
                 var (pri, use, choice) = PriorityResolver.Evaluate(
-                    card.CardId, TriggerType.Ignition, ctx, activeConfig, _effects, _cc);
+                    card.CardId, TriggerType.Ignition, ctx, activeConfig, _effects, _cc, a.ValidTargets);
                 if (!use)
                 {
                     return null;
                 }
 
-                if (a.EffectTargetType == "Choice" && choice is null)
+                if (a.EffectTargetType == AvailableAction.ChoiceEffectTargetType && choice is null)
                 {
                     if (!(a.ValidTargets?.Count > 0))
                     {

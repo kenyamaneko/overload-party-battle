@@ -216,11 +216,9 @@ public static class EffectClassifier
                 break;
 
             // ダメージ
-            case DealDamageOp d:
-                ClassifyDamageTarget(info, d);
-                break;
-            case IncidentDamageOp id:
-                ClassifyIncidentDamageTarget(info, id);
+            case DealDamageOp:
+            case IncidentDamageOp:
+                ClassifyDamageSelector(info, op);
                 break;
 
             // バフ / デバフ
@@ -300,28 +298,9 @@ public static class EffectClassifier
         }
     }
 
-    private static void ClassifyDamageTarget(EffectInfo info, DealDamageOp op)
-    {
-        // Use reflection-free approach by checking selector type
-        ClassifyDamageSelector(info, op);
-    }
-
-    private static void ClassifyIncidentDamageTarget(EffectInfo info, IncidentDamageOp op)
-    {
-        ClassifyDamageSelector(info, op);
-    }
-
     private static void ClassifyDamageSelector(EffectInfo info, IEffectOp op)
     {
-        // We need to check the selector type — get it via pattern matching on known ops
-        ISelector? sel = op switch
-        {
-            DealDamageOp d => GetSelector(d),
-            IncidentDamageOp i => GetSelector(i),
-            _ => null,
-        };
-
-        switch (sel)
+        switch (GetSelector(op))
         {
             case ByChoiceSelector bcs:
                 info.AddCategory(EffectCategory.SingleDamage);
@@ -379,11 +358,13 @@ public static class EffectClassifier
         }
     }
 
-    // Helper to extract selector from ops using reflection-free approach.
-    // Ops store their selector in the constructor, so we access them via well-known fields.
-    private static ISelector? GetSelector(object op)
+    /// <summary>
+    /// op が対象の選定に使うセレクタを返します。
+    /// </summary>
+    /// <param name="op">対象の op。</param>
+    /// <returns>op のセレクタ。セレクタを持たない op では null。</returns>
+    public static ISelector? GetSelector(IEffectOp op)
     {
-        // Use a simple field accessor approach since we control all the op types
         return op switch
         {
             DealDamageOp d => d.Selector,

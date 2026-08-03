@@ -70,51 +70,34 @@ public class ByChoiceSelector : ISelector
             return [];
         }
 
+        return EnumerateCandidates(ctx).Where(r => r.InstanceID == instanceId).ToList();
+    }
+
+    /// <summary>
+    /// 選べる対象を返します。
+    /// </summary>
+    /// <param name="ctx">操作コンテキスト。</param>
+    /// <returns>絞り込み条件を満たすリソース一覧。</returns>
+    public List<DeployedResource> EnumerateCandidates(OpContext ctx)
+    {
         var field = Owner == "opponent" ? ctx.OpponentField : ctx.MyField;
-        var resource = FieldHelpers.FindResourceByID(field, instanceId);
-        if (resource is null)
-        {
-            return [];
-        }
 
-        // フィルターを適用
-        if (Zone is { } z)
+        IEnumerable<DeployedResource> candidates = Zone switch
         {
-            var actualZone = FieldHelpers.FindResourceZone(field, instanceId)?.ToWireString();
-            if (actualZone != z)
-            {
-                return [];
-            }
-        }
+            null => field.Frontend.Concat(field.Backend),
+            Zones.Frontend => field.Frontend,
+            Zones.Backend => field.Backend,
+            _ => [],
+        };
 
-        if (Faction is { Length: > 0 } faction)
-        {
-            var card = ctx.CardCache.MustGet(resource.CardID);
-            if (card.Faction != faction)
-            {
-                return [];
-            }
-        }
-
-        if (CardType is { Length: > 0 } cardType)
-        {
-            var card = ctx.CardCache.MustGet(resource.CardID);
-            if (!EffectHelpers.MatchesCardType(card, cardType))
-            {
-                return [];
-            }
-        }
-
-        if (Subtypes is { Count: > 0 } subtypes)
-        {
-            var card = ctx.CardCache.MustGet(resource.CardID);
-            if (!EffectHelpers.MatchesAnySubtype(card, subtypes))
-            {
-                return [];
-            }
-        }
-
-        return [resource];
+        var cc = ctx.CardCache;
+        return candidates
+            .Where(r => Faction is not { Length: > 0 } || cc.MustGet(r.CardID).Faction == Faction)
+            .Where(r => CardType is not { Length: > 0 }
+                        || EffectHelpers.MatchesCardType(cc.MustGet(r.CardID), CardType))
+            .Where(r => Subtypes is not { Count: > 0 }
+                        || EffectHelpers.MatchesAnySubtype(cc.MustGet(r.CardID), Subtypes))
+            .ToList();
     }
 
     private static string? GetChoiceInstanceId(OpContext ctx)

@@ -162,8 +162,14 @@ public static class TargetSelector
     /// <summary>
     /// Resolves a single target from a TargetSpec, constrained to the given valid target IDs.
     /// </summary>
+    /// <param name="spec">ターゲット仕様。</param>
+    /// <param name="validTargets">選んでよい対象の InstanceID 一覧。</param>
+    /// <param name="myField">自フィールド。</param>
+    /// <param name="oppField">相手フィールド。</param>
+    /// <param name="cc">カード定義の参照元。</param>
+    /// <returns>解決したターゲットの InstanceID。該当なしなら null。</returns>
     public static string? ResolveFromValid(
-        TargetSpec spec, List<string> validTargets,
+        TargetSpec spec, IReadOnlyList<string> validTargets,
         GD.Field myField, GD.OpponentField oppField, ICardCache cc)
     {
         var validSet = new HashSet<string>(validTargets);

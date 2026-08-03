@@ -33,7 +33,7 @@ internal sealed class IgnitionStrategy
             {
                 var cardId = ActionFilter.ResolveCardIdForInstance(a.SourceInstanceID!, ctx.Field);
                 var (pri, use, choiceData) = PriorityResolver.Evaluate(
-                    cardId, TriggerType.Ignition, ctx, activeConfig, _effects, _cc);
+                    cardId, TriggerType.Ignition, ctx, activeConfig, _effects, _cc, a.ValidTargets);
                 return (Action: a, CardId: cardId, Priority: pri, Use: use, ChoiceData: choiceData);
             })
             .Where(x => x.Use)
@@ -43,7 +43,7 @@ internal sealed class IgnitionStrategy
                     ? id.ToString()
                     : null;
 
-                if (x.Action.EffectTargetType == "Choice" && targetId is null)
+                if (x.Action.EffectTargetType == AvailableAction.ChoiceEffectTargetType && targetId is null)
                 {
                     if (!(x.Action.ValidTargets?.Count > 0))
                     {
@@ -79,12 +79,12 @@ internal sealed class IgnitionStrategy
     private string? SelectTargetFromValid(
         string cardId, List<string> validTargets, DecisionContext ctx, AiConfig activeConfig)
     {
-        var validSet = new HashSet<string>(validTargets);
         var info = _effects.GetEffectInfo(cardId, TriggerType.Ignition);
         if (info is not null)
         {
-            var target = PriorityResolver.SelectTarget(info, ctx, activeConfig.TargetSelection, _cc);
-            if (target is not null && validSet.Contains(target))
+            var target = PriorityResolver.SelectTarget(
+                info, ctx, activeConfig.TargetSelection, _cc, validTargets);
+            if (target is not null)
             {
                 return target;
             }

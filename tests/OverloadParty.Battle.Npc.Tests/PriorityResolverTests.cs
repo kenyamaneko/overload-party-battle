@@ -507,7 +507,7 @@ public class PriorityResolverTests
             var effects = new NullEffectRegistry();
 
             var (_, use, _) = PriorityResolver.Evaluate(
-                "UNKNOWN", TriggerType.Ignition, ctx, config, effects, cc);
+                "UNKNOWN", TriggerType.Ignition, ctx, config, effects, cc, validTargets: null);
 
             use.Should().BeFalse();
         }
@@ -534,7 +534,7 @@ public class PriorityResolverTests
             });
 
             var (pri, use, _) = PriorityResolver.Evaluate(
-                "TST-0003", TriggerType.Ignition, ctx, config, reg, cc);
+                "TST-0003", TriggerType.Ignition, ctx, config, reg, cc, validTargets: null);
 
             use.Should().BeTrue();
             pri.Should().Be(90);
@@ -551,7 +551,8 @@ public class PriorityResolverTests
             var ctx = MakeCtx(cc);
             var info = new EffectInfo().WithCategory(EffectCategory.BudgetGain);
 
-            var act = () => PriorityResolver.SelectTarget(info, ctx, new TargetSelectionConfig(), cc);
+            var act = () => PriorityResolver.SelectTarget(
+                info, ctx, new TargetSelectionConfig(), cc, validTargets: null);
 
             act.Should().Throw<InvalidOperationException>();
         }
@@ -563,7 +564,8 @@ public class PriorityResolverTests
             var ctx = MakeCtx(cc);
             var info = new EffectInfo().WithCategory(EffectCategory.SingleDamage);
 
-            var act = () => PriorityResolver.SelectTarget(info, ctx, new TargetSelectionConfig(), cc);
+            var act = () => PriorityResolver.SelectTarget(
+                info, ctx, new TargetSelectionConfig(), cc, validTargets: null);
 
             act.Should().Throw<InvalidOperationException>();
         }
