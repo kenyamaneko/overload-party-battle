@@ -181,7 +181,7 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 | `play_card` | Main Phase | 手札に存在 | 配置先が空き | — | デプロイターン 0 なら即表向き、1以上なら裏向き配置 |
 | `attack` | Battle Phase | フィールド上の自コンピュート（表向き） | 相手フィールド上の表向きリソース | — | 攻撃済みでない |
 | `scale_up` | Main Phase | フィールド上の自リソース（表向き） | — | — | Resizable 属性、現在Rank < 対象Rank |
-| `monetize` | Main Phase | バックエンドのコンピュート（表向き・休止でない） | — | — | このターン収益化に未使用、1 回の分配量は実効 TP 以下、Insight Pool 残量 ≥ 分配量合計 |
+| `monetize` | Main Phase | バックエンドのコンピュート（表向き・休止でない） | — | — | リソースごと 1ターン1回制限、1 回の分配量は実効 TP 以下、Insight Pool 残量 ≥ 分配量合計 |
 | `use_ignition` | Main/Battle Phase | 効果を持つカード | 効果の対象 | 効果コスト | 1ターン1回制限 |
 | `use_initiative` | Main Phase | デッキが選んだプロダクトの施策 | 施策の対象 | Insight | ルーチン 1ターン1回 / スペシャル 1ゲーム1回、先攻 T1 不可 |
 
