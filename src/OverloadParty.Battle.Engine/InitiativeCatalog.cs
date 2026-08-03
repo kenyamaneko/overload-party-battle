@@ -4,8 +4,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine;
 
 /// <summary>
-/// 施策を ID で解決するインメモリ実装。起動時に card サービスから取得した
-/// 施策定義を保持する。
+/// 施策を ID で解決するインメモリ実装。起動時に読み込んだ施策定義を保持する。
 /// </summary>
 public class InitiativeCatalog : IInitiativeCatalog
 {

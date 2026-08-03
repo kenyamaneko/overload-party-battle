@@ -632,14 +632,18 @@ public static class MasterData
             .Select(CardDefinitionMapper.ToInitiative)
             .ToList();
 
-    private static string CardsPath() =>
+    /// <summary>カード定義ファイルの位置を返します。</summary>
+    /// <returns>カード定義ファイルのパス。</returns>
+    public static string CardsPath() =>
         Environment.GetEnvironmentVariable("CARDS_JSON_PATH")
         ?? FindInCache(CardsFileName)
         ?? throw new FileNotFoundException(
             $"{CardsFileName} not found. Set CARDS_JSON_PATH to the card master data.");
 
     // 施策は card の同じディレクトリで配布されるため、カード定義の隣を既定の読み込み元にする。
-    private static string InitiativesPath() =>
+    /// <summary>施策定義ファイルの位置を返します。</summary>
+    /// <returns>施策定義ファイルのパス。</returns>
+    public static string InitiativesPath() =>
         Environment.GetEnvironmentVariable("INITIATIVES_JSON_PATH")
         ?? Path.Combine(Path.GetDirectoryName(CardsPath())!, InitiativesFileName);
 

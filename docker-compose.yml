@@ -31,9 +31,6 @@ services:
       DATABASE_CONN: Host=postgres;Port=5432;Database=battle;Username=battle;Password=battle;Search Path=battle
       DATABASE_IAM_AUTH_ENABLED: "false"
       NPC_AI_CONFIG_DIR: /src/src/OverloadParty.Battle.Npc/Data
-      # カードは card サービスから取得する。単体スタックには card が居ないため、
-      # 対戦カード読み込みには別途 card を含むスタック (e2e) が要る。
-      CARD_SERVICE_URL: http://card:9003
     volumes:
       - ./:/src
       - battle_nuget:/root/.nuget/packages

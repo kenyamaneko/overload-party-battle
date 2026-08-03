@@ -62,8 +62,7 @@ public class CardCache : ICardCache
     }
 
     /// <summary>
-    /// Load cards from a pre-built list (e.g., parsed from JSON in the Server layer
-    /// or fetched from the card service via <see cref="CardServiceClient"/>).
+    /// 読み込み済みのカード定義でキャッシュを差し替えます。
     /// </summary>
     /// <param name="cards">キャッシュに投入するカード定義の列。</param>
     public void LoadFromList(IEnumerable<CardDefinition> cards)
