@@ -139,11 +139,8 @@ var app = builder.Build();
 var localCardsPath = isLocalDev ? Environment.GetEnvironmentVariable("CARDS_JSON_PATH") : null;
 var localInitiativesPath = isLocalDev ? Environment.GetEnvironmentVariable("INITIATIVES_JSON_PATH") : null;
 
-// 起動時に 1 度だけ取得する。失敗したら例外を伝搬させてプロセスを落とし、Cloud Run の
-// 再起動を間隔付きの再試行として使う。ここで再試行ループを抱えると滞留が見えなくなる。
-string cardsJson;
-string initiativesJson;
 string masterDataOrigin;
+Func<Task<(string CardsJson, string InitiativesJson)>> readMasterDataAsync;
 if (!string.IsNullOrEmpty(localCardsPath))
 {
     if (!File.Exists(localCardsPath))
@@ -156,9 +153,12 @@ if (!string.IsNullOrEmpty(localCardsPath))
         throw new FileNotFoundException(
             $"Initiative data not found at {localInitiativesPath}. Set INITIATIVES_JSON_PATH and run 'python3 scripts/generate_products.py' in the card repo.");
     }
-    cardsJson = File.ReadAllText(localCardsPath);
-    initiativesJson = File.ReadAllText(localInitiativesPath);
-    masterDataOrigin = $"{localCardsPath} and {localInitiativesPath}";
+    // ラムダの中では null 検査の結果が届かないため、非 null が確定した値を非許容の変数へ移す。
+    string cardsPath = localCardsPath;
+    string initiativesPath = localInitiativesPath;
+    masterDataOrigin = $"{cardsPath} and {initiativesPath}";
+    readMasterDataAsync = async () =>
+        (await File.ReadAllTextAsync(cardsPath), await File.ReadAllTextAsync(initiativesPath));
 }
 else
 {
@@ -167,14 +167,17 @@ else
     {
         throw new InvalidOperationException("MASTER_DATA_BUCKET not set");
     }
-    (cardsJson, initiativesJson) = await MasterDataStorageClient.DownloadAsync(masterDataBucket);
     masterDataOrigin = $"gs://{masterDataBucket}";
+    readMasterDataAsync = () => MasterDataStorageClient.DownloadAsync(masterDataBucket);
 }
 
+// 起動時に 1 度だけ取得する。失敗したら例外を伝搬させてプロセスを落とし、Cloud Run の
+// 再起動を間隔付きの再試行として使う。ここで再試行ループを抱えると滞留が見えなくなる。
 List<CardDefinition> masterCards;
 List<Initiative> masterInitiatives;
 try
 {
+    var (cardsJson, initiativesJson) = await readMasterDataAsync();
     (masterCards, masterInitiatives) = MasterDataLoader.FromJson(cardsJson, initiativesJson);
 }
 catch (Exception ex)

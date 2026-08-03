@@ -108,6 +108,24 @@ public class StartupConfigValidationTests(ServerTestFixture fixture)
             });
     }
 
+    [Fact(DisplayName = "ローカル開発モードでカードデータファイルが未指定のとき、マスターデータのバケット名が空文字だと起動に失敗する")]
+    public void EmptyMasterDataBucket_FailsStartup()
+    {
+        WithEnvironmentVariables(
+            new Dictionary<string, string?>
+            {
+                ["CARDS_JSON_PATH"] = null,
+                ["MASTER_DATA_BUCKET"] = "",
+            },
+            () =>
+            {
+                var act = BuildFactory();
+
+                act.Should().Throw<InvalidOperationException>()
+                    .WithMessage("*MASTER_DATA_BUCKET*");
+            });
+    }
+
     [Trait("対象", "データベース接続の設定検証")]
     [Collection(ServerTestCollection.Name)]
     public class DatabaseConnection(ServerTestFixture fixture)
