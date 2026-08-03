@@ -59,6 +59,33 @@ public class ChoiceTargetActionsTests
         play.ValidTargets.Should().Equal("be_1");
     }
 
+    [Fact(DisplayName = "裏向きのリソースしかいないとき、対象を選ぶ即時カードをプレイするアクションが列挙されない")]
+    public void ImmediateCard_OnlyFaceDownResources_OmitsAction()
+    {
+        var state = TestFactory.MakeGameState(turn: 2);
+        state.Player1Field.Backend[0] =
+            TestFactory.MakeResource(cardId: ResourceCard, instanceId: "be_1", faceUp: false, deployLeft: 1);
+
+        var actions = EnumerateWithImmediateCardInHand(state, ChoiceHeal(Zones.Backend));
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
+    }
+
+    [Fact(DisplayName = "表向きと裏向きのリソースが混在するとき、対象を選ぶ即時カードの候補は表向きのものだけになる")]
+    public void ImmediateCard_MixedFaceUpAndFaceDown_ListsOnlyFaceUp()
+    {
+        var state = TestFactory.MakeGameState(turn: 2);
+        state.Player1Field.Backend[0] =
+            TestFactory.MakeResource(cardId: ResourceCard, instanceId: "be_faceup");
+        state.Player1Field.Backend[1] =
+            TestFactory.MakeResource(cardId: ResourceCard, instanceId: "be_facedown", faceUp: false, deployLeft: 1);
+
+        var actions = EnumerateWithImmediateCardInHand(state, ChoiceHeal(Zones.Backend));
+
+        var play = actions.Should().ContainSingle(a => a.Type == ActionTypes.PlayCard).Subject;
+        play.ValidTargets.Should().Equal("be_faceup");
+    }
+
     [Fact(DisplayName = "対象を選ぶ即時カードで選べるリソースが 1 件も無いとき、そのカードをプレイするアクションが列挙されない")]
     public void ImmediateCard_NoValidTarget_OmitsAction()
     {
