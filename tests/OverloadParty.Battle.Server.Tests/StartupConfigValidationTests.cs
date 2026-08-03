@@ -12,17 +12,26 @@ namespace OverloadParty.Battle.Tests.Server;
 [Collection(ServerTestCollection.Name)]
 public class StartupConfigValidationTests(ServerTestFixture fixture)
 {
-    private static void WithEnvironmentVariable(string name, string? value, Action act)
+    private static void WithEnvironmentVariable(string name, string? value, Action act) =>
+        WithEnvironmentVariables(new Dictionary<string, string?> { [name] = value }, act);
+
+    private static void WithEnvironmentVariables(IReadOnlyDictionary<string, string?> variables, Action act)
     {
-        var original = Environment.GetEnvironmentVariable(name);
+        var originals = variables.Keys.ToDictionary(name => name, Environment.GetEnvironmentVariable);
         try
         {
-            Environment.SetEnvironmentVariable(name, value);
+            foreach (var (name, value) in variables)
+            {
+                Environment.SetEnvironmentVariable(name, value);
+            }
             act();
         }
         finally
         {
-            Environment.SetEnvironmentVariable(name, original);
+            foreach (var (name, original) in originals)
+            {
+                Environment.SetEnvironmentVariable(name, original);
+            }
         }
     }
 
@@ -79,5 +88,52 @@ public class StartupConfigValidationTests(ServerTestFixture fixture)
 
             act.Should().Throw<FileNotFoundException>();
         });
+    }
+
+    [Trait("対象", "データベース接続の設定検証")]
+    [Collection(ServerTestCollection.Name)]
+    public class DatabaseConnection(ServerTestFixture fixture)
+    {
+        [Fact(DisplayName = "IAM 認証を有効にする設定のとき、接続ユーザーが未指定なら起動に失敗する")]
+        public void IamAuthWithoutConnectionUser_FailsStartup()
+        {
+            WithEnvironmentVariables(
+                new Dictionary<string, string?>
+                {
+                    ["DATABASE_IAM_AUTH_ENABLED"] = "true",
+                    ["DATABASE_CONN"] = "Host=/cloudsql/TST-project:TST-region:TST-instance;Database=battle;Search Path=battle;SSL Mode=Disable",
+                },
+                () =>
+                {
+                    var act = BuildFactory();
+
+                    act.Should().Throw<InvalidOperationException>()
+                        .WithMessage("*Username*");
+                });
+        }
+
+        [Fact(DisplayName = "IAM 認証の有効・無効の指定が未設定のとき、起動に失敗する")]
+        public void MissingIamAuthFlag_FailsStartup()
+        {
+            WithEnvironmentVariable("DATABASE_IAM_AUTH_ENABLED", null, () =>
+            {
+                var act = BuildFactory();
+
+                act.Should().Throw<InvalidOperationException>()
+                    .WithMessage("*DATABASE_IAM_AUTH_ENABLED is not set*");
+            });
+        }
+
+        [Fact(DisplayName = "IAM 認証の有効・無効の指定が true でも false でもない値のとき、起動に失敗する")]
+        public void InvalidIamAuthFlag_FailsStartup()
+        {
+            WithEnvironmentVariable("DATABASE_IAM_AUTH_ENABLED", "enabled", () =>
+            {
+                var act = BuildFactory();
+
+                act.Should().Throw<InvalidOperationException>()
+                    .WithMessage("*got \"enabled\"*");
+            });
+        }
     }
 }

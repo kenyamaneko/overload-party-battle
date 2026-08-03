@@ -39,6 +39,7 @@ Battle (このサービス, :9002)
 |---|---|---|
 | `PORT` | `9002` | リッスンポート |
 | `DATABASE_CONN` / `ConnectionStrings__DefaultConnection` | *(本番必須)* | PostgreSQL 接続文字列 (`battle` スキーマ) |
+| `DATABASE_IAM_AUTH_ENABLED` | *(必須)* | `true` なら Cloud SQL の IAM データベース認証で接続し、パスワードの代わりにアクセストークンを供給する。`false` なら接続文字列のパスワードで接続する。未設定と `true` / `false` 以外の値は起動時にエラー。`true` のときは接続文字列に接続ユーザー (`Username`) が要る |
 
 **ConfigMap (サービス URL):**
 
