@@ -350,6 +350,22 @@ public class GameEngineTests
     [Trait("対象", "スロット選択待ちによるアクション制御")]
     public class PendingSlotSelectGate : Base
     {
+        /// <summary>指定プレイヤーのデッキに配置待ちのカードを足し、そのスロット選択待ちを積む。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="playerNum">選択待ちを持つプレイヤー番号。</param>
+        /// <param name="cardInstanceId">デッキに足すカードのインスタンス ID。</param>
+        private static void QueueSlotSelect(BattleGameState state, long playerNum, string cardInstanceId)
+        {
+            state.GetRepository(playerNum).Add(
+                new UndeployedCard { InstanceID = cardInstanceId, CardID = "TST-0001" });
+            state.PendingSlotSelects.Add(new AwaitingSlotSelect
+            {
+                PlayerNum = playerNum,
+                SourceZone = SlotSelectSources.Repository,
+                CardInstanceID = cardInstanceId,
+            });
+        }
+
         [Fact(DisplayName = "スロット選択待ちのプレイヤーが別アクションをすると、GameRuleException を投げる")]
         public async Task ProcessAction_PendingSlotSelect_BlocksOtherActions()
         {
@@ -359,12 +375,7 @@ public class GameEngineTests
             await _engine.RunAutoAdvance(game!);
 
             var state = await _repo.GetGameState(gameID);
-            state!.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 1,
-                Resource = TestFactory.MakeResource(instanceId: "pending_1"),
-                SourceZone = SlotSelectSources.Repository,
-            });
+            QueueSlotSelect(state!, 1, "pending_1");
 
             game = await _repo.GetGame(gameID);
             var act = () => _engine.ProcessAction(
@@ -382,12 +393,7 @@ public class GameEngineTests
             await _engine.RunAutoAdvance(game!);
 
             var state = await _repo.GetGameState(gameID);
-            state!.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 1,
-                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
-                SourceZone = SlotSelectSources.Repository,
-            });
+            QueueSlotSelect(state!, 1, "pending_1");
 
             game = await _repo.GetGame(gameID);
             var result = await _engine.ProcessAction(
@@ -397,6 +403,7 @@ public class GameEngineTests
             result.Events.Should().Contain(e => e.EventType == ActionTypes.SelectSlot);
             state.PendingSlotSelects.Should().BeEmpty();
             state.Player1Field.Frontend[1].Should().NotBeNull();
+            state.Player1Repository.Should().NotContain(c => c.InstanceID == "pending_1");
         }
 
         [Fact(DisplayName = "相手がスロット選択待ちのとき、ターンプレイヤーのカードプレイは拒否される")]
@@ -409,12 +416,7 @@ public class GameEngineTests
 
             var state = await _repo.GetGameState(gameID);
             // 手番は P1 だが、P2 にスロット選択が残っている
-            state!.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 2,
-                Resource = TestFactory.MakeResource(instanceId: "pending_1"),
-                SourceZone = SlotSelectSources.Repository,
-            });
+            QueueSlotSelect(state!, 2, "pending_1");
 
             var cardToPlay = state.Player1Hand.First();
             game = await _repo.GetGame(gameID);
@@ -440,12 +442,7 @@ public class GameEngineTests
 
             var state = await _repo.GetGameState(gameID);
             // 手番は P1 だが、選択の所有者は P2
-            state!.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 2,
-                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
-                SourceZone = SlotSelectSources.Repository,
-            });
+            QueueSlotSelect(state!, 2, "pending_1");
 
             game = await _repo.GetGame(gameID);
             var result = await _engine.ProcessAction(
@@ -466,27 +463,18 @@ public class GameEngineTests
             await _engine.RunAutoAdvance(game!);
 
             var state = await _repo.GetGameState(gameID);
-            state!.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 2,
-                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_pending"),
-                SourceZone = SlotSelectSources.Repository,
-            });
-            state.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 1,
-                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_pending"),
-                SourceZone = SlotSelectSources.Repository,
-            });
+            QueueSlotSelect(state!, 2, "opp_pending");
+            QueueSlotSelect(state, 1, "my_pending");
 
             game = await _repo.GetGame(gameID);
             await _engine.ProcessAction(
                 game!, 1, ActionType.SelectSlot,
                 new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
 
-            state.Player1Field.Frontend[1]!.InstanceID.Should().Be("my_pending");
+            state.Player1Field.Frontend[1].Should().NotBeNull();
+            state.Player1Repository.Should().NotContain(c => c.InstanceID == "my_pending");
             state.PendingSlotSelects.Should().ContainSingle()
-                .Which.Resource.InstanceID.Should().Be("opp_pending");
+                .Which.CardInstanceID.Should().Be("opp_pending");
         }
 
         [Fact(DisplayName = "スロット選択待ちが生じた後の次アクションは、GameRuleException を投げる")]
@@ -510,12 +498,7 @@ public class GameEngineTests
                     Index = 0,
                 });
 
-            state.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 1,
-                Resource = TestFactory.MakeResource(instanceId: "pending_1"),
-                SourceZone = SlotSelectSources.Repository,
-            });
+            QueueSlotSelect(state, 1, "pending_1");
 
             var cardToPlay2 = state.Player1Hand.First();
             game = await _repo.GetGame(gameID);
@@ -542,18 +525,8 @@ public class GameEngineTests
             var state = await _repo.GetGameState(gameID);
 
             // 2件のスロット選択をキューに積む
-            state!.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 1,
-                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
-                SourceZone = SlotSelectSources.Repository,
-            });
-            state.PendingSlotSelects.Add(new AwaitingSlotSelect
-            {
-                PlayerNum = 1,
-                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_2"),
-                SourceZone = SlotSelectSources.Repository,
-            });
+            QueueSlotSelect(state!, 1, "pending_1");
+            QueueSlotSelect(state, 1, "pending_2");
 
             // 1件目を処理
             game = await _repo.GetGame(gameID);
@@ -562,8 +535,10 @@ public class GameEngineTests
                 new SelectSlotRequest { Zone = Zones.Frontend, Index = 0 });
 
             result.ShouldSelectSlot.Should().BeTrue();
-            state.Player1Field.Frontend[0]!.InstanceID.Should().Be("pending_1");
-            state.PendingSlotSelects.Should().ContainSingle();
+            state.Player1Field.Frontend[0].Should().NotBeNull();
+            state.Player1Repository.Should().NotContain(c => c.InstanceID == "pending_1");
+            state.PendingSlotSelects.Should().ContainSingle()
+                .Which.CardInstanceID.Should().Be("pending_2");
 
             // 2件目を処理
             game = await _repo.GetGame(gameID);
@@ -572,7 +547,8 @@ public class GameEngineTests
                 new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
 
             result2.ShouldSelectSlot.Should().BeFalse();
-            state.Player1Field.Frontend[1]!.InstanceID.Should().Be("pending_2");
+            state.Player1Field.Frontend[1].Should().NotBeNull();
+            state.Player1Repository.Should().NotContain(c => c.InstanceID == "pending_2");
             state.PendingSlotSelects.Should().BeEmpty();
         }
     }
@@ -854,8 +830,8 @@ public class GameEngineTests
             state.Player1Trash.Should().Contain(c => c.CardID == AttachmentCardId);
         }
 
-        [Fact(DisplayName = "解決までに空きスロットが埋まった選択待ちは不発になり、取り出したカードがデッキに戻る")]
-        public async Task RemainingSlotSelect_NoSlotLeftAtResolution_ReturnsCardToRepository()
+        [Fact(DisplayName = "解決までに空きスロットが埋まった選択待ちは不発になり、そのカードはデッキに残る")]
+        public async Task RemainingSlotSelect_NoSlotLeftAtResolution_LeavesCardInRepository()
         {
             _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition,
                 new RequestSlotFromRepoOp(), new RequestSlotFromRepoOp());
@@ -869,12 +845,30 @@ public class GameEngineTests
 
             await Ignite(gameID);
             state.PendingSlotSelects.Should().HaveCount(2);
+            state.Player1Repository.Should().HaveCount(2, "スロットが決まるまでカードはデッキから取り出さない");
 
             var result = await SelectSlot(gameID, 1, Zones.Frontend, 0);
 
             state.PendingSlotSelects.Should().BeEmpty();
             result.ShouldSelectSlot.Should().BeFalse();
-            state.Player1Repository.Should().ContainSingle(c => c.CardID == DeployCardId);
+            state.Player1Field.Frontend[0]!.CardID.Should().Be(DeployCardId);
+            state.Player1Repository.Should().ContainSingle().Which.InstanceID.Should().Be("r_2");
+        }
+
+        [Fact(DisplayName = "空きスロットが 1 つも無いとき、デプロイ先を要する起動効果を直接使おうとすると拒否される")]
+        public async Task NoEmptySlot_DirectIgnitionRequest_IsRejected()
+        {
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+            FillAllSlotsExceptFrontendZero(state);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: DeployCardId, instanceId: "fe_0", faceUp: true);
+
+            var act = () => Ignite(gameID);
+
+            await act.Should().ThrowAsync<GameRuleException>().WithMessage("*needs an empty slot*");
+            state.PendingSlotSelects.Should().BeEmpty();
+            state.Player1Repository.Should().ContainSingle();
         }
 
         /// <summary>フロントエンドの先頭スロットだけを空けて、プレイヤー 1 の盤面を埋める。</summary>
@@ -1009,12 +1003,21 @@ public class GameEngineTests
             return (engine, gameID);
         }
 
-        private static AwaitingSlotSelect MakeAwaitingSlotSelect(long playerNum) => new()
+        /// <summary>デッキに配置待ちのカードを足し、そのスロット選択待ちを返す。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="playerNum">選択待ちを持つプレイヤー番号。</param>
+        /// <returns>積むスロット選択待ち。</returns>
+        private static AwaitingSlotSelect MakeAwaitingSlotSelect(BattleGameState state, long playerNum)
         {
-            PlayerNum = playerNum,
-            Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
-            SourceZone = SlotSelectSources.Repository,
-        };
+            state.GetRepository(playerNum).Add(
+                new UndeployedCard { InstanceID = "pending_1", CardID = "TST-0001" });
+            return new AwaitingSlotSelect
+            {
+                PlayerNum = playerNum,
+                SourceZone = SlotSelectSources.Repository,
+                CardInstanceID = "pending_1",
+            };
+        }
 
         [Fact(DisplayName = "相手ターン中でも、選択者は効果中選択の解決アクションを送れる")]
         public async Task PendingChoice_ChooserResolves_EvenOnOpponentTurn()
@@ -1040,7 +1043,7 @@ public class GameEngineTests
 
             var state = await _repo.GetGameState(gameID);
             state!.PendingEffectChoice = MakePending(2);
-            state.PendingSlotSelects.Add(MakeAwaitingSlotSelect(1));
+            state.PendingSlotSelects.Add(MakeAwaitingSlotSelect(state, 1));
 
             var game = await _repo.GetGame(gameID);
             await engine.ProcessAction(
@@ -1058,7 +1061,7 @@ public class GameEngineTests
 
             var state = await _repo.GetGameState(gameID);
             state!.PendingEffectChoice = MakePending(2);
-            state.PendingSlotSelects.Add(MakeAwaitingSlotSelect(1));
+            state.PendingSlotSelects.Add(MakeAwaitingSlotSelect(state, 1));
 
             var game = await _repo.GetGame(gameID);
             var act = () => engine.ProcessAction(game!, 1, ActionType.SelectSlot,

@@ -29,6 +29,7 @@ public static class UseIgnitionProcessor
         var resource = FieldHelpers.FindResourceByID(field, req.InstanceID);
         if (resource is not null)
         {
+            EnsurePlacementSlotAvailable(field, resource.CardID, effects);
             return IgniteResource(state, game, playerNum, resource, req, cc, effects);
         }
 
@@ -36,6 +37,7 @@ public static class UseIgnitionProcessor
         var support = FieldHelpers.FindSupportByID(field, req.InstanceID);
         if (support is not null)
         {
+            EnsurePlacementSlotAvailable(field, support.CardID, effects);
             return IgniteSupport(state, game, playerNum, field, support, req, cc, effects);
         }
 
@@ -149,6 +151,16 @@ public static class UseIgnitionProcessor
         });
 
         return new ActionResult { Events = events };
+    }
+
+    /// <summary>
+    /// リソースの配置スロットを要する効果は、置ける場所が無ければ発動条件を満たさないものとして拒否します。
+    /// </summary>
+    private static void EnsurePlacementSlotAvailable(Field field, string cardId, IEffectRegistry effects)
+    {
+        if (AvailableActions.CanPlaceEffectDeploy(field, cardId, effects)) { return; }
+
+        throw new GameRuleException($"card {cardId} needs an empty slot to deploy into");
     }
 
     private static CardDefinition ValidateResourceActivation(

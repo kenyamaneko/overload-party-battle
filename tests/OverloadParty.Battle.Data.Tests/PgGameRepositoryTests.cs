@@ -209,8 +209,9 @@ public class PgGameRepositoryTests
                     new AwaitingSlotSelect
                     {
                         PlayerNum = 1,
-                        Resource = new DeployedResource { InstanceID = "inst_9", CardID = "TST-0001" },
                         SourceZone = SlotSelectSources.Hand,
+                        CardInstanceID = "inst_9",
+                        OverrideAV = 200,
                     },
                 ];
                 s.PendingEffectChoice = new PendingEffectChoice
@@ -237,8 +238,9 @@ public class PgGameRepositoryTests
 
             got.PendingSlotSelects.Should().HaveCount(1);
             got.PendingSlotSelects[0].PlayerNum.Should().Be(1);
-            got.PendingSlotSelects[0].Resource.InstanceID.Should().Be("inst_9");
+            got.PendingSlotSelects[0].CardInstanceID.Should().Be("inst_9");
             got.PendingSlotSelects[0].SourceZone.Should().Be(SlotSelectSources.Hand);
+            got.PendingSlotSelects[0].OverrideAV.Should().Be(200);
 
             got.PendingEffectChoice.Should().NotBeNull();
             got.PendingEffectChoice!.ChooserPlayerNum.Should().Be(2);

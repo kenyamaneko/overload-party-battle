@@ -36,17 +36,24 @@ public static class SelectSlotProcessor
         }
 
         var pending = state.PendingSlotSelects[pendingIndex];
+        var cardDef = cc.MustGet(SlotSelectQueue.FindCard(state, pending).CardID);
 
         // 配置候補は選択を要求した時点で凍結せず、解決するこの時点の盤面から評価する。
         // 要求から解決までの間に破壊や別のデプロイで盤面が変わるため。
         string slotKey = $"{req.Zone}_{req.Index}";
-        if (!SlotSelectQueue.ValidZonesFor(state, pending, cc).Contains(slotKey))
+        var field = state.GetField(playerNum);
+        if (!ResourceHelpers.BuildValidZones(field, cardDef).Contains(slotKey))
         {
             throw new GameRuleException($"Invalid slot: {slotKey}");
         }
 
-        var field = state.GetField(playerNum);
-        Place(field, pending.Resource, req.Zone, req.Index);
+        // 配置先が決まったこの時点で初めてカードを領域から取り出す。
+        var sourceCard = SlotSelectQueue.TakeCard(state, pending);
+        var resource = SlotSelectQueue.BuildResource(
+            pending, cardDef, sourceCard, state.NextInstanceID(), state.CurrentTurn);
+        resource.DeployOrder = state.NextDeployOrder();
+
+        Place(field, resource, req.Zone, req.Index);
         state.PendingSlotSelects.RemoveAt(pendingIndex);
 
         var events = new List<GameEvent>
@@ -58,18 +65,18 @@ public static class SelectSlotProcessor
                 PlayerNum = playerNum,
                 EventData = new SelectSlotEventData
                 {
-                    CardId = pending.Resource.CardID,
-                    InstanceId = pending.Resource.InstanceID,
+                    CardId = resource.CardID,
+                    InstanceId = resource.InstanceID,
                     Zone = req.Zone,
                     Index = req.Index,
                 },
             },
         };
 
-        if (pending.Resource.FaceUp)
+        if (resource.FaceUp)
         {
             var (_, completionEvents) = DeployCompletion.CompleteResource(
-                state, game, playerNum, pending.Resource, cc, effects);
+                state, game, playerNum, resource, cc, effects);
             events.AddRange(completionEvents);
         }
         else

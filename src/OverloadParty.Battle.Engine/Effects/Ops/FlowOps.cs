@@ -189,6 +189,9 @@ public class CustomFnTaggedOp(Action<OpContext> fn) : IEffectOp
     /// <summary>Zone hint for NPC classification.</summary>
     public string? Zone { get; init; }
 
+    /// <summary>リソースを置くスロットを要求する効果かどうか。</summary>
+    public bool RequiresPlacementSlot { get; init; }
+
     /// <inheritdoc />
     public void Execute(OpContext ctx) => fn(ctx);
 }

@@ -217,11 +217,12 @@ public class PassiveRecalculationTests
             PassiveRecalculator.Recalculate(state, game, cc, registry);
             StatCalculator.CalculateEffectiveTP(watcher, state.Player1Field, cc).Should().Be(600);
 
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "os1", CardID = "TST-9002" });
             state.PendingSlotSelects.Add(new AwaitingSlotSelect
             {
                 PlayerNum = 1,
-                Resource = TestFactory.MakeResource(cardId: "TST-9002", instanceId: "os1", faceUp: true),
                 SourceZone = SlotSelectSources.Repository,
+                CardInstanceID = "os1",
             });
 
             SelectSlotProcessor.Process(state, game, 1, new SelectSlotRequest { Zone = "backend", Index = 0 }, cc, registry);

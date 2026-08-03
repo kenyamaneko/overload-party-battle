@@ -18,42 +18,34 @@ public class RequestSlotFromRepoOp : IEffectOp
     public void Execute(OpContext ctx)
     {
         var repo = ctx.State.GetRepository(ctx.PlayerNum);
+        var reserved = SlotSelectQueue.ReservedCardInstanceIDs(ctx.State, ctx.PlayerNum);
 
         var match = repo.FirstOrDefault(candidate =>
         {
+            if (reserved.Contains(candidate.InstanceID)) { return false; }
             var definition = ctx.CardCache.Get(candidate.CardID);
             return definition is not null && (Filter is null || Filter(definition));
         });
 
         if (match is null) { return; }
 
-        // 配置先がないなら repo から取り除く前に HasGuardFailed で抜ける。
-        // 取り除いてから不発にすると、戻したカードがデッキの末尾へ移り引き順が変わる。
+        // 配置先がなければ発動条件の不成立として不発にする。
         var card = ctx.CardCache.MustGet(match.CardID);
         var field = ctx.GetField(ctx.PlayerNum);
-        var validZones = ResourceHelpers.BuildValidZones(field, card);
-        if (validZones.Count == 0)
+        if (ResourceHelpers.BuildValidZones(field, card).Count == 0)
         {
             ctx.Result.HasGuardFailed = true;
             return;
         }
 
-        repo.Remove(match);
-        var instance = ResourceHelpers.CreateDeployedResource(
-            card, ctx.State.NextInstanceID(), ctx.State.CurrentTurn, match.ArtNo);
-        instance.DeployOrder = ctx.State.NextDeployOrder();
-
-        if (OverrideAV > 0)
-        {
-            instance.MaxAV = OverrideAV;
-            instance.Damage = 0;
-        }
-
+        // カードはスロットが決まるまでデッキに残す。取り出さなければ不発時に戻す必要がなく、
+        // デッキの並びもインスタンス ID も動かない。
         ctx.State.PendingSlotSelects.Add(new AwaitingSlotSelect
         {
             PlayerNum = ctx.PlayerNum,
-            Resource = instance,
             SourceZone = SlotSelectSources.Repository,
+            CardInstanceID = match.InstanceID,
+            OverrideAV = OverrideAV,
         });
     }
 }
@@ -109,9 +101,12 @@ public class RequestSlotFromHandOp : IEffectOp
     {
         // SlotRequestHelpers.DeployFromHand は CardID で手札先頭を引くため、
         // 同名カードの 2 枚目以降は候補として区別しなくてよい。
+        var reserved = SlotSelectQueue.ReservedCardInstanceIDs(ctx.State, ctx.PlayerNum);
+
         return ctx.State.GetHand(ctx.PlayerNum)
             .Where(c =>
             {
+                if (reserved.Contains(c.InstanceID)) { return false; }
                 var card = ctx.CardCache.Get(c.CardID);
                 return card is not null && (Filter is null || Filter(card));
             })

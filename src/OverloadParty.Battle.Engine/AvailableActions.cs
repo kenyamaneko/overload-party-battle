@@ -251,6 +251,19 @@ public static class AvailableActions
         return true;
     }
 
+    /// <summary>
+    /// リソースの配置スロットを要する効果を、置ける場所が無い間は発動できないものとして扱います。
+    /// </summary>
+    /// <param name="field">効果を使うプレイヤーのフィールド。</param>
+    /// <param name="cardId">効果を持つカードの ID。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <returns>効果が配置スロットを要さないか、置ける場所があれば true。</returns>
+    public static bool CanPlaceEffectDeploy(Field field, string cardId, IEffectRegistry effects)
+    {
+        return !SlotRequestHelpers.RequiresPlacementSlot(effects.GetOps(cardId, TriggerType.Ignition))
+            || FieldHelpers.HasEmptyResourceSlot(field);
+    }
+
     private static AvailableAction? BuildSupportSlotAction(Field field, UndeployedCard handCard)
     {
         // ワイヤーフォーマット: "{zone}_{slotIndex}" — クライアント/NPC 側で _ 分割してパース
@@ -403,6 +416,7 @@ public static class AvailableActions
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
 
             if (!AllPreCheckableGuardsSatisfied(state, source: resource, supSource: null, card.CardId, cc, effects)) { continue; }
+            if (!CanPlaceEffectDeploy(myField, card.CardId, effects)) { continue; }
 
             var action = new AvailableAction
             {
@@ -424,6 +438,7 @@ public static class AvailableActions
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
 
             if (!AllPreCheckableGuardsSatisfied(state, source: null, supSource: support, card.CardId, cc, effects)) { continue; }
+            if (!CanPlaceEffectDeploy(myField, card.CardId, effects)) { continue; }
 
             var action = new AvailableAction
             {

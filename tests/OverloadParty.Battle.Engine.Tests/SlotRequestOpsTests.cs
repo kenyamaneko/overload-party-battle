@@ -62,11 +62,11 @@ public class SlotRequestOpsTests
 
             var pending = state.PendingSlotSelects.Should().ContainSingle().Subject;
             pending.PlayerNum.Should().Be(1);
-            pending.Resource.CardID.Should().Be("TST-0001");
+            pending.CardInstanceID.Should().Be("r_1");
         }
 
-        [Fact(DisplayName = "デッキからのデプロイ要求で対象カードがデッキから取り除かれる")]
-        public void Ignition_RemovesCardFromRepo()
+        [Fact(DisplayName = "デッキからのデプロイ要求では、スロットが決まるまで対象カードがデッキに残る")]
+        public void Ignition_LeavesCardInRepoUntilSlotChosen()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp());
             var state = StateWithSource();
@@ -74,7 +74,7 @@ public class SlotRequestOpsTests
 
             Ignite(state, cc, effects);
 
-            state.Player1Repository.Should().BeEmpty();
+            state.Player1Repository.Should().ContainSingle().Which.InstanceID.Should().Be("r_1");
         }
 
         [Fact(DisplayName = "可用性を上書きして 200 を指定するとデプロイするリソースの最大可用性が 200 になる")]
@@ -85,8 +85,10 @@ public class SlotRequestOpsTests
             state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" }];
 
             Ignite(state, cc, effects);
+            SelectSlotProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 }, cc, effects);
 
-            state.PendingSlotSelects[0].Resource.MaxAV.Should().Be(200);
+            state.Player1Field.Frontend[1]!.MaxAV.Should().Be(200);
         }
 
         [Fact(DisplayName = "条件に合うカードがデッキにないとき選択待ちが積まれずデッキは変わらない")]
@@ -169,11 +171,11 @@ public class SlotRequestOpsTests
             Ignite(state, cc, effects, Choose("TST-0001"));
 
             state.PendingSlotSelects.Should().ContainSingle()
-                .Which.Resource.CardID.Should().Be("TST-0001");
+                .Which.CardInstanceID.Should().Be("h_1");
         }
 
-        [Fact(DisplayName = "手札からのデプロイ要求で対象カードが手札から取り除かれる")]
-        public void Ignition_RemovesCardFromHand()
+        [Fact(DisplayName = "手札からのデプロイ要求では、スロットが決まるまで対象カードが手札に残る")]
+        public void Ignition_LeavesCardInHandUntilSlotChosen()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromHandOp());
             var state = StateWithSource();
@@ -181,7 +183,7 @@ public class SlotRequestOpsTests
 
             Ignite(state, cc, effects, Choose("TST-0001"));
 
-            state.Player1Hand.Should().BeEmpty();
+            state.Player1Hand.Should().ContainSingle().Which.InstanceID.Should().Be("h_1");
         }
 
         [Fact(DisplayName = "手札のカードを選ばずにデプロイ要求すると拒否される")]
@@ -244,8 +246,7 @@ public class SlotRequestOpsTests
 
             var pending = state.PendingSlotSelects.Should().ContainSingle().Subject;
             pending.PlayerNum.Should().Be(1);
-            pending.Resource.CardID.Should().Be("TST-0001");
-            state.Player1Repository.Should().ContainSingle(c => c.CardID == "TST-DB01");
+            pending.CardInstanceID.Should().Be("r_1");
         }
 
         [Fact(DisplayName = "盤面が満杯でも、破壊された 1 体の空きスロットへ同名カードをデプロイできる")]

@@ -102,10 +102,17 @@ public static class GameStateView
     {
         var pending = state.PendingSlotSelects.FirstOrDefault(p => p.PlayerNum == playerNum);
         if (pending is null) { return null; }
+
+        // カードはまだ手札やデッキにあるので、配置後の姿をカード定義から組み立てて見せる。
+        var sourceCard = SlotSelectQueue.FindCard(state, pending);
+        var cardDef = cc.MustGet(sourceCard.CardID);
+        var preview = SlotSelectQueue.BuildResource(
+            pending, cardDef, sourceCard, sourceCard.InstanceID, state.CurrentTurn);
+
         return new GD.PendingSlotSelectView
         {
-            Resource = MapResource(pending.Resource),
-            ValidZones = SlotSelectQueue.ValidZonesFor(state, pending, cc),
+            Resource = MapResource(preview),
+            ValidZones = ResourceHelpers.BuildValidZones(state.GetField(playerNum), cardDef),
         };
     }
 

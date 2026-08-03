@@ -127,13 +127,14 @@ public class GameStateViewTests
         public void SlotSelectPending_ShowsResourceAndValidZones()
         {
             var state = TestFactory.MakeGameState();
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0002" });
             state.PendingSlotSelects =
             [
                 new AwaitingSlotSelect
                 {
                     PlayerNum = 1,
-                    Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0002" },
                     SourceZone = SlotSelectSources.Repository,
+                    CardInstanceID = "r_1",
                 },
             ];
 
@@ -150,13 +151,14 @@ public class GameStateViewTests
             var state = TestFactory.MakeGameState();
             state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0002", instanceId: "occupied_0");
             state.Player1Field.Backend[1] = TestFactory.MakeResource(cardId: "TST-0002", instanceId: "occupied_1");
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = "TST-0002" });
             state.PendingSlotSelects =
             [
                 new AwaitingSlotSelect
                 {
                     PlayerNum = 1,
-                    Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0002" },
                     SourceZone = SlotSelectSources.Repository,
+                    CardInstanceID = "r_1",
                 },
             ];
 
@@ -174,8 +176,8 @@ public class GameStateViewTests
                 new AwaitingSlotSelect
                 {
                     PlayerNum = 1,
-                    Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0001" },
                     SourceZone = SlotSelectSources.Repository,
+                    CardInstanceID = "r_1",
                 },
             ];
 

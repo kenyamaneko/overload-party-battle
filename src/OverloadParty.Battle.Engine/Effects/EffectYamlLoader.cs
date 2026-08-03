@@ -359,6 +359,7 @@ public static class EffectYamlLoader
             Categories = categories ?? [],
             Target = targetType,
             Zone = zoneHint,
+            RequiresPlacementSlot = CustomEffectRegistry.RequiresPlacementSlot(customName),
         }];
     }
 
