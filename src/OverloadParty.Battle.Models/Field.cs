@@ -103,5 +103,19 @@ public class AwaitingSlotSelect
 {
     public long PlayerNum { get; set; }
     public DeployedResource Resource { get; set; } = null!;
-    public List<string> ValidZones { get; set; } = [];
+
+    /// <summary>カードを取り出した領域 (<see cref="SlotSelectSources"/> の値)。デプロイが不発に終わったときの戻し先。</summary>
+    public string SourceZone { get; set; } = "";
+}
+
+/// <summary>
+/// スロット選択待ちのカードを取り出した領域 (<see cref="AwaitingSlotSelect.SourceZone"/> の値) の定数。
+/// </summary>
+public static class SlotSelectSources
+{
+    /// <summary>手札。</summary>
+    public const string Hand = "hand";
+
+    /// <summary>デッキ。</summary>
+    public const string Repository = "repository";
 }

@@ -9,7 +9,7 @@ public static class SlotRequestHelpers
 {
     /// <summary>
     /// Removes the chosen card from hand, creates a <see cref="DeployedResource"/>,
-    /// computes valid zones, and enqueues a <see cref="AwaitingSlotSelect"/> entry.
+    /// and enqueues a <see cref="AwaitingSlotSelect"/> entry.
     /// </summary>
     /// <param name="ctx">パイプライン実行コンテキスト。</param>
     /// <param name="choiceCardId">手札からデプロイするカードの ID。</param>
@@ -25,7 +25,7 @@ public static class SlotRequestHelpers
         }
 
         // 配置先がないなら手札から取り除く前に HasGuardFailed で抜ける。
-        // 取り除いてから判定すると、解決失敗時に手札からカードが消えたまま戻せなくなる。
+        // 取り除いてから不発にすると、戻したカードが手札の末尾へ移り並びが変わる。
         var field = ctx.GetField(ctx.PlayerNum);
         var validZones = ResourceHelpers.BuildValidZones(field, card);
         if (validZones.Count == 0)
@@ -45,7 +45,7 @@ public static class SlotRequestHelpers
         {
             PlayerNum = ctx.PlayerNum,
             Resource = instance,
-            ValidZones = validZones,
+            SourceZone = SlotSelectSources.Hand,
         });
     }
 }

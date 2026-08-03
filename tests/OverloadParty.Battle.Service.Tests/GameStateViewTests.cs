@@ -132,16 +132,37 @@ public class GameStateViewTests
                 new AwaitingSlotSelect
                 {
                     PlayerNum = 1,
-                    Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0001" },
-                    ValidZones = ["frontend_0", "frontend_1"],
+                    Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0002" },
+                    SourceZone = SlotSelectSources.Repository,
                 },
             ];
 
             var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
 
             result.MyView.PendingSlotSelect.Should().NotBeNull();
-            result.MyView.PendingSlotSelect!.Resource.CardID.Should().Be("TST-0001");
-            result.MyView.PendingSlotSelect.ValidZones.Should().Equal("frontend_0", "frontend_1");
+            result.MyView.PendingSlotSelect!.Resource.CardID.Should().Be("TST-0002");
+            result.MyView.PendingSlotSelect.ValidZones.Should().Equal("backend_0", "backend_1", "backend_2");
+        }
+
+        [Fact(DisplayName = "空きスロットが 1 つだけのとき、配置可能ゾーンはその 1 つだけになる")]
+        public void SlotSelectPending_SingleEmptySlot_OffersOnlyThatSlot()
+        {
+            var state = TestFactory.MakeGameState();
+            state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: "TST-0002", instanceId: "occupied_0");
+            state.Player1Field.Backend[1] = TestFactory.MakeResource(cardId: "TST-0002", instanceId: "occupied_1");
+            state.PendingSlotSelects =
+            [
+                new AwaitingSlotSelect
+                {
+                    PlayerNum = 1,
+                    Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0002" },
+                    SourceZone = SlotSelectSources.Repository,
+                },
+            ];
+
+            var result = GameStateView.Build(state, _game, 1, _cc, new EffectRegistry());
+
+            result.MyView.PendingSlotSelect!.ValidZones.Should().Equal("backend_2");
         }
 
         [Fact(DisplayName = "スロット選択待ちでない相手のビューには、スロット選択待ちが載らない")]
@@ -154,7 +175,7 @@ public class GameStateViewTests
                 {
                     PlayerNum = 1,
                     Resource = new DeployedResource { InstanceID = "inst_1", CardID = "TST-0001" },
-                    ValidZones = ["frontend_0"],
+                    SourceZone = SlotSelectSources.Repository,
                 },
             ];
 

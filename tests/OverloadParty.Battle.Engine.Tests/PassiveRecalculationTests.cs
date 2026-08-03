@@ -221,7 +221,7 @@ public class PassiveRecalculationTests
             {
                 PlayerNum = 1,
                 Resource = TestFactory.MakeResource(cardId: "TST-9002", instanceId: "os1", faceUp: true),
-                ValidZones = ["backend_0"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             SelectSlotProcessor.Process(state, game, 1, new SelectSlotRequest { Zone = "backend", Index = 0 }, cc, registry);

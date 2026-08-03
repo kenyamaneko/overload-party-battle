@@ -37,16 +37,16 @@ public static class SelectSlotProcessor
 
         var pending = state.PendingSlotSelects[pendingIndex];
 
+        // 配置候補は選択を要求した時点で凍結せず、解決するこの時点の盤面から評価する。
+        // 要求から解決までの間に破壊や別のデプロイで盤面が変わるため。
         string slotKey = $"{req.Zone}_{req.Index}";
-        if (!pending.ValidZones.Contains(slotKey))
+        if (!SlotSelectQueue.ValidZonesFor(state, pending, cc).Contains(slotKey))
         {
             throw new GameRuleException($"Invalid slot: {slotKey}");
         }
 
         var field = state.GetField(playerNum);
-        ValidateAndPlace(field, pending.Resource, req.Zone, req.Index);
-        PassiveRecalculator.Recalculate(state, game, cc, effects);
-
+        Place(field, pending.Resource, req.Zone, req.Index);
         state.PendingSlotSelects.RemoveAt(pendingIndex);
 
         var events = new List<GameEvent>
@@ -66,6 +66,17 @@ public static class SelectSlotProcessor
             },
         };
 
+        if (pending.Resource.FaceUp)
+        {
+            var (_, completionEvents) = DeployCompletion.CompleteResource(
+                state, game, playerNum, pending.Resource, cc, effects);
+            events.AddRange(completionEvents);
+        }
+        else
+        {
+            PassiveRecalculator.Recalculate(state, game, cc, effects);
+        }
+
         return new ActionResult
         {
             Events = events,
@@ -73,33 +84,15 @@ public static class SelectSlotProcessor
         };
     }
 
-    private static void ValidateAndPlace(Field field, DeployedResource resource, string zone, int index)
+    private static void Place(Field field, DeployedResource resource, string zone, int index)
     {
-        if (index < 0 || index >= BattleConstants.SlotsPerZone)
+        var target = zone switch
         {
-            throw new GameRuleException($"Invalid slot index {index}");
-        }
+            Zones.Frontend => field.Frontend,
+            Zones.Backend => field.Backend,
+            _ => throw new GameRuleException($"Unknown zone: {zone}"),
+        };
 
-        switch (zone)
-        {
-            case Zones.Frontend:
-                if (field.Frontend[index] is not null)
-                {
-                    throw new GameRuleException($"Frontend slot {index} is occupied");
-                }
-                field.Frontend[index] = resource;
-                break;
-
-            case Zones.Backend:
-                if (field.Backend[index] is not null)
-                {
-                    throw new GameRuleException($"Backend slot {index} is occupied");
-                }
-                field.Backend[index] = resource;
-                break;
-
-            default:
-                throw new GameRuleException($"Unknown zone: {zone}");
-        }
+        target[index] = resource;
     }
 }

@@ -190,7 +190,9 @@ public static class PlayCardProcessor
         // カウントダウンなしで稼働した Support 自身の効果を発火（on_deploy 2 段解決）。
         if (support.DeployingTurnsLeft <= 0)
         {
-            events.AddRange(FireOnDeployForSupport(ctx, support));
+            events.AddRange(DeployCompletion.CompleteSupport(
+                ctx.State, ctx.Game, ctx.PlayerNum, support, ctx.CC, ctx.Effects));
+            return;
         }
 
         PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
@@ -220,24 +222,11 @@ public static class PlayCardProcessor
             return false;
         }
 
-        ctx.State.SetHasOperated(ctx.PlayerNum, true);
-
-        // 相手の on_deploy 誘発はデプロイをキャンセルしうるため先に解決し、
-        // キャンセルされなかった場合のみデプロイされたカード自身の効果を走らせる（2 段解決）。
-        var (cancelled, deployEvents) = FireOnDeployForResource(ctx, resource);
+        var (cancelled, deployEvents) = DeployCompletion.CompleteResource(
+            ctx.State, ctx.Game, ctx.PlayerNum, resource, ctx.CC, ctx.Effects);
         events.AddRange(deployEvents);
 
-        if (cancelled)
-        {
-            FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
-            CardMoveHelpers.AddToTrash(ctx.State, ctx.PlayerNum, cardDef.CardId, resource.InstanceID, resource.ArtNo);
-            PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
-            return true;
-        }
-
-        PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
-
-        return false;
+        return cancelled;
     }
 
     private static ActionResult ProcessAttachCard(
@@ -342,131 +331,6 @@ public static class PlayCardProcessor
         {
             throw new GameRuleException($"{req.Zone} slot {req.Index} is occupied");
         }
-    }
-
-    /// <summary>
-    /// デプロイされたリソースの on_deploy を発火します。
-    /// </summary>
-    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
-    /// <param name="deployed">デプロイされたリソース。</param>
-    /// <returns>デプロイがキャンセルされたかと、発火したイベント。</returns>
-    private static (bool Cancelled, List<GameEvent> Events) FireOnDeployForResource(
-        PlayContext ctx, DeployedResource deployed)
-    {
-
-        var events = new List<GameEvent>();
-
-        var (cancelled, triggerEvents) = FireOnDeployTriggers(ctx, deployed, supSource: null);
-        events.AddRange(triggerEvents);
-
-        if (cancelled) { return (true, events); }
-
-        // Stage 2: デプロイされたカード自身の効果。
-        // TODO(#130): on_deploy トリガーの発火タイミング分割 (配置時/稼働時) で本経路の振り分けが変わる。
-        if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
-        {
-            var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;
-            var result = handler(new EffectContext
-            {
-                State = ctx.State,
-                Game = ctx.Game,
-                PlayerNum = ctx.PlayerNum,
-                Source = deployed,
-                Target = deployed,
-                EventOwnerNum = ctx.PlayerNum,
-                CardCache = ctx.CC,
-                Effects = ctx.Effects,
-                Trigger = TriggerType.OnDeploy,
-                EffectCardId = deployed.CardID,
-                EffectInstanceId = deployed.InstanceID,
-            });
-            events.AddRange(result.Events);
-            if (result.PendingChoice is { } pendingChoice)
-            {
-                ctx.State.PendingEffectChoice = pendingChoice;
-            }
-        }
-
-        return (false, events);
-    }
-
-    /// <summary>
-    /// デプロイされたサポートカードの on_deploy を発火します。
-    /// </summary>
-    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
-    /// <param name="deployed">デプロイされたサポートカード。</param>
-    /// <returns>発火したイベント。</returns>
-    private static List<GameEvent> FireOnDeployForSupport(PlayContext ctx, DeployedSupport deployed)
-    {
-
-        var events = new List<GameEvent>();
-
-        var (cancelled, triggerEvents) = FireOnDeployTriggers(ctx, deployedResource: null, deployed);
-        events.AddRange(triggerEvents);
-
-        if (cancelled) { return events; }
-
-        // TODO(#130): on_deploy トリガーの発火タイミング分割 (配置時/稼働時) で本経路の振り分けが変わる。
-        if (ctx.Effects.Has(deployed.CardID, TriggerType.OnDeploy))
-        {
-            var handler = ctx.Effects.Get(deployed.CardID, TriggerType.OnDeploy)!;
-            var result = handler(new EffectContext
-            {
-                State = ctx.State,
-                Game = ctx.Game,
-                PlayerNum = ctx.PlayerNum,
-                SupSource = deployed,
-                EventOwnerNum = ctx.PlayerNum,
-                CardCache = ctx.CC,
-                Effects = ctx.Effects,
-                Trigger = TriggerType.OnDeploy,
-                EffectCardId = deployed.CardID,
-                EffectInstanceId = deployed.InstanceID,
-            });
-            events.AddRange(result.Events);
-            if (result.PendingChoice is { } pendingChoice)
-            {
-                ctx.State.PendingEffectChoice = pendingChoice;
-            }
-        }
-
-        return events;
-    }
-
-    /// <summary>
-    /// on_deploy の Stage 1 として相手サポートゾーンの誘発を発火します
-    /// </summary>
-    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
-    /// <param name="deployedResource">デプロイされたリソース（サポートカードのデプロイ時は null）。</param>
-    /// <param name="supSource">デプロイされたサポートカード（リソースのデプロイ時は null）。</param>
-    /// <returns>デプロイがキャンセルされたかと、発火したイベント。</returns>
-    private static (bool Cancelled, List<GameEvent> Events) FireOnDeployTriggers(
-        PlayContext ctx, DeployedResource? deployedResource, DeployedSupport? supSource)
-    {
-
-        var opponentNum = ctx.State.OpponentOf(ctx.PlayerNum);
-        var opponentField = ctx.State.GetField(opponentNum);
-
-        var candidates = FieldHelpers.AllSupports(opponentField)
-            .Select(s => EventTriggerCandidate.ForSupport(s, opponentNum))
-            .ToList();
-
-        return EventTriggerFiring.Fire(
-            ctx.State, ctx.Game, ctx.Effects, ctx.CC, TriggerType.OnDeploy, candidates,
-            candidate => new EffectContext
-            {
-                State = ctx.State,
-                Game = ctx.Game,
-                PlayerNum = opponentNum,
-                SupSource = candidate.Support,
-                Source = deployedResource,
-                Target = deployedResource,
-                EventOwnerNum = ctx.PlayerNum,
-                CardCache = ctx.CC,
-                Effects = ctx.Effects,
-                Trigger = TriggerType.OnDeploy,
-                EffectCardId = candidate.CardId,
-            });
     }
 
     /// <summary>

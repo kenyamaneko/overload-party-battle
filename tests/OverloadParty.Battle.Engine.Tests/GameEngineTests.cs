@@ -363,7 +363,7 @@ public class GameEngineTests
             {
                 PlayerNum = 1,
                 Resource = TestFactory.MakeResource(instanceId: "pending_1"),
-                ValidZones = ["frontend_1"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             game = await _repo.GetGame(gameID);
@@ -386,7 +386,7 @@ public class GameEngineTests
             {
                 PlayerNum = 1,
                 Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
-                ValidZones = ["frontend_1"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             game = await _repo.GetGame(gameID);
@@ -413,7 +413,7 @@ public class GameEngineTests
             {
                 PlayerNum = 2,
                 Resource = TestFactory.MakeResource(instanceId: "pending_1"),
-                ValidZones = ["frontend_0"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             var cardToPlay = state.Player1Hand.First();
@@ -444,7 +444,7 @@ public class GameEngineTests
             {
                 PlayerNum = 2,
                 Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
-                ValidZones = ["frontend_0"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             game = await _repo.GetGame(gameID);
@@ -470,13 +470,13 @@ public class GameEngineTests
             {
                 PlayerNum = 2,
                 Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_pending"),
-                ValidZones = ["frontend_0"],
+                SourceZone = SlotSelectSources.Repository,
             });
             state.PendingSlotSelects.Add(new AwaitingSlotSelect
             {
                 PlayerNum = 1,
                 Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "my_pending"),
-                ValidZones = ["frontend_1"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             game = await _repo.GetGame(gameID);
@@ -514,7 +514,7 @@ public class GameEngineTests
             {
                 PlayerNum = 1,
                 Resource = TestFactory.MakeResource(instanceId: "pending_1"),
-                ValidZones = ["frontend_1"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             var cardToPlay2 = state.Player1Hand.First();
@@ -546,13 +546,13 @@ public class GameEngineTests
             {
                 PlayerNum = 1,
                 Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
-                ValidZones = ["frontend_0"],
+                SourceZone = SlotSelectSources.Repository,
             });
             state.PendingSlotSelects.Add(new AwaitingSlotSelect
             {
                 PlayerNum = 1,
                 Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_2"),
-                ValidZones = ["frontend_1"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             // 1件目を処理
@@ -574,6 +574,275 @@ public class GameEngineTests
             result2.ShouldSelectSlot.Should().BeFalse();
             state.Player1Field.Frontend[1]!.InstanceID.Should().Be("pending_2");
             state.PendingSlotSelects.Should().BeEmpty();
+        }
+    }
+
+    [Trait("対象", "効果によるデプロイの稼働開始")]
+    public class EffectDeployCompletion
+    {
+        private const string IgnitionCardId = "TST-0009";
+        private const string DeployCardId = "TST-0001";
+        private const string SlowDeployCardId = "TST-0003";
+        private const string WatcherCardId = "TST-0400";
+        private const string AttackerCardId = "TST-0005";
+
+        private readonly FakeGameRepository _repo = new();
+        private readonly TestCardCache _cc = new();
+        private readonly EffectRegistry _effects = new();
+        private readonly GameEngine _engine;
+
+        public EffectDeployCompletion()
+        {
+            _cc.Add(TestFactory.PlatformCard(cardId: IgnitionCardId));
+            _cc.Add(TestFactory.ComputeCard(cardId: DeployCardId, mc: 0, deployTurns: 0));
+            _cc.Add(TestFactory.ComputeCard(cardId: SlowDeployCardId, mc: 0, deployTurns: 1, name: "SlowCompute"));
+            _cc.Add(TestFactory.ReactiveCard(cardId: WatcherCardId));
+            _cc.Add(TestFactory.ComputeCard(cardId: AttackerCardId, mc: 0, tp: 2000, deployTurns: 0, name: "StrongCompute"));
+            _engine = new GameEngine(_repo, _cc, _effects, new InitiativeCatalog([]), new FakeClock());
+        }
+
+        /// <summary>プレイヤー 1 のサポートゾーンに発動元を置いた、メインフェーズのゲームを始める。</summary>
+        /// <param name="deployedCardId">効果でデプロイされるカードの ID。</param>
+        /// <returns>ゲーム ID と、進行に伴って更新され続けるゲーム状態。</returns>
+        private async Task<(string GameID, BattleGameState State)> StartWithIgnitionSource(string deployedCardId)
+        {
+            var deck = TestFactory.MakeDeck(_cc, DeployCardId);
+            var gameID = await _engine.CreateNewGame(deck, deck, firstPlayer: 1);
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+
+            var state = (await _repo.GetGameState(gameID))!;
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "src",
+                CardID = IgnitionCardId,
+                FaceUp = true,
+                DeployOrder = 1,
+            };
+            state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = deployedCardId }];
+            return (gameID, state);
+        }
+
+        /// <summary>指定プレイヤーのアクションを実行する。</summary>
+        /// <param name="gameID">対象ゲームの ID。</param>
+        /// <param name="playerNum">アクションするプレイヤー番号。</param>
+        /// <param name="actionType">アクション種別。</param>
+        /// <param name="actionData">アクション固有のリクエスト。</param>
+        /// <returns>アクション結果。</returns>
+        private async Task<ActionResult> Act(string gameID, long playerNum, ActionType actionType, object actionData)
+        {
+            var game = await _repo.GetGame(gameID);
+            return await _engine.ProcessAction(game!, playerNum, actionType, actionData);
+        }
+
+        private Task<ActionResult> Ignite(string gameID) =>
+            Act(gameID, 1, ActionType.UseIgnition, new UseIgnitionRequest { InstanceID = "src" });
+
+        private Task<ActionResult> SelectSlot(string gameID, long playerNum, string zone, int index) =>
+            Act(gameID, playerNum, ActionType.SelectSlot, new SelectSlotRequest { Zone = zone, Index = index });
+
+        /// <summary>指定プレイヤーのターンを、手札上限の調整を挟みながら終了させる。</summary>
+        /// <param name="gameID">対象ゲームの ID。</param>
+        /// <param name="playerNum">ターンを終了するプレイヤー番号。</param>
+        private async Task EndTurn(string gameID, long playerNum)
+        {
+            while (true)
+            {
+                var result = await Act(gameID, playerNum, ActionType.EndPhase, new object());
+
+                if (result.ShouldDiscard)
+                {
+                    var hand = (await _repo.GetGameState(gameID))!.GetHand(playerNum);
+                    var discardIds = hand.Take(hand.Count - BattleConstants.HandLimit)
+                        .Select(c => c.InstanceID).ToList();
+                    await Act(gameID, playerNum, ActionType.DiscardHand,
+                        new DiscardHandRequest { CardInstanceIDs = discardIds });
+                    return;
+                }
+
+                if ((await _repo.GetGameState(gameID))!.ActivePlayer != playerNum)
+                {
+                    return;
+                }
+            }
+        }
+
+        [Fact(DisplayName = "効果デプロイのスロット選択を解決して表向きリソースが場に出ると、稼働実績が立つ")]
+        public async Task SlotSelectResolved_FaceUpResource_SetsHasOperated()
+        {
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+
+            await Ignite(gameID);
+            await SelectSlot(gameID, 1, Zones.Frontend, 0);
+
+            state.Player1Field.Frontend[0]!.CardID.Should().Be(DeployCardId);
+            state.Player1HasOperated.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "効果デプロイで裏向きに置かれたとき、稼働実績は立たない")]
+        public async Task SlotSelectResolved_FaceDownResource_LeavesHasOperatedFalse()
+        {
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            var (gameID, state) = await StartWithIgnitionSource(SlowDeployCardId);
+
+            await Ignite(gameID);
+            await SelectSlot(gameID, 1, Zones.Frontend, 0);
+
+            state.Player1Field.Frontend[0]!.FaceUp.Should().BeFalse();
+            state.Player1Field.Frontend[0]!.DeployingTurnsLeft.Should().Be(1);
+            state.Player1HasOperated.Should().BeFalse();
+        }
+
+        [Fact(DisplayName = "効果デプロイのスロット選択を解決すると、置かれたカードのデプロイ時効果が発動する")]
+        public async Task SlotSelectResolved_FiresDeployedCardsOwnDeployEffect()
+        {
+            bool deployEffectFired = false;
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            _effects.Register(DeployCardId, TriggerType.OnDeploy,
+                _ => { deployEffectFired = true; return new EffectResult(); });
+            var (gameID, _) = await StartWithIgnitionSource(DeployCardId);
+
+            await Ignite(gameID);
+            await SelectSlot(gameID, 1, Zones.Frontend, 0);
+
+            deployEffectFired.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "効果デプロイのスロット選択を解決すると、相手のデプロイ反応リアクティブが発動する")]
+        public async Task SlotSelectResolved_FiresOpponentDeployWatcher()
+        {
+            string? watchedInstanceId = null;
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            _effects.Register(WatcherCardId, TriggerType.OnDeploy,
+                ctx => { watchedInstanceId = ctx.Target?.InstanceID; return new EffectResult(); });
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "watcher",
+                CardID = WatcherCardId,
+                DeployOrder = 1,
+            };
+
+            await Ignite(gameID);
+            await SelectSlot(gameID, 1, Zones.Frontend, 0);
+
+            watchedInstanceId.Should().Be(state.Player1Field.Frontend[0]!.InstanceID);
+        }
+
+        [Fact(DisplayName = "デッキから自動配置する効果で表向きに置かれると、置かれたカードのデプロイ時効果が発動し稼働実績が立つ")]
+        public async Task ImmediateDeployFromRepo_FiresDeployEffectAndSetsHasOperated()
+        {
+            bool deployEffectFired = false;
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new DeployFromRepoOp());
+            _effects.Register(DeployCardId, TriggerType.OnDeploy,
+                _ => { deployEffectFired = true; return new EffectResult(); });
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+
+            await Ignite(gameID);
+
+            deployEffectFired.Should().BeTrue();
+            state.Player1HasOperated.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "盤面に表向きリソースがないプレイヤーのデプロイが相手リアクティブでキャンセルされると、稼働実績は立たずゲームが続行する")]
+        public async Task CancelledDeploy_LeavesHasOperatedFalse_AndGameContinues()
+        {
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            _effects.Register(WatcherCardId, TriggerType.OnDeploy,
+                _ => new EffectResult { ShouldCancelAction = true });
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "watcher",
+                CardID = WatcherCardId,
+                DeployOrder = 1,
+            };
+
+            await Ignite(gameID);
+            var result = await SelectSlot(gameID, 1, Zones.Frontend, 0);
+
+            state.Player1Field.Frontend[0].Should().BeNull();
+            state.Player1Trash.Should().Contain(c => c.CardID == DeployCardId);
+            state.Player1HasOperated.Should().BeFalse();
+            result.GameOver.Should().BeNull();
+        }
+
+        [Fact(DisplayName = "効果デプロイだけで稼働したプレイヤーが自分の 3 ターン目を終えても、ローンチ失敗で敗北しない")]
+        public async Task DeployedOnlyByEffect_SurvivesLaunchFailureCheck()
+        {
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+            state.CurrentTurn = 5;
+
+            await Ignite(gameID);
+            await SelectSlot(gameID, 1, Zones.Frontend, 0);
+            await EndTurn(gameID, 1);
+
+            state.ActivePlayer.Should().Be(2);
+            (await _repo.GetGame(gameID))!.Status.Should().Be(GameStatus.Playing);
+        }
+
+        [Fact(DisplayName = "効果デプロイだけで稼働したプレイヤーの表向きリソースが全滅すると、システムダウンで敗北する")]
+        public async Task DeployedOnlyByEffect_AllResourcesDestroyed_LosesBySystemDown()
+        {
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: AttackerCardId, instanceId: "atk", faceUp: true, maxTP: 2000, currentTP: 2000);
+
+            await Ignite(gameID);
+            await SelectSlot(gameID, 1, Zones.Frontend, 0);
+            await EndTurn(gameID, 1);
+            await Act(gameID, 2, ActionType.EndPhase, new object());
+            var result = await Act(gameID, 2, ActionType.Attack, new AttackRequest
+            {
+                AttackerInstanceID = "atk",
+                TargetInstanceID = state.Player1Field.Frontend[0]!.InstanceID,
+            });
+
+            result.GameOver.Should().NotBeNull();
+            result.GameOver!.WinnerNum.Should().Be(2);
+            result.GameOver.Reason.Should().Be(WinReason.SystemDown.ToWireString());
+        }
+
+        [Fact(DisplayName = "解決までに空きスロットが埋まった選択待ちは不発になり、取り出したカードがデッキに戻る")]
+        public async Task RemainingSlotSelect_NoSlotLeftAtResolution_ReturnsCardToRepository()
+        {
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition,
+                new RequestSlotFromRepoOp(), new RequestSlotFromRepoOp());
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+            state.Player1Repository =
+            [
+                new UndeployedCard { InstanceID = "r_1", CardID = DeployCardId },
+                new UndeployedCard { InstanceID = "r_2", CardID = DeployCardId },
+            ];
+            FillAllSlotsExceptFrontendZero(state);
+
+            await Ignite(gameID);
+            state.PendingSlotSelects.Should().HaveCount(2);
+
+            var result = await SelectSlot(gameID, 1, Zones.Frontend, 0);
+
+            state.PendingSlotSelects.Should().BeEmpty();
+            result.ShouldSelectSlot.Should().BeFalse();
+            state.Player1Repository.Should().ContainSingle(c => c.CardID == DeployCardId);
+        }
+
+        /// <summary>フロントエンドの先頭スロットだけを空けて、プレイヤー 1 の盤面を埋める。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        private static void FillAllSlotsExceptFrontendZero(BattleGameState state)
+        {
+            for (int i = 1; i < BattleConstants.SlotsPerZone; i++)
+            {
+                state.Player1Field.Frontend[i] = TestFactory.MakeResource(
+                    cardId: DeployCardId, instanceId: $"fe_{i}", faceUp: true);
+            }
+            for (int i = 0; i < BattleConstants.SlotsPerZone; i++)
+            {
+                state.Player1Field.Backend[i] = TestFactory.MakeResource(
+                    cardId: DeployCardId, instanceId: $"be_{i}", faceUp: true);
+            }
         }
     }
 
@@ -696,7 +965,7 @@ public class GameEngineTests
         {
             PlayerNum = playerNum,
             Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "pending_1"),
-            ValidZones = ["frontend_0"],
+            SourceZone = SlotSelectSources.Repository,
         };
 
         [Fact(DisplayName = "相手ターン中でも、選択者は効果中選択の解決アクションを送れる")]

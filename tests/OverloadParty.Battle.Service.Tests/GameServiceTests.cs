@@ -464,7 +464,7 @@ public class GameServiceTests
             {
                 PlayerNum = 2,
                 Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "npc_pending"),
-                ValidZones = ["frontend_0"],
+                SourceZone = SlotSelectSources.Repository,
             });
 
             await _svc.AdvanceNpcTurn(game.GameID);

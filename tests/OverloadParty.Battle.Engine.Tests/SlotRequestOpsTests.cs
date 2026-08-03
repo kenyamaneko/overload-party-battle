@@ -63,7 +63,6 @@ public class SlotRequestOpsTests
             var pending = state.PendingSlotSelects.Should().ContainSingle().Subject;
             pending.PlayerNum.Should().Be(1);
             pending.Resource.CardID.Should().Be("TST-0001");
-            pending.ValidZones.Should().NotBeEmpty();
         }
 
         [Fact(DisplayName = "デッキからのデプロイ要求で対象カードがデッキから取り除かれる")]
@@ -103,31 +102,34 @@ public class SlotRequestOpsTests
             state.Player1Repository.Should().HaveCount(1);
         }
 
-        [Fact(DisplayName = "Compute系リソースはフロントエンドとバックエンドの両ゾーンが候補になる")]
-        public void Ignition_ComputeCard_OffersFrontendAndBackendZones()
+        [Theory(DisplayName = "Compute系リソースの選択待ちは、フロントエンドにもバックエンドにも配置できる")]
+        [InlineData(Zones.Frontend)]
+        [InlineData(Zones.Backend)]
+        public void Ignition_ComputeCard_PlaceableInFrontendAndBackend(string zone)
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp());
             var state = StateWithSource();
             state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" }];
 
             Ignite(state, cc, effects);
+            SelectSlotProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new SelectSlotRequest { Zone = zone, Index = 1 }, cc, effects);
 
-            var zones = state.PendingSlotSelects[0].ValidZones;
-            zones.Should().Contain(z => z.StartsWith("frontend_"));
-            zones.Should().Contain(z => z.StartsWith("backend_"));
+            state.PendingSlotSelects.Should().BeEmpty();
         }
 
-        [Fact(DisplayName = "データベースリソースはバックエンドのゾーンだけが候補になる")]
-        public void Ignition_DatabaseCard_OffersOnlyBackendZones()
+        [Fact(DisplayName = "データベースリソースの選択待ちは、フロントエンドを選ぶと拒否される")]
+        public void Ignition_DatabaseCard_RejectsFrontend()
         {
             var (cc, effects) = IgnitionEnv(new RequestSlotFromRepoOp());
             var state = StateWithSource();
             state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = "TST-DB01" }];
 
             Ignite(state, cc, effects);
+            var act = () => SelectSlotProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 }, cc, effects);
 
-            var zones = state.PendingSlotSelects[0].ValidZones;
-            zones.Should().AllSatisfy(z => z.Should().StartWith("backend_"));
+            act.Should().Throw<GameRuleException>().WithMessage("*Invalid slot: frontend_1*");
         }
 
         [Fact(DisplayName = "空きスロットがないとき選択待ちが積まれずデッキは変わらない")]
@@ -244,6 +246,38 @@ public class SlotRequestOpsTests
             pending.PlayerNum.Should().Be(1);
             pending.Resource.CardID.Should().Be("TST-0001");
             state.Player1Repository.Should().ContainSingle(c => c.CardID == "TST-DB01");
+        }
+
+        [Fact(DisplayName = "盤面が満杯でも、破壊された 1 体の空きスロットへ同名カードをデプロイできる")]
+        public void OnDestroy_BoardWasFull_DeploysIntoFreedSlot()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001"));
+            cc.Add(TestFactory.DataCard(cardId: "TST-DB01", subtype: "Database"));
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0005", tp: 1500, av: 1400, name: "StrongCompute"));
+            var effects = new EffectRegistry();
+            effects.RegisterComposed("TST-0001", TriggerType.OnDestroy, new RequestSlotFromRepoSameCardOp());
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, activePlayer: 2);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: "TST-0005", instanceId: "atk", faceUp: true, maxTP: 1500, currentTP: 1500);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "victim", faceUp: true);
+            for (int i = 1; i < BattleConstants.SlotsPerZone; i++)
+            {
+                state.Player1Field.Frontend[i] = TestFactory.MakeResource(cardId: "TST-0005", instanceId: $"fe_{i}", faceUp: true);
+            }
+            for (int i = 0; i < BattleConstants.SlotsPerZone; i++)
+            {
+                state.Player1Field.Backend[i] = TestFactory.MakeResource(cardId: "TST-DB01", instanceId: $"be_{i}", faceUp: true);
+            }
+            state.Player1Repository = [new UndeployedCard { InstanceID = "r_1", CardID = "TST-0001" }];
+
+            AttackProcessor.Process(state, TestFactory.MakeGame(), 2, Atk("atk", "victim"), cc, effects);
+            SelectSlotProcessor.Process(state, TestFactory.MakeGame(), 1,
+                new SelectSlotRequest { Zone = Zones.Frontend, Index = 0 }, cc, effects);
+
+            state.Player1Field.Frontend[0]!.CardID.Should().Be("TST-0001");
+            state.PendingSlotSelects.Should().BeEmpty();
         }
     }
 }

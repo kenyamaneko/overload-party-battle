@@ -244,10 +244,13 @@ public class GameEngine
                 };
             }
 
-            if (actionType != ActionType.SelectSlot && state.PendingSlotSelects.Count > 0)
+            // 効果中選択が残っている間は再開で盤面が変わりうるので、確定した盤面になるまで取り消さない。
+            if (state.PendingEffectChoice is null)
             {
-                actionResult.ShouldSelectSlot = true;
+                SlotSelectQueue.CancelUnplaceable(state, _cardCache);
             }
+
+            actionResult.ShouldSelectSlot = state.PendingSlotSelects.Count > 0;
 
             actionResult.GameOver ??= WinConditionChecker.Check(state, game);
 

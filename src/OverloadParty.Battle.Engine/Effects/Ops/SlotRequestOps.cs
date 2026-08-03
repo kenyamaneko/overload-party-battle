@@ -28,7 +28,7 @@ public class RequestSlotFromRepoOp : IEffectOp
         if (match is null) { return; }
 
         // 配置先がないなら repo から取り除く前に HasGuardFailed で抜ける。
-        // 取り除いてから判定すると、解決失敗時に repo からカードが消えたまま戻せなくなる。
+        // 取り除いてから不発にすると、戻したカードがデッキの末尾へ移り引き順が変わる。
         var card = ctx.CardCache.MustGet(match.CardID);
         var field = ctx.GetField(ctx.PlayerNum);
         var validZones = ResourceHelpers.BuildValidZones(field, card);
@@ -53,7 +53,7 @@ public class RequestSlotFromRepoOp : IEffectOp
         {
             PlayerNum = ctx.PlayerNum,
             Resource = instance,
-            ValidZones = validZones,
+            SourceZone = SlotSelectSources.Repository,
         });
     }
 }
