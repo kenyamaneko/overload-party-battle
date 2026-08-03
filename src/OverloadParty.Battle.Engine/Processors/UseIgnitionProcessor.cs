@@ -29,7 +29,6 @@ public static class UseIgnitionProcessor
         var resource = FieldHelpers.FindResourceByID(field, req.InstanceID);
         if (resource is not null)
         {
-            EnsurePlacementSlotAvailable(field, resource.CardID, effects);
             return IgniteResource(state, game, playerNum, resource, req, cc, effects);
         }
 
@@ -37,7 +36,6 @@ public static class UseIgnitionProcessor
         var support = FieldHelpers.FindSupportByID(field, req.InstanceID);
         if (support is not null)
         {
-            EnsurePlacementSlotAvailable(field, support.CardID, effects);
             return IgniteSupport(state, game, playerNum, field, support, req, cc, effects);
         }
 
@@ -50,6 +48,7 @@ public static class UseIgnitionProcessor
         UseIgnitionRequest req, ICardCache cc, IEffectRegistry effects)
     {
         var card = ValidateResourceActivation(source, cc, effects);
+        EnsurePlacementSlotAvailable(state.GetField(playerNum), card.CardId, effects);
 
         DeployedResource? target = null;
         if (req.TargetInstanceID is { } targetId)
@@ -112,6 +111,8 @@ public static class UseIgnitionProcessor
         {
             throw new GameRuleException($"support card {card.CardId} has no ignition effect");
         }
+
+        EnsurePlacementSlotAvailable(field, card.CardId, effects);
 
         var handler = effects.Get(card.CardId, TriggerType.Ignition)!;
         var ctx = new EffectContext
