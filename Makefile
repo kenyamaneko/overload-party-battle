@@ -1,4 +1,4 @@
-.PHONY: build run test test-coverage clean restore update-common down help
+.PHONY: build run test test-coverage clean restore update-common sync-card-master-data down help
 
 # ─── Config ──────────────────────────────────────────────
 SLN     := OverloadParty.Battle.slnx
@@ -33,6 +33,9 @@ update-common:  ## Update OverloadParty.* generated packages to the latest versi
 	@for pkg in $(GENERATED_PKGS); do rm -rf $(HOME)/.nuget/packages/$$(echo $$pkg | tr A-Z a-z); done
 	dotnet restore $(SLN)
 	@echo "Updated to:" && dotnet list $(SERVER) package --include-prerelease | grep OverloadParty\.
+
+sync-card-master-data:  ## Sync the bundled card master data from the card repository (CARD_REPO, CARD_REF)
+	bash scripts/sync_card_master_data.sh
 
 # ─── Misc ────────────────────────────────────────────────
 clean:  ## Remove build artifacts
