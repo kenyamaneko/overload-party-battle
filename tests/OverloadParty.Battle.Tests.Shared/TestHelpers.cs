@@ -557,13 +557,40 @@ public static class TestUseLimitEffects
         TestCardCache cc, EffectRegistry registry, CardDefinition card,
         string? useLimit = null, string trigger = TriggerTypes.Ignition)
     {
+        RegisterEffect(cc, registry, card, useLimit, trigger, BuildGainBudgetOp());
+    }
+
+    /// <summary>
+    /// 相手の伏せリアクティブを 1 枚選んで開示する起動効果をカードに持たせ、
+    /// カードキャッシュと効果レジストリに登録します。伏せリアクティブが 2 枚以上あると選択待ちに入るため、
+    /// 選択を挟んで効果が再開する経路を公開経路から辿れます。
+    /// </summary>
+    /// <param name="cc">カード定義の登録先。</param>
+    /// <param name="registry">効果の登録先。</param>
+    /// <param name="card">効果を持たせるカード定義。</param>
+    /// <param name="useLimit">宣言する回数制限 (<see cref="UseLimits"/> の値)。制限なしなら null。</param>
+    public static void RegisterRevealReactive(
+        TestCardCache cc, EffectRegistry registry, CardDefinition card, string? useLimit = null)
+    {
+        RegisterEffect(
+            cc, registry, card, useLimit, TriggerTypes.Ignition,
+            JsonSerializer.SerializeToElement(new Dictionary<string, object>
+            {
+                [EffectOps.RevealReactive] = new Dictionary<string, object>(),
+            }));
+    }
+
+    private static void RegisterEffect(
+        TestCardCache cc, EffectRegistry registry, CardDefinition card,
+        string? useLimit, string trigger, JsonElement op)
+    {
         card.Effects =
         [
             new EffectDef
             {
                 Trigger = trigger,
                 UseLimit = useLimit,
-                Ops = [BuildGainBudgetOp()],
+                Ops = [op],
             },
         ];
 

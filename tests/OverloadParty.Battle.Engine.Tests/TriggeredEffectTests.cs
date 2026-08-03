@@ -155,16 +155,17 @@ public class TriggeredEffectTests
         private const string AttackerCardId = "TST-0470";
         private const string DefenderCardId = "TST-0471";
 
-        /// <summary>ダメージを受けたときに 1 ゲーム 1 回だけバジェットを得る防御側リソースを登録する。</summary>
+        /// <summary>ダメージを受けたときに、指定の回数制限つきでバジェットを得る防御側リソースを登録する。</summary>
+        /// <param name="useLimit">防御側の誘発効果が宣言する回数制限。</param>
         /// <returns>カード定義キャッシュと効果レジストリ。</returns>
-        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv()
+        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv(string useLimit)
         {
             var cc = new TestCardCache();
             var registry = new EffectRegistry();
             cc.Add(TestFactory.ComputeCard(cardId: AttackerCardId, tp: 100, mc: 0));
             TestUseLimitEffects.RegisterBudgetGain(
                 cc, registry, TestFactory.ComputeCard(cardId: DefenderCardId, av: 5000, mc: 0),
-                UseLimits.OncePerGame, TriggerTypes.OnDamaged);
+                useLimit, TriggerTypes.OnDamaged);
             return (cc, registry);
         }
 
@@ -192,7 +193,21 @@ public class TriggeredEffectTests
         [Fact(DisplayName = "1 ゲーム 1 回の誘発効果を使い切った後でも、同じ契機のアクションは成功し効果だけが増えない")]
         public void OncePerGame_AfterConsumed_TriggeringActionStillSucceeds()
         {
-            var (cc, registry) = MakeEnv();
+            var (cc, registry) = MakeEnv(UseLimits.OncePerGame);
+            var state = MakeState();
+            Attack(state, cc, registry, "atk_1");
+
+            var second = Attack(state, cc, registry, "atk_2");
+
+            second.Events.Should().Contain(e => e.EventType == ActionTypes.Attack);
+            state.Player2Budget.Should().Be(100);
+            state.Player2Field.Frontend[0]!.Damage.Should().Be(200);
+        }
+
+        [Fact(DisplayName = "1 ターン 1 回の誘発効果を使い切った後でも、同じターンの同じ契機のアクションは成功し効果だけが増えない")]
+        public void OncePerTurn_AfterConsumed_TriggeringActionStillSucceeds()
+        {
+            var (cc, registry) = MakeEnv(UseLimits.OncePerTurn);
             var state = MakeState();
             Attack(state, cc, registry, "atk_1");
 

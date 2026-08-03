@@ -796,4 +796,99 @@ public class UseIgnitionProcessorTests
             state.Player1Budget.Should().Be(100);
         }
     }
+
+    [Trait("対象", "選択を挟んだサポートの起動効果の回数制限")]
+    public class SupportUseLimitAcrossChoice
+    {
+        private const string SupportCardId = "TST-0442";
+        private const string ReactiveCardId = "TST-0443";
+
+        /// <summary>相手の伏せリアクティブを 1 枚開示する 1 ターン 1 回のサポートを登録する。</summary>
+        /// <returns>カード定義キャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv()
+        {
+            var cc = new TestCardCache();
+            var registry = new EffectRegistry();
+            TestUseLimitEffects.RegisterRevealReactive(
+                cc, registry, TestFactory.PlatformCard(cardId: SupportCardId), UseLimits.OncePerTurn);
+            cc.Add(TestFactory.ReactiveCard(cardId: ReactiveCardId));
+            return (cc, registry);
+        }
+
+        /// <summary>建設の完了したサポートと、相手の伏せリアクティブ 2 枚を並べた状態を作る。</summary>
+        /// <returns>テスト用ゲーム状態。</returns>
+        private static BattleGameState MakeState()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = SupportCardId,
+                FaceUp = true,
+                DeployingTurnsLeft = 0,
+            };
+            for (int i = 0; i < 2; i++)
+            {
+                state.Player2Field.Support[i] = new DeployedSupport
+                {
+                    InstanceID = $"opp_sup_{i + 1}",
+                    CardID = ReactiveCardId,
+                    FaceUp = false,
+                };
+            }
+            return state;
+        }
+
+        /// <summary>サポートの起動効果を使用し、生じた選択待ちを 2 枚目を選んで解決する。</summary>
+        private static void IgniteAndResolveChoice(
+            BattleGameState state, TestCardCache cc, EffectRegistry registry)
+        {
+            var game = TestFactory.MakeGame();
+            UseIgnitionProcessor.Process(
+                state, game, 1, new UseIgnitionRequest { InstanceID = "sup_1" }, cc, registry);
+            ResolvePendingChoiceProcessor.Process(
+                state, game, 1, new ResolvePendingChoiceRequest { ChosenId = "opp_sup_2" },
+                cc, registry, new FakeClock());
+        }
+
+        [Fact(DisplayName = "選択を挟む 1 ターン 1 回のサポートの起動効果は、選択を解決すると効果が適用され使用済みになる")]
+        public void ResolvedChoice_AppliesEffectAndMarksUsed()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState();
+
+            IgniteAndResolveChoice(state, cc, registry);
+
+            state.Player2Field.Support[1]!.FaceUp.Should().BeTrue();
+            state.PendingEffectChoice.Should().BeNull();
+            state.Player1Field.Support[0]!.EffectUsedThisTurn.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "選択を挟む 1 ターン 1 回のサポートの起動効果を解決した後、同じターンの 2 回目は使用済みとして拒否される")]
+        public void ResolvedChoice_SecondUseInSameTurn_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState();
+            IgniteAndResolveChoice(state, cc, registry);
+
+            var act = () => UseIgnitionProcessor.Process(
+                state, TestFactory.MakeGame(), 1,
+                new UseIgnitionRequest { InstanceID = "sup_1" }, cc, registry);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already used this turn*");
+        }
+
+        [Fact(DisplayName = "選択を挟む 1 ターン 1 回のサポートの起動効果を解決した後、同じターンの候補から起動効果の使用が消える")]
+        public void ResolvedChoice_ExcludedFromAvailableActions()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState();
+            IgniteAndResolveChoice(state, cc, registry);
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, 1, state.Player1Field, state.Player2Field, [], state.Player1Budget, 0, cc, registry);
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
+        }
+    }
 }
