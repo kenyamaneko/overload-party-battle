@@ -542,6 +542,7 @@ public static class EffectYamlLoader
                 string? faction = element.GetStringOrNull("faction");
                 var cardTypes = ParseCardTypes(element);
                 var subtypes = ParseSubtypes(element);
+                var cardIds = ParseCardIds(element);
 
                 return new ByChoiceSelector
                 {
@@ -549,6 +550,7 @@ public static class EffectYamlLoader
                     Faction = faction,
                     CardType = cardTypes is { Count: 1 } ? cardTypes[0] : null,
                     Subtypes = subtypes,
+                    CardIds = cardIds,
                     Owner = owner ?? PlayerRefs.Myself,
                 };
             }
@@ -575,14 +577,15 @@ public static class EffectYamlLoader
         bool excludeSource = element.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
         var cardTypes = ParseCardTypes(element);
         var subtypes = ParseSubtypes(element);
+        var cardIds = ParseCardIds(element);
 
         ISelector selector = owner switch
         {
-            PlayerRefs.Myself => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes },
-            PlayerRefs.Opponent => new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes },
+            PlayerRefs.Myself => new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes, CardIds = cardIds },
+            PlayerRefs.Opponent => new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes, CardIds = cardIds },
             PlayerRefs.Both => new UnionSelector(
-                new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes },
-                new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes }),
+                new AllOwnSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes, CardIds = cardIds },
+                new AllOpponentSelector { Zone = zone, Faction = faction, CardTypes = cardTypes, Subtypes = subtypes, CardIds = cardIds }),
             _ => throw new InvalidOperationException($"Unknown selector owner: {owner}"),
         };
 
