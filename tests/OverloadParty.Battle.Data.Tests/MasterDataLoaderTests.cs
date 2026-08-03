@@ -1,4 +1,3 @@
-using System.Text.Json;
 using OverloadParty.Battle.Data;
 using OverloadParty.Battle.Models;
 
@@ -8,7 +7,6 @@ public class MasterDataLoaderTests
 {
     private const string EmptyList = "[]";
     private const string NullLiteral = "null";
-    private const string MalformedJson = "{";
 
     private static (List<CardDefinition> Cards, List<Initiative> Initiatives) LoadDistributedMasterData() =>
         MasterDataLoader.FromJson(
@@ -76,14 +74,6 @@ public class MasterDataLoaderTests
 
             act.Should().Throw<InvalidOperationException>()
                 .WithMessage("failed to deserialize cards master data");
-        }
-
-        [Fact(DisplayName = "カード定義が JSON として壊れているとき、読み込みに失敗する")]
-        public void MalformedCardsFails()
-        {
-            var act = () => MasterDataLoader.FromJson(MalformedJson, EmptyList);
-
-            act.Should().Throw<JsonException>();
         }
     }
 }

@@ -162,8 +162,11 @@ if (!string.IsNullOrEmpty(localCardsPath))
 }
 else
 {
-    var masterDataBucket = Environment.GetEnvironmentVariable("MASTER_DATA_BUCKET")
-        ?? throw new InvalidOperationException("MASTER_DATA_BUCKET not set");
+    var masterDataBucket = Environment.GetEnvironmentVariable("MASTER_DATA_BUCKET");
+    if (string.IsNullOrEmpty(masterDataBucket))
+    {
+        throw new InvalidOperationException("MASTER_DATA_BUCKET not set");
+    }
     (cardsJson, initiativesJson) = await MasterDataStorageClient.DownloadAsync(masterDataBucket);
     masterDataOrigin = $"gs://{masterDataBucket}";
 }
