@@ -250,7 +250,7 @@ public static class EndPhaseProcessor
         {
             resource.HasAttacked = false;
             resource.EffectUsedThisTurn = false;
-            resource.MonetizedAmount = 0;
+            resource.MonetizedThisTurn = false;
         }
 
         foreach (var support in FieldHelpers.AllSupports(field))

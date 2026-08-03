@@ -34,7 +34,7 @@ draw → main → battle → end → (ActivePlayer切替) → draw ...
 | 3 | 維持コスト徴収後の敗北判定 | `WinConditionChecker.CheckBudgetZero` → `CheckSystemDown` の順に判定し、成立したらそこで決着する。以降の手順は行わず、手札が上限を超えていても破棄を要求しない |
 | 4 | Insight 生成 & Elastic ボーナス累積 | `GenerateInsight`：バックエンドの Data 系リソースが `StatCalculator.CalculateEffectiveInsight` で yield を計算し Insight プールに加算。続けて `StatCalculator.ApplyElasticBonus` で `ElasticBonus` を `elasticIncrement` ぶん**累積**（リセットではない。逓減は `CalculateEffectiveElasticBonus` が対数スケールで処理） |
 | 5 | 一時効果の終了 | `ExpireTemporaryEffects`：`duration: "this_turn"` / `"until_next_own_turn_end"` の `TemporaryEffects` を除去 |
-| 6 | ターン単位フラグのリセット | `ResetPerTurnFlags`：`HasAttacked` / `EffectUsedThisTurn` / `MonetizedAmount` / `IncidentPlayedThisTurn` を false/0 に戻す |
+| 6 | ターン単位フラグのリセット | `ResetPerTurnFlags`：`HasAttacked` / `EffectUsedThisTurn` / `MonetizedThisTurn` / `IncidentPlayedThisTurn` を false に戻す |
 | 7 | 手札上限チェック | 手札が **6枚** を超過していなければ手順 8 を飛ばして手順 9 へ進む。超過していれば `EndPhaseProcessor` が `phase_end`（`needsDiscard: true`）イベントを返し、手順 9 のターン交代を保留する |
 | 8 | プレイヤーが破棄カードを選択（手順 7 で超過時のみ） | `TurnControlsMessage.DiscardRequired`（手札枚数 − 6、`AvailableActions.ComputeTurnControls`）を見たクライアントが `discard_hand` で破棄するカードを送信。`DiscardProcessor` が枚数を、`CardMoveHelpers.DiscardCards` が指定カードの重複と手札への実在を検証し、いずれかに反すれば手札もトラッシュも変えずに拒否する。個別のタイムアウトは持たず、ターン全体のタイムバンクが時間の上限として働く |
 | 9 | 手札調整後の判定とターン切り替え | 手順 7 で超過が無ければ `EndPhaseProcessor`、超過があれば手順 8 の `DiscardProcessor` が `EndPhaseProcessor.AdvanceAfterHandAdjustment` を呼び、`WinConditionChecker.CheckLaunchFailure` → `CheckTurnLimit` → どちらも成立しなければ `TurnManager.SwitchActivePlayer` → 次プレイヤーの `DrawPhaseProcessor.Process` を起動 |
@@ -181,7 +181,7 @@ NPC は `List<AvailableAction>` から最適なアクションを選択するの
 | `play_card` | Main Phase | 手札に存在 | 配置先が空き | — | デプロイターン 0 なら即表向き、1以上なら裏向き配置 |
 | `attack` | Battle Phase | フィールド上の自コンピュート（表向き） | 相手フィールド上の表向きリソース | — | 攻撃済みでない |
 | `scale_up` | Main Phase | フィールド上の自リソース（表向き） | — | — | Resizable 属性、現在Rank < 対象Rank |
-| `monetize` | Main Phase | バックエンドのコンピュート（休止でない） | — | — | Insight Pool 残量 ≥ 分配量、TP上限 |
+| `monetize` | Main Phase | バックエンドのコンピュート（表向き・休止でない） | — | — | このターン収益化に未使用、1 回の分配量は実効 TP 以下、Insight Pool 残量 ≥ 分配量合計 |
 | `use_ignition` | Main/Battle Phase | 効果を持つカード | 効果の対象 | 効果コスト | 1ターン1回制限 |
 | `use_initiative` | Main Phase | デッキが選んだプロダクトの施策 | 施策の対象 | Insight | ルーチン 1ターン1回 / スペシャル 1ゲーム1回、先攻 T1 不可 |
 

@@ -173,8 +173,8 @@ type DeployedResource struct {
 	MaxTP          *int64  `json:"maxTP,omitempty"`
 	MaxYield       *int64  `json:"maxYield,omitempty"`
 
-	// MonetizedAmount 収益化で配分された Insight 量
-	MonetizedAmount int64 `json:"monetizedAmount"`
+	// MonetizedThisTurn このターンに収益化へ使用済みか
+	MonetizedThisTurn bool `json:"monetizedThisTurn"`
 
 	// Rank ランク (S/M/L/XL)。game-design-constants の Rank に対応。
 	Rank             *string           `json:"rank,omitempty"`
@@ -262,6 +262,7 @@ type HiddenDeployedSupport struct {
 
 // MonetizeAction defines model for MonetizeAction.
 type MonetizeAction struct {
+	// RemainingCapacity 1 回の収益化で割り当てられる上限 (実効スループット)。
 	RemainingCapacity *int64  `json:"remainingCapacity,omitempty"`
 	SourceInstanceID  *string `json:"sourceInstanceID,omitempty"`
 	Type              string  `json:"type"`

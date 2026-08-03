@@ -72,7 +72,7 @@ public class GameStateViewTests
                 DeployOrder = 2,
                 HasAttacked = true,
                 EffectUsedThisTurn = true,
-                MonetizedAmount = 300,
+                MonetizedThisTurn = true,
                 ElasticBonus = 150,
                 LastAttackTurn = 3,
             };
@@ -88,7 +88,7 @@ public class GameStateViewTests
             mapped.DeployOrder.Should().Be(2);
             mapped.HasAttacked.Should().BeTrue();
             mapped.EffectUsedThisTurn.Should().BeTrue();
-            mapped.MonetizedAmount.Should().Be(300);
+            mapped.MonetizedThisTurn.Should().BeTrue();
             mapped.ElasticBonus.Should().Be(150);
             mapped.LastAttackTurn.Should().Be(3);
             mapped.ArtNo.Should().Be(2);

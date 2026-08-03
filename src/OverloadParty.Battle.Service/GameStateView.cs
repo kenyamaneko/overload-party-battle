@@ -161,7 +161,7 @@ public static class GameStateView
             MaxYield = r.MaxYield,
             Damage = r.Damage,
             TemporaryEffects = r.TemporaryEffects.Select(MapTemporaryEffect).ToList(),
-            MonetizedAmount = r.MonetizedAmount,
+            MonetizedThisTurn = r.MonetizedThisTurn,
             HasAttacked = r.HasAttacked,
             EffectUsedThisTurn = r.EffectUsedThisTurn,
             EffectUsedThisGame = r.EffectUsedThisGame,

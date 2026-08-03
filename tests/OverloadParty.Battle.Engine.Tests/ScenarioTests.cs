@@ -50,48 +50,120 @@ public class ScenarioTests
             _onDeployFired.Should().BeFalse();
 
             // 1 ラウンド進める (P1 → P2)。手番が P1 に戻る際のドローフェーズでデプロイ完了へ 1 ターン近づく。
-            await EndTurn(gameID, 1);
-            await EndTurn(gameID, 2);
+            await EndTurn(_repo, _engine, gameID, 1);
+            await EndTurn(_repo, _engine, gameID, 2);
             deployed.DeployingTurnsLeft.Should().Be(1, "所有者の 1 回目のドローフェーズではデプロイ完了に届かず稼働しない");
             deployed.FaceUp.Should().BeFalse();
             _onDeployFired.Should().BeFalse();
 
             // もう 1 ラウンド進める。手番が P1 に戻る際のドローフェーズでデプロイが完了し稼働する。
-            await EndTurn(gameID, 1);
-            await EndTurn(gameID, 2);
+            await EndTurn(_repo, _engine, gameID, 1);
+            await EndTurn(_repo, _engine, gameID, 2);
             deployed.DeployingTurnsLeft.Should().Be(0);
             deployed.FaceUp.Should().BeTrue("デプロイターン 2 のリソースは所有者の 2 回目のドローフェーズで稼働する");
             _onDeployFired.Should().BeTrue("デプロイ完了時にデプロイ時効果が発動する");
         }
+    }
 
-        /// <summary>指定プレイヤーのターンを実ルールどおり終了させ、手札が上限を超える場合は超過分を破棄する。</summary>
-        /// <param name="gameID">対象ゲームの ID。</param>
-        /// <param name="player">ターンを終了するプレイヤー番号。</param>
-        private async Task EndTurn(string gameID, long player)
+    /// <summary>指定プレイヤーのターンを実ルールどおり終了させ、手札が上限を超える場合は超過分を破棄する。</summary>
+    /// <param name="repo">ゲームとゲーム状態を保持するリポジトリ。</param>
+    /// <param name="engine">アクションを実行するエンジン。</param>
+    /// <param name="gameID">対象ゲームの ID。</param>
+    /// <param name="player">ターンを終了するプレイヤー番号。</param>
+    private static async Task EndTurn(
+        FakeGameRepository repo, GameEngine engine, string gameID, long player)
+    {
+        while (true)
         {
-            while (true)
+            var game = await repo.GetGame(gameID);
+            var result = await engine.ProcessAction(game!, player, ActionType.EndPhase, new object());
+
+            if (result.ShouldDiscard)
             {
-                var game = await _repo.GetGame(gameID);
-                var result = await _engine.ProcessAction(game!, player, ActionType.EndPhase, new object());
-
-                if (result.ShouldDiscard)
-                {
-                    var state = await _repo.GetGameState(gameID);
-                    var hand = state!.GetHand(player);
-                    var discardIds = hand.Take(hand.Count - BattleConstants.HandLimit)
-                        .Select(c => c.InstanceID).ToArray();
-                    game = await _repo.GetGame(gameID);
-                    await _engine.ProcessAction(game!, player, ActionType.DiscardHand,
-                        new DiscardHandRequest { CardInstanceIDs = [.. discardIds] });
-                    return;
-                }
-
-                var current = await _repo.GetGameState(gameID);
-                if (current!.ActivePlayer != player)
-                {
-                    return;
-                }
+                var state = await repo.GetGameState(gameID);
+                var hand = state!.GetHand(player);
+                var discardIds = hand.Take(hand.Count - BattleConstants.HandLimit)
+                    .Select(c => c.InstanceID).ToArray();
+                game = await repo.GetGame(gameID);
+                await engine.ProcessAction(game!, player, ActionType.DiscardHand,
+                    new DiscardHandRequest { CardInstanceIDs = [.. discardIds] });
+                return;
             }
+
+            var current = await repo.GetGameState(gameID);
+            if (current!.ActivePlayer != player)
+            {
+                return;
+            }
+        }
+    }
+
+    [Trait("対象", "収益化のターンをまたぐ再使用")]
+    public class MonetizeAcrossTurns
+    {
+        private const string ComputeCardId = "TST-0001";
+
+        private readonly FakeGameRepository _repo = new();
+        private readonly TestCardCache _cc = new();
+        private readonly GameEngine _engine;
+
+        /// <summary>維持コストのかからない即時稼働のコンピュートを登録したエンジンを用意する。</summary>
+        public MonetizeAcrossTurns()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: ComputeCardId, mc: 0, deployTurns: 0));
+            _engine = new GameEngine(_repo, _cc, new EffectRegistry(), new InitiativeCatalog([]), new FakeClock());
+        }
+
+        [Fact(DisplayName = "前のターンに収益化へ使用したリソースは、次の自分のターンに再度収益化できる")]
+        public async Task MonetizedResource_CanMonetizeAgainOnNextOwnTurn()
+        {
+            var gameID = await _engine.CreateNewGame(
+                TestFactory.MakeDeck(_cc, ComputeCardId), TestFactory.MakeDeck(_cc, ComputeCardId), firstPlayer: 1);
+
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+            var state = (await _repo.GetGameState(gameID))!;
+            var cardInstanceId = TestFactory.ReplaceFirstHandCard(state, 1, ComputeCardId);
+            game = await _repo.GetGame(gameID);
+            await _engine.ProcessAction(game!, 1, ActionType.PlayCard,
+                new PlayCardRequest { CardInstanceID = cardInstanceId, Zone = Zones.Backend, Index = 0 });
+
+            // FakeGameRepository は状態をその場で更新するため、この参照は以降の進行でも生き続ける。
+            var resource = state.Player1Field.Backend[0]!;
+
+            // ターン 1 は収益化できないため、1 ラウンド進めて P1 の次のターンで収益化する。
+            await EndTurn(_repo, _engine, gameID, 1);
+            await EndTurn(_repo, _engine, gameID, 2);
+            state.SetInsightPool(1, 2000);
+
+            long budgetBeforeFirstMonetize = state.GetBudget(1);
+            await Monetize(gameID, resource.InstanceID, 400);
+
+            state.GetBudget(1).Should().Be(budgetBeforeFirstMonetize + 400);
+            resource.MonetizedThisTurn.Should().BeTrue();
+
+            await EndTurn(_repo, _engine, gameID, 1);
+            await EndTurn(_repo, _engine, gameID, 2);
+
+            resource.MonetizedThisTurn.Should().BeFalse("自分のターンの終了時に収益化の使用済みが解除される");
+
+            long budgetBeforeSecondMonetize = state.GetBudget(1);
+            await Monetize(gameID, resource.InstanceID, 400);
+
+            state.GetBudget(1).Should().Be(budgetBeforeSecondMonetize + 400);
+        }
+
+        /// <summary>プレイヤー 1 が指定リソースへインサイトを割り当てて収益化する。</summary>
+        /// <param name="gameID">対象ゲームの ID。</param>
+        /// <param name="instanceID">収益化に使うリソースのインスタンス ID。</param>
+        /// <param name="amount">割り当てるインサイト量。</param>
+        private async Task Monetize(string gameID, string instanceID, long amount)
+        {
+            var game = await _repo.GetGame(gameID);
+            await _engine.ProcessAction(game!, 1, ActionType.Monetize, new MonetizeRequest
+            {
+                Distributions = [new MonetizeDistribution { InstanceID = instanceID, Amount = amount }],
+            });
         }
     }
 

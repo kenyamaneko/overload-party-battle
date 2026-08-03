@@ -723,7 +723,7 @@ components:
         - maxAV
         - damage
         - temporaryEffects
-        - monetizedAmount
+        - monetizedThisTurn
         - hasAttacked
         - effectUsedThisTurn
         - effectUsedThisGame
@@ -797,10 +797,9 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemporaryEffect"
-        monetizedAmount:
-          type: integer
-          format: int64
-          description: 収益化で配分された Insight 量
+        monetizedThisTurn:
+          type: boolean
+          description: このターンに収益化へ使用済みか
         hasAttacked:
           type: boolean
         effectUsedThisTurn:
@@ -1040,6 +1039,7 @@ components:
             remainingCapacity:
               type: integer
               format: int64
+              description: 1 回の収益化で割り当てられる上限 (実効スループット)。
 
     UseIgnitionAction:
       description: フィールド上のカードの起動効果を使用する候補。

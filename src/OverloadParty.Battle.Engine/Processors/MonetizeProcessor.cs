@@ -31,6 +31,14 @@ public static class MonetizeProcessor
             throw new GameRuleException("no distributions provided");
         }
 
+        var duplicated = req.Distributions
+            .GroupBy(d => d.InstanceID)
+            .FirstOrDefault(g => g.Count() > 1);
+        if (duplicated is not null)
+        {
+            throw new GameRuleException($"resource {duplicated.Key} appears more than once in the distribution");
+        }
+
         var field = state.GetField(playerNum);
         long insightPool = state.GetInsightPool(playerNum);
         long budget = state.GetBudget(playerNum);
@@ -49,7 +57,7 @@ public static class MonetizeProcessor
         // 全バリデーション通過後に状態変更を適用
         foreach (var (dist, (resource, card)) in validated)
         {
-            resource.MonetizedAmount += dist.Amount;
+            resource.MonetizedThisTurn = true;
 
             // Elastic スケーリング
             if (card.Elastic && card.ElasticIncrement > 0)
@@ -95,6 +103,11 @@ public static class MonetizeProcessor
             throw new GameRuleException("can only distribute yield from backend resources");
         }
 
+        if (!resource.FaceUp)
+        {
+            throw new GameRuleException("face-down resource cannot monetize");
+        }
+
         var card = cc.MustGet(resource.CardID);
         if (!card.IsComputeType)
         {
@@ -104,12 +117,15 @@ public static class MonetizeProcessor
         {
             throw new GameRuleException("dormant resource cannot monetize");
         }
+        if (resource.MonetizedThisTurn)
+        {
+            throw new GameRuleException($"resource {dist.InstanceID} already monetized this turn");
+        }
 
         long effectiveTP = StatCalculator.CalculateEffectiveTP(resource, field, cc);
-        long remaining = effectiveTP - resource.MonetizedAmount;
-        if (dist.Amount > remaining)
+        if (dist.Amount > effectiveTP)
         {
-            throw new GameRuleException($"distribution amount {dist.Amount} exceeds remaining capacity {remaining}");
+            throw new GameRuleException($"distribution amount {dist.Amount} exceeds throughput {effectiveTP}");
         }
 
         return (resource, card);
