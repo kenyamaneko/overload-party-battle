@@ -501,5 +501,37 @@ public class GameServiceTests
             after!.PendingSlotSelects.Should().ContainSingle().Which.PlayerNum.Should().Be(2);
             result.IsNpcPending.Should().BeTrue();
         }
+
+        [Fact(DisplayName = "NPC の選択の解決がイベントを生まないとき、解決した上で NPC の進行が必要だと返る")]
+        public async Task NpcChoiceResolutionWithoutEvents_ReportsNpcPending()
+        {
+            _effects.Register("TST-0002", TriggerType.Ignition, _ => new EffectResult());
+
+            var cards = MakePlayerCards();
+            var game = await _svc.StartNPCBattle(cards, "IN-0001", "IN-0002", Factions.SHE, NpcPlayerSummaries);
+
+            var state = await _repo.GetGameState(game.GameID);
+            state!.ActivePlayer = 2;
+            state.CurrentTurn = 2;
+            state.CurrentPhase = Phase.Main;
+            state.Player2Repository.Add(new UndeployedCard { InstanceID = "repo_top", CardID = "TST-0001" });
+            state.PendingEffectChoice = new PendingEffectChoice
+            {
+                ChooserPlayerNum = 2,
+                OwnerPlayerNum = 2,
+                EffectCardId = "TST-0002",
+                EffectInstanceId = "npc_effect",
+                Trigger = TriggerType.Ignition,
+                ChoiceKey = "cardId",
+                Candidates = ["repo_top"],
+                ChoiceKind = ChoiceKinds.DeckTop,
+            };
+
+            var result = await _svc.AdvanceNpcTurn(game.GameID);
+
+            var after = await _repo.GetGameState(game.GameID);
+            after!.PendingEffectChoice.Should().BeNull();
+            result.IsNpcPending.Should().BeTrue();
+        }
     }
 }

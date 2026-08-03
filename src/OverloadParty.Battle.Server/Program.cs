@@ -48,7 +48,18 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 var connStr = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? Environment.GetEnvironmentVariable("DATABASE_CONN")
     ?? throw new InvalidOperationException("DATABASE_CONN or ConnectionStrings:DefaultConnection not set");
-var dataSource = NpgsqlDataSource.Create(connStr);
+var iamAuthEnabled = Environment.GetEnvironmentVariable("DATABASE_IAM_AUTH_ENABLED") switch
+{
+    "true" => true,
+    "false" => false,
+    null => throw new InvalidOperationException(
+        "DATABASE_IAM_AUTH_ENABLED is not set (must be \"true\" or \"false\")"),
+    var raw => throw new InvalidOperationException(
+        $"DATABASE_IAM_AUTH_ENABLED must be \"true\" or \"false\", got \"{raw}\""),
+};
+var dataSource = iamAuthEnabled
+    ? CloudSqlIamDataSourceFactory.Create(connStr)
+    : NpgsqlDataSource.Create(connStr);
 builder.Services.AddSingleton(dataSource);
 builder.Services.AddSingleton<IGameRepository>(sp => new PgGameRepository(sp.GetRequiredService<NpgsqlDataSource>()));
 

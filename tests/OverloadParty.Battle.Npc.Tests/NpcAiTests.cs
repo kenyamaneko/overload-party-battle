@@ -1219,11 +1219,7 @@ public class NpcAiTests
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_strat", CardID = "TST-STRAT" } };
         var available = new List<GD.AvailableAction>
         {
-            new GD.PlayCardAction
-            {
-                HandInstanceID = "h_strat", CardID = "TST-STRAT",
-                ValidZones = new() { "support_0" },
-            },
+            new GD.PlayCardAction { HandInstanceID = "h_strat", CardID = "TST-STRAT" },
         };
         var state = BuildState(hand: hand, available: available);
 
@@ -1243,11 +1239,7 @@ public class NpcAiTests
         var hand = new List<GD.UndeployedCard> { new() { InstanceID = "h_noeff", CardID = "TST-NOEFF" } };
         var available = new List<GD.AvailableAction>
         {
-            new GD.PlayCardAction
-            {
-                HandInstanceID = "h_noeff", CardID = "TST-NOEFF",
-                ValidZones = new() { "support_0" },
-            },
+            new GD.PlayCardAction { HandInstanceID = "h_noeff", CardID = "TST-NOEFF" },
         };
         var state = BuildState(hand: hand, available: available);
 

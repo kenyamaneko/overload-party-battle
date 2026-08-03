@@ -8,8 +8,7 @@ namespace OverloadParty.Battle.Npc.Strategies;
 
 /// <summary>
 /// ストラテジー / インシデント など即時効果カードの使用判断。
-/// hold_until / use_conditions / PriorityResolver で use=true となったものだけを
-/// サポートゾーンに配置する。
+/// hold_until / use_conditions / PriorityResolver で use=true となったものだけを手札から発動する。
 /// </summary>
 internal sealed class ImmediateActionStrategy
 {
@@ -28,7 +27,6 @@ internal sealed class ImmediateActionStrategy
     public List<NpcAction> Decide(
         DecisionContext ctx,
         List<GD.PlayCardAction> playActions,
-        HashSet<string> usedZones,
         AiConfig activeConfig)
     {
         var candidates = CardCandidateBuilder.Build<Dictionary<string, object>?>(
@@ -58,30 +56,17 @@ internal sealed class ImmediateActionStrategy
                 return (pri, choice);
             });
 
-        var actions = new List<NpcAction>();
-        foreach (var c in candidates)
-        {
-            var zone = ActionFilter.PickSupportZone(c.Action.ValidZones, usedZones);
-            if (zone is null)
-            {
-                continue;
-            }
-
-            var pos = ActionFilter.ParseZoneStr(zone)!;
-            actions.Add(new NpcAction
+        return candidates
+            .Select(c => new NpcAction
             {
                 ActionType = ActionTypes.PlayCard,
                 Data = new PlayCardRequest
                 {
                     CardInstanceID = c.Action.HandInstanceID!,
-                    Zone = pos.Zone,
-                    Index = pos.Index,
                     ChoiceData = c.Extra,
                 },
-            });
-            usedZones.Add(zone);
-        }
-        return actions;
+            })
+            .ToList();
     }
 
     private bool ShouldHold(CardDefinition card, DecisionContext ctx, AiConfig config)

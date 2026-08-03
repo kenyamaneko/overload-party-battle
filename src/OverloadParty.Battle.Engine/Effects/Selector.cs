@@ -58,6 +58,9 @@ public class ByChoiceSelector : ISelector
     /// <summary>Subtype filter list, or null for any subtype.</summary>
     public List<string>? Subtypes { get; init; }
 
+    /// <summary>Card ID filter list, or null for any card ID.</summary>
+    public List<string>? CardIds { get; init; }
+
     /// <summary>Owner of the target: "myself" or "opponent".</summary>
     public string Owner { get; init; } = "myself";
 
@@ -97,6 +100,7 @@ public class ByChoiceSelector : ISelector
                         || EffectHelpers.MatchesCardType(cc.MustGet(r.CardID), CardType))
             .Where(r => Subtypes is not { Count: > 0 }
                         || EffectHelpers.MatchesAnySubtype(cc.MustGet(r.CardID), Subtypes))
+            .Where(r => CardIds is not { Count: > 0 } || CardIds.Contains(r.CardID))
             .ToList();
     }
 
@@ -131,17 +135,20 @@ public class AllOwnSelector : ISelector
     /// <summary>Subtype filter list, or null for any subtype.</summary>
     public List<string>? Subtypes { get; init; }
 
+    /// <summary>Card ID filter list, or null for any card ID.</summary>
+    public List<string>? CardIds { get; init; }
+
     /// <inheritdoc />
     public List<DeployedResource> Select(OpContext ctx)
     {
         var field = ctx.MyField;
-        return FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes, Subtypes);
+        return FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes, Subtypes, CardIds);
     }
 
-    /// <summary>ゾーン・陣営・カードタイプ・サブタイプでフィルタした表向きリソースを返します。</summary>
+    /// <summary>ゾーン・陣営・カードタイプ・サブタイプ・カード ID でフィルタした表向きリソースを返します。</summary>
     internal static List<DeployedResource> FilterResources(
         Field field, string? zone, string? faction, ICardCache cc,
-        List<string>? cardTypes = null, List<string>? subtypes = null)
+        List<string>? cardTypes = null, List<string>? subtypes = null, List<string>? cardIds = null)
     {
         IEnumerable<DeployedResource> candidates = zone switch
         {
@@ -155,6 +162,7 @@ public class AllOwnSelector : ISelector
             .Where(r => faction is not { Length: > 0 } || cc.MustGet(r.CardID).Faction == faction)
             .Where(r => cardTypes is not { Count: > 0 } || EffectHelpers.MatchesAnyCardType(cc.MustGet(r.CardID), cardTypes))
             .Where(r => subtypes is not { Count: > 0 } || EffectHelpers.MatchesAnySubtype(cc.MustGet(r.CardID), subtypes))
+            .Where(r => cardIds is not { Count: > 0 } || cardIds.Contains(r.CardID))
             .ToList();
     }
 }
@@ -176,11 +184,14 @@ public class AllOpponentSelector : ISelector
     /// <summary>Subtype filter list, or null for any subtype.</summary>
     public List<string>? Subtypes { get; init; }
 
+    /// <summary>Card ID filter list, or null for any card ID.</summary>
+    public List<string>? CardIds { get; init; }
+
     /// <inheritdoc />
     public List<DeployedResource> Select(OpContext ctx)
     {
         var field = ctx.OpponentField;
-        return AllOwnSelector.FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes, Subtypes);
+        return AllOwnSelector.FilterResources(field, Zone, Faction, ctx.CardCache, CardTypes, Subtypes, CardIds);
     }
 }
 

@@ -272,11 +272,6 @@ public class GameService
         var humanPlayerNum = ResolveHumanPlayerNum(game);
         var npcResult = await _npcRunner.AdvanceOneAction(game, ct);
 
-        if (npcResult.Events.Count == 0)
-        {
-            return new GameActionResult();
-        }
-
         var clientState = await GetStateForPlayer(gameID, humanPlayerNum, ct);
 
         var events = npcResult.Events

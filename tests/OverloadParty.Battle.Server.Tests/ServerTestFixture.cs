@@ -34,6 +34,7 @@ public class ServerTestFixture : IAsyncLifetime
         }
 
         Environment.SetEnvironmentVariable("DATABASE_CONN", connectionString);
+        Environment.SetEnvironmentVariable("DATABASE_IAM_AUTH_ENABLED", "false");
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Development");
         Environment.SetEnvironmentVariable("CARDS_JSON_PATH", FindCardsJson());
         Environment.SetEnvironmentVariable("INITIATIVES_JSON_PATH",
