@@ -39,7 +39,6 @@ public static class DeployCompletion
             return (true, events);
         }
 
-        // TODO(#130): on_deploy トリガーの発火タイミング分割 (配置時/稼働時) で本経路の振り分けが変わる。
         if (effects.Has(resource.CardID, TriggerType.OnDeploy))
         {
             var handler = effects.Get(resource.CardID, TriggerType.OnDeploy)!;
@@ -98,7 +97,6 @@ public static class DeployCompletion
             return events;
         }
 
-        // TODO(#130): on_deploy トリガーの発火タイミング分割 (配置時/稼働時) で本経路の振り分けが変わる。
         if (effects.Has(support.CardID, TriggerType.OnDeploy))
         {
             var handler = effects.Get(support.CardID, TriggerType.OnDeploy)!;

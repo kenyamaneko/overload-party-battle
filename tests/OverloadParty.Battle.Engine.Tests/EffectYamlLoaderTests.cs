@@ -379,6 +379,46 @@ public class PassiveClassificationTests
     }
 }
 
+[Trait("対象", "配置時トリガーの読み込み")]
+public class OnSetTriggerLoadingTests
+{
+    private static JsonElement Parse(string json) => JsonDocument.Parse(json).RootElement;
+
+    [Fact(DisplayName = "on_set の効果定義が配置時トリガーとして登録される")]
+    public void OnSetDef_IsRegisteredUnderOnSetTrigger()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9105");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "on_set",
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":100}}""")],
+            },
+        ];
+        var registry = new EffectRegistry();
+
+        EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+
+        var handler = registry.Get("TST-9105", TriggerType.OnSet);
+        handler.Should().NotBeNull();
+
+        var state = TestFactory.MakeGameState(p1Budget: 5000);
+        handler!(new EffectContext
+        {
+            State = state,
+            Game = TestFactory.MakeGame(),
+            PlayerNum = 1,
+            CardCache = new TestCardCache(),
+            Effects = registry,
+            Trigger = TriggerType.OnSet,
+            EffectCardId = "TST-9105",
+        });
+
+        state.Player1Budget.Should().Be(5100);
+    }
+}
+
 [Trait("対象", "効果定義の不正値の読み込み拒否")]
 public class UnknownValueRejectionTests
 {

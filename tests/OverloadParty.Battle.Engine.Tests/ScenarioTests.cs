@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Engine;
+using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
@@ -95,6 +96,59 @@ public class ScenarioTests
             {
                 return;
             }
+        }
+    }
+
+    [Trait("対象", "配置時のデプロイターン短縮")]
+    public class OnSetDeployShortening
+    {
+        private const string ShorteningCardId = "TST-0718";
+        private const string FillerCardId = "TST-0001";
+
+        private readonly FakeGameRepository _repo = new();
+        private readonly TestCardCache _cc = new();
+        private readonly GameEngine _engine;
+        private bool _onDeployFired;
+
+        /// <summary>デプロイターン 2 で、配置時に残デプロイターンを 1 減らすリソースを登録したエンジンを用意する。</summary>
+        public OnSetDeployShortening()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: ShorteningCardId, deployTurns: 2));
+            _cc.Add(TestFactory.ComputeCard(cardId: FillerCardId, deployTurns: 0));
+            var effects = new TestEffectRegistry();
+            effects.Register(
+                ShorteningCardId, TriggerType.OnSet,
+                EffectComposer.Compose(new ReduceDeployTurnsOp(new StaticAmount(1))));
+            effects.Register(ShorteningCardId, TriggerType.OnDeploy, _ => { _onDeployFired = true; return new EffectResult(); });
+            _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]), new FakeClock());
+        }
+
+        [Fact(DisplayName = "デプロイターン 2 のカードが配置時に 1 短縮されたとき、次の自分のドローフェーズで稼働する")]
+        public async Task ShortenedAtPlacement_BecomesOperationalAtNextOwnDrawPhase()
+        {
+            var gameID = await _engine.CreateNewGame(
+                TestFactory.MakeDeck(_cc, ShorteningCardId), TestFactory.MakeDeck(_cc, FillerCardId), firstPlayer: 1);
+
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+            var state = (await _repo.GetGameState(gameID))!;
+            var cardInstanceId = TestFactory.ReplaceFirstHandCard(state, 1, ShorteningCardId);
+            game = await _repo.GetGame(gameID);
+            await _engine.ProcessAction(game!, 1, ActionType.PlayCard,
+                new PlayCardRequest { CardInstanceID = cardInstanceId, Zone = Zones.Frontend, Index = 0 });
+
+            // FakeGameRepository は状態をその場で更新するため、この参照は以降の進行でも生き続ける。
+            var deployed = state.Player1Field.Frontend[0]!;
+            deployed.DeployingTurnsLeft.Should().Be(1, "配置時効果がデプロイターン 2 を 1 短縮する");
+            deployed.FaceUp.Should().BeFalse();
+            _onDeployFired.Should().BeFalse();
+
+            await EndTurn(_repo, _engine, gameID, 1);
+            await EndTurn(_repo, _engine, gameID, 2);
+
+            deployed.DeployingTurnsLeft.Should().Be(0);
+            deployed.FaceUp.Should().BeTrue("短縮により所有者の 1 回目のドローフェーズで稼働する");
+            _onDeployFired.Should().BeTrue("稼働時効果はデプロイ完了時に発動する");
         }
     }
 

@@ -855,6 +855,7 @@ public static class EffectYamlLoader
 
     private static TriggerType ParseTrigger(string trigger) => trigger switch
     {
+        TriggerTypes.OnSet => TriggerType.OnSet,
         TriggerTypes.OnDeploy => TriggerType.OnDeploy,
         TriggerTypes.Ignition => TriggerType.Ignition,
         TriggerTypes.Passive => TriggerType.OnEndPhase, // 後方互換: passive → OnEndPhase

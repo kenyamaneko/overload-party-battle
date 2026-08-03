@@ -1,4 +1,5 @@
 using OverloadParty.Battle.Engine;
+using OverloadParty.Battle.Engine.Effects.Ops;
 using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
@@ -686,6 +687,181 @@ public class PlayCardProcessorTests
                 .Which.Cancelled.Should().Be(true);
             state.Player1Budget.Should().Be(0);
             act.Should().Throw<GameRuleException>().WithMessage("*incident already played this turn*");
+        }
+    }
+
+    [Trait("対象", "配置時効果の発火")]
+    public class OnSetEffect
+    {
+        private const string DeployingResourceId = "TST-0710";
+        private const string ImmediateResourceId = "TST-0711";
+        private const string BothTriggersResourceId = "TST-0712";
+        private const string DeployingSupportId = "TST-0713";
+        private const string AttachmentId = "TST-0714";
+        private const string DeployWatcherId = "TST-0715";
+        private const string SelfShorteningResourceId = "TST-0716";
+        private const string AttachmentHostId = "TST-0717";
+
+        /// <summary>配置時効果・稼働時効果・相手のデプロイ反応リアクティブを登録した環境を作る。</summary>
+        /// <returns>カード定義キャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, TestEffectRegistry Effects) MakeEnv()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: DeployingResourceId, deployTurns: 2));
+            cc.Add(TestFactory.ComputeCard(cardId: ImmediateResourceId, deployTurns: 0));
+            cc.Add(TestFactory.ComputeCard(cardId: BothTriggersResourceId, deployTurns: 2));
+            cc.Add(TestFactory.ComputeCard(cardId: SelfShorteningResourceId, deployTurns: 1));
+            cc.Add(TestFactory.ComputeCard(cardId: AttachmentHostId, deployTurns: 0));
+            cc.Add(TestFactory.PlatformCard(cardId: DeployingSupportId));
+            cc.Add(TestFactory.AttachmentCard(cardId: AttachmentId));
+            cc.Add(TestFactory.ReactiveCard(cardId: DeployWatcherId));
+
+            var effects = new TestEffectRegistry();
+            string[] onSetCardIds =
+            [
+                DeployingResourceId, ImmediateResourceId, BothTriggersResourceId, DeployingSupportId, AttachmentId,
+            ];
+            foreach (string cardId in onSetCardIds)
+            {
+                effects.Register(cardId, TriggerType.OnSet, GainBudget(1, 300));
+            }
+            effects.Register(BothTriggersResourceId, TriggerType.OnDeploy, GainBudget(1, 1000));
+            effects.Register(DeployWatcherId, TriggerType.OnDeploy, GainBudget(2, 400));
+            effects.Register(
+                SelfShorteningResourceId, TriggerType.OnSet,
+                EffectComposer.Compose(new ReduceDeployTurnsOp(new StaticAmount(1))));
+
+            return (cc, effects);
+        }
+
+        /// <summary>指定プレイヤーのバジェットを増やす効果ハンドラを作る。</summary>
+        /// <param name="playerNum">バジェットを受け取るプレイヤー番号。</param>
+        /// <param name="amount">増やす額。</param>
+        /// <returns>効果ハンドラ。</returns>
+        private static EffectHandler GainBudget(long playerNum, long amount) =>
+            ctx =>
+            {
+                ctx.State.SetBudget(playerNum, ctx.State.GetBudget(playerNum) + amount);
+                return new EffectResult();
+            };
+
+        /// <summary>指定カードを手札に 1 枚持つ、両者バジェット 5000 のメインフェーズの状態を作る。</summary>
+        /// <param name="cardId">手札に置くカード ID。</param>
+        /// <returns>テスト用ゲーム状態。</returns>
+        private static BattleGameState MakeStateWithHand(string cardId)
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 5000, p2Budget: 5000);
+            state.Player1Hand.Add(new UndeployedCard { InstanceID = "h_1", CardID = cardId });
+            return state;
+        }
+
+        /// <summary>手札のカードを指定ゾーンへプレイする。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="cc">カード定義キャッシュ。</param>
+        /// <param name="effects">効果レジストリ。</param>
+        /// <param name="zone">配置先ゾーン。</param>
+        /// <param name="targetInstanceId">アタッチメントの装備先インスタンス ID。</param>
+        private static void Play(
+            BattleGameState state, TestCardCache cc, TestEffectRegistry effects,
+            string zone, string? targetInstanceId = null)
+            => PlayCardProcessor.Process(
+                state, TestFactory.MakeGame(), 1,
+                new PlayCardRequest
+                {
+                    CardInstanceID = "h_1",
+                    Zone = zone,
+                    Index = 0,
+                    TargetInstanceID = targetInstanceId,
+                },
+                cc, effects);
+
+        [Fact(DisplayName = "デプロイターン 2 のカードを配置したとき、配置時効果が発動する")]
+        public void DeployingResource_FiresOnSetAtPlacement()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(DeployingResourceId);
+
+            Play(state, cc, effects, Zones.Frontend);
+
+            state.Player1Budget.Should().Be(5300);
+        }
+
+        [Fact(DisplayName = "デプロイターン 0 のカードを配置したとき、配置時効果が発動する")]
+        public void ImmediateResource_FiresOnSetAtPlacement()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(ImmediateResourceId);
+
+            Play(state, cc, effects, Zones.Frontend);
+
+            state.Player1Budget.Should().Be(5300);
+        }
+
+        [Fact(DisplayName = "デプロイターン 2 のカードを配置したとき、相手サポートのデプロイ反応リアクティブは発動しない")]
+        public void DeployingResource_DoesNotTriggerOpponentDeployWatcher()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(DeployingResourceId);
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "opp_watcher",
+                CardID = DeployWatcherId,
+                DeployOrder = 1,
+            };
+
+            Play(state, cc, effects, Zones.Frontend);
+
+            state.Player1Budget.Should().Be(5300, "配置時効果は配置の瞬間に発動する");
+            state.Player2Budget.Should().Be(5000, "配置は相手のデプロイ反応リアクティブの誘発契機にならない");
+        }
+
+        [Fact(DisplayName = "デプロイターン 2 のカードが配置時効果と稼働時効果の両方を持つとき、配置の時点では配置時効果だけが発動する")]
+        public void ResourceWithBothTriggers_FiresOnlyOnSetAtPlacement()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(BothTriggersResourceId);
+
+            Play(state, cc, effects, Zones.Frontend);
+
+            state.Player1Budget.Should().Be(5300);
+        }
+
+        [Fact(DisplayName = "デプロイターン 2 のサポートカードを配置したとき、配置時効果が発動する")]
+        public void DeployingSupport_FiresOnSetAtPlacement()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(DeployingSupportId);
+
+            Play(state, cc, effects, Zones.Support);
+
+            state.Player1Budget.Should().Be(5300);
+        }
+
+        [Fact(DisplayName = "アタッチメントを装備したとき、配置時効果が発動する")]
+        public void Attachment_FiresOnSetAtEquip()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(AttachmentId);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: AttachmentHostId, instanceId: "host_1", faceUp: true);
+
+            Play(state, cc, effects, Zones.Support, targetInstanceId: "host_1");
+
+            state.Player1Budget.Should().Be(5300);
+        }
+
+        [Fact(DisplayName = "デプロイターン 1 のカードの配置時効果が残デプロイターンを 1 減らしたとき、配置したターンから表向きで稼働する")]
+        public void OnSetShorteningToZero_BecomesOperationalOnPlacement()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(SelfShorteningResourceId);
+
+            Play(state, cc, effects, Zones.Frontend);
+
+            var deployed = state.Player1Field.Frontend[0]!;
+            deployed.DeployingTurnsLeft.Should().Be(0);
+            deployed.FaceUp.Should().BeTrue();
+            state.GetHasOperated(1).Should().BeTrue();
         }
     }
 }

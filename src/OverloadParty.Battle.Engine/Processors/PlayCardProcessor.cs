@@ -187,6 +187,8 @@ public static class PlayCardProcessor
 
         field.Support[req.Index] = support;
 
+        events.AddRange(FireOnSet(ctx, cardDef.CardId, support.InstanceID, source: null, support, req));
+
         // カウントダウンなしで稼働した Support 自身の効果を発火（on_deploy 2 段解決）。
         if (support.DeployingTurnsLeft <= 0)
         {
@@ -215,12 +217,17 @@ public static class PlayCardProcessor
             field.Backend[req.Index] = resource;
         }
 
+        events.AddRange(FireOnSet(ctx, cardDef.CardId, resource.InstanceID, resource, supSource: null, req));
+
         // 表向きになった時点で on_deploy を発動する仕様のため、デプロイ中はスキップ（実際の発動は DrawPhaseProcessor）。
         if (resource.DeployingTurnsLeft > 0)
         {
             PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
             return false;
         }
+
+        // 配置時効果が残デプロイターンを 0 まで縮めた場合もその場で稼働にあたるため、表向きにしてから稼働開始処理へ渡す。
+        resource.FaceUp = true;
 
         var (cancelled, deployEvents) = DeployCompletion.CompleteResource(
             ctx.State, ctx.Game, ctx.PlayerNum, resource, ctx.CC, ctx.Effects);
@@ -272,6 +279,8 @@ public static class PlayCardProcessor
 
         var events = new List<GameEvent>();
 
+        events.AddRange(FireOnSet(ctx, cardDef.CardId, attachInstanceID, target, attachment, req));
+
         // アタッチメントは装備された時点が自身のデプロイにあたるため、ここで自身の on_deploy 効果を発火する。
         if (ctx.Effects.Has(cardDef.CardId, TriggerType.OnDeploy))
         {
@@ -311,6 +320,51 @@ public static class PlayCardProcessor
         });
 
         return new ActionResult { Events = events };
+    }
+
+    /// <summary>
+    /// 場に置かれたカード自身の配置時効果を発火します。
+    /// </summary>
+    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
+    /// <param name="cardId">置いたカードのカード ID。</param>
+    /// <param name="instanceId">置いたカードのインスタンス ID。</param>
+    /// <param name="source">効果の発火元リソース。サポートカードを置いた場合は null。</param>
+    /// <param name="supSource">効果の発火元サポートカード。リソースを置いた場合は null。</param>
+    /// <param name="req">プレイヤーの選択値を含むカードプレイリクエスト。</param>
+    /// <returns>配置時効果が発したイベント。</returns>
+    private static List<GameEvent> FireOnSet(
+        PlayContext ctx, string cardId, string instanceId,
+        DeployedResource? source, DeployedSupport? supSource, PlayCardRequest req)
+    {
+        if (!ctx.Effects.Has(cardId, TriggerType.OnSet))
+        {
+            return [];
+        }
+
+        var handler = ctx.Effects.Get(cardId, TriggerType.OnSet)!;
+        var result = handler(new EffectContext
+        {
+            State = ctx.State,
+            Game = ctx.Game,
+            PlayerNum = ctx.PlayerNum,
+            Source = source,
+            SupSource = supSource,
+            Target = source,
+            EventOwnerNum = ctx.PlayerNum,
+            CardCache = ctx.CC,
+            ChoiceData = req.ChoiceData,
+            Effects = ctx.Effects,
+            Trigger = TriggerType.OnSet,
+            EffectCardId = cardId,
+            EffectInstanceId = instanceId,
+        });
+
+        if (result.PendingChoice is { } pendingChoice)
+        {
+            ctx.State.PendingEffectChoice = pendingChoice;
+        }
+
+        return result.Events;
     }
 
     private static void ValidatePlayPosition(CardDefinition cardDef, Field field, PlayCardRequest req)

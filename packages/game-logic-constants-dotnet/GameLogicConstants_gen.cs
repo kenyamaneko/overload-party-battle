@@ -82,6 +82,7 @@ public static class TriggerTypes
 {
     public const string Ignition = "ignition";
     public const string Passive = "passive";
+    public const string OnSet = "on_set";
     public const string OnDeploy = "on_deploy";
     public const string OnEndPhase = "on_end_phase";
     public const string OnFieldChange = "on_field_change";
