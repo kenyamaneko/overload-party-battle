@@ -66,6 +66,22 @@ public class ScenarioTests
         }
     }
 
+    /// <summary>指定プレイヤーのアクションをエンジン経由で実行する。</summary>
+    /// <param name="repo">ゲームとゲーム状態を保持するリポジトリ。</param>
+    /// <param name="engine">アクションを実行するエンジン。</param>
+    /// <param name="gameID">対象ゲームの ID。</param>
+    /// <param name="playerNum">アクションするプレイヤー番号。</param>
+    /// <param name="actionType">アクション種別。</param>
+    /// <param name="actionData">アクション固有のリクエスト。</param>
+    /// <returns>アクション結果。</returns>
+    private static async Task<ActionResult> Act(
+        FakeGameRepository repo, GameEngine engine, string gameID,
+        long playerNum, ActionType actionType, object actionData)
+    {
+        var game = await repo.GetGame(gameID);
+        return await engine.ProcessAction(game!, playerNum, actionType, actionData);
+    }
+
     /// <summary>指定プレイヤーのターンを実ルールどおり終了させ、手札が上限を超える場合は超過分を破棄する。</summary>
     /// <param name="repo">ゲームとゲーム状態を保持するリポジトリ。</param>
     /// <param name="engine">アクションを実行するエンジン。</param>
@@ -218,6 +234,7 @@ public class ScenarioTests
 
         private readonly FakeGameRepository _repo = new();
         private readonly TestCardCache _cc = new();
+        private readonly TestEffectRegistry _effects = new();
         private readonly GameEngine _engine;
 
         /// <summary>稼働時に 2 択の分岐を要求するデプロイターン 2 のリソースを登録したエンジンを用意する。</summary>
@@ -225,16 +242,15 @@ public class ScenarioTests
         {
             _cc.Add(TestFactory.ComputeCard(cardId: ChoiceCardId, mc: 0, deployTurns: 2));
             _cc.Add(TestFactory.ComputeCard(cardId: FillerCardId, mc: 0, deployTurns: 0));
-            var effects = new TestEffectRegistry();
             var branches = new Dictionary<string, List<IEffectOp>>
             {
                 [AutopilotOption] = [new InlineOp(o => o.State.SetInsightPool(o.PlayerNum, AutopilotInsight))],
                 [StandardOption] = [new InlineOp(o => o.State.SetInsightPool(o.PlayerNum, StandardInsight))],
             };
-            effects.Register(
+            _effects.Register(
                 ChoiceCardId, TriggerType.OnDeploy,
                 EffectComposer.Compose(new BranchOnChoiceOp(branches)));
-            _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]), new FakeClock());
+            _engine = new GameEngine(_repo, _cc, _effects, new InitiativeCatalog([]), new FakeClock());
         }
 
         /// <summary>
@@ -257,25 +273,12 @@ public class ScenarioTests
             return (gameID, state);
         }
 
-        /// <summary>指定プレイヤーのアクションを実行する。</summary>
-        /// <param name="gameID">対象ゲームの ID。</param>
-        /// <param name="playerNum">アクションするプレイヤー番号。</param>
-        /// <param name="actionType">アクション種別。</param>
-        /// <param name="actionData">アクション固有のリクエスト。</param>
-        /// <returns>アクション結果。</returns>
-        private async Task<ActionResult> Act(
-            string gameID, long playerNum, ActionType actionType, object actionData)
-        {
-            var game = await _repo.GetGame(gameID);
-            return await _engine.ProcessAction(game!, playerNum, actionType, actionData);
-        }
-
         [Fact(DisplayName = "残り 1 ターンの選択付きカードがあるとき、前のターンプレイヤーがエンドフェーズを終了すると、アクションが完了し相手に選択待ちが積まれる")]
         public async Task EndPhase_CompletesAndQueuesChoiceForTheNextActivePlayer()
         {
             var (gameID, state) = await StartBeforeOpponentsDrawPhase();
 
-            var result = await Act(gameID, 2, ActionType.EndPhase, new object());
+            var result = await Act(_repo, _engine, gameID, 2, ActionType.EndPhase, new object());
 
             result.GameOver.Should().BeNull();
             state.ActivePlayer.Should().Be(1, "エンドフェーズの完了でターンが交代する");
@@ -285,13 +288,29 @@ public class ScenarioTests
             state.CurrentPhase.Should().Be(Phase.Draw, "選択が解決されるまでドローフェーズのまま止まる");
         }
 
+        [Fact(DisplayName = "ドローフェーズで積まれた選択待ちは、選択するプレイヤーに選択を解決するアクションとして提示される")]
+        public async Task QueuedChoice_IsOfferedToTheChooserAsAnAvailableAction()
+        {
+            var (gameID, state) = await StartBeforeOpponentsDrawPhase();
+            await Act(_repo, _engine, gameID, 2, ActionType.EndPhase, new object());
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, 1, state.Player1Field, state.Player2Field, state.Player1Hand,
+                state.Player1Budget, state.Player1InsightPool, _cc, _effects);
+
+            var choiceAction = actions.Should()
+                .ContainSingle(a => a.Type == ActionTypes.ResolvePendingChoice).Subject;
+            choiceAction.ChoiceOptions!.Select(o => o.Key)
+                .Should().BeEquivalentTo(AutopilotOption, StandardOption);
+        }
+
         [Fact(DisplayName = "積まれた選択を解決すると、選んだ分岐の効果が適用されメインフェーズへ進む")]
         public async Task ResolvingChoice_AppliesChosenBranchAndContinuesTheTurn()
         {
             var (gameID, state) = await StartBeforeOpponentsDrawPhase();
-            await Act(gameID, 2, ActionType.EndPhase, new object());
+            await Act(_repo, _engine, gameID, 2, ActionType.EndPhase, new object());
 
-            var result = await Act(gameID, 1, ActionType.ResolvePendingChoice,
+            var result = await Act(_repo, _engine, gameID, 1, ActionType.ResolvePendingChoice,
                 new ResolvePendingChoiceRequest { ChosenId = StandardOption });
 
             result.GameOver.Should().BeNull();
@@ -312,11 +331,11 @@ public class ScenarioTests
                 state.Player2Hand.Add(new UndeployedCard { InstanceID = $"extra_{i}", CardID = FillerCardId });
             }
 
-            var endPhaseResult = await Act(gameID, 2, ActionType.EndPhase, new object());
+            var endPhaseResult = await Act(_repo, _engine, gameID, 2, ActionType.EndPhase, new object());
             endPhaseResult.ShouldDiscard.Should().BeTrue();
             state.PendingEffectChoice.Should().BeNull("破棄が済むまでドローフェーズに入らない");
 
-            var discardResult = await Act(gameID, 2, ActionType.DiscardHand,
+            var discardResult = await Act(_repo, _engine, gameID, 2, ActionType.DiscardHand,
                 new DiscardHandRequest { CardInstanceIDs = ["extra_0"] });
 
             discardResult.GameOver.Should().BeNull();
@@ -366,25 +385,12 @@ public class ScenarioTests
             _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]), new FakeClock());
         }
 
-        /// <summary>指定プレイヤーのアクションを実行する。</summary>
-        /// <param name="gameID">対象ゲームの ID。</param>
-        /// <param name="playerNum">アクションするプレイヤー番号。</param>
-        /// <param name="actionType">アクション種別。</param>
-        /// <param name="actionData">アクション固有のリクエスト。</param>
-        /// <returns>アクション結果。</returns>
-        private async Task<ActionResult> Act(
-            string gameID, long playerNum, ActionType actionType, object actionData)
-        {
-            var game = await _repo.GetGame(gameID);
-            return await _engine.ProcessAction(game!, playerNum, actionType, actionData);
-        }
-
         [Fact(DisplayName = "効果で 2 枚のデプロイを要求し 1 枚目のスロットを選ぶと、配置時の選択待ちが積まれ、残りのスロット選択も残る")]
         public async Task SelectingFirstSlot_QueuesOnSetChoiceWhileSlotSelectionRemains()
         {
             var (gameID, state) = await StartWithTwoQueuedDeploys();
 
-            await Act(gameID, 1, ActionType.SelectSlot,
+            await Act(_repo, _engine, gameID, 1, ActionType.SelectSlot,
                 new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
 
             var placed = state.Player1Field.Frontend[1]!;
@@ -401,16 +407,16 @@ public class ScenarioTests
         public async Task ResolvingOnSetChoice_ShortensDeployAndAllowsTheNextSlotSelection()
         {
             var (gameID, state) = await StartWithTwoQueuedDeploys();
-            await Act(gameID, 1, ActionType.SelectSlot,
+            await Act(_repo, _engine, gameID, 1, ActionType.SelectSlot,
                 new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
 
-            await Act(gameID, 1, ActionType.ResolvePendingChoice,
+            await Act(_repo, _engine, gameID, 1, ActionType.ResolvePendingChoice,
                 new ResolvePendingChoiceRequest { ChosenId = AutopilotOption });
 
             state.PendingEffectChoice.Should().BeNull();
             state.Player1Field.Frontend[1]!.DeployingTurnsLeft.Should().Be(1);
 
-            await Act(gameID, 1, ActionType.SelectSlot,
+            await Act(_repo, _engine, gameID, 1, ActionType.SelectSlot,
                 new SelectSlotRequest { Zone = Zones.Frontend, Index = 2 });
 
             state.Player1Field.Frontend[2]!.CardID.Should().Be(ChoiceCardId);
@@ -439,7 +445,7 @@ public class ScenarioTests
                 new UndeployedCard { InstanceID = "repo_c2", CardID = ChoiceCardId },
             ];
 
-            await Act(gameID, 1, ActionType.UseIgnition, new UseIgnitionRequest { InstanceID = "r_deployer" });
+            await Act(_repo, _engine, gameID, 1, ActionType.UseIgnition, new UseIgnitionRequest { InstanceID = "r_deployer" });
             state.PendingSlotSelects.Should().HaveCount(2);
 
             return (gameID, state);
@@ -564,19 +570,6 @@ public class ScenarioTests
             return (gameID, state);
         }
 
-        /// <summary>指定プレイヤーのアクションを実行する。</summary>
-        /// <param name="gameID">対象ゲームの ID。</param>
-        /// <param name="playerNum">アクションするプレイヤー番号。</param>
-        /// <param name="actionType">アクション種別。</param>
-        /// <param name="actionData">アクション固有のリクエスト。</param>
-        /// <returns>アクション結果。</returns>
-        private async Task<ActionResult> Act(
-            string gameID, long playerNum, ActionType actionType, object actionData)
-        {
-            var game = await _repo.GetGame(gameID);
-            return await _engine.ProcessAction(game!, playerNum, actionType, actionData);
-        }
-
         [Fact(DisplayName = "ターン 30 のメインフェーズでカードをプレイしたとき、アクション解決後もゲームが続行する")]
         public async Task PlayCardOnFinalTurn_ContinuesGame()
         {
@@ -585,7 +578,7 @@ public class ScenarioTests
             state.CurrentPhase = Phase.Main;
             var cardInstanceId = TestFactory.ReplaceFirstHandCard(state, 2, FreeCardId);
 
-            var result = await Act(gameID, 2, ActionType.PlayCard,
+            var result = await Act(_repo, _engine, gameID, 2, ActionType.PlayCard,
                 new PlayCardRequest { CardInstanceID = cardInstanceId, Zone = Zones.Frontend, Index = 1 });
 
             result.GameOver.Should().BeNull();
@@ -600,7 +593,7 @@ public class ScenarioTests
             var (gameID, state) = await StartBattlePhaseAt(
                 turn: 30, activePlayer: 2, p1Budget: 3000, p2Budget: 2000);
 
-            var result = await Act(gameID, 2, ActionType.EndPhase, new object());
+            var result = await Act(_repo, _engine, gameID, 2, ActionType.EndPhase, new object());
 
             result.GameOver.Should().NotBeNull();
             result.GameOver!.WinnerNum.Should().Be(1);
@@ -615,7 +608,7 @@ public class ScenarioTests
             var (gameID, _) = await StartBattlePhaseAt(
                 turn: 30, activePlayer: 2, p1Budget: 2500, p2Budget: 2500);
 
-            var result = await Act(gameID, 2, ActionType.EndPhase, new object());
+            var result = await Act(_repo, _engine, gameID, 2, ActionType.EndPhase, new object());
 
             result.GameOver.Should().NotBeNull();
             result.GameOver!.WinnerNum.Should().Be(0);
@@ -628,7 +621,7 @@ public class ScenarioTests
             var (gameID, state) = await StartBattlePhaseAt(
                 turn: 29, activePlayer: 1, p1Budget: 3000, p2Budget: 2000);
 
-            var result = await Act(gameID, 1, ActionType.EndPhase, new object());
+            var result = await Act(_repo, _engine, gameID, 1, ActionType.EndPhase, new object());
 
             result.GameOver.Should().BeNull();
             state.CurrentTurn.Should().Be(30);
@@ -643,7 +636,7 @@ public class ScenarioTests
             state.Player2Field.Frontend[0] = TestFactory.MakeResource(
                 cardId: HighMaintenanceCardId, instanceId: "r_p2", faceUp: true);
 
-            var result = await Act(gameID, 2, ActionType.EndPhase, new object());
+            var result = await Act(_repo, _engine, gameID, 2, ActionType.EndPhase, new object());
 
             result.GameOver.Should().NotBeNull();
             result.GameOver!.WinnerNum.Should().Be(1);
@@ -660,12 +653,12 @@ public class ScenarioTests
                 state.Player2Hand.Add(new UndeployedCard { InstanceID = $"extra_{i}", CardID = FreeCardId });
             }
 
-            var endPhaseResult = await Act(gameID, 2, ActionType.EndPhase, new object());
+            var endPhaseResult = await Act(_repo, _engine, gameID, 2, ActionType.EndPhase, new object());
 
             endPhaseResult.ShouldDiscard.Should().BeTrue();
             endPhaseResult.GameOver.Should().BeNull();
 
-            var discardResult = await Act(gameID, 2, ActionType.DiscardHand,
+            var discardResult = await Act(_repo, _engine, gameID, 2, ActionType.DiscardHand,
                 new DiscardHandRequest { CardInstanceIDs = ["extra_0", "extra_1"] });
 
             discardResult.GameOver.Should().NotBeNull();

@@ -39,10 +39,6 @@ public static class DeployCompletion
             return (true, events);
         }
 
-        // キャンセルされたデプロイは「発生しなかった」扱いになり、自身の効果が選択待ちで中断しても稼働は成立するため、
-        // 稼働実績はキャンセル解決の後、かつ自身の効果より前に立てる。
-        state.SetHasOperated(ownerNum, true);
-
         if (effects.Has(resource.CardID, TriggerType.OnDeploy))
         {
             var handler = effects.Get(resource.CardID, TriggerType.OnDeploy)!;
@@ -68,6 +64,9 @@ public static class DeployCompletion
         }
 
         PassiveRecalculator.Recalculate(state, game, cc, effects);
+
+        // キャンセルされたデプロイは「発生しなかった」扱いになるため、稼働実績はキャンセル解決の後に立てる。
+        state.SetHasOperated(ownerNum, true);
 
         return (false, events);
     }

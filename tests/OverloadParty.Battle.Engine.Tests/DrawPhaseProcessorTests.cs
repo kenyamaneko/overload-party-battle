@@ -179,6 +179,7 @@ public class DrawPhaseProcessorTests
 
         private const string OwnCardId = "TST-0001";
         private const string SecondOwnCardId = "TST-0002";
+        private const string SupportCardId = "TST-0201";
         private const string EarlyReactiveCardId = "TST-0401";
         private const string LateReactiveCardId = "TST-0402";
 
@@ -295,6 +296,40 @@ public class DrawPhaseProcessorTests
             DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), cc, effects);
 
             fired.Should().Equal(SecondOwnCardId, OwnCardId);
+        }
+
+        [Fact(DisplayName = "同一ドローフェーズにリソースとサポートカードが同時稼働するとき、ゾーンをまたいでセットが早い順に発動する")]
+        public void SimultaneousCompletionAcrossZones_FiresInDeployOrder()
+        {
+            var cc = DrawCc();
+            cc.Add(TestFactory.PlatformCard(cardId: SupportCardId));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = OwnCardId });
+
+            var lateSet = TestFactory.MakeResource(
+                cardId: OwnCardId, instanceId: "r_1", faceUp: false, deployLeft: 1);
+            lateSet.DeployOrder = 2;
+            state.Player1Field.Frontend[0] = lateSet;
+
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = SupportCardId,
+                FaceUp = true,
+                DeployingTurnsLeft = 1,
+                DeployOrder = 1,
+            };
+
+            var fired = new List<string>();
+            var effects = new TestEffectRegistry();
+            effects.Register(OwnCardId, TriggerType.OnDeploy,
+                _ => { fired.Add(OwnCardId); return new EffectResult(); });
+            effects.Register(SupportCardId, TriggerType.OnDeploy,
+                _ => { fired.Add(SupportCardId); return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), cc, effects);
+
+            fired.Should().Equal(SupportCardId, OwnCardId);
         }
     }
 
