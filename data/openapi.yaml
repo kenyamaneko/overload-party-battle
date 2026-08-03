@@ -723,8 +723,6 @@ components:
         - maxAV
         - damage
         - temporaryEffects
-        - monetizedThisTurn
-        - hasAttacked
         - effectUsedThisTurn
         - effectUsedThisGame
         - deployedOnTurn
@@ -797,11 +795,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/TemporaryEffect"
-        monetizedThisTurn:
-          type: boolean
-          description: このターンに収益化へ使用済みか
-        hasAttacked:
-          type: boolean
         effectUsedThisTurn:
           type: boolean
         effectUsedThisGame:

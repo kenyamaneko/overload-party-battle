@@ -486,9 +486,6 @@ export interface components {
              */
             damage: number;
             temporaryEffects: components["schemas"]["TemporaryEffect"][];
-            /** @description このターンに収益化へ使用済みか */
-            monetizedThisTurn: boolean;
-            hasAttacked: boolean;
             effectUsedThisTurn: boolean;
             effectUsedThisGame: boolean;
             /** Format: int64 */

@@ -451,15 +451,6 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("temporaryEffects")]
         public System.Collections.Generic.List<TemporaryEffect> TemporaryEffects { get; set; } = new System.Collections.Generic.List<TemporaryEffect>();
 
-        /// <summary>
-        /// このターンに収益化へ使用済みか
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("monetizedThisTurn")]
-        public bool MonetizedThisTurn { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("hasAttacked")]
-        public bool HasAttacked { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("effectUsedThisTurn")]
         public bool EffectUsedThisTurn { get; set; } = default!;
 

@@ -163,7 +163,6 @@ type DeployedResource struct {
 	EffectUsedThisTurn bool  `json:"effectUsedThisTurn"`
 	ElasticBonus       int64 `json:"elasticBonus"`
 	FaceUp             bool  `json:"faceUp"`
-	HasAttacked        bool  `json:"hasAttacked"`
 
 	// InstanceFamily インスタンスファミリー。game-design-constants の InstanceFamily に対応。
 	InstanceFamily *string `json:"instanceFamily,omitempty"`
@@ -172,9 +171,6 @@ type DeployedResource struct {
 	MaxAV          int64   `json:"maxAV"`
 	MaxTP          *int64  `json:"maxTP,omitempty"`
 	MaxYield       *int64  `json:"maxYield,omitempty"`
-
-	// MonetizedThisTurn このターンに収益化へ使用済みか
-	MonetizedThisTurn bool `json:"monetizedThisTurn"`
 
 	// Rank ランク (S/M/L/XL)。game-design-constants の Rank に対応。
 	Rank             *string           `json:"rank,omitempty"`

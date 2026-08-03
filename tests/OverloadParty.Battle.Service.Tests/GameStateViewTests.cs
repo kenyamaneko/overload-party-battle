@@ -55,7 +55,7 @@ public class GameStateViewTests
             result.MyView.Trash.Should().HaveCount(1);
         }
 
-        [Fact(DisplayName = "自分のビューのリソースに、ランク・ダメージ・デプロイ順・攻撃済みなどの盤面状態がそのまま載る")]
+        [Fact(DisplayName = "自分のビューのリソースに、ランク・ダメージ・デプロイ順・効果使用済みなどの盤面状態がそのまま載る")]
         public void ResourceCarriesBoardStateFields()
         {
             var state = TestFactory.MakeGameState();
@@ -70,9 +70,7 @@ public class GameStateViewTests
                 Damage = 200,
                 DeployedOnTurn = 3,
                 DeployOrder = 2,
-                HasAttacked = true,
                 EffectUsedThisTurn = true,
-                MonetizedThisTurn = true,
                 ElasticBonus = 150,
                 LastAttackTurn = 3,
             };
@@ -86,9 +84,7 @@ public class GameStateViewTests
             mapped.Damage.Should().Be(200);
             mapped.DeployedOnTurn.Should().Be(3);
             mapped.DeployOrder.Should().Be(2);
-            mapped.HasAttacked.Should().BeTrue();
             mapped.EffectUsedThisTurn.Should().BeTrue();
-            mapped.MonetizedThisTurn.Should().BeTrue();
             mapped.ElasticBonus.Should().Be(150);
             mapped.LastAttackTurn.Should().Be(3);
             mapped.ArtNo.Should().Be(2);
