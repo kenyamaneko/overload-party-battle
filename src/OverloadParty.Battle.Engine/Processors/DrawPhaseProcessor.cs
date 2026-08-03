@@ -83,8 +83,7 @@ public static class DrawPhaseProcessor
     {
         if (state.PendingEffectChoice is null) { return; }
 
-        // TODO(#130): on_deploy の発火タイミングを配置時/稼働時に分割し、稼働時に選択を要求する効果
-        // のみがここに到達するようにした上で、resumable DrawPhase で中断・再開を支える。
+        // TODO(#172): 稼働時の選択待ちを中断・再開できるドローフェーズで支える。
         throw new InvalidOperationException(
             $"deferred on_deploy choice for {cardId} requires resumable draw phase (not yet supported)");
     }

@@ -187,9 +187,15 @@ public static class PlayCardProcessor
 
         field.Support[req.Index] = support;
 
+        var (onSetEvents, onSetChoice) = FireOnSet(
+            ctx, cardDef.CardId, support.InstanceID, source: null, support, req);
+        events.AddRange(onSetEvents);
+
         // カウントダウンなしで稼働した Support 自身の効果を発火（on_deploy 2 段解決）。
         if (support.DeployingTurnsLeft <= 0)
         {
+            OnSetFiring.RejectDeferredChoiceBeforeDeployCompletion(onSetChoice, cardDef.CardId);
+
             events.AddRange(DeployCompletion.CompleteSupport(
                 ctx.State, ctx.Game, ctx.PlayerNum, support, ctx.CC, ctx.Effects));
             return;
@@ -215,12 +221,21 @@ public static class PlayCardProcessor
             field.Backend[req.Index] = resource;
         }
 
+        var (onSetEvents, onSetChoice) = FireOnSet(
+            ctx, cardDef.CardId, resource.InstanceID, resource, supSource: null, req);
+        events.AddRange(onSetEvents);
+
         // 表向きになった時点で on_deploy を発動する仕様のため、デプロイ中はスキップ（実際の発動は DrawPhaseProcessor）。
         if (resource.DeployingTurnsLeft > 0)
         {
             PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
             return false;
         }
+
+        OnSetFiring.RejectDeferredChoiceBeforeDeployCompletion(onSetChoice, cardDef.CardId);
+
+        // 配置時効果が残デプロイターンを 0 まで縮めた場合もその場で稼働にあたるため、表向きにしてから稼働開始処理へ渡す。
+        resource.FaceUp = true;
 
         var (cancelled, deployEvents) = DeployCompletion.CompleteResource(
             ctx.State, ctx.Game, ctx.PlayerNum, resource, ctx.CC, ctx.Effects);
@@ -272,6 +287,13 @@ public static class PlayCardProcessor
 
         var events = new List<GameEvent>();
 
+        var (onSetEvents, onSetChoice) = FireOnSet(
+            ctx, cardDef.CardId, attachInstanceID, target, attachment, req);
+        events.AddRange(onSetEvents);
+
+        // アタッチメントは装備の時点で必ず稼働するため、配置時効果が選択待ちのまま先へ進めない。
+        OnSetFiring.RejectDeferredChoiceBeforeDeployCompletion(onSetChoice, cardDef.CardId);
+
         // アタッチメントは装備された時点が自身のデプロイにあたるため、ここで自身の on_deploy 効果を発火する。
         if (ctx.Effects.Has(cardDef.CardId, TriggerType.OnDeploy))
         {
@@ -311,6 +333,32 @@ public static class PlayCardProcessor
         });
 
         return new ActionResult { Events = events };
+    }
+
+    /// <summary>
+    /// 場に置かれたカード自身の配置時効果を発火し、選択待ちになったらゲーム状態に載せます。
+    /// </summary>
+    /// <param name="ctx">カードプレイ処理コンテキスト。</param>
+    /// <param name="cardId">置いたカードのカード ID。</param>
+    /// <param name="instanceId">置いたカードのインスタンス ID。</param>
+    /// <param name="source">効果の発火元リソース。アタッチメントでは装備先のリソース、サポートカードでは null。</param>
+    /// <param name="supSource">効果の発火元サポートカード。リソースでは null。</param>
+    /// <param name="req">プレイヤーの選択値を含むカードプレイリクエスト。</param>
+    /// <returns>発火したイベントと、効果が選択を要求して中断した場合の選択待ち。</returns>
+    private static (List<GameEvent> Events, PendingEffectChoice? PendingChoice) FireOnSet(
+        PlayContext ctx, string cardId, string instanceId,
+        DeployedResource? source, DeployedSupport? supSource, PlayCardRequest req)
+    {
+        var (events, pendingChoice) = OnSetFiring.Fire(
+            ctx.State, ctx.Game, ctx.PlayerNum, cardId, instanceId,
+            source, supSource, req.ChoiceData, ctx.CC, ctx.Effects);
+
+        if (pendingChoice is not null)
+        {
+            ctx.State.PendingEffectChoice = pendingChoice;
+        }
+
+        return (events, pendingChoice);
     }
 
     private static void ValidatePlayPosition(CardDefinition cardDef, Field field, PlayCardRequest req)

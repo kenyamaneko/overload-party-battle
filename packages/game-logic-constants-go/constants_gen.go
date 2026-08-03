@@ -82,6 +82,7 @@ const (
 const (
 	TriggerTypeIgnition = "ignition"
 	TriggerTypePassive = "passive"
+	TriggerTypeOnSet = "on_set"
 	TriggerTypeOnDeploy = "on_deploy"
 	TriggerTypeOnEndPhase = "on_end_phase"
 	TriggerTypeOnFieldChange = "on_field_change"

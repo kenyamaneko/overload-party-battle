@@ -121,5 +121,8 @@ public enum TriggerType
     OnDamaged,
     OnEndPhase,
     OnFieldChange,
-    OnScaleUp
+    OnScaleUp,
+
+    // 選択待ちの永続化で数値として保存されるため、既存の値を並べ替えず末尾に足す。
+    OnSet
 }
