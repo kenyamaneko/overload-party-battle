@@ -550,7 +550,7 @@ public static class EffectYamlLoader
                 {
                     Zone = zone,
                     Faction = faction,
-                    CardType = cardTypes is { Count: 1 } ? cardTypes[0] : null,
+                    CardTypes = cardTypes,
                     Subtypes = subtypes,
                     CardIds = cardIds,
                     Owner = owner ?? PlayerRefs.Myself,

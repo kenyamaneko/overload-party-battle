@@ -52,8 +52,8 @@ public class ByChoiceSelector : ISelector
     /// <summary>Faction filter, or null for any faction.</summary>
     public string? Faction { get; init; }
 
-    /// <summary>Card type filter, or null for any type.</summary>
-    public string? CardType { get; init; }
+    /// <summary>Card type filter list, or null for any type.</summary>
+    public List<string>? CardTypes { get; init; }
 
     /// <summary>Subtype filter list, or null for any subtype.</summary>
     public List<string>? Subtypes { get; init; }
@@ -96,8 +96,8 @@ public class ByChoiceSelector : ISelector
         var cc = ctx.CardCache;
         return candidates
             .Where(r => Faction is not { Length: > 0 } || cc.MustGet(r.CardID).Faction == Faction)
-            .Where(r => CardType is not { Length: > 0 }
-                        || EffectHelpers.MatchesCardType(cc.MustGet(r.CardID), CardType))
+            .Where(r => CardTypes is not { Count: > 0 }
+                        || EffectHelpers.MatchesAnyCardType(cc.MustGet(r.CardID), CardTypes))
             .Where(r => Subtypes is not { Count: > 0 }
                         || EffectHelpers.MatchesAnySubtype(cc.MustGet(r.CardID), Subtypes))
             .Where(r => CardIds is not { Count: > 0 } || CardIds.Contains(r.CardID))
