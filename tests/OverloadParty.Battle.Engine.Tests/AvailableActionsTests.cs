@@ -1181,7 +1181,7 @@ public class AvailableActionsTests
         }
     }
 
-    [Trait("対象", "収益化の可否と残変換容量")]
+    [Trait("対象", "収益化の可否と割当上限")]
     public class MonetizeRules : Base
     {
         [Fact(DisplayName = "バックエンドの Compute系リソースは収益化の候補になる")]
