@@ -25,8 +25,8 @@ public class UseIgnitionProcessorTests
     [Trait("対象", "リソースの起動効果の使用")]
     public class ResourceEffect : Base
     {
-        [Fact(DisplayName = "リソースの起動効果を使用するとハンドラが実行され使用済みフラグが立つ")]
-        public void Process_ResourceEffect_ExecutesHandlerAndSetsFlag()
+        [Fact(DisplayName = "リソースの起動効果を使用するとハンドラが実行される")]
+        public void Process_ResourceEffect_ExecutesHandler()
         {
             bool handlerCalled = false;
             var reg = new EffectRegistry();
@@ -44,7 +44,6 @@ public class UseIgnitionProcessorTests
             UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             handlerCalled.Should().BeTrue();
-            resource.EffectUsedThisTurn.Should().BeTrue();
         }
 
         [Fact(DisplayName = "リソースの起動効果の使用で カード ID とソース ID を載せた起動効果の使用イベントが生成される")]
@@ -112,23 +111,6 @@ public class UseIgnitionProcessorTests
             var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             act.Should().Throw<GameRuleException>().WithMessage("*dormant*");
-        }
-
-        [Fact(DisplayName = "このターン既に使用済みのリソースの起動効果を再使用すると例外になる")]
-        public void Process_EffectAlreadyUsedThisTurn_Throws()
-        {
-            var reg = new EffectRegistry();
-            reg.Register("TST-0001", TriggerType.Ignition, _ => new EffectResult());
-
-            var state = TestFactory.MakeGameState(turn: 2);
-            var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "r_1");
-            resource.EffectUsedThisTurn = true;
-            state.Player1Field.Frontend[0] = resource;
-
-            var req = new UseIgnitionRequest { InstanceID = "r_1" };
-            var act = () => UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
-
-            act.Should().Throw<GameRuleException>().WithMessage("*already used*");
         }
 
         [Fact(DisplayName = "存在しないインスタンスを指定して起動効果を使用すると例外になる")]
@@ -201,8 +183,8 @@ public class UseIgnitionProcessorTests
     [Trait("対象", "サポートカードの起動効果の使用")]
     public class SupportEffect : Base
     {
-        [Fact(DisplayName = "サポートカードの起動効果を使用するとハンドラが実行され使用済みフラグが立つ")]
-        public void Process_SupportEffect_ExecutesHandlerAndSetsFlag()
+        [Fact(DisplayName = "サポートカードの起動効果を使用するとハンドラが実行される")]
+        public void Process_SupportEffect_ExecutesHandler()
         {
             bool handlerCalled = false;
             var reg = new EffectRegistry();
@@ -225,7 +207,6 @@ public class UseIgnitionProcessorTests
             UseIgnitionProcessor.Process(state, _game, 1, req, _cc, reg);
 
             handlerCalled.Should().BeTrue();
-            support.EffectUsedThisTurn.Should().BeTrue();
         }
 
         [Fact(DisplayName = "起動効果が登録されていないサポートカードを起動すると例外になる")]
@@ -540,6 +521,374 @@ public class UseIgnitionProcessorTests
             state.Player1Hand.Select(c => c.InstanceID).Should().Equal("d_2");
             state.Player1Trash.Select(c => c.InstanceID).Should().Equal("d_1");
             state.Player1Repository.Select(c => c.InstanceID).Should().Equal("d_3");
+        }
+    }
+
+    [Trait("対象", "リソースの起動効果の回数制限")]
+    public class ResourceUseLimit
+    {
+        private const string NoLimitCardId = "TST-0430";
+        private const string OncePerTurnCardId = "TST-0431";
+        private const string OncePerGameCardId = "TST-0432";
+        private const string OtherOncePerGameCardId = "TST-0433";
+
+        /// <summary>回数制限の記載を変えた 4 種のリソースを効果ごと登録する。</summary>
+        /// <returns>カード定義キャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv()
+        {
+            var cc = new TestCardCache();
+            var registry = new EffectRegistry();
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.ComputeCard(cardId: NoLimitCardId, mc: 0, deployTurns: 0));
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.ComputeCard(cardId: OncePerTurnCardId, mc: 0, deployTurns: 0),
+                UseLimits.OncePerTurn);
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.ComputeCard(cardId: OncePerGameCardId, mc: 0, deployTurns: 0),
+                UseLimits.OncePerGame);
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.ComputeCard(cardId: OtherOncePerGameCardId, mc: 0, deployTurns: 0),
+                UseLimits.OncePerGame);
+            return (cc, registry);
+        }
+
+        /// <summary>指定したカードをフロントエンドに並べた、バジェット 0 の状態を作る。</summary>
+        /// <param name="placements">配置するカード ID とインスタンス ID の組。</param>
+        /// <returns>テスト用ゲーム状態。</returns>
+        private static BattleGameState MakeState(params (string CardId, string InstanceId)[] placements)
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 0);
+            for (int i = 0; i < placements.Length; i++)
+            {
+                state.Player1Field.Frontend[i] = TestFactory.MakeResource(
+                    cardId: placements[i].CardId, instanceId: placements[i].InstanceId, faceUp: true);
+            }
+            return state;
+        }
+
+        /// <summary>フィールドのリソースから起動効果を使用する。</summary>
+        private static void Ignite(
+            BattleGameState state, TestCardCache cc, EffectRegistry registry, string instanceId) =>
+            UseIgnitionProcessor.Process(
+                state, TestFactory.MakeGame(), 1, new UseIgnitionRequest { InstanceID = instanceId }, cc, registry);
+
+        [Fact(DisplayName = "回数制限のないリソースの起動効果は、同じターンに 2 回使用でき効果が 2 回分適用される")]
+        public void NoUseLimit_UsedTwiceInSameTurn_AppliesTwice()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((NoLimitCardId, "r_1"));
+
+            Ignite(state, cc, registry, "r_1");
+            Ignite(state, cc, registry, "r_1");
+
+            state.Player1Budget.Should().Be(200);
+        }
+
+        [Fact(DisplayName = "1 ターン 1 回のリソースの起動効果は、1 回目の使用で効果が適用される")]
+        public void OncePerTurn_FirstUse_AppliesEffect()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerTurnCardId, "r_1"));
+
+            Ignite(state, cc, registry, "r_1");
+
+            state.Player1Budget.Should().Be(100);
+        }
+
+        [Fact(DisplayName = "1 ターン 1 回のリソースの起動効果を同じターンに 2 回目使用すると、このターンは使用済みとして拒否され効果は 1 回分しか適用されない")]
+        public void OncePerTurn_SecondUseInSameTurn_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerTurnCardId, "r_1"));
+            Ignite(state, cc, registry, "r_1");
+
+            var act = () => Ignite(state, cc, registry, "r_1");
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already used this turn*");
+            state.Player1Budget.Should().Be(100);
+        }
+
+        [Fact(DisplayName = "同名のリソースが 2 体あるとき、1 ターン 1 回の起動効果を同じターンにそれぞれ 1 回ずつ使用できる")]
+        public void OncePerTurn_TwoCopies_EachUsesOnceInSameTurn()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerTurnCardId, "r_1"), (OncePerTurnCardId, "r_2"));
+
+            Ignite(state, cc, registry, "r_1");
+            Ignite(state, cc, registry, "r_2");
+
+            state.Player1Budget.Should().Be(200);
+        }
+
+        [Fact(DisplayName = "1 ターン 1 回の起動効果を使ったリソースは、自分のターンが終わると再び使用できる")]
+        public void OncePerTurn_AfterOwnTurnEnds_CanBeUsedAgain()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerTurnCardId, "r_1"));
+            state.SetHasOperated(1, true);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = NoLimitCardId });
+            state.Player2Repository.Add(new UndeployedCard { InstanceID = "repo_2", CardID = NoLimitCardId });
+            Ignite(state, cc, registry, "r_1");
+
+            var game = TestFactory.MakeGame();
+            EndPhaseProcessor.Process(state, game, 1, cc, registry, new FakeClock());
+            EndPhaseProcessor.Process(state, game, 1, cc, registry, new FakeClock());
+            Ignite(state, cc, registry, "r_1");
+
+            state.Player1Budget.Should().Be(200);
+        }
+
+        [Fact(DisplayName = "1 ゲーム 1 回のリソースの起動効果は、1 回目の使用で効果が適用される")]
+        public void OncePerGame_FirstUse_AppliesEffect()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerGameCardId, "r_1"));
+
+            Ignite(state, cc, registry, "r_1");
+
+            state.Player1Budget.Should().Be(100);
+        }
+
+        [Fact(DisplayName = "1 ゲーム 1 回のリソースの起動効果を同じゲームで 2 回目使用すると、このゲームは使用済みとして拒否され効果は 1 回分しか適用されない")]
+        public void OncePerGame_SecondUseInSameGame_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerGameCardId, "r_1"));
+            Ignite(state, cc, registry, "r_1");
+
+            var act = () => Ignite(state, cc, registry, "r_1");
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already used this game*");
+            state.Player1Budget.Should().Be(100);
+        }
+
+        [Fact(DisplayName = "1 ゲーム 1 回の起動効果を使ったリソースが場を離れた後、同名の別コピーから使用すると拒否される")]
+        public void OncePerGame_AnotherCopyAfterFirstLeavesField_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerGameCardId, "r_1"));
+            Ignite(state, cc, registry, "r_1");
+
+            state.Player1Field.Frontend[0] = null;
+            state.Player1Field.Frontend[1] = TestFactory.MakeResource(
+                cardId: OncePerGameCardId, instanceId: "r_2", faceUp: true);
+            var act = () => Ignite(state, cc, registry, "r_2");
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already used this game*");
+            state.Player1Budget.Should().Be(100);
+        }
+
+        [Fact(DisplayName = "1 ゲーム 1 回の起動効果を使った後でも、別のカード名の 1 ゲーム 1 回の起動効果は使用できる")]
+        public void OncePerGame_DifferentCardName_CanStillBeUsed()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerGameCardId, "r_1"), (OtherOncePerGameCardId, "r_2"));
+            Ignite(state, cc, registry, "r_1");
+
+            Ignite(state, cc, registry, "r_2");
+
+            state.Player1Budget.Should().Be(200);
+        }
+
+        [Fact(DisplayName = "1 ゲーム 1 回の起動効果を相手が使っていても、自分は同じカード名の起動効果を使用できる")]
+        public void OncePerGame_OpponentUsage_DoesNotBlockOwnUse()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState((OncePerGameCardId, "r_1"));
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: OncePerGameCardId, instanceId: "opp_1", faceUp: true);
+            UseIgnitionProcessor.Process(
+                state, TestFactory.MakeGame(), 2,
+                new UseIgnitionRequest { InstanceID = "opp_1" }, cc, registry);
+
+            Ignite(state, cc, registry, "r_1");
+
+            state.Player1Budget.Should().Be(100);
+        }
+    }
+
+    [Trait("対象", "サポートカードの起動効果の回数制限と建設中の判定")]
+    public class SupportUseLimit
+    {
+        private const string OncePerTurnCardId = "TST-0440";
+        private const string NoLimitCardId = "TST-0441";
+
+        /// <summary>1 ターン 1 回のサポートと回数制限のないサポートを効果ごと登録する。</summary>
+        /// <returns>カード定義キャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv()
+        {
+            var cc = new TestCardCache();
+            var registry = new EffectRegistry();
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.PlatformCard(cardId: OncePerTurnCardId), UseLimits.OncePerTurn);
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.PlatformCard(cardId: NoLimitCardId));
+            return (cc, registry);
+        }
+
+        /// <summary>指定したサポートをサポートゾーンに置いた、バジェット 0 の状態を作る。</summary>
+        /// <param name="cardId">配置するサポートのカード ID。</param>
+        /// <param name="deployingTurnsLeft">建設の残りターン数。0 なら建設完了。</param>
+        /// <returns>テスト用ゲーム状態。</returns>
+        private static BattleGameState MakeState(string cardId, long deployingTurnsLeft = 0)
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 0);
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = cardId,
+                FaceUp = true,
+                DeployingTurnsLeft = deployingTurnsLeft,
+            };
+            return state;
+        }
+
+        /// <summary>サポートゾーンのカードから起動効果を使用する。</summary>
+        private static void Ignite(BattleGameState state, TestCardCache cc, EffectRegistry registry) =>
+            UseIgnitionProcessor.Process(
+                state, TestFactory.MakeGame(), 1, new UseIgnitionRequest { InstanceID = "sup_1" }, cc, registry);
+
+        [Fact(DisplayName = "1 ターン 1 回のサポートの起動効果を同じターンに 2 回目使用すると、このターンは使用済みとして拒否され効果は 1 回分しか適用されない")]
+        public void OncePerTurn_SecondUseInSameTurn_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(OncePerTurnCardId);
+            Ignite(state, cc, registry);
+
+            var act = () => Ignite(state, cc, registry);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already used this turn*");
+            state.Player1Budget.Should().Be(100);
+        }
+
+        [Fact(DisplayName = "回数制限のないサポートの起動効果は、同じターンに 2 回使用でき効果が 2 回分適用される")]
+        public void NoUseLimit_UsedTwiceInSameTurn_AppliesTwice()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(NoLimitCardId);
+
+            Ignite(state, cc, registry);
+            Ignite(state, cc, registry);
+
+            state.Player1Budget.Should().Be(200);
+        }
+
+        [Fact(DisplayName = "建設の残り 1 ターンのサポートの起動効果を使用すると、建設中として拒否され効果が適用されない")]
+        public void UnderConstruction_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(NoLimitCardId, deployingTurnsLeft: 1);
+
+            var act = () => Ignite(state, cc, registry);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*under construction*");
+            state.Player1Budget.Should().Be(0);
+        }
+
+        [Fact(DisplayName = "建設の完了したサポートの起動効果を使用すると、効果が適用される")]
+        public void ConstructionFinished_AppliesEffect()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(NoLimitCardId, deployingTurnsLeft: 0);
+
+            Ignite(state, cc, registry);
+
+            state.Player1Budget.Should().Be(100);
+        }
+    }
+
+    [Trait("対象", "選択を挟んだサポートの起動効果の回数制限")]
+    public class SupportUseLimitAcrossChoice
+    {
+        private const string SupportCardId = "TST-0442";
+        private const string ReactiveCardId = "TST-0443";
+
+        /// <summary>相手の伏せリアクティブを 1 枚開示する 1 ターン 1 回のサポートを登録する。</summary>
+        /// <returns>カード定義キャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv()
+        {
+            var cc = new TestCardCache();
+            var registry = new EffectRegistry();
+            TestUseLimitEffects.RegisterRevealReactive(
+                cc, registry, TestFactory.PlatformCard(cardId: SupportCardId), UseLimits.OncePerTurn);
+            cc.Add(TestFactory.ReactiveCard(cardId: ReactiveCardId));
+            return (cc, registry);
+        }
+
+        /// <summary>建設の完了したサポートと、相手の伏せリアクティブ 2 枚を並べた状態を作る。</summary>
+        /// <returns>テスト用ゲーム状態。</returns>
+        private static BattleGameState MakeState()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, activePlayer: 1);
+            state.Player1Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "sup_1",
+                CardID = SupportCardId,
+                FaceUp = true,
+                DeployingTurnsLeft = 0,
+            };
+            for (int i = 0; i < 2; i++)
+            {
+                state.Player2Field.Support[i] = new DeployedSupport
+                {
+                    InstanceID = $"opp_sup_{i + 1}",
+                    CardID = ReactiveCardId,
+                    FaceUp = false,
+                };
+            }
+            return state;
+        }
+
+        /// <summary>サポートの起動効果を使用し、生じた選択待ちを 2 枚目を選んで解決する。</summary>
+        private static void IgniteAndResolveChoice(
+            BattleGameState state, TestCardCache cc, EffectRegistry registry)
+        {
+            var game = TestFactory.MakeGame();
+            UseIgnitionProcessor.Process(
+                state, game, 1, new UseIgnitionRequest { InstanceID = "sup_1" }, cc, registry);
+            ResolvePendingChoiceProcessor.Process(
+                state, game, 1, new ResolvePendingChoiceRequest { ChosenId = "opp_sup_2" },
+                cc, registry, new FakeClock());
+        }
+
+        [Fact(DisplayName = "選択を挟む 1 ターン 1 回のサポートの起動効果は、選択を解決すると効果が適用され使用済みになる")]
+        public void ResolvedChoice_AppliesEffectAndMarksUsed()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState();
+
+            IgniteAndResolveChoice(state, cc, registry);
+
+            state.Player2Field.Support[1]!.FaceUp.Should().BeTrue();
+            state.PendingEffectChoice.Should().BeNull();
+            state.Player1Field.Support[0]!.EffectUsedThisTurn.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "選択を挟む 1 ターン 1 回のサポートの起動効果を解決した後、同じターンの 2 回目は使用済みとして拒否される")]
+        public void ResolvedChoice_SecondUseInSameTurn_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState();
+            IgniteAndResolveChoice(state, cc, registry);
+
+            var act = () => UseIgnitionProcessor.Process(
+                state, TestFactory.MakeGame(), 1,
+                new UseIgnitionRequest { InstanceID = "sup_1" }, cc, registry);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already used this turn*");
+        }
+
+        [Fact(DisplayName = "選択を挟む 1 ターン 1 回のサポートの起動効果を解決した後、同じターンの候補から起動効果の使用が消える")]
+        public void ResolvedChoice_ExcludedFromAvailableActions()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState();
+            IgniteAndResolveChoice(state, cc, registry);
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, 1, state.Player1Field, state.Player2Field, [], state.Player1Budget, 0, cc, registry);
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
     }
 }

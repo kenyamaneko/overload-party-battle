@@ -43,8 +43,7 @@ public static class TurnManager
     {
         Phase.Main => action is ActionType.PlayCard or ActionType.ScaleUp or ActionType.Monetize
             or ActionType.UseIgnition or ActionType.UseInitiative or ActionType.EndPhase,
-        Phase.Battle => action is ActionType.Attack or ActionType.UseIgnition
-            or ActionType.EndPhase,
+        Phase.Battle => action is ActionType.Attack or ActionType.EndPhase,
         Phase.End => action is ActionType.DiscardHand,
         _ => false,
     };

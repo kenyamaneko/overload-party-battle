@@ -24,7 +24,7 @@ public class TurnManagerExtendedTests
 
         [Theory(DisplayName = "バトルフェーズで各アクションが許可されるか判定する")]
         [InlineData(ActionType.Attack, true)]
-        [InlineData(ActionType.UseIgnition, true)]
+        [InlineData(ActionType.UseIgnition, false)]
         [InlineData(ActionType.EndPhase, true)]
         [InlineData(ActionType.PlayCard, false)]
         [InlineData(ActionType.ScaleUp, false)]

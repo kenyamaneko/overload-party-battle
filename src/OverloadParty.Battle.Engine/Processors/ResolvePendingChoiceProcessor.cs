@@ -62,6 +62,7 @@ public static class ResolvePendingChoiceProcessor
         // 盤面上のリソースとは別インスタンスになる。実体に引き直さないと再開後の変更が盤面に載らない。
         var source = ResolveOnField(state, pending.OwnerPlayerNum, pending.Source);
         var target = ResolveOnField(state, pending.OwnerPlayerNum, pending.Target);
+        var supSource = ResolveSupportOnField(state, pending.OwnerPlayerNum, pending.EffectInstanceId);
 
         var ctx = new EffectContext
         {
@@ -72,6 +73,7 @@ public static class ResolvePendingChoiceProcessor
             PlayerNum = pending.OwnerPlayerNum,
             Source = source,
             Target = target,
+            SupSource = supSource,
             CardCache = cc,
             ChoiceData = choiceData,
             EventOwnerNum = pending.EventOwnerNum,
@@ -176,6 +178,23 @@ public static class ResolvePendingChoiceProcessor
     {
         // 破壊された発火元から再開する on_destroy があるため、盤面を離れていても保存分で続行する。
         return FindOnField(state, ownerPlayerNum, snapshot) ?? snapshot;
+    }
+
+    /// <summary>
+    /// 効果の持ち主がサポートなら、そのサポートを盤面上の実体に引き直します。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="ownerPlayerNum">効果の所有者プレイヤー番号。</param>
+    /// <param name="effectInstanceId">選択待ちに保存されていた効果インスタンス ID。</param>
+    /// <returns>盤面上のサポート。持ち主がサポートでない場合と、盤面を離れている場合は null。</returns>
+    private static DeployedSupport? ResolveSupportOnField(
+        BattleGameState state, long ownerPlayerNum, string? effectInstanceId)
+    {
+        if (effectInstanceId is null) { return null; }
+
+        return FieldHelpers.FindSupportByID(state.GetField(ownerPlayerNum), effectInstanceId)
+            ?? FieldHelpers.FindSupportByID(
+                state.GetField(state.OpponentOf(ownerPlayerNum)), effectInstanceId);
     }
 
     /// <summary>

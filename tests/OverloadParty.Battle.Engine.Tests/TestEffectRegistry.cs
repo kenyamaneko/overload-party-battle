@@ -24,6 +24,7 @@ public class TestEffectRegistry : IEffectRegistry
     public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
     public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
     public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
+    public UseLimitKind? GetUseLimit(string cardId, TriggerType trigger) => null;
 
     public void RegisterPassive(string cardId, PassiveEffectDef def)
     {

@@ -487,7 +487,6 @@ export interface components {
             damage: number;
             temporaryEffects: components["schemas"]["TemporaryEffect"][];
             effectUsedThisTurn: boolean;
-            effectUsedThisGame: boolean;
             /** Format: int64 */
             deployedOnTurn: number;
             /** Format: int64 */
@@ -509,7 +508,6 @@ export interface components {
             /** Format: int64 */
             deployOrder: number;
             effectUsedThisTurn: boolean;
-            effectUsedThisGame: boolean;
             /** @description Attachment 対象のインスタンス ID */
             targetInstanceID?: string | null;
         };

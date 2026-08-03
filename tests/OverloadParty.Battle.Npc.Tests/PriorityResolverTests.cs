@@ -58,6 +58,7 @@ public class PriorityResolverTests
         public EffectInfo? GetEffectInfo(string cardId, TriggerType trigger) => null;
         public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
         public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
+        public UseLimitKind? GetUseLimit(string cardId, TriggerType trigger) => null;
         public void RegisterPassive(string cardId, PassiveEffectDef def) { }
         public IReadOnlyList<PassiveEffectDef> GetPassives(string cardId) => [];
     }
@@ -77,6 +78,7 @@ public class PriorityResolverTests
         public BudgetRequirement? GetBudgetRequirement(string cardId, TriggerType trigger) => null;
         public List<string>? GetChoiceOptions(string cardId, TriggerType trigger) => null;
         public IEffectOp[]? GetOps(string cardId, TriggerType trigger) => null;
+        public UseLimitKind? GetUseLimit(string cardId, TriggerType trigger) => null;
         public void RegisterPassive(string cardId, PassiveEffectDef def) { }
         public IReadOnlyList<PassiveEffectDef> GetPassives(string cardId) => [];
     }

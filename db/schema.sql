@@ -98,6 +98,7 @@ CREATE TABLE battle.game_states (
   player1_time_bank    BIGINT NOT NULL,              -- Player 1 残り時間
   player1_incident_played_this_turn BOOLEAN NOT NULL, -- Player 1 がこのターンにインシデントを使用済みか
   player1_has_operated   BOOLEAN NOT NULL, -- Player 1 の稼働実績フラグ
+  player1_status       JSONB NOT NULL,               -- Player 1 のカード個体に紐付かない持ち越し状態
   player2_budget       BIGINT NOT NULL,              -- Player 2 Budget
   player2_insight_pool BIGINT NOT NULL,              -- Player 2 Insight Pool
   player2_field        JSONB NOT NULL,               -- Player 2 フィールド上のカード
@@ -107,6 +108,7 @@ CREATE TABLE battle.game_states (
   player2_time_bank    BIGINT NOT NULL,              -- Player 2 残り時間
   player2_incident_played_this_turn BOOLEAN NOT NULL, -- Player 2 がこのターンにインシデントを使用済みか
   player2_has_operated   BOOLEAN NOT NULL, -- Player 2 の稼働実績フラグ
+  player2_status       JSONB NOT NULL,               -- Player 2 のカード個体に紐付かない持ち越し状態
   current_action_timer BIGINT,                       -- アクションタイマー
   next_instance_seq    BIGINT NOT NULL DEFAULT 0,    -- インスタンスID発番用シーケンス
   turn_started_at      TIMESTAMPTZ NOT NULL,         -- 現在のターンの開始日時（タイムバンク減算の基準点）

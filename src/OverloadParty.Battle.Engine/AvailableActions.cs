@@ -124,7 +124,7 @@ public static class AvailableActions
                 actions.AddRange(EnumeratePlayCardActions(state, myField, hand, budget, cc, effects));
                 actions.AddRange(EnumerateScaleUpActions(myField, cc));
                 actions.AddRange(EnumerateMonetizeActions(state, myField, insightPool, cc));
-                actions.AddRange(EnumerateUseIgnitionActions(state, myField, oppField, budget, cc, effects));
+                actions.AddRange(EnumerateUseIgnitionActions(state, playerNum, myField, cc, effects));
                 if (initiatives is not null)
                 {
                     actions.AddRange(EnumerateUseInitiativeActions(state, insightPool, cc, effects, initiatives));
@@ -133,7 +133,6 @@ public static class AvailableActions
 
             case Phase.Battle:
                 actions.AddRange(EnumerateAttackActions(myField, oppField, cc));
-                actions.AddRange(EnumerateUseIgnitionActions(state, myField, oppField, budget, cc, effects));
                 break;
         }
 
@@ -446,18 +445,17 @@ public static class AvailableActions
     }
 
     private static IEnumerable<AvailableAction> EnumerateUseIgnitionActions(
-        BattleGameState state, Field myField, Field oppField,
-        long budget, ICardCache cc, IEffectRegistry effects)
+        BattleGameState state, long playerNum, Field myField, ICardCache cc, IEffectRegistry effects)
     {
 
         // フロントエンドおよびバックエンドリソース
         foreach (var resource in FieldHelpers.AllFaceUpResources(myField))
         {
-            if (resource.EffectUsedThisTurn) { continue; }
             if (FieldHelpers.HasTemporaryEffect(resource, BuffTypes.Dormant)) { continue; }
 
             var card = cc.MustGet(resource.CardID);
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
+            if (IsIgnitionUseLimitConsumed(state, playerNum, card.CardId, resource, supSource: null, effects)) { continue; }
 
             if (!AllPreCheckableGuardsSatisfied(state, source: resource, supSource: null, card.CardId, cc, effects)) { continue; }
             if (!CanPlaceEffectDeploy(myField, card.CardId, effects)) { continue; }
@@ -477,10 +475,10 @@ public static class AvailableActions
         foreach (var support in FieldHelpers.AllSupports(myField))
         {
             if (support.DeployingTurnsLeft > 0) { continue; }
-            if (support.EffectUsedThisTurn) { continue; }
 
             var card = cc.MustGet(support.CardID);
             if (!effects.Has(card.CardId, TriggerType.Ignition)) { continue; }
+            if (IsIgnitionUseLimitConsumed(state, playerNum, card.CardId, source: null, support, effects)) { continue; }
 
             if (!AllPreCheckableGuardsSatisfied(state, source: null, supSource: support, card.CardId, cc, effects)) { continue; }
             if (!CanPlaceEffectDeploy(myField, card.CardId, effects)) { continue; }
@@ -495,6 +493,25 @@ public static class AvailableActions
             if (!TryPopulateResourceChoice(action, state, card.CardId, source: null, support, cc, effects)) { continue; }
             yield return action;
         }
+    }
+
+    /// <summary>
+    /// 起動効果がカード記載の回数制限を使い切っているかを判定します。
+    /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="playerNum">効果を使うプレイヤー番号。</param>
+    /// <param name="cardId">効果を持つカードの ID。</param>
+    /// <param name="source">効果を持つリソース。サポート由来なら null。</param>
+    /// <param name="supSource">効果を持つサポート。リソース由来なら null。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <returns>使い切っていれば true。</returns>
+    private static bool IsIgnitionUseLimitConsumed(
+        BattleGameState state, long playerNum, string cardId,
+        DeployedResource? source, DeployedSupport? supSource, IEffectRegistry effects)
+    {
+        return UseLimitRules.IsConsumed(
+            effects.GetUseLimit(cardId, TriggerType.Ignition),
+            state, playerNum, cardId, source, supSource);
     }
 
     /// <summary>

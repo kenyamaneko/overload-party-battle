@@ -249,6 +249,39 @@ public class PgGameRepositoryTests
             got.PendingEffectChoice.Candidates.Should().Equal("inst_1", "inst_2");
         }
 
+        [Fact(DisplayName = "1 ゲーム 1 回の効果を使い終えたカードがプレイヤーごとにリロード後も保持される")]
+        public async Task UpdateGameState_used_once_per_game_card_ids_roundtrip()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            await repo.CreateGame(game, state);
+
+            await repo.UpdateGameState(game.GameID, s =>
+            {
+                s.Player1Status.UsedOncePerGameCardIds.Add("TST-0032");
+                s.Player1Status.UsedOncePerGameCardIds.Add("TST-0033");
+                s.Player2Status.UsedOncePerGameCardIds.Add("TST-0034");
+                return Task.FromResult<IReadOnlyList<GameEvent>>([]);
+            });
+
+            var got = await repo.GetGameState(game.GameID);
+            got!.Player1Status.UsedOncePerGameCardIds.Should().Equal("TST-0032", "TST-0033");
+            got.Player2Status.UsedOncePerGameCardIds.Should().Equal("TST-0034");
+        }
+
+        [Fact(DisplayName = "1 ゲーム 1 回の効果を一度も使っていないゲーム状態は、リロードしても使用済みカードが空になる")]
+        public async Task UpdateGameState_used_once_per_game_card_ids_stay_empty()
+        {
+            var repo = CreateRepo();
+            var (game, state) = MakeFixture();
+            await repo.CreateGame(game, state);
+
+            var got = await repo.GetGameState(game.GameID);
+
+            got!.Player1Status.UsedOncePerGameCardIds.Should().BeEmpty();
+            got.Player2Status.UsedOncePerGameCardIds.Should().BeEmpty();
+        }
+
         [Fact(DisplayName = "選択待ちを null・空に戻すとその状態が保存される")]
         public async Task UpdateGameState_clears_pending_choice_state()
         {

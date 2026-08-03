@@ -1,3 +1,5 @@
+using OverloadParty.Battle.Models;
+
 namespace OverloadParty.Battle.Engine.Effects;
 
 /// <summary>
@@ -10,4 +12,10 @@ public class BuiltBlock
 
     /// <summary>guard 通過後に順次実行する ops。</summary>
     public IEffectOp[] Ops { get; init; } = [];
+
+    /// <summary>
+    /// このブロックが宣言する回数制限。記載がなければ null。
+    /// 複数ブロックを束ねたブロックでは、束ねた側の一部だけが使い切られている場合を表せないため常に null になる。
+    /// </summary>
+    public UseLimitKind? UseLimit { get; init; }
 }

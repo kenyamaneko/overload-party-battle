@@ -24,6 +24,9 @@ public class EffectRegistration
 
     /// <summary>top-level guards のみ参照したい consumer 向け。</summary>
     public IEffectGuard[]? Guards => Block?.Guards;
+
+    /// <summary>効果全体を 1 ブロックで宣言したときの回数制限。複数ブロックに分かれる効果では null。</summary>
+    public UseLimitKind? UseLimit => Block?.UseLimit;
 }
 
 /// <summary>
@@ -196,6 +199,12 @@ public class EffectRegistry : IEffectRegistry
     public IEffectOp[]? GetOps(string cardId, TriggerType trigger)
     {
         return GetRegistration(cardId, trigger)?.Ops;
+    }
+
+    /// <inheritdoc />
+    public UseLimitKind? GetUseLimit(string cardId, TriggerType trigger)
+    {
+        return GetRegistration(cardId, trigger)?.UseLimit;
     }
 
     /// <summary>

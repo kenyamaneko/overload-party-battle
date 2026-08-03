@@ -57,6 +57,7 @@ public class BattleGameState
     public string Player1SpecialId { get; set; } = "";
     public bool Player1RoutineUsedThisTurn { get; set; }
     public bool Player1SpecialUsedThisGame { get; set; }
+    public PlayerStatus Player1Status { get; set; } = new();
 
     // プレイヤー 2 の状態
     public long Player2Budget { get; set; }
@@ -72,6 +73,7 @@ public class BattleGameState
     public string Player2SpecialId { get; set; } = "";
     public bool Player2RoutineUsedThisTurn { get; set; }
     public bool Player2SpecialUsedThisGame { get; set; }
+    public PlayerStatus Player2Status { get; set; } = new();
 
     // 共有状態
     public long? CurrentActionTimer { get; set; }
@@ -375,6 +377,18 @@ public class BattleGameState
             default: throw new ArgumentOutOfRangeException(nameof(playerNum));
         }
     }
+
+    /// <summary>
+    /// 指定したプレイヤーの持ち越し状態を返します
+    /// </summary>
+    /// <param name="playerNum">対象プレイヤー番号</param>
+    /// <returns>プレイヤーの持ち越し状態</returns>
+    public PlayerStatus GetStatus(long playerNum) => playerNum switch
+    {
+        1 => Player1Status,
+        2 => Player2Status,
+        _ => throw new ArgumentOutOfRangeException(nameof(playerNum)),
+    };
 
     /// <summary>
     /// 指定したプレイヤーの相手のプレイヤー番号を返します

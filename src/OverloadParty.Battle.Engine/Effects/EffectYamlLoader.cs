@@ -308,21 +308,23 @@ public static class EffectYamlLoader
             }
         }
 
-        // UseIgnitionProcessor already enforces once-per-turn for ignition triggers
-        if (def.UseLimit is not null && ParseTrigger(def.Trigger) != TriggerType.Ignition)
+        UseLimitKind? useLimit = null;
+        if (def.UseLimit is { } useLimitName)
         {
-            bool perGame = def.UseLimit switch
-            {
-                UseLimits.OncePerGame => true,
-                UseLimits.OncePerTurn => false,
-                _ => throw new InvalidOperationException($"Unknown use_limit: {def.UseLimit}"),
-            };
-            ops.Insert(0, new CheckUseLimitOp(perGame));
-            ops.Add(new MarkUseLimitOp(perGame));
+            useLimit = ParseUseLimit(useLimitName);
+            ops.Insert(0, new CheckUseLimitOp(useLimit.Value));
+            ops.Add(new MarkUseLimitOp(useLimit.Value));
         }
 
-        return new BuiltBlock { Guards = guards.ToArray(), Ops = ops.ToArray() };
+        return new BuiltBlock { Guards = guards.ToArray(), Ops = ops.ToArray(), UseLimit = useLimit };
     }
+
+    private static UseLimitKind ParseUseLimit(string useLimit) => useLimit switch
+    {
+        UseLimits.OncePerGame => UseLimitKind.OncePerGame,
+        UseLimits.OncePerTurn => UseLimitKind.OncePerTurn,
+        _ => throw new InvalidOperationException($"Unknown use_limit: {useLimit}"),
+    };
 
     private static List<IEffectOp> BuildCustomBlock(
         string customName,

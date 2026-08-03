@@ -75,12 +75,9 @@ public static class UseIgnitionProcessor
         };
 
         var result = handler(ctx);
-        // 選択待ちを捨てると、選択を要する起動効果が何も起きずに使用済みになる。
-        state.PendingEffectChoice = result.PendingChoice ?? state.PendingEffectChoice;
-        // 不発だった効果で使用済みにすると、何も起きないままそのターンの再使用が塞がれる。
-        if (!result.HasGuardFailed)
+        if (result.PendingChoice is { } pendingChoice)
         {
-            source.EffectUsedThisTurn = true;
+            state.PendingEffectChoice = pendingChoice;
         }
 
         var events = new List<GameEvent>(result.Events);
@@ -105,13 +102,7 @@ public static class UseIgnitionProcessor
         Field field, DeployedSupport support,
         UseIgnitionRequest req, ICardCache cc, IEffectRegistry effects)
     {
-        var card = cc.MustGet(support.CardID);
-
-        if (!effects.Has(card.CardId, TriggerType.Ignition))
-        {
-            throw new GameRuleException($"support card {card.CardId} has no ignition effect");
-        }
-
+        var card = ValidateSupportActivation(support, cc, effects);
         EnsurePlacementSlotAvailable(field, card.CardId, effects);
 
         var handler = effects.Get(card.CardId, TriggerType.Ignition)!;
@@ -130,12 +121,9 @@ public static class UseIgnitionProcessor
         };
 
         var result = handler(ctx);
-        // 選択待ちを捨てると、選択を要する起動効果が何も起きずに使用済みになる。
-        state.PendingEffectChoice = result.PendingChoice ?? state.PendingEffectChoice;
-        // 不発だった効果で使用済みにすると、何も起きないままそのターンの再使用が塞がれる。
-        if (!result.HasGuardFailed)
+        if (result.PendingChoice is { } pendingChoice)
         {
-            support.EffectUsedThisTurn = true;
+            state.PendingEffectChoice = pendingChoice;
         }
 
         var events = new List<GameEvent>(result.Events);
@@ -164,6 +152,9 @@ public static class UseIgnitionProcessor
         throw new GameRuleException($"card {cardId} needs an empty slot to deploy into");
     }
 
+    /// <summary>
+    /// リソースが起動効果を使える状態かを確かめます。回数制限はカード記載に従い効果側の op が判定します。
+    /// </summary>
     private static CardDefinition ValidateResourceActivation(
         DeployedResource source, ICardCache cc, IEffectRegistry effects)
     {
@@ -173,13 +164,29 @@ public static class UseIgnitionProcessor
         {
             throw new GameRuleException($"card {card.CardId} has no ignition effect");
         }
-        if (source.EffectUsedThisTurn)
-        {
-            throw new GameRuleException("effect already used this turn");
-        }
         if (FieldHelpers.HasTemporaryEffect(source, BuffTypes.Dormant))
         {
             throw new GameRuleException("dormant resource cannot use effect");
+        }
+
+        return card;
+    }
+
+    /// <summary>
+    /// サポートが起動効果を使える状態かを確かめます。回数制限はカード記載に従い効果側の op が判定します。
+    /// </summary>
+    private static CardDefinition ValidateSupportActivation(
+        DeployedSupport support, ICardCache cc, IEffectRegistry effects)
+    {
+        var card = cc.MustGet(support.CardID);
+
+        if (!effects.Has(card.CardId, TriggerType.Ignition))
+        {
+            throw new GameRuleException($"support card {card.CardId} has no ignition effect");
+        }
+        if (support.DeployingTurnsLeft > 0)
+        {
+            throw new GameRuleException("support under construction cannot use effect");
         }
 
         return card;

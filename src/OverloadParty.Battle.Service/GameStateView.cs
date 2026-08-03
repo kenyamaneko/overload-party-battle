@@ -170,7 +170,6 @@ public static class GameStateView
             Damage = r.Damage,
             TemporaryEffects = r.TemporaryEffects.Select(MapTemporaryEffect).ToList(),
             EffectUsedThisTurn = r.EffectUsedThisTurn,
-            EffectUsedThisGame = r.EffectUsedThisGame,
             DeployedOnTurn = r.DeployedOnTurn,
             DeployOrder = r.DeployOrder,
             ElasticBonus = r.ElasticBonus,
@@ -189,7 +188,6 @@ public static class GameStateView
             DeployingTurnsLeft = s.DeployingTurnsLeft,
             DeployOrder = s.DeployOrder,
             EffectUsedThisTurn = s.EffectUsedThisTurn,
-            EffectUsedThisGame = s.EffectUsedThisGame,
             TargetInstanceID = s.TargetInstanceID,
         };
     }
