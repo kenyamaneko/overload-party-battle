@@ -54,6 +54,26 @@ Battle (このサービス, :9002)
 | `INITIATIVES_JSON_PATH` | *(空)* | ローカル開発モード時に `CARDS_JSON_PATH` と併せて必須。card service の代わりにこの JSON ファイルから施策定義を読み込む |
 | `NPC_AI_CONFIG_DIR` | *(必須)* | NPC AI 設定 YAML ディレクトリ。未設定または非実在パスなら起動時にエラー。コンテナイメージは同梱データを指す `/app/NpcData` を設定済み |
 
+## 同梱するカードマスターデータ
+
+テストとローカル開発の入力として、card のカード定義・施策定義を `packages/game-state-dotnet/cache/` に同梱している。
+
+| ファイル | 内容 |
+|---|---|
+| `cards_gen.json` | カード定義 |
+| `initiatives_gen.json` | 施策定義 |
+| `card_source_gen.json` | 上の 2 ファイルの取り込み元 (card のリポジトリ・コミット・コミット日時・取り込み日時) |
+
+`card_source_gen.json` の `commit` は、コピー元にした card のコミットを指す。データを最後に変更したコミットとは限らない。
+
+同梱データを更新するには以下を実行する。3 ファイルすべてが同時に書き換わるため、記録と中身がずれない。
+
+```
+make sync-card-data
+```
+
+card のクローンの位置は `CARD_REPO` (既定 `../overload-party-card`)、取り込むコミットは `CARD_REF` (既定 `origin/main`) で指定する。
+
 ## 公開パッケージ
 
 | パッケージ | 言語 | 説明 |
