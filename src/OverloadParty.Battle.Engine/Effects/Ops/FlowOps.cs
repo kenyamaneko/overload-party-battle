@@ -116,9 +116,6 @@ public class CustomFnOp(Action<OpContext> fn) : IEffectOp
 /// </summary>
 public class CheckUseLimitOp(UseLimitKind limit) : IEffectOp
 {
-    /// <summary>この op が確かめる回数制限。</summary>
-    public UseLimitKind Limit => limit;
-
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
@@ -150,9 +147,6 @@ public class CheckUseLimitOp(UseLimitKind limit) : IEffectOp
 /// </summary>
 public class MarkUseLimitOp(UseLimitKind limit) : IEffectOp
 {
-    /// <summary>この op が記録する回数制限。</summary>
-    public UseLimitKind Limit => limit;
-
     /// <inheritdoc />
     public void Execute(OpContext ctx) => UseLimitRules.MarkConsumed(
         limit, ctx.State, ctx.PlayerNum, ctx.Ctx.EffectCardId, ctx.Source, ctx.SupSource);
