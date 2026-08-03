@@ -3,8 +3,7 @@ using OverloadParty.Battle.Models;
 namespace OverloadParty.Battle.Engine.Effects.Ops;
 
 /// <summary>
-/// Finds a matching card in the repository, removes it, creates a resource instance,
-/// and enqueues a <see cref="AwaitingSlotSelect"/> entry for the player to choose a slot.
+/// 条件に合うデッキのカードを、配置先の空きがあるときにかぎり <see cref="AwaitingSlotSelect"/> として積みます。
 /// </summary>
 public class RequestSlotFromRepoOp : IEffectOp
 {
@@ -51,8 +50,7 @@ public class RequestSlotFromRepoOp : IEffectOp
 }
 
 /// <summary>
-/// Removes a card from hand by player choice, creates a resource instance,
-/// and enqueues a <see cref="AwaitingSlotSelect"/> entry for the player to choose a slot.
+/// プレイヤーが選んだ手札のカードを、配置先の空きがあるときにかぎり <see cref="AwaitingSlotSelect"/> として積みます。
 /// </summary>
 public class RequestSlotFromHandOp : IEffectOp
 {
