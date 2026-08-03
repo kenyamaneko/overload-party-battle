@@ -263,8 +263,10 @@ public static class AvailableActions
 
     /// <summary>
     /// 盤面のリソースから対象を選ぶ効果について <see cref="AvailableAction.ValidTargets"/> と
-    /// <see cref="AvailableAction.EffectTargetType"/> を埋めます。選ぶ効果なのに絞り込みを満たす
-    /// リソースが 1 件も無いときは false を返す (使っても何も起きないためアクションを提示しない)。
+    /// <see cref="AvailableAction.EffectTargetType"/> を埋めます。絞り込みを満たすリソースが
+    /// 1 件も無いときは false を返し、そのカードをプレイできないものとして扱います。
+    /// 効果の一部が対象に依存しない場合も同じ扱いにするのは、プレイできるかどうかが
+    /// カードごとに変わるとプレイヤーが理由を説明できないため。
     /// </summary>
     private static bool TryPopulateResourceChoice(
         AvailableAction action, BattleGameState state, string cardId,

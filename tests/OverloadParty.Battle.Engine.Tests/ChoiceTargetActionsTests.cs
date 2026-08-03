@@ -32,13 +32,13 @@ public class ChoiceTargetActionsTests
     }
 
     /// <summary>指定の効果を持つ即時カードを手札に 1 枚だけ持つ状態で、実行可能アクションを列挙する。</summary>
-    /// <param name="op">即時カードの効果として登録する op。</param>
     /// <param name="state">対象のゲーム状態。</param>
+    /// <param name="ops">即時カードの効果として登録する op 列。</param>
     /// <returns>実行可能アクション一覧。</returns>
-    private List<AvailableAction> EnumerateWithImmediateCardInHand(IEffectOp op, BattleGameState state)
+    private List<AvailableAction> EnumerateWithImmediateCardInHand(BattleGameState state, params IEffectOp[] ops)
     {
         var effects = new EffectRegistry();
-        effects.RegisterComposed(ImmediateCard, TriggerType.Ignition, op);
+        effects.RegisterComposed(ImmediateCard, TriggerType.Ignition, ops);
         var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = ImmediateCard } };
 
         return AvailableActions.GetAllAvailableActions(
@@ -52,7 +52,7 @@ public class ChoiceTargetActionsTests
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: ResourceCard, instanceId: "fe_1");
         state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: ResourceCard, instanceId: "be_1");
 
-        var actions = EnumerateWithImmediateCardInHand(ChoiceHeal(Zones.Backend), state);
+        var actions = EnumerateWithImmediateCardInHand(state, ChoiceHeal(Zones.Backend));
 
         var play = actions.Should().ContainSingle(a => a.Type == ActionTypes.PlayCard).Subject;
         play.EffectTargetType.Should().Be("Choice");
@@ -65,7 +65,21 @@ public class ChoiceTargetActionsTests
         var state = TestFactory.MakeGameState(turn: 2);
         state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: ResourceCard, instanceId: "fe_1");
 
-        var actions = EnumerateWithImmediateCardInHand(ChoiceHeal(Zones.Backend), state);
+        var actions = EnumerateWithImmediateCardInHand(state, ChoiceHeal(Zones.Backend));
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
+    }
+
+    [Fact(DisplayName = "対象を選ぶ効果と対象を選ばない効果を併せ持つ即時カードでも、選べるリソースが 1 件も無ければプレイするアクションが列挙されない")]
+    public void ImmediateCard_MixedEffect_NoValidTarget_OmitsAction()
+    {
+        var state = TestFactory.MakeGameState(turn: 2);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: ResourceCard, instanceId: "fe_1");
+
+        var actions = EnumerateWithImmediateCardInHand(
+            state,
+            ChoiceHeal(Zones.Backend),
+            new GainBudgetOp(PlayerRef.Myself, new StaticAmount(500)));
 
         actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
     }
