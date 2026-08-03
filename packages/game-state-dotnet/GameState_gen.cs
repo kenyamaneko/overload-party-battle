@@ -451,15 +451,6 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("temporaryEffects")]
         public System.Collections.Generic.List<TemporaryEffect> TemporaryEffects { get; set; } = new System.Collections.Generic.List<TemporaryEffect>();
 
-        /// <summary>
-        /// 収益化で配分された Insight 量
-        /// </summary>
-        [System.Text.Json.Serialization.JsonPropertyName("monetizedAmount")]
-        public long MonetizedAmount { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("hasAttacked")]
-        public bool HasAttacked { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("effectUsedThisTurn")]
         public bool EffectUsedThisTurn { get; set; } = default!;
 
@@ -773,6 +764,9 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("sourceInstanceID")]
         public string SourceInstanceID { get; set; } = default!;
 
+        /// <summary>
+        /// 1 回の収益化で割り当てられる上限 (実効スループット)。
+        /// </summary>
         [System.Text.Json.Serialization.JsonPropertyName("remainingCapacity")]
         public long RemainingCapacity { get; set; } = default!;
 

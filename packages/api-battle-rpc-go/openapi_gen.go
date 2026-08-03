@@ -163,7 +163,6 @@ type DeployedResource struct {
 	EffectUsedThisTurn bool  `json:"effectUsedThisTurn"`
 	ElasticBonus       int64 `json:"elasticBonus"`
 	FaceUp             bool  `json:"faceUp"`
-	HasAttacked        bool  `json:"hasAttacked"`
 
 	// InstanceFamily インスタンスファミリー。game-design-constants の InstanceFamily に対応。
 	InstanceFamily *string `json:"instanceFamily,omitempty"`
@@ -172,9 +171,6 @@ type DeployedResource struct {
 	MaxAV          int64   `json:"maxAV"`
 	MaxTP          *int64  `json:"maxTP,omitempty"`
 	MaxYield       *int64  `json:"maxYield,omitempty"`
-
-	// MonetizedAmount 収益化で配分された Insight 量
-	MonetizedAmount int64 `json:"monetizedAmount"`
 
 	// Rank ランク (S/M/L/XL)。game-design-constants の Rank に対応。
 	Rank             *string           `json:"rank,omitempty"`
@@ -262,6 +258,7 @@ type HiddenDeployedSupport struct {
 
 // MonetizeAction defines model for MonetizeAction.
 type MonetizeAction struct {
+	// RemainingCapacity 1 回の収益化で割り当てられる上限 (実効スループット)。
 	RemainingCapacity *int64  `json:"remainingCapacity,omitempty"`
 	SourceInstanceID  *string `json:"sourceInstanceID,omitempty"`
 	Type              string  `json:"type"`

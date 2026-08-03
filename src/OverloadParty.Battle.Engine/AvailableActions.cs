@@ -37,7 +37,7 @@ public class AvailableAction
     /// <summary>Whether a family selection is required (scale-up to Medium/Large).</summary>
     public bool IsFamilyRequired { get; set; }
 
-    /// <summary>Remaining monetize capacity for the resource (monetize only).</summary>
+    /// <summary>Maximum amount allocatable in one monetize action, i.e. the effective throughput (monetize only).</summary>
     public long RemainingCapacity { get; set; }
 
     /// <summary>The type of target the effect expects (use_ignition only).</summary>
@@ -374,16 +374,17 @@ public static class AvailableActions
             var card = cc.MustGet(res.CardID);
             if (!card.IsComputeType) { continue; }
             if (FieldHelpers.HasTemporaryEffect(res, BuffTypes.Dormant)) { continue; }
+            if (res.MonetizedThisTurn) { continue; }
 
             long effectiveTP = StatCalculator.CalculateEffectiveTP(res, field, cc);
-            long remaining = effectiveTP - res.MonetizedAmount;
-            if (remaining <= 0) { continue; }
+            // 割当量は 1 以上でなければならないため、上限 0 のリソースは提示しない
+            if (effectiveTP <= 0) { continue; }
 
             yield return new AvailableAction
             {
                 Type = ActionTypes.Monetize,
                 SourceInstanceID = res.InstanceID,
-                RemainingCapacity = remaining,
+                RemainingCapacity = effectiveTP,
             };
         }
     }

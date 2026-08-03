@@ -411,7 +411,7 @@ public class EndPhaseProcessorTests
     [Trait("対象", "ターン内フラグのリセット")]
     public class PerTurnFlagsReset : Base
     {
-        [Fact(DisplayName = "エンドフェーズにリソースの攻撃済み・効果使用済み・収益化量とインシデント使用のターン内フラグがリセットされる")]
+        [Fact(DisplayName = "エンドフェーズにリソースの攻撃済み・効果使用済み・収益化使用済みとインシデント使用のターン内フラグがリセットされる")]
         public void ResetsPerTurnFlags()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Battle, activePlayer: 1);
@@ -420,7 +420,7 @@ public class EndPhaseProcessorTests
             var resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "res_1", faceUp: true);
             resource.HasAttacked = true;
             resource.EffectUsedThisTurn = true;
-            resource.MonetizedAmount = 100;
+            resource.MonetizedThisTurn = true;
             state.Player1Field.Frontend[0] = resource;
 
             state.SetIncidentPlayedThisTurn(1, true);
@@ -429,7 +429,7 @@ public class EndPhaseProcessorTests
 
             resource.HasAttacked.Should().BeFalse();
             resource.EffectUsedThisTurn.Should().BeFalse();
-            resource.MonetizedAmount.Should().Be(0);
+            resource.MonetizedThisTurn.Should().BeFalse();
             state.GetIncidentPlayedThisTurn(1).Should().BeFalse();
         }
     }

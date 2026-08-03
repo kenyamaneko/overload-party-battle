@@ -1181,7 +1181,7 @@ public class AvailableActionsTests
         }
     }
 
-    [Trait("対象", "収益化の可否と残変換容量")]
+    [Trait("対象", "収益化の可否と割当上限")]
     public class MonetizeRules : Base
     {
         [Fact(DisplayName = "バックエンドの Compute系リソースは収益化の候補になる")]
@@ -1269,8 +1269,8 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact(DisplayName = "スループット 600 で 200 収益化済みのとき、残変換容量は 400 になる")]
-        public void Monetize_RemainingCapacityBasedOnTP()
+        [Fact(DisplayName = "スループット 600 のリソースがこのターン未使用のとき、収益化の候補に現れ割当上限は 600 になる")]
+        public void Monetize_AllocationLimitIsEffectiveTP()
         {
             // 各カードの変換上限 = スループット値
             var cc = new TestCardCache();
@@ -1278,19 +1278,17 @@ public class AvailableActionsTests
 
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
             var myField = TestFactory.MakeField();
-            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
-            res.MonetizedAmount = 200; // 既に200使用
-            myField.Backend[0] = res;
+            myField.Backend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
                 state, 1, myField, TestFactory.MakeField(), [], 5000, 1000, cc, new EffectRegistry());
 
-            var yieldAction = actions.Single(a => a.Type == ActionTypes.Monetize);
-            yieldAction.RemainingCapacity.Should().Be(400); // 600 - 200 = 400
+            var monetizeAction = actions.Single(a => a.Type == ActionTypes.Monetize);
+            monetizeAction.RemainingCapacity.Should().Be(600);
         }
 
-        [Fact(DisplayName = "スループット 600 を全て収益化済みのとき、収益化できない")]
-        public void Monetize_ExcludedWhenCapacityFull()
+        [Fact(DisplayName = "このターン収益化に使用済みのリソースは、収益化の候補に現れない")]
+        public void Monetize_ExcludedWhenAlreadyMonetizedThisTurn()
         {
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
@@ -1298,7 +1296,25 @@ public class AvailableActionsTests
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
             var myField = TestFactory.MakeField();
             var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
-            res.MonetizedAmount = 600; // 全容量使用済み
+            res.MonetizedThisTurn = true;
+            myField.Backend[0] = res;
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 1000, cc, new EffectRegistry());
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
+        }
+
+        [Fact(DisplayName = "スループットを抑止されたリソースは割当上限が 0 になるため、収益化の候補に現れない")]
+        public void Monetize_ExcludedWhenThroughputSuppressed()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: "TST-0001", tp: 600));
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            var myField = TestFactory.MakeField();
+            var res = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "be_1");
+            res.TemporaryEffects.Add(new TemporaryEffect { EffectType = EffectTypes.TPSuppressed });
             myField.Backend[0] = res;
 
             var actions = AvailableActions.GetAllAvailableActions(
@@ -1324,7 +1340,7 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
         }
 
-        [Fact(DisplayName = "複数のバックエンド Compute系リソースがあるとき、それぞれに残変換容量付きの収益化アクションが生成される")]
+        [Fact(DisplayName = "複数のバックエンド Compute系リソースがあるとき、それぞれに割当上限付きの収益化アクションが生成される")]
         public void Monetize_MultipleBackendComputeEachGetAction()
         {
             // 複数のバックエンドComputeがある場合、それぞれにmonetizeが生成される

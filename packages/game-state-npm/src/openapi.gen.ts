@@ -486,12 +486,6 @@ export interface components {
              */
             damage: number;
             temporaryEffects: components["schemas"]["TemporaryEffect"][];
-            /**
-             * Format: int64
-             * @description 収益化で配分された Insight 量
-             */
-            monetizedAmount: number;
-            hasAttacked: boolean;
             effectUsedThisTurn: boolean;
             effectUsedThisGame: boolean;
             /** Format: int64 */
@@ -607,7 +601,10 @@ export interface components {
         /** @description リソースで収益化する候補。 */
         MonetizeAction: Omit<components["schemas"]["AvailableAction"], "type"> & {
             sourceInstanceID?: string;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description 1 回の収益化で割り当てられる上限 (実効スループット)。
+             */
             remainingCapacity?: number;
         } & {
             /**

@@ -30,7 +30,7 @@ public class DeployedResource
     public long? MaxYield { get; set; }
     public long Damage { get; set; }
     public List<TemporaryEffect> TemporaryEffects { get; set; } = [];
-    public long MonetizedAmount { get; set; }
+    public bool MonetizedThisTurn { get; set; }
     public bool HasAttacked { get; set; }
     public bool EffectUsedThisTurn { get; set; }
     public bool EffectUsedThisGame { get; set; }

@@ -53,7 +53,7 @@ public class MonetizeProcessorTests
     [Trait("対象", "収益化")]
     public class BasicMonetize : Base
     {
-        [Fact(DisplayName = "インサイト 300 を収益化するとプールが 200 に減りバジェットが 5300 になる")]
+        [Fact(DisplayName = "インサイト 300 を収益化すると、プールが 200 に減りバジェットが 5300 になりそのリソースは使用済みになる")]
         public void Process_BasicMonetize_TransfersInsightToBudget()
         {
             var state = TestFactory.MakeGameState(turn: 2);
@@ -61,12 +61,12 @@ public class MonetizeProcessorTests
             state.Player1Field.Backend[0] = resource;
             state.SetInsightPool(1, 500);
 
-            var result = MonetizeProcessor.Process(
+            MonetizeProcessor.Process(
                 state, _game, 1, MakeReq(Dist("be_1", 300)), _cc);
 
             state.GetInsightPool(1).Should().Be(200);
             state.GetBudget(1).Should().Be(5300);
-            resource.MonetizedAmount.Should().Be(300);
+            resource.MonetizedThisTurn.Should().BeTrue();
         }
     }
 
@@ -172,7 +172,7 @@ public class MonetizeProcessorTests
             var act = () => MonetizeProcessor.Process(
                 state, _game, 1, MakeReq(Dist("be_1", 700)), _cc);
 
-            act.Should().Throw<GameRuleException>().WithMessage("*exceeds remaining capacity*");
+            act.Should().Throw<GameRuleException>().WithMessage("*exceeds throughput*");
         }
     }
 
@@ -211,8 +211,8 @@ public class MonetizeProcessorTests
             var result = MonetizeProcessor.Process(
                 state, _game, 1, MakeReq(Dist("be_1", 300), Dist("be_2", 200)), _cc);
 
-            res1.MonetizedAmount.Should().Be(300);
-            res2.MonetizedAmount.Should().Be(200);
+            res1.MonetizedThisTurn.Should().BeTrue();
+            res2.MonetizedThisTurn.Should().BeTrue();
             state.GetInsightPool(1).Should().Be(300);
             state.GetBudget(1).Should().Be(5500);
             result.Events.Should().Contain(e => e.EventType == ActionTypes.Monetize);
@@ -264,7 +264,7 @@ public class MonetizeProcessorTests
     [Trait("対象", "エラスティックリソースの収益化")]
     public class ElasticMonetize
     {
-        [Fact(DisplayName = "エラスティックリソースを収益化するとエラスティックボーナスが加算される")]
+        [Fact(DisplayName = "エラスティック増分 100 のリソースを 1 回収益化すると、エラスティックボーナスがちょうど 100 増える")]
         public void Process_AppliesElasticBonus()
         {
             var cc = new TestCardCache();
@@ -276,7 +276,7 @@ public class MonetizeProcessorTests
 
             MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 100)), cc);
 
-            res.ElasticBonus.Should().BeGreaterThan(0, "Elastic リソースの収益化で エラスティックボーナス が加算される");
+            res.ElasticBonus.Should().Be(100);
         }
     }
 
@@ -294,6 +294,158 @@ public class MonetizeProcessorTests
             var act = () => MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 100)), cc);
 
             act.Should().Throw<GameRuleException>().WithMessage("*insight pool*");
+        }
+    }
+
+    /// <summary>実効スループット 700 のバックエンドコンピュートを登録したキャッシュを作る。</summary>
+    /// <returns>TST-0004 (スループット 700) を登録したキャッシュ。</returns>
+    private static TestCardCache ThroughputCc()
+    {
+        var cc = new TestCardCache();
+        cc.Add(TestFactory.ComputeCard(cardId: "TST-0004", tp: 700));
+        return cc;
+    }
+
+    /// <summary>実効スループット 700 のバックエンドコンピュートを 1 体だけ置いた状態を作る。</summary>
+    /// <param name="insightPool">プレイヤー 1 のインサイトプール。</param>
+    /// <returns>ゲーム状態と配置したリソース。</returns>
+    private static (BattleGameState State, DeployedResource Resource) StateWithThroughput700(long insightPool)
+    {
+        var state = TestFactory.MakeGameState(turn: 2);
+        var resource = TestFactory.MakeResource(
+            cardId: "TST-0004", instanceId: "be_1", faceUp: true, maxTP: 700, currentTP: 700);
+        state.Player1Field.Backend[0] = resource;
+        state.SetInsightPool(1, insightPool);
+        return (state, resource);
+    }
+
+    [Trait("対象", "収益化の割当量の境界")]
+    public class AllocationBoundary
+    {
+        [Fact(DisplayName = "実効スループット 700 のリソースに 700 を割り当てると、バジェットが 5000 から 5700 になる")]
+        public void Process_AmountEqualToThroughput_Succeeds()
+        {
+            var (state, _) = StateWithThroughput700(insightPool: 5000);
+
+            MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 700)), ThroughputCc());
+
+            state.GetBudget(1).Should().Be(5700);
+        }
+
+        [Fact(DisplayName = "実効スループット 700 のリソースに 701 を割り当てると、スループット超過として拒否される")]
+        public void Process_AmountAboveThroughput_Throws()
+        {
+            var (state, _) = StateWithThroughput700(insightPool: 5000);
+
+            var act = () => MonetizeProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 701)), ThroughputCc());
+
+            act.Should().Throw<GameRuleException>().WithMessage("*exceeds throughput*");
+        }
+
+        [Fact(DisplayName = "割当量が 0 のとき、正の量でないとして拒否される")]
+        public void Process_ZeroAmount_Throws()
+        {
+            var (state, _) = StateWithThroughput700(insightPool: 5000);
+
+            var act = () => MonetizeProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 0)), ThroughputCc());
+
+            act.Should().Throw<GameRuleException>().WithMessage("*must be positive*");
+        }
+
+        [Fact(DisplayName = "割当量が 1 のとき、バジェットが 5000 から 5001 になる")]
+        public void Process_AmountOne_Succeeds()
+        {
+            var (state, _) = StateWithThroughput700(insightPool: 5000);
+
+            MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 1)), ThroughputCc());
+
+            state.GetBudget(1).Should().Be(5001);
+        }
+    }
+
+    [Trait("対象", "リソースごとの 1 ターン 1 回制限")]
+    public class OncePerTurn
+    {
+        [Fact(DisplayName = "400 の割当に成功した後、同一ターンに同じリソースへ 100 を割り当てると使用済みとして拒否される")]
+        public void Process_SecondMonetizeInSameTurn_Throws()
+        {
+            var (state, _) = StateWithThroughput700(insightPool: 5000);
+            var cc = ThroughputCc();
+            MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 400)), cc);
+
+            var act = () => MonetizeProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 100)), cc);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already monetized this turn*");
+            state.GetBudget(1).Should().Be(5400);
+        }
+    }
+
+    [Trait("対象", "同一リクエスト内の重複配分")]
+    public class DuplicateInRequest
+    {
+        [Fact(DisplayName = "同じリソースへの配分を 2 エントリ (300 と 300) 含むリクエストは、重複として拒否される")]
+        public void Process_DuplicateInstanceInRequest_Throws()
+        {
+            var (state, resource) = StateWithThroughput700(insightPool: 5000);
+
+            var act = () => MonetizeProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 300), Dist("be_1", 300)), ThroughputCc());
+
+            act.Should().Throw<GameRuleException>().WithMessage("*appears more than once*");
+            state.GetBudget(1).Should().Be(5000);
+            resource.MonetizedThisTurn.Should().BeFalse();
+        }
+    }
+
+    [Trait("対象", "インサイトプール合計の上限")]
+    public class InsightPoolTotal
+    {
+        [Fact(DisplayName = "プールが 500 のとき、2 体へ合計 600 を配分するとプール超過として拒否される")]
+        public void Process_TotalExceedsInsightPool_Throws()
+        {
+            var cc = ThroughputCc();
+            var state = TestFactory.MakeGameState(turn: 2);
+            state.Player1Field.Backend[0] = TestFactory.MakeResource(
+                cardId: "TST-0004", instanceId: "be_1", faceUp: true, maxTP: 700, currentTP: 700);
+            state.Player1Field.Backend[1] = TestFactory.MakeResource(
+                cardId: "TST-0004", instanceId: "be_2", faceUp: true, maxTP: 700, currentTP: 700);
+            state.SetInsightPool(1, 500);
+
+            var act = () => MonetizeProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 300), Dist("be_2", 300)), cc);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*exceeds insight pool*");
+            state.GetBudget(1).Should().Be(5000);
+        }
+    }
+
+    [Trait("対象", "裏向きリソースの収益化")]
+    public class FaceDownResource
+    {
+        [Fact(DisplayName = "裏向きのバックエンドコンピュートへ割り当てると、裏向きとして拒否される")]
+        public void Process_FaceDownResource_Throws()
+        {
+            var (state, resource) = StateWithThroughput700(insightPool: 5000);
+            resource.FaceUp = false;
+
+            var act = () => MonetizeProcessor.Process(
+                state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 300)), ThroughputCc());
+
+            act.Should().Throw<GameRuleException>().WithMessage("*face-down*");
+            state.GetBudget(1).Should().Be(5000);
+        }
+
+        [Fact(DisplayName = "表向きのバックエンドコンピュートへ 300 を割り当てると、バジェットが 5000 から 5300 になる")]
+        public void Process_FaceUpResource_Succeeds()
+        {
+            var (state, _) = StateWithThroughput700(insightPool: 5000);
+
+            MonetizeProcessor.Process(state, TestFactory.MakeGame(), 1, Req(Dist("be_1", 300)), ThroughputCc());
+
+            state.GetBudget(1).Should().Be(5300);
         }
     }
 }
