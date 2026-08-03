@@ -90,6 +90,11 @@ public class BattleGameState
     /// </summary>
     public PendingEffectChoice? PendingEffectChoice { get; set; }
 
+    /// <summary>
+    /// ドローフェーズで稼働開始処理が済んでいないカードのインスタンス ID。DeployOrder 昇順で先頭から処理する。
+    /// </summary>
+    public List<string> PendingDeployCompletions { get; set; } = [];
+
     // ─── Accessor helpers (by player number) ────────────────
 
     /// <summary>

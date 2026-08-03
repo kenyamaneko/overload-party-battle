@@ -180,8 +180,9 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 player2_incident_played_this_turn = $22, player2_has_operated = $23, player2_status = $24,
                 current_action_timer = $25, next_instance_seq = $26,
                 turn_started_at = $27, next_deploy_order_seq = $28,
-                pending_slot_selects = $29, pending_effect_choice = $30, updated_at = $31
-            WHERE game_id = $32", conn, tx))
+                pending_slot_selects = $29, pending_effect_choice = $30,
+                pending_deploy_completions = $31, updated_at = $32
+            WHERE game_id = $33", conn, tx))
         {
             AddGameStateParams(cmd, state);
             cmd.Parameters.AddWithValue(state.GameID);
@@ -325,7 +326,8 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                player2_incident_played_this_turn, player2_has_operated, player2_status,
                current_action_timer, next_instance_seq,
                turn_started_at, next_deploy_order_seq,
-               pending_slot_selects, pending_effect_choice, updated_at
+               pending_slot_selects, pending_effect_choice,
+               pending_deploy_completions, updated_at
         FROM battle.game_states WHERE game_id = $1";
 
     // ─── Helpers ─────────────────────────────────────────────────
@@ -396,7 +398,9 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             PendingEffectChoice = r.IsDBNull(30)
                 ? null
                 : JsonSerializer.Deserialize<PendingEffectChoice>(r.GetString(30), DbJsonOptions.Default),
-            UpdatedAt = r.GetDateTime(31),
+            PendingDeployCompletions =
+                JsonSerializer.Deserialize<List<string>>(r.GetString(31), DbJsonOptions.Default) ?? [],
+            UpdatedAt = r.GetDateTime(32),
         };
     }
 
@@ -415,8 +419,9 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 player2_incident_played_this_turn, player2_has_operated, player2_status,
                 current_action_timer, next_instance_seq,
                 turn_started_at, next_deploy_order_seq,
-                pending_slot_selects, pending_effect_choice, updated_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)", conn, tx);
+                pending_slot_selects, pending_effect_choice,
+                pending_deploy_completions, updated_at
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33,$34)", conn, tx);
         cmd.Parameters.AddWithValue(state.GameID);
         cmd.Parameters.Add(new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = stateJson });
         AddGameStateParams(cmd, state);
@@ -458,6 +463,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(state.NextDeployOrderSeq);
         cmd.Parameters.Add(BuildJsonbParam(state.PendingSlotSelects));
         cmd.Parameters.Add(BuildJsonbParam(state.PendingEffectChoice));
+        cmd.Parameters.Add(BuildJsonbParam(state.PendingDeployCompletions));
         cmd.Parameters.AddWithValue(state.UpdatedAt);
     }
 

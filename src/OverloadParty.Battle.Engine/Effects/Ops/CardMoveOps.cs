@@ -115,6 +115,10 @@ public class DeployFromRepoOp : IEffectOp
         var instance = ResourceHelpers.DeployFromRepo(
             ctx.State, ctx.PlayerNum, field, match, OverrideAV, ctx.CardCache);
 
+        // 配置時効果が残デプロイターンを 0 まで縮めたときの稼働開始処理は短縮した効果の中で済むため、
+        // 稼働開始処理が二重に走らないよう、配置の時点で稼働前だったかを控える。
+        bool wasDeploying = instance.DeployingTurnsLeft > 0;
+
         var (onSetEvents, onSetChoice) = OnSetFiring.Fire(
             ctx.State, ctx.Game, ctx.PlayerNum, instance.CardID, instance.InstanceID,
             instance, supSource: null, choiceData: null, ctx.CardCache, ctx.Effects);
@@ -122,17 +126,10 @@ public class DeployFromRepoOp : IEffectOp
         {
             ctx.AddEvent(evt);
         }
-        if (onSetChoice is not null)
-        {
-            ctx.State.PendingEffectChoice = onSetChoice;
-        }
 
-        if (instance.DeployingTurnsLeft > 0) { return; }
+        if (wasDeploying) { return; }
 
         OnSetFiring.RejectDeferredChoiceBeforeDeployCompletion(onSetChoice, instance.CardID);
-
-        // 配置時効果が残デプロイターンを 0 まで縮めた場合もその場で稼働にあたるため、表向きにしてから稼働開始処理へ渡す。
-        instance.FaceUp = true;
 
         var (_, events) = DeployCompletion.CompleteResource(
             ctx.State, ctx.Game, ctx.PlayerNum, instance, ctx.CardCache, ctx.Effects);

@@ -176,6 +176,126 @@ public class DrawPhaseProcessorTests
 
             fired.Should().BeTrue("カウントダウン完了で稼働したサポートカードのデプロイ時効果が発動する");
         }
+
+        private const string OwnCardId = "TST-0001";
+        private const string SecondOwnCardId = "TST-0002";
+        private const string EarlyReactiveCardId = "TST-0401";
+        private const string LateReactiveCardId = "TST-0402";
+
+        /// <summary>残り 1 ターンの裏向きリソースをフロントエンドに置いた、ドローできる状態を作る。</summary>
+        /// <returns>ドローフェーズ開始前のゲーム状態。</returns>
+        private static BattleGameState StateWithDeployingResource()
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = OwnCardId });
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: OwnCardId, instanceId: "r_1", faceUp: false, deployLeft: 1);
+            return state;
+        }
+
+        /// <summary>相手のサポートゾーンに裏向きのリアクティブを伏せる。</summary>
+        /// <param name="state">対象のゲーム状態。</param>
+        /// <param name="slotIndex">伏せるサポートスロットの位置。</param>
+        /// <param name="cardId">伏せるリアクティブのカード ID。</param>
+        /// <param name="deployOrder">伏せた順序。小さいほど早い。</param>
+        private static void SetOpponentReactive(
+            BattleGameState state, int slotIndex, string cardId, long deployOrder)
+        {
+            state.Player2Field.Support[slotIndex] = new DeployedSupport
+            {
+                InstanceID = $"sup_{deployOrder}",
+                CardID = cardId,
+                FaceUp = false,
+                DeployOrder = deployOrder,
+            };
+        }
+
+        [Fact(DisplayName = "残り 1 ターンの裏向きカードがカウントダウン完了で稼働したとき、相手のデプロイ反応リアクティブが発動する")]
+        public void OpponentReactive_FiresWhenCountdownCompletes()
+        {
+            var cc = DrawCc();
+            cc.Add(TestFactory.ReactiveCard(cardId: EarlyReactiveCardId));
+            var state = StateWithDeployingResource();
+            SetOpponentReactive(state, slotIndex: 0, EarlyReactiveCardId, deployOrder: 1);
+
+            var fired = new List<string>();
+            var effects = new TestEffectRegistry();
+            effects.Register(EarlyReactiveCardId, TriggerType.OnDeploy,
+                _ => { fired.Add(EarlyReactiveCardId); return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), cc, effects);
+
+            fired.Should().Equal(EarlyReactiveCardId);
+            state.Player2Trash.Should().ContainSingle().Which.CardID.Should().Be(EarlyReactiveCardId);
+        }
+
+        [Fact(DisplayName = "相手のデプロイ反応リアクティブが 2 枚伏せてあるとき、1 枚の稼働に対しセットが早い 1 枚だけが発動する")]
+        public void OpponentReactive_OnlyEarliestFires()
+        {
+            var cc = DrawCc();
+            cc.Add(TestFactory.ReactiveCard(cardId: EarlyReactiveCardId));
+            cc.Add(TestFactory.ReactiveCard(cardId: LateReactiveCardId));
+            var state = StateWithDeployingResource();
+            SetOpponentReactive(state, slotIndex: 0, LateReactiveCardId, deployOrder: 2);
+            SetOpponentReactive(state, slotIndex: 1, EarlyReactiveCardId, deployOrder: 1);
+
+            var fired = new List<string>();
+            var effects = new TestEffectRegistry();
+            effects.Register(EarlyReactiveCardId, TriggerType.OnDeploy,
+                _ => { fired.Add(EarlyReactiveCardId); return new EffectResult(); });
+            effects.Register(LateReactiveCardId, TriggerType.OnDeploy,
+                _ => { fired.Add(LateReactiveCardId); return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), cc, effects);
+
+            fired.Should().Equal(EarlyReactiveCardId);
+            state.Player2Trash.Should().ContainSingle().Which.CardID.Should().Be(EarlyReactiveCardId);
+        }
+
+        [Fact(DisplayName = "相手のサポートゾーンが空のとき、稼働したカード自身のデプロイ時効果だけが発動する")]
+        public void NoOpponentSupport_OnlyOwnEffectFires()
+        {
+            var state = StateWithDeployingResource();
+
+            var fired = new List<string>();
+            var effects = new TestEffectRegistry();
+            effects.Register(OwnCardId, TriggerType.OnDeploy,
+                _ => { fired.Add(OwnCardId); return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), DrawCc(), effects);
+
+            fired.Should().Equal(OwnCardId);
+        }
+
+        [Fact(DisplayName = "同一ドローフェーズに 2 枚が同時稼働するとき、スロット順ではなくセットが早い順に発動する")]
+        public void SimultaneousCompletion_FiresInDeployOrder()
+        {
+            var cc = DrawCc();
+            cc.Add(TestFactory.ComputeCard(cardId: SecondOwnCardId));
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Draw, activePlayer: 1);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "repo_1", CardID = OwnCardId });
+
+            var lateSet = TestFactory.MakeResource(
+                cardId: OwnCardId, instanceId: "r_front", faceUp: false, deployLeft: 1);
+            lateSet.DeployOrder = 2;
+            state.Player1Field.Frontend[0] = lateSet;
+
+            var earlySet = TestFactory.MakeResource(
+                cardId: SecondOwnCardId, instanceId: "r_back", faceUp: false, deployLeft: 1);
+            earlySet.DeployOrder = 1;
+            state.Player1Field.Backend[0] = earlySet;
+
+            var fired = new List<string>();
+            var effects = new TestEffectRegistry();
+            effects.Register(OwnCardId, TriggerType.OnDeploy,
+                _ => { fired.Add(OwnCardId); return new EffectResult(); });
+            effects.Register(SecondOwnCardId, TriggerType.OnDeploy,
+                _ => { fired.Add(SecondOwnCardId); return new EffectResult(); });
+
+            DrawPhaseProcessor.Process(state, TestFactory.MakeGame(), cc, effects);
+
+            fired.Should().Equal(SecondOwnCardId, OwnCardId);
+        }
     }
 
     [Trait("対象", "デッキアウト判定とドロー・デプロイ経過処理の順序")]

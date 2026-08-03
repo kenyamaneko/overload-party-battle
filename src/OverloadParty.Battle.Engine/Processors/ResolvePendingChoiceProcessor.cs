@@ -104,6 +104,16 @@ public static class ResolvePendingChoiceProcessor
 
         events.AddRange(ResumeSuspendedAttack(state, game, cc, effects, pending, result));
 
+        // 稼働開始処理の途中で止まっていたなら、残りの稼働とフェーズ進行を続きから進める。
+        if (state.PendingEffectChoice is null && state.PendingDeployCompletions.Count > 0)
+        {
+            return new ActionResult
+            {
+                Events = events,
+                GameOver = DrawPhaseProcessor.ResumeDeployCompletions(state, game, cc, effects),
+            };
+        }
+
         // エンドフェーズ効果の途中で止まっていたなら、残りの効果と精算を続きから進める。
         // 破壊の後始末で新たな選択待ちが立つこともあるので、state を見て停止中かを判定する。
         if (state.PendingEffectChoice is null && pending.EndPhasePlayerNum is { } endPhasePlayerNum)

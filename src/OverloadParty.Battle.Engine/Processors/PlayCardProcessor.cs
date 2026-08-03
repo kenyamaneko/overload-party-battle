@@ -221,21 +221,22 @@ public static class PlayCardProcessor
             field.Backend[req.Index] = resource;
         }
 
+        // 配置時効果が残デプロイターンを 0 まで縮めたときの稼働開始処理は短縮した効果の中で済むため、
+        // 稼働開始処理が二重に走らないよう、配置の時点で稼働前だったかを控える。
+        bool wasDeploying = resource.DeployingTurnsLeft > 0;
+
         var (onSetEvents, onSetChoice) = FireOnSet(
             ctx, cardDef.CardId, resource.InstanceID, resource, supSource: null, req);
         events.AddRange(onSetEvents);
 
         // 表向きになった時点で on_deploy を発動する仕様のため、デプロイ中はスキップ（実際の発動は DrawPhaseProcessor）。
-        if (resource.DeployingTurnsLeft > 0)
+        if (wasDeploying)
         {
             PassiveRecalculator.Recalculate(ctx.State, ctx.Game, ctx.CC, ctx.Effects);
             return false;
         }
 
         OnSetFiring.RejectDeferredChoiceBeforeDeployCompletion(onSetChoice, cardDef.CardId);
-
-        // 配置時効果が残デプロイターンを 0 まで縮めた場合もその場で稼働にあたるため、表向きにしてから稼働開始処理へ渡す。
-        resource.FaceUp = true;
 
         var (cancelled, deployEvents) = DeployCompletion.CompleteResource(
             ctx.State, ctx.Game, ctx.PlayerNum, resource, ctx.CC, ctx.Effects);
@@ -336,7 +337,7 @@ public static class PlayCardProcessor
     }
 
     /// <summary>
-    /// 場に置かれたカード自身の配置時効果を発火し、選択待ちになったらゲーム状態に載せます。
+    /// 場に置かれたカード自身の配置時効果を発火します。
     /// </summary>
     /// <param name="ctx">カードプレイ処理コンテキスト。</param>
     /// <param name="cardId">置いたカードのカード ID。</param>
@@ -349,16 +350,9 @@ public static class PlayCardProcessor
         PlayContext ctx, string cardId, string instanceId,
         DeployedResource? source, DeployedSupport? supSource, PlayCardRequest req)
     {
-        var (events, pendingChoice) = OnSetFiring.Fire(
+        return OnSetFiring.Fire(
             ctx.State, ctx.Game, ctx.PlayerNum, cardId, instanceId,
             source, supSource, req.ChoiceData, ctx.CC, ctx.Effects);
-
-        if (pendingChoice is not null)
-        {
-            ctx.State.PendingEffectChoice = pendingChoice;
-        }
-
-        return (events, pendingChoice);
     }
 
     private static void ValidatePlayPosition(CardDefinition cardDef, Field field, PlayCardRequest req)

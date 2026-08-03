@@ -152,6 +152,300 @@ public class ScenarioTests
         }
     }
 
+    /// <summary>任意の Action を IEffectOp として実行するテスト専用 op。</summary>
+    private sealed class InlineOp(Action<OpContext> action) : IEffectOp
+    {
+        public void Execute(OpContext ctx) => action(ctx);
+    }
+
+    [Trait("対象", "配置時のデプロイターン短縮による即時稼働")]
+    public class OnSetImmediateDeploy
+    {
+        private const string ImmediateCardId = "TST-0719";
+        private const string FillerCardId = "TST-0001";
+
+        private readonly FakeGameRepository _repo = new();
+        private readonly TestCardCache _cc = new();
+        private readonly GameEngine _engine;
+        private int _onDeployFireCount;
+
+        /// <summary>デプロイターン 2 で、配置時に残デプロイターンを 2 減らすリソースを登録したエンジンを用意する。</summary>
+        public OnSetImmediateDeploy()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: ImmediateCardId, mc: 0, deployTurns: 2));
+            _cc.Add(TestFactory.ComputeCard(cardId: FillerCardId, mc: 0, deployTurns: 0));
+            var effects = new TestEffectRegistry();
+            effects.Register(
+                ImmediateCardId, TriggerType.OnSet,
+                EffectComposer.Compose(new ReduceDeployTurnsOp(new StaticAmount(2))));
+            effects.Register(
+                ImmediateCardId, TriggerType.OnDeploy,
+                _ => { _onDeployFireCount++; return new EffectResult(); });
+            _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]), new FakeClock());
+        }
+
+        [Fact(DisplayName = "デプロイターン 2 のカードが配置時に 2 短縮されたとき、その場で表向きになり稼働時効果が 1 回だけ発動する")]
+        public async Task ShortenedToZeroAtPlacement_BecomesOperationalImmediately()
+        {
+            var gameID = await _engine.CreateNewGame(
+                TestFactory.MakeDeck(_cc, ImmediateCardId), TestFactory.MakeDeck(_cc, FillerCardId), firstPlayer: 1);
+
+            var game = await _repo.GetGame(gameID);
+            await _engine.RunAutoAdvance(game!);
+            var state = (await _repo.GetGameState(gameID))!;
+            var cardInstanceId = TestFactory.ReplaceFirstHandCard(state, 1, ImmediateCardId);
+            game = await _repo.GetGame(gameID);
+            await _engine.ProcessAction(game!, 1, ActionType.PlayCard,
+                new PlayCardRequest { CardInstanceID = cardInstanceId, Zone = Zones.Frontend, Index = 0 });
+
+            var deployed = state.Player1Field.Frontend[0]!;
+            deployed.DeployingTurnsLeft.Should().Be(0);
+            deployed.FaceUp.Should().BeTrue("配置時に残デプロイターンが 0 になったカードはその場で稼働する");
+            _onDeployFireCount.Should().Be(1);
+            state.Player1HasOperated.Should().BeTrue();
+        }
+    }
+
+    [Trait("対象", "稼働時の選択待ちを挟むターン進行")]
+    public class DeployChoiceOnCountdownCompletion
+    {
+        private const string ChoiceCardId = "TST-0720";
+        private const string FillerCardId = "TST-0001";
+        private const string AutopilotOption = "autopilot";
+        private const string StandardOption = "standard";
+        private const long AutopilotInsight = 111;
+        private const long StandardInsight = 222;
+
+        private readonly FakeGameRepository _repo = new();
+        private readonly TestCardCache _cc = new();
+        private readonly GameEngine _engine;
+
+        /// <summary>稼働時に 2 択の分岐を要求するデプロイターン 2 のリソースを登録したエンジンを用意する。</summary>
+        public DeployChoiceOnCountdownCompletion()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: ChoiceCardId, mc: 0, deployTurns: 2));
+            _cc.Add(TestFactory.ComputeCard(cardId: FillerCardId, mc: 0, deployTurns: 0));
+            var effects = new TestEffectRegistry();
+            var branches = new Dictionary<string, List<IEffectOp>>
+            {
+                [AutopilotOption] = [new InlineOp(o => o.State.SetInsightPool(o.PlayerNum, AutopilotInsight))],
+                [StandardOption] = [new InlineOp(o => o.State.SetInsightPool(o.PlayerNum, StandardInsight))],
+            };
+            effects.Register(
+                ChoiceCardId, TriggerType.OnDeploy,
+                EffectComposer.Compose(new BranchOnChoiceOp(branches)));
+            _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]), new FakeClock());
+        }
+
+        /// <summary>
+        /// プレイヤー 2 のバトルフェーズから始まり、プレイヤー 1 の場に残り 1 ターンの
+        /// 選択付きカードが伏せてある盤面を用意する。
+        /// </summary>
+        /// <returns>用意したゲームの ID と、進行に伴って更新され続けるゲーム状態。</returns>
+        private async Task<(string GameID, BattleGameState State)> StartBeforeOpponentsDrawPhase()
+        {
+            var gameID = await _engine.CreateNewGame(
+                TestFactory.MakeDeck(_cc, ChoiceCardId), TestFactory.MakeDeck(_cc, FillerCardId), firstPlayer: 1);
+
+            var state = (await _repo.GetGameState(gameID))!;
+            state.CurrentTurn = 4;
+            state.ActivePlayer = 2;
+            state.CurrentPhase = Phase.Battle;
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: ChoiceCardId, instanceId: "r_choice", faceUp: false, deployLeft: 1);
+
+            return (gameID, state);
+        }
+
+        /// <summary>指定プレイヤーのアクションを実行する。</summary>
+        /// <param name="gameID">対象ゲームの ID。</param>
+        /// <param name="playerNum">アクションするプレイヤー番号。</param>
+        /// <param name="actionType">アクション種別。</param>
+        /// <param name="actionData">アクション固有のリクエスト。</param>
+        /// <returns>アクション結果。</returns>
+        private async Task<ActionResult> Act(
+            string gameID, long playerNum, ActionType actionType, object actionData)
+        {
+            var game = await _repo.GetGame(gameID);
+            return await _engine.ProcessAction(game!, playerNum, actionType, actionData);
+        }
+
+        [Fact(DisplayName = "残り 1 ターンの選択付きカードがあるとき、前のターンプレイヤーがエンドフェーズを終了すると、アクションが完了し相手に選択待ちが積まれる")]
+        public async Task EndPhase_CompletesAndQueuesChoiceForTheNextActivePlayer()
+        {
+            var (gameID, state) = await StartBeforeOpponentsDrawPhase();
+
+            var result = await Act(gameID, 2, ActionType.EndPhase, new object());
+
+            result.GameOver.Should().BeNull();
+            state.ActivePlayer.Should().Be(1, "エンドフェーズの完了でターンが交代する");
+            state.PendingEffectChoice.Should().NotBeNull();
+            state.PendingEffectChoice!.ChooserPlayerNum.Should().Be(1);
+            state.PendingEffectChoice.Candidates.Should().BeEquivalentTo(AutopilotOption, StandardOption);
+            state.CurrentPhase.Should().Be(Phase.Draw, "選択が解決されるまでドローフェーズのまま止まる");
+        }
+
+        [Fact(DisplayName = "積まれた選択を解決すると、選んだ分岐の効果が適用されメインフェーズへ進む")]
+        public async Task ResolvingChoice_AppliesChosenBranchAndContinuesTheTurn()
+        {
+            var (gameID, state) = await StartBeforeOpponentsDrawPhase();
+            await Act(gameID, 2, ActionType.EndPhase, new object());
+
+            var result = await Act(gameID, 1, ActionType.ResolvePendingChoice,
+                new ResolvePendingChoiceRequest { ChosenId = StandardOption });
+
+            result.GameOver.Should().BeNull();
+            state.PendingEffectChoice.Should().BeNull();
+            state.Player1InsightPool.Should().Be(StandardInsight);
+            state.Player1Field.Frontend[0]!.FaceUp.Should().BeTrue();
+            state.Player1HasOperated.Should().BeTrue();
+            state.CurrentPhase.Should().Be(Phase.Main);
+            state.ActivePlayer.Should().Be(1);
+        }
+
+        [Fact(DisplayName = "前のターンプレイヤーの手札が上限を超えているとき、破棄を解決するとアクションが完了し相手に選択待ちが積まれる")]
+        public async Task DiscardHand_CompletesAndQueuesChoiceForTheNextActivePlayer()
+        {
+            var (gameID, state) = await StartBeforeOpponentsDrawPhase();
+            foreach (var i in Enumerable.Range(0, 2))
+            {
+                state.Player2Hand.Add(new UndeployedCard { InstanceID = $"extra_{i}", CardID = FillerCardId });
+            }
+
+            var endPhaseResult = await Act(gameID, 2, ActionType.EndPhase, new object());
+            endPhaseResult.ShouldDiscard.Should().BeTrue();
+            state.PendingEffectChoice.Should().BeNull("破棄が済むまでドローフェーズに入らない");
+
+            var discardResult = await Act(gameID, 2, ActionType.DiscardHand,
+                new DiscardHandRequest { CardInstanceIDs = ["extra_0"] });
+
+            discardResult.GameOver.Should().BeNull();
+            state.ActivePlayer.Should().Be(1);
+            state.PendingEffectChoice.Should().NotBeNull();
+            state.PendingEffectChoice!.ChooserPlayerNum.Should().Be(1);
+            state.CurrentPhase.Should().Be(Phase.Draw);
+        }
+    }
+
+    [Trait("対象", "効果でデプロイしたカードの配置時の選択待ち")]
+    public class EffectDeployWithOnSetChoice
+    {
+        private const string DeployerCardId = "TST-0721";
+        private const string ChoiceCardId = "TST-0722";
+        private const string AutopilotOption = "autopilot";
+        private const string StandardOption = "standard";
+
+        private readonly FakeGameRepository _repo = new();
+        private readonly TestCardCache _cc = new();
+        private readonly GameEngine _engine;
+
+        /// <summary>
+        /// デッキから 2 枚のデプロイを要求する起動効果と、配置時に 2 択を要求する
+        /// デプロイターン 2 のリソースを登録したエンジンを用意する。
+        /// </summary>
+        public EffectDeployWithOnSetChoice()
+        {
+            _cc.Add(TestFactory.ComputeCard(cardId: DeployerCardId, mc: 0, deployTurns: 0));
+            _cc.Add(TestFactory.ComputeCard(cardId: ChoiceCardId, mc: 0, deployTurns: 2));
+            var effects = new TestEffectRegistry();
+
+            var deployRequest = new RequestSlotFromRepoOp { Filter = card => card.CardId == ChoiceCardId };
+            effects.Register(
+                DeployerCardId, TriggerType.Ignition,
+                EffectComposer.Compose(deployRequest, deployRequest));
+
+            var branches = new Dictionary<string, List<IEffectOp>>
+            {
+                [AutopilotOption] = [new ReduceDeployTurnsOp(new StaticAmount(1))],
+                [StandardOption] = [],
+            };
+            effects.Register(
+                ChoiceCardId, TriggerType.OnSet,
+                EffectComposer.Compose(new BranchOnChoiceOp(branches)));
+
+            _engine = new GameEngine(_repo, _cc, effects, new InitiativeCatalog([]), new FakeClock());
+        }
+
+        /// <summary>指定プレイヤーのアクションを実行する。</summary>
+        /// <param name="gameID">対象ゲームの ID。</param>
+        /// <param name="playerNum">アクションするプレイヤー番号。</param>
+        /// <param name="actionType">アクション種別。</param>
+        /// <param name="actionData">アクション固有のリクエスト。</param>
+        /// <returns>アクション結果。</returns>
+        private async Task<ActionResult> Act(
+            string gameID, long playerNum, ActionType actionType, object actionData)
+        {
+            var game = await _repo.GetGame(gameID);
+            return await _engine.ProcessAction(game!, playerNum, actionType, actionData);
+        }
+
+        [Fact(DisplayName = "効果で 2 枚のデプロイを要求し 1 枚目のスロットを選ぶと、配置時の選択待ちが積まれ、残りのスロット選択も残る")]
+        public async Task SelectingFirstSlot_QueuesOnSetChoiceWhileSlotSelectionRemains()
+        {
+            var (gameID, state) = await StartWithTwoQueuedDeploys();
+
+            await Act(gameID, 1, ActionType.SelectSlot,
+                new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
+
+            var placed = state.Player1Field.Frontend[1]!;
+            placed.CardID.Should().Be(ChoiceCardId);
+            placed.DeployingTurnsLeft.Should().Be(2, "選択が解決されるまで配置時効果は適用されない");
+            placed.FaceUp.Should().BeFalse();
+            state.PendingEffectChoice.Should().NotBeNull();
+            state.PendingEffectChoice!.Trigger.Should().Be(TriggerType.OnSet);
+            state.PendingEffectChoice.Candidates.Should().BeEquivalentTo(AutopilotOption, StandardOption);
+            state.PendingSlotSelects.Should().ContainSingle("2 枚目のスロット選択は残ったままになる");
+        }
+
+        [Fact(DisplayName = "積まれた配置時の選択を短縮する側で解決すると、残デプロイターンが縮み 2 枚目のスロット選択へ進める")]
+        public async Task ResolvingOnSetChoice_ShortensDeployAndAllowsTheNextSlotSelection()
+        {
+            var (gameID, state) = await StartWithTwoQueuedDeploys();
+            await Act(gameID, 1, ActionType.SelectSlot,
+                new SelectSlotRequest { Zone = Zones.Frontend, Index = 1 });
+
+            await Act(gameID, 1, ActionType.ResolvePendingChoice,
+                new ResolvePendingChoiceRequest { ChosenId = AutopilotOption });
+
+            state.PendingEffectChoice.Should().BeNull();
+            state.Player1Field.Frontend[1]!.DeployingTurnsLeft.Should().Be(1);
+
+            await Act(gameID, 1, ActionType.SelectSlot,
+                new SelectSlotRequest { Zone = Zones.Frontend, Index = 2 });
+
+            state.Player1Field.Frontend[2]!.CardID.Should().Be(ChoiceCardId);
+            state.PendingSlotSelects.Should().BeEmpty();
+        }
+
+        /// <summary>
+        /// 起動効果でデッキから 2 枚のデプロイを要求し、スロット選択が 2 件積まれた盤面を用意する。
+        /// </summary>
+        /// <returns>用意したゲームの ID と、進行に伴って更新され続けるゲーム状態。</returns>
+        private async Task<(string GameID, BattleGameState State)> StartWithTwoQueuedDeploys()
+        {
+            var gameID = await _engine.CreateNewGame(
+                TestFactory.MakeDeck(_cc, DeployerCardId, ChoiceCardId),
+                TestFactory.MakeDeck(_cc, DeployerCardId), firstPlayer: 1);
+
+            var state = (await _repo.GetGameState(gameID))!;
+            state.CurrentTurn = 3;
+            state.ActivePlayer = 1;
+            state.CurrentPhase = Phase.Main;
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: DeployerCardId, instanceId: "r_deployer", faceUp: true);
+            state.Player1Repository =
+            [
+                new UndeployedCard { InstanceID = "repo_c1", CardID = ChoiceCardId },
+                new UndeployedCard { InstanceID = "repo_c2", CardID = ChoiceCardId },
+            ];
+
+            await Act(gameID, 1, ActionType.UseIgnition, new UseIgnitionRequest { InstanceID = "r_deployer" });
+            state.PendingSlotSelects.Should().HaveCount(2);
+
+            return (gameID, state);
+        }
+    }
+
     [Trait("対象", "収益化のターンをまたぐ再使用")]
     public class MonetizeAcrossTurns
     {

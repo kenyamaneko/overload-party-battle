@@ -73,25 +73,22 @@ public static class SelectSlotProcessor
             },
         };
 
+        // 配置時効果が残デプロイターンを 0 まで縮めたときの稼働開始処理は短縮した効果の中で済むため、
+        // 稼働開始処理が二重に走らないよう、配置の時点で稼働前だったかを控える。
+        bool wasDeploying = resource.DeployingTurnsLeft > 0;
+
         var (onSetEvents, onSetChoice) = OnSetFiring.Fire(
             state, game, playerNum, resource.CardID, resource.InstanceID,
             resource, supSource: null, choiceData: null, cc, effects);
         events.AddRange(onSetEvents);
-        if (onSetChoice is not null)
-        {
-            state.PendingEffectChoice = onSetChoice;
-        }
 
-        if (resource.DeployingTurnsLeft > 0)
+        if (wasDeploying)
         {
             PassiveRecalculator.Recalculate(state, game, cc, effects);
         }
         else
         {
             OnSetFiring.RejectDeferredChoiceBeforeDeployCompletion(onSetChoice, resource.CardID);
-
-            // 配置時効果が残デプロイターンを 0 まで縮めた場合もその場で稼働にあたるため、表向きにしてから稼働開始処理へ渡す。
-            resource.FaceUp = true;
 
             var (_, completionEvents) = DeployCompletion.CompleteResource(
                 state, game, playerNum, resource, cc, effects);

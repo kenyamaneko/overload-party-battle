@@ -127,7 +127,7 @@ public class DestroyPlatformOp : IEffectOp
 }
 
 /// <summary>
-/// Reduces the source resource's remaining deploy turns.
+/// 発火元リソースの残デプロイターンを縮め、0 になったらその場で稼働させる。
 /// </summary>
 public class ReduceDeployTurnsOp(IAmountResolver value) : IEffectOp
 {
@@ -136,7 +136,21 @@ public class ReduceDeployTurnsOp(IAmountResolver value) : IEffectOp
     {
         if (ctx.Source is null) { return; }
 
+        // 既に稼働しているリソースには短縮する残ターンがない。
+        if (ctx.Source.DeployingTurnsLeft <= 0) { return; }
+
         long amount = value.Resolve(ctx);
         ctx.Source.DeployingTurnsLeft = Math.Max(0, ctx.Source.DeployingTurnsLeft - amount);
+
+        if (ctx.Source.DeployingTurnsLeft > 0) { return; }
+
+        ctx.Source.FaceUp = true;
+
+        var (_, events) = DeployCompletion.CompleteResource(
+            ctx.State, ctx.Game, ctx.PlayerNum, ctx.Source, ctx.CardCache, ctx.Effects);
+        foreach (var evt in events)
+        {
+            ctx.AddEvent(evt);
+        }
     }
 }

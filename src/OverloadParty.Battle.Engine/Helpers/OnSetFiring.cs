@@ -21,7 +21,7 @@ public static class OnSetFiring
     /// <param name="choiceData">プレイヤーが同じアクションで送ってきた選択値。無ければ null。</param>
     /// <param name="cc">カード定義キャッシュ。</param>
     /// <param name="effects">効果ハンドラのレジストリ。</param>
-    /// <returns>発火したイベントと、効果が選択を要求して中断した場合の選択待ち。</returns>
+    /// <returns>発火したイベントと、効果が選択を要求して中断した場合の選択待ち。選択待ちはゲーム状態にも載せる。</returns>
     public static (List<GameEvent> Events, PendingEffectChoice? PendingChoice) Fire(
         BattleGameState state, Game game, long ownerNum,
         string cardId, string instanceId,
@@ -52,6 +52,12 @@ public static class OnSetFiring
             EffectInstanceId = instanceId,
         });
 
+        // 呼び出し側が載せ忘れると選択待ちが黙って消えるため、ゲーム状態への反映は発火元で行う。
+        if (result.PendingChoice is not null)
+        {
+            state.PendingEffectChoice = result.PendingChoice;
+        }
+
         return (result.Events, result.PendingChoice);
     }
 
@@ -65,7 +71,7 @@ public static class OnSetFiring
     {
         if (onSetChoice is null) { return; }
 
-        // TODO(#172): 配置時の選択待ちを跨いで稼働開始処理を再開できるようにする。
+        // TODO(#281): 配置時の選択待ちを跨いで稼働開始処理を再開できるようにする。
         throw new InvalidOperationException(
             $"deferred on_set choice for {cardId} cannot suspend a deployment that completes in the same action (not yet supported)");
     }

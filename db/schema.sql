@@ -115,6 +115,7 @@ CREATE TABLE battle.game_states (
   next_deploy_order_seq BIGINT NOT NULL,             -- デプロイ順発番用シーケンス
   pending_slot_selects JSONB NOT NULL,               -- 効果デプロイのスロット選択待ちキュー
   pending_effect_choice JSONB,                       -- 効果の選択待ち状態（NULL=待ちなし）
+  pending_deploy_completions JSONB NOT NULL,         -- 稼働開始処理が済んでいないカードのインスタンスID（DeployOrder 昇順）
   updated_at           TIMESTAMPTZ NOT NULL DEFAULT now() -- 更新日時
 );
 CREATE TRIGGER trg_game_states_updated_at BEFORE UPDATE ON battle.game_states FOR EACH ROW EXECUTE FUNCTION battle.update_updated_at();
