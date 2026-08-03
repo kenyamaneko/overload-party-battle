@@ -184,6 +184,109 @@ public class NpcAiIntegrationTests
     }
 
     // ═══════════════════════════════════════════════════════════════
+    //  メインフェーズ: 即時効果カード
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact(DisplayName = "手札にストラテジーがあるとき、そのストラテジーをプレイする")]
+    public void MainPhase_StrategyInHand_IsPlayed()
+    {
+        var config = _configs["SHE-easy"];
+        var ai = new NpcAi(config, _cc, _effects);
+
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Hand = [new() { InstanceID = "h_strategy", CardID = "NT-0010" }];
+        state.Player1Budget = 5000;
+
+        var clientState = BuildClientState(state, 1);
+
+        var actions = ai.DecideMainPhaseActions(clientState);
+
+        actions.Should().Contain(a =>
+            a.ActionType == ActionTypes.PlayCard
+            && ((PlayCardRequest)a.Data).CardInstanceID == "h_strategy");
+    }
+
+    [Fact(DisplayName = "サポートゾーンが全て埋まっているとき、手札のストラテジーをプレイする")]
+    public void MainPhase_SupportZoneFull_StrategyIsPlayed()
+    {
+        var config = _configs["SHE-easy"];
+        var ai = new NpcAi(config, _cc, _effects);
+
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Hand = [new() { InstanceID = "h_strategy", CardID = "NT-0010" }];
+        state.Player1Budget = 5000;
+        foreach (int slot in Enumerable.Range(0, state.Player1Field.Support.Capacity))
+        {
+            state.Player1Field.Support[slot] = new DeployedSupport
+            {
+                InstanceID = $"sup_{slot}",
+                CardID = "SH-0012",
+                FaceUp = true,
+            };
+        }
+
+        var clientState = BuildClientState(state, 1);
+
+        var actions = ai.DecideMainPhaseActions(clientState);
+
+        actions.Should().Contain(a =>
+            a.ActionType == ActionTypes.PlayCard
+            && ((PlayCardRequest)a.Data).CardInstanceID == "h_strategy");
+    }
+
+    [Fact(DisplayName = "同じターンにストラテジーとプラットフォームをプレイするとき、プラットフォームは先頭のサポート枠に置かれる")]
+    public void MainPhase_StrategyWithPlatform_PlatformTakesFirstSupportSlot()
+    {
+        var config = _configs["SHE-easy"];
+        var ai = new NpcAi(config, _cc, _effects);
+
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Hand =
+        [
+            new() { InstanceID = "h_strategy", CardID = "NT-0010" },
+            new() { InstanceID = "h_platform", CardID = "SH-0012" },
+        ];
+        state.Player1Budget = 5000;
+
+        var clientState = BuildClientState(state, 1);
+
+        var plays = ai.DecideMainPhaseActions(clientState)
+            .Where(a => a.ActionType == ActionTypes.PlayCard)
+            .Select(a => (PlayCardRequest)a.Data)
+            .ToList();
+
+        plays.Should().Contain(r => r.CardInstanceID == "h_strategy");
+        var platform = plays.Should().ContainSingle(r => r.CardInstanceID == "h_platform").Subject;
+        platform.Zone.Should().Be("support");
+        platform.Index.Should().Be(0);
+    }
+
+    [Theory(DisplayName = "インシデントは 1 ターンに 1 枚しか使わない")]
+    [InlineData("このターンにまだインシデントを使っていないとき、手札のインシデントをプレイする", false, true)]
+    [InlineData("このターンに既にインシデントを使っているとき、手札のインシデントをプレイしない", true, false)]
+    public void MainPhase_IncidentOncePerTurn(string _, bool incidentAlreadyPlayed, bool isPlayed)
+    {
+        var config = _configs["Sugar-easy"];
+        var ai = new NpcAi(config, _cc, _effects);
+
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Hand = [new() { InstanceID = "h_incident", CardID = "NT-0013" }];
+        state.Player1Budget = 5000;
+        state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+            cardId: "SH-0001", instanceId: "opp_target");
+        state.SetIncidentPlayedThisTurn(1, incidentAlreadyPlayed);
+
+        var clientState = BuildClientState(state, 1);
+
+        var actions = ai.DecideMainPhaseActions(clientState);
+
+        actions.Any(a =>
+            a.ActionType == ActionTypes.PlayCard
+            && ((PlayCardRequest)a.Data).CardInstanceID == "h_incident")
+            .Should().Be(isPlayed);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
     //  メインフェーズ: スケールアップは config のインスタンスファミリーを使う
     // ═══════════════════════════════════════════════════════════════
 
