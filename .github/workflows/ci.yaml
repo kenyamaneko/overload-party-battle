@@ -127,8 +127,10 @@ jobs:
         with:
           role: reader
           formats: "nuget"
+      # TreatNoTestsAsError が無いと、テストクラスの改名で filter が 0 件になったとき
+      # 検査を 1 件も実行せずに成功する。
       - name: Verify card master data effects are implemented
-        run: dotnet test tests/OverloadParty.Battle.Engine.Tests --filter "FullyQualifiedName~MasterDataEffectLoadTests"
+        run: dotnet test tests/OverloadParty.Battle.Engine.Tests --filter "FullyQualifiedName~MasterDataEffectLoadTests" -- RunConfiguration.TreatNoTestsAsError=true
         env:
           CARDS_JSON_PATH: ${{ github.workspace }}/card-master-data/data/cache/cards_gen.json
           INITIATIVES_JSON_PATH: ${{ github.workspace }}/card-master-data/data/cache/initiatives_gen.json
