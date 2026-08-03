@@ -33,9 +33,8 @@ public static class DeployCompletion
 
         if (cancelled)
         {
-            var field = state.GetField(ownerNum);
-            FieldHelpers.RemoveResourceFromField(field, resource.InstanceID);
-            CardMoveHelpers.AddToTrash(state, ownerNum, resource.CardID, resource.InstanceID, resource.ArtNo);
+            // キャンセルは破壊ではないため SLA ペナルティを伴わない。
+            ResourceHelpers.MoveResourceToTrash(state, ownerNum, state.GetField(ownerNum), resource);
             PassiveRecalculator.Recalculate(state, game, cc, effects);
             return (true, events);
         }

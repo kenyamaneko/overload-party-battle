@@ -585,6 +585,7 @@ public class GameEngineTests
         private const string SlowDeployCardId = "TST-0003";
         private const string WatcherCardId = "TST-0400";
         private const string AttackerCardId = "TST-0005";
+        private const string AttachmentCardId = "TST-0300";
 
         private readonly FakeGameRepository _repo = new();
         private readonly TestCardCache _cc = new();
@@ -598,6 +599,7 @@ public class GameEngineTests
             _cc.Add(TestFactory.ComputeCard(cardId: SlowDeployCardId, mc: 0, deployTurns: 1, name: "SlowCompute"));
             _cc.Add(TestFactory.ReactiveCard(cardId: WatcherCardId));
             _cc.Add(TestFactory.ComputeCard(cardId: AttackerCardId, mc: 0, tp: 2000, deployTurns: 0, name: "StrongCompute"));
+            _cc.Add(TestFactory.AttachmentCard(cardId: AttachmentCardId));
             _engine = new GameEngine(_repo, _cc, _effects, new InitiativeCatalog([]), new FakeClock());
         }
 
@@ -804,6 +806,52 @@ public class GameEngineTests
             result.GameOver.Should().NotBeNull();
             result.GameOver!.WinnerNum.Should().Be(2);
             result.GameOver.Reason.Should().Be(WinReason.SystemDown.ToWireString());
+        }
+
+        [Fact(DisplayName = "カウントダウン完了のデプロイが相手リアクティブでキャンセルされると、装備中のアタッチメントもトラッシュへ送られる")]
+        public async Task CancelledCountdownDeploy_TrashesAttachmentsToo()
+        {
+            _effects.Register(WatcherCardId, TriggerType.OnDeploy,
+                _ => new EffectResult { ShouldCancelAction = true });
+            var (gameID, state) = await StartWithIgnitionSource(DeployCardId);
+            state.Player1Repository =
+            [
+                new UndeployedCard { InstanceID = "r_1", CardID = DeployCardId },
+                new UndeployedCard { InstanceID = "r_2", CardID = DeployCardId },
+                new UndeployedCard { InstanceID = "r_3", CardID = DeployCardId },
+            ];
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "watcher",
+                CardID = WatcherCardId,
+                DeployOrder = 1,
+            };
+
+            var slowCardInstanceId = TestFactory.ReplaceFirstHandCard(state, 1, SlowDeployCardId);
+            await Act(gameID, 1, ActionType.PlayCard, new PlayCardRequest
+            {
+                CardInstanceID = slowCardInstanceId,
+                Zone = Zones.Frontend,
+                Index = 0,
+            });
+            string deployingInstanceId = state.Player1Field.Frontend[0]!.InstanceID;
+
+            var attachmentInstanceId = TestFactory.ReplaceFirstHandCard(state, 1, AttachmentCardId);
+            await Act(gameID, 1, ActionType.PlayCard, new PlayCardRequest
+            {
+                CardInstanceID = attachmentInstanceId,
+                Zone = Zones.Support,
+                Index = 1,
+                TargetInstanceID = deployingInstanceId,
+            });
+
+            await EndTurn(gameID, 1);
+            await EndTurn(gameID, 2);
+
+            state.Player1Field.Frontend[0].Should().BeNull();
+            state.Player1Field.Support[1].Should().BeNull();
+            state.Player1Trash.Should().Contain(c => c.CardID == SlowDeployCardId);
+            state.Player1Trash.Should().Contain(c => c.CardID == AttachmentCardId);
         }
 
         [Fact(DisplayName = "解決までに空きスロットが埋まった選択待ちは不発になり、取り出したカードがデッキに戻る")]
