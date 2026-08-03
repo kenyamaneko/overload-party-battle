@@ -96,12 +96,31 @@ public class UndeployedCard
 }
 
 /// <summary>
-/// Holds a resource that has been removed from hand/repo but not yet placed on the field,
-/// awaiting the player's slot selection.
+/// 効果でデプロイするカードと、その配置先スロットの選択待ちを表す。
+/// カードは選択が解決されるまで元の領域に残るため、不発に終わっても戻す処理は要らない。
 /// </summary>
 public class AwaitingSlotSelect
 {
     public long PlayerNum { get; set; }
-    public DeployedResource Resource { get; set; } = null!;
-    public List<string> ValidZones { get; set; } = [];
+
+    /// <summary>配置するカードが置かれている領域 (<see cref="SlotSelectSources"/> の値)。</summary>
+    public string SourceZone { get; set; } = "";
+
+    /// <summary>配置するカードのインスタンス ID。領域内のカードを一意に指す。</summary>
+    public string CardInstanceID { get; set; } = "";
+
+    /// <summary>配置するリソースに上書きする可用性。0 ならカード定義の値を使う。</summary>
+    public long OverrideAV { get; set; }
+}
+
+/// <summary>
+/// スロット選択待ちのカードが置かれている領域 (<see cref="AwaitingSlotSelect.SourceZone"/> の値) の定数。
+/// </summary>
+public static class SlotSelectSources
+{
+    /// <summary>手札。</summary>
+    public const string Hand = "hand";
+
+    /// <summary>デッキ。</summary>
+    public const string Repository = "repository";
 }

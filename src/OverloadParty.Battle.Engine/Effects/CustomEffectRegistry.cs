@@ -36,6 +36,21 @@ public class CustomEffectRegistry
 
     private static void NoOp(OpContext _) { }
 
+    /// <summary>リソースを置くスロットを要求するカスタム効果の名前。</summary>
+    private static readonly HashSet<string> PlacementSlotRequiringEffects =
+    [
+        CustomEffects.DeploySameTypeFromHand,
+        CustomEffects.CloudShift,
+    ];
+
+    /// <summary>
+    /// カスタム効果がリソースを置くスロットを要求するかを返します。
+    /// </summary>
+    /// <param name="customName">カスタム効果名。</param>
+    /// <returns>配置スロットを要求するなら true。</returns>
+    public static bool RequiresPlacementSlot(string customName) =>
+        PlacementSlotRequiringEffects.Contains(customName);
+
     /// <summary>
     /// meta から必須パラメータ 1 件を読み出し、それを束縛した効果関数を返すファクトリを組む。
     /// </summary>

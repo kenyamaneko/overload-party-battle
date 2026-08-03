@@ -150,7 +150,7 @@ public class EventTriggerResolutionTests
             order.Should().Equal("watcher", "deploy-self");
         }
 
-        [Fact(DisplayName = "リアクティブにデプロイをキャンセルされると、そのカード自身のデプロイ時効果は動かずリソースがトラッシュへ送られる")]
+        [Fact(DisplayName = "リアクティブにデプロイをキャンセルされると、そのカード自身のデプロイ時効果は動かずリソースがトラッシュへ送られ、稼働実績も立たない")]
         public void CancelledByWatcher_SkipsDeployEffectAndTrashesResource()
         {
             var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
@@ -172,6 +172,7 @@ public class EventTriggerResolutionTests
             deployEffectFired.Should().BeFalse("a cancelled deploy never runs the deployed card's own effect");
             state.Player1Field.Frontend[0].Should().BeNull("a cancelled deploy removes the resource");
             state.Player1Trash.Should().Contain(c => c.CardID == "DEPLOYED");
+            state.Player1HasOperated.Should().BeFalse("a cancelled deploy never happened");
         }
     }
 

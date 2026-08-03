@@ -65,6 +65,16 @@ public static class FieldHelpers
     }
 
     /// <summary>
+    /// リソースを置ける空きスロットがフロントエンドかバックエンドにあるかを判定する。
+    /// </summary>
+    /// <param name="field">対象フィールド。</param>
+    /// <returns>空きスロットが 1 つ以上あれば true。</returns>
+    public static bool HasEmptyResourceSlot(Field field)
+    {
+        return field.Frontend.FindEmptySlot() >= 0 || field.Backend.FindEmptySlot() >= 0;
+    }
+
+    /// <summary>
     /// Check if a resource has a specific temporary effect.
     /// </summary>
     /// <param name="resource">対象リソース。</param>

@@ -460,18 +460,20 @@ public class GameServiceTests
 
             var state = await _repo.GetGameState(game.GameID);
             state!.ActivePlayer = 1;
+            state.Player2Repository.Add(new UndeployedCard { InstanceID = "npc_pending", CardID = "TST-0001" });
             state.PendingSlotSelects.Add(new AwaitingSlotSelect
             {
                 PlayerNum = 2,
-                Resource = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "npc_pending"),
-                ValidZones = ["frontend_0"],
+                SourceZone = SlotSelectSources.Repository,
+                CardInstanceID = "npc_pending",
             });
 
             await _svc.AdvanceNpcTurn(game.GameID);
 
             var after = await _repo.GetGameState(game.GameID);
             after!.PendingSlotSelects.Should().BeEmpty();
-            after.Player2Field.Frontend[0]!.InstanceID.Should().Be("npc_pending");
+            after.Player2Repository.Should().NotContain(c => c.InstanceID == "npc_pending");
+            after.Player2Field.Frontend[0]!.CardID.Should().Be("TST-0001");
         }
 
         [Fact(DisplayName = "人間のアクションで NPC 側にスロット選択が積まれたとき、NPC の進行が必要だと返る")]

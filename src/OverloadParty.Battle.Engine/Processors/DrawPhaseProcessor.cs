@@ -45,7 +45,7 @@ public static class DrawPhaseProcessor
         var playerNum = state.ActivePlayer;
         var field = state.GetField(playerNum);
 
-        // カウントダウン完了 = 表向き稼働状態でフィールドに入った瞬間。ここで on_deploy を発火する。
+        // カウントダウン完了 = 表向き稼働状態でフィールドに入った瞬間。ここで稼働開始処理を行う。
         foreach (var resource in FieldHelpers.AllResources(field))
         {
             if (resource.DeployingTurnsLeft > 0)
@@ -54,8 +54,8 @@ public static class DrawPhaseProcessor
                 if (resource.DeployingTurnsLeft <= 0)
                 {
                     resource.FaceUp = true;
-                    state.SetHasOperated(playerNum, true);
-                    FireOnDeploy(state, game, playerNum, cc, effects, source: resource, supSource: null);
+                    DeployCompletion.CompleteResource(state, game, playerNum, resource, cc, effects);
+                    RejectDeferredChoice(state, resource.CardID);
                 }
             }
         }
@@ -67,7 +67,8 @@ public static class DrawPhaseProcessor
                 support.DeployingTurnsLeft--;
                 if (support.DeployingTurnsLeft <= 0)
                 {
-                    FireOnDeploy(state, game, playerNum, cc, effects, source: null, supSource: support);
+                    DeployCompletion.CompleteSupport(state, game, playerNum, support, cc, effects);
+                    RejectDeferredChoice(state, support.CardID);
                 }
             }
         }
@@ -76,37 +77,15 @@ public static class DrawPhaseProcessor
     }
 
     /// <summary>
-    /// デプロイのカウントダウン完了で稼働したカード自身の on_deploy 効果を発火します。
+    /// 稼働開始処理が選択待ちに遷移していたら、支えられない状態として拒否します。
     /// </summary>
-    static void FireOnDeploy(
-        BattleGameState state, Game game, long playerNum, ICardCache cc, IEffectRegistry effects,
-        DeployedResource? source, DeployedSupport? supSource)
+    static void RejectDeferredChoice(BattleGameState state, string cardId)
     {
-        string cardId = source?.CardID ?? supSource!.CardID;
-        if (!effects.Has(cardId, TriggerType.OnDeploy)) { return; }
+        if (state.PendingEffectChoice is null) { return; }
 
-        var handler = effects.Get(cardId, TriggerType.OnDeploy)!;
-        var result = handler(new EffectContext
-        {
-            State = state,
-            Game = game,
-            PlayerNum = playerNum,
-            Source = source,
-            Target = source,
-            SupSource = supSource,
-            EventOwnerNum = playerNum,
-            CardCache = cc,
-            Effects = effects,
-            Trigger = TriggerType.OnDeploy,
-            EffectCardId = cardId,
-            EffectInstanceId = source?.InstanceID ?? supSource!.InstanceID,
-        });
-        if (result.PendingChoice is not null)
-        {
-            // TODO(#130): on_deploy の発火タイミングを配置時/稼働時に分割し、稼働時に選択を要求する効果
-            // のみがここに到達するようにした上で、resumable DrawPhase で中断・再開を支える。
-            throw new InvalidOperationException(
-                $"deferred on_deploy choice for {cardId} requires resumable draw phase (not yet supported)");
-        }
+        // TODO(#130): on_deploy の発火タイミングを配置時/稼働時に分割し、稼働時に選択を要求する効果
+        // のみがここに到達するようにした上で、resumable DrawPhase で中断・再開を支える。
+        throw new InvalidOperationException(
+            $"deferred on_deploy choice for {cardId} requires resumable draw phase (not yet supported)");
     }
 }

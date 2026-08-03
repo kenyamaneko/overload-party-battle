@@ -1,6 +1,7 @@
 using System.Linq;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
+using OverloadParty.Battle.Engine.Helpers;
 using OverloadParty.Battle.Models;
 
 using GD = OverloadParty.GameState;
@@ -67,7 +68,7 @@ public static class GameStateView
             TrashCount = myTrash.Count,
             Trash = myTrash.Select(MapUndeployedCard).ToList(),
             AvailableActions = availableActions,
-            PendingSlotSelect = MapPendingSlotSelect(state, playerNum),
+            PendingSlotSelect = MapPendingSlotSelect(state, playerNum, cc),
         };
 
         var oppView = new GD.OpponentView
@@ -97,14 +98,21 @@ public static class GameStateView
         };
     }
 
-    private static GD.PendingSlotSelectView? MapPendingSlotSelect(BattleGameState state, long playerNum)
+    private static GD.PendingSlotSelectView? MapPendingSlotSelect(BattleGameState state, long playerNum, ICardCache cc)
     {
         var pending = state.PendingSlotSelects.FirstOrDefault(p => p.PlayerNum == playerNum);
         if (pending is null) { return null; }
+
+        // カードはまだ手札やデッキにあるので、配置後の姿をカード定義から組み立てて見せる。
+        var sourceCard = SlotSelectQueue.FindCard(state, pending);
+        var cardDef = cc.MustGet(sourceCard.CardID);
+        var preview = SlotSelectQueue.BuildResource(
+            pending, cardDef, sourceCard, sourceCard.InstanceID, state.CurrentTurn);
+
         return new GD.PendingSlotSelectView
         {
-            Resource = MapResource(pending.Resource),
-            ValidZones = pending.ValidZones.ToList(),
+            Resource = MapResource(preview),
+            ValidZones = ResourceHelpers.BuildValidZones(state.GetField(playerNum), cardDef),
         };
     }
 

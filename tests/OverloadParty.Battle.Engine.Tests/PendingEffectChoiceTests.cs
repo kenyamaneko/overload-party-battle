@@ -167,7 +167,7 @@ public class PendingEffectChoiceTests
             return (state, cc, effects);
         }
 
-        [Fact(DisplayName = "選択を解決すると選択したカードが手札からデプロイされ選択待ちが解消される")]
+        [Fact(DisplayName = "選択を解決すると選択したカードが配置先の選択待ちへ進み、効果中選択が解消される")]
         public void Resolve_AppliesChoiceData_DeploysChosenCard()
         {
             var (state, cc, effects) = Suspended();
@@ -176,9 +176,10 @@ public class PendingEffectChoiceTests
             ResolvePendingChoiceProcessor.Process(state, TestFactory.MakeGame(), 1, req, cc, effects, new FakeClock());
 
             state.PendingEffectChoice.Should().BeNull();
-            state.Player1Hand.Should().NotContain(c => c.InstanceID == "h_1");
             var pendingSlot = state.PendingSlotSelects.Should().ContainSingle().Subject;
-            pendingSlot.Resource.CardID.Should().Be(HandDummyCardId);
+            pendingSlot.CardInstanceID.Should().Be("h_1");
+            state.Player1Hand.Should().Contain(c => c.InstanceID == "h_1",
+                "スロットが決まるまでカードは手札に残る");
         }
 
         [Fact(DisplayName = "選択より前にバジェットを増やす手順がある効果は、選択を解決してもバジェットが再び増えない")]

@@ -112,7 +112,17 @@ public class DeployFromRepoOp : IEffectOp
         if (match is null) { return; }
 
         var field = ctx.GetField(ctx.PlayerNum);
-        ResourceHelpers.DeployFromRepo(ctx.State, ctx.PlayerNum, field, match, OverrideAV, ctx.CardCache);
+        var instance = ResourceHelpers.DeployFromRepo(
+            ctx.State, ctx.PlayerNum, field, match, OverrideAV, ctx.CardCache);
+
+        if (!instance.FaceUp) { return; }
+
+        var (_, events) = DeployCompletion.CompleteResource(
+            ctx.State, ctx.Game, ctx.PlayerNum, instance, ctx.CardCache, ctx.Effects);
+        foreach (var evt in events)
+        {
+            ctx.AddEvent(evt);
+        }
     }
 }
 

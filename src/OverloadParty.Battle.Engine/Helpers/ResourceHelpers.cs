@@ -146,7 +146,8 @@ public static class ResourceHelpers
     /// <param name="field">配置先のフィールド。</param>
     /// <param name="cardId">手札から配置するカードの ID。</param>
     /// <param name="cc">カード定義キャッシュ。</param>
-    public static void DeployFromHand(BattleGameState state, long playerNum, Field field, string cardId, ICardCache cc)
+    /// <returns>配置したリソースインスタンス。</returns>
+    public static DeployedResource DeployFromHand(BattleGameState state, long playerNum, Field field, string cardId, ICardCache cc)
     {
         var hand = state.GetHand(playerNum);
         int handIdx = hand.FindIndex(c => c.CardID == cardId);
@@ -161,6 +162,7 @@ public static class ResourceHelpers
         var card = cc.MustGet(cardId);
         var instance = CreateDeployedResource(card, state.NextInstanceID(), state.CurrentTurn, handCard.ArtNo);
         PlaceResourceOnField(field, instance, card);
+        return instance;
     }
 
     /// <summary>
@@ -172,7 +174,8 @@ public static class ResourceHelpers
     /// <param name="repoCard">配置するリポジトリのカード。</param>
     /// <param name="overrideAV">配置リソースに上書きする可用性。0 ならカード定義の値を使う。</param>
     /// <param name="cc">カード定義キャッシュ。</param>
-    public static void DeployFromRepo(BattleGameState state, long playerNum, Field field, UndeployedCard repoCard, long overrideAV, ICardCache cc)
+    /// <returns>配置したリソースインスタンス。</returns>
+    public static DeployedResource DeployFromRepo(BattleGameState state, long playerNum, Field field, UndeployedCard repoCard, long overrideAV, ICardCache cc)
     {
         var repo = state.GetRepository(playerNum);
         repo.Remove(repoCard);
@@ -187,6 +190,7 @@ public static class ResourceHelpers
         }
 
         PlaceResourceOnField(field, instance, card);
+        return instance;
     }
 
     /// <summary>

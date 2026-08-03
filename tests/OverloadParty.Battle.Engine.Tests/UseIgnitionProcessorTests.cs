@@ -429,8 +429,8 @@ public class UseIgnitionProcessorTests
             UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1, IgniteRequest(), cc, registry);
 
             state.PendingSlotSelects.Should().ContainSingle()
-                .Which.Resource.CardID.Should().Be(DeployedFromHandCardId);
-            state.Player1Hand.Should().BeEmpty();
+                .Which.CardInstanceID.Should().Be("h_1");
+            state.Player1Hand.Should().ContainSingle("スロットが決まるまでカードは手札に残る");
         }
     }
 

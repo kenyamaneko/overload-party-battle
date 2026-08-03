@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.Json;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Effects.Ops;
@@ -1855,6 +1856,99 @@ public class AvailableActionsTests
             var actions = Enumerate(StateWithDeckTopChoice(), NonChooser, new TestCardCache());
 
             actions.Should().BeEmpty();
+        }
+    }
+
+    [Trait("対象", "デプロイ先を要する起動効果の提示")]
+    public class DeployIgnitionSlotAvailability : Base
+    {
+        private const string SourceCardId = "TST-0009";
+        private const string DeployCardId = "TST-0001";
+
+        /// <summary>デッキからのデプロイを起動効果に持つ発動元を、フロントエンドに置いた状態を作る。</summary>
+        /// <returns>カードキャッシュ・効果レジストリ・ゲーム状態・発動元のフィールド。</returns>
+        private static (TestCardCache Cc, EffectRegistry Effects, BattleGameState State, Field MyField) Setup()
+        {
+            var cc = new TestCardCache();
+            cc.Add(TestFactory.ComputeCard(cardId: SourceCardId));
+            cc.Add(TestFactory.ComputeCard(cardId: DeployCardId));
+            var effects = new EffectRegistry();
+            effects.RegisterComposed(SourceCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: SourceCardId, instanceId: "src", faceUp: true);
+            state.Player1Repository.Add(new UndeployedCard { InstanceID = "r_1", CardID = DeployCardId });
+
+            return (cc, effects, state, state.Player1Field);
+        }
+
+        [Fact(DisplayName = "空きスロットがあるとき、デプロイ先を要する起動効果が候補になる")]
+        public void EmptySlotExists_DeployIgnitionIsOffered()
+        {
+            var (cc, effects, state, myField) = Setup();
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, effects);
+
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition);
+        }
+
+        [Fact(DisplayName = "空きスロットが 1 つも無いとき、デプロイ先を要する起動効果は候補にならない")]
+        public void NoEmptySlot_DeployIgnitionIsNotOffered()
+        {
+            var (cc, effects, state, myField) = Setup();
+            FillAllSlots(myField);
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, effects);
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
+        }
+
+        [Fact(DisplayName = "空きスロットが 1 つも無いとき、カスタム効果で移設する起動効果も候補にならない")]
+        public void NoEmptySlot_CustomDeployIgnitionIsNotOffered()
+        {
+            var cc = new TestCardCache();
+            var sourceCard = TestFactory.ComputeCard(cardId: SourceCardId);
+            sourceCard.Effects =
+            [
+                new EffectDef
+                {
+                    Trigger = TriggerTypes.Ignition,
+                    Custom = CustomEffects.CloudShift,
+                    Meta = new Dictionary<string, JsonElement>(),
+                },
+            ];
+            cc.Add(sourceCard);
+            cc.Add(TestFactory.ComputeCard(cardId: DeployCardId));
+
+            var effects = new EffectRegistry();
+            EffectYamlLoader.LoadEffectSources([sourceCard], effects, new CustomEffectRegistry());
+
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
+            var myField = state.Player1Field;
+            myField.Frontend[0] = TestFactory.MakeResource(cardId: SourceCardId, instanceId: "src", faceUp: true);
+            FillAllSlots(myField);
+
+            var actions = AvailableActions.GetAllAvailableActions(
+                state, 1, myField, TestFactory.MakeField(), [], 5000, 100, cc, effects);
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
+        }
+
+        /// <summary>発動元を残したまま、フィールドの残りスロットを全て埋める。</summary>
+        /// <param name="field">埋める対象のフィールド。</param>
+        private static void FillAllSlots(Field field)
+        {
+            for (int i = 1; i < BattleConstants.SlotsPerZone; i++)
+            {
+                field.Frontend[i] = TestFactory.MakeResource(cardId: DeployCardId, instanceId: $"fe_{i}");
+            }
+            for (int i = 0; i < BattleConstants.SlotsPerZone; i++)
+            {
+                field.Backend[i] = TestFactory.MakeResource(cardId: DeployCardId, instanceId: $"be_{i}");
+            }
         }
     }
 }
