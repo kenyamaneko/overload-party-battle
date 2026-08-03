@@ -13,25 +13,25 @@ public class CustomEffectRegistry
     /// <summary>cancel_nth_deploy が無効化する、そのターンの何体目のデプロイか。</summary>
     private const int CancelNthDeployTargetCount = 3;
 
-    private readonly Dictionary<string, Func<Dictionary<string, JsonElement>?, Action<OpContext>?>> _factories = new()
+    private readonly Dictionary<string, Func<string, Dictionary<string, JsonElement>?, Action<OpContext>>> _factories = new()
     {
         // Phase 2-2: 既存カスタム（EffectInit から移行）
         [CustomEffects.ChainAttackBonus] = RequireMeta("damage", element => element.GetInt64(), ChainAttackBonus),
-        [CustomEffects.DeploySameTypeFromHand] = _ => DeploySameTypeFromHand,
-        [CustomEffects.DisableHighTpDeploy] = _ => DisableHighTpDeploy,
-        [CustomEffects.CancelNthDeploy] = _ => CancelNthDeploy,
-        [CustomEffects.RedirectAttack] = _ => RedirectAttack,
+        [CustomEffects.DeploySameTypeFromHand] = (_, _) => DeploySameTypeFromHand,
+        [CustomEffects.DisableHighTpDeploy] = (_, _) => DisableHighTpDeploy,
+        [CustomEffects.CancelNthDeploy] = (_, _) => CancelNthDeploy,
+        [CustomEffects.RedirectAttack] = (_, _) => RedirectAttack,
 
         // Phase 2-3: 新規カスタム
         [CustomEffects.CloudShift] = BuildCloudShift,
-        [CustomEffects.SpotExpiry] = BuildSpotExpiry,
-        [CustomEffects.Reattach] = _ => Reattach,
-        [CustomEffects.ScaleToZero] = _ => ScaleToZero,
+        [CustomEffects.SpotExpiry] = (_, meta) => BuildSpotExpiry(meta),
+        [CustomEffects.Reattach] = (_, _) => Reattach,
+        [CustomEffects.ScaleToZero] = (_, _) => ScaleToZero,
         [CustomEffects.KeepOneFromDeckTop] = RequireMeta("peek", element => element.GetInt32(), KeepOneFromDeckTop),
 
         // target_shield はカード定義を passive に検査する marker（FieldHelpers.IsTargetShielded）。
         // deploy trigger では副作用なしだが、登録しておかないと loader が unknown custom として throw する。
-        [CustomEffects.TargetShield] = _ => NoOp,
+        [CustomEffects.TargetShield] = (_, _) => NoOp,
     };
 
     private static void NoOp(OpContext _) { }
@@ -40,15 +40,16 @@ public class CustomEffectRegistry
     /// meta から必須パラメータ 1 件を読み出し、それを束縛した効果関数を返すファクトリを組む。
     /// </summary>
     /// <typeparam name="T">効果が受け取るパラメータの型。</typeparam>
-    /// <param name="key">meta から読むキー。</param>
+    /// <param name="key">meta から読むキー。欠けている場合は読み込みを失敗させる。</param>
     /// <param name="read">JsonElement を効果が要する型へ変換する関数。</param>
     /// <param name="effect">読み出した値を適用する効果。</param>
-    /// <returns>meta を受け取り効果関数を返すファクトリ。meta に該当キーが無ければ null を返す。</returns>
-    private static Func<Dictionary<string, JsonElement>?, Action<OpContext>?> RequireMeta<T>(
+    /// <returns>カスタム効果名と meta を受け取り効果関数を返すファクトリ。</returns>
+    private static Func<string, Dictionary<string, JsonElement>?, Action<OpContext>> RequireMeta<T>(
         string key, Func<JsonElement, T> read, Action<OpContext, T> effect) =>
-        meta => meta is not null && meta.TryGetValue(key, out var element)
+        (customName, meta) => meta is not null && meta.TryGetValue(key, out var element)
             ? octx => effect(octx, read(element))
-            : null;
+            : throw new InvalidOperationException(
+                $"Custom effect {customName} requires meta key: {key}");
 
     /// <summary>
     /// Builds a custom effect function for the given name and meta parameters.
@@ -63,7 +64,7 @@ public class CustomEffectRegistry
         {
             return null;
         }
-        return factory(meta);
+        return factory(customName, meta);
     }
 
     // ================================================================
@@ -316,11 +317,11 @@ public class CustomEffectRegistry
     /// Deploy a resource from hand matching faction/card_type filter, then self-destruct the source.
     /// meta: { faction, card_type, deploy_discount }
     /// </summary>
-    private static Action<OpContext>? BuildCloudShift(Dictionary<string, JsonElement>? meta)
+    private static Action<OpContext> BuildCloudShift(string customName, Dictionary<string, JsonElement>? meta)
     {
         if (meta is null)
         {
-            return null;
+            throw new InvalidOperationException($"Custom effect {customName} requires meta");
         }
 
         string? faction = meta.GetStringOrNull("faction");
@@ -380,7 +381,7 @@ public class CustomEffectRegistry
     /// Self-destruct after N turns since deploy.
     /// meta: { turns }
     /// </summary>
-    private static Action<OpContext>? BuildSpotExpiry(Dictionary<string, JsonElement>? meta)
+    private static Action<OpContext> BuildSpotExpiry(Dictionary<string, JsonElement>? meta)
     {
         int expiryTurns = meta?.GetInt32Or("turns", 2) ?? 2;
 

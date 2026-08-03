@@ -1,0 +1,198 @@
+[
+  {
+    "initiative_id": "IN-0001",
+    "product_id": "PD-0001",
+    "kind": "routine",
+    "name": "物欲刺激",
+    "insight_cost": 400,
+    "effect_text": "相手の表向きリソース 1体につき、相手の Budget を -100 する。",
+    "effect": {
+      "ops": [
+        {
+          "lose_budget": {
+            "target": "opponent",
+            "amount": {
+              "base": 0,
+              "per": {
+                "count": {
+                  "owner": "opponent"
+                },
+                "value": 100
+              }
+            }
+          }
+        }
+      ]
+    },
+    "is_active": true
+  },
+  {
+    "initiative_id": "IN-0002",
+    "product_id": "PD-0001",
+    "kind": "special",
+    "name": "大感謝セール",
+    "insight_cost": 0,
+    "effect_text": "Insightプールの全 Insight を消費し、1.5倍の Budget に変換する。",
+    "effect": {
+      "ops": [
+        {
+          "convert_all_insight": {
+            "rate_percent": 150
+          }
+        }
+      ]
+    },
+    "is_active": true
+  },
+  {
+    "initiative_id": "IN-0003",
+    "product_id": "PD-0002",
+    "kind": "routine",
+    "name": "天候予測",
+    "insight_cost": 150,
+    "effect_text": "相手のサポートゾーンの伏せカード 1枚を選択して確認する。",
+    "effect": {
+      "ops": [
+        {
+          "peek_reactive": {}
+        }
+      ]
+    },
+    "is_active": true
+  },
+  {
+    "initiative_id": "IN-0004",
+    "product_id": "PD-0002",
+    "kind": "special",
+    "name": "台風",
+    "insight_cost": 400,
+    "effect_text": "相手の表向きリソース全てに 700 ダメージを与える。",
+    "effect": {
+      "ops": [
+        {
+          "deal_damage": {
+            "selector": {
+              "owner": "opponent"
+            },
+            "amount": 700
+          }
+        },
+        {
+          "destroy_check": {
+            "target": "opponent"
+          }
+        }
+      ]
+    },
+    "is_active": true
+  },
+  {
+    "initiative_id": "IN-0005",
+    "product_id": "PD-0003",
+    "kind": "routine",
+    "name": "焼きたてのお菓子",
+    "insight_cost": 300,
+    "effect_text": "味方リソース 1体の可用性を 300 回復する。",
+    "effect": {
+      "ops": [
+        {
+          "heal_damage": {
+            "selector": {
+              "owner": "myself",
+              "pick": "choice"
+            },
+            "amount": 300
+          }
+        }
+      ]
+    },
+    "is_active": true
+  },
+  {
+    "initiative_id": "IN-0006",
+    "product_id": "PD-0003",
+    "kind": "special",
+    "name": "お裾分け",
+    "insight_cost": 600,
+    "effect_text": "相手の表向きリソース全てを休止にする。",
+    "effect": {
+      "ops": [
+        {
+          "apply_buff": {
+            "selector": {
+              "owner": "opponent"
+            },
+            "buff": "dormant",
+            "amount": 1,
+            "duration": "until_next_turn_end"
+          }
+        }
+      ]
+    },
+    "is_active": true
+  },
+  {
+    "initiative_id": "IN-0007",
+    "product_id": "PD-0004",
+    "kind": "routine",
+    "name": "BGM配信",
+    "insight_cost": 300,
+    "effect_text": "このターン、味方の表向きリソース全てのスループットを +200 する。",
+    "effect": {
+      "ops": [
+        {
+          "apply_buff": {
+            "selector": {
+              "owner": "myself"
+            },
+            "buff": "tp",
+            "amount": 200,
+            "duration": "this_turn"
+          }
+        }
+      ]
+    },
+    "is_active": true
+  },
+  {
+    "initiative_id": "IN-0008",
+    "product_id": "PD-0004",
+    "kind": "special",
+    "name": "フェス開催",
+    "insight_cost": 500,
+    "effect_text": "自分と相手の表向きリソース 1体につき、Budget を +150 する。",
+    "effect": {
+      "ops": [
+        {
+          "gain_budget": {
+            "target": "myself",
+            "amount": {
+              "base": 0,
+              "per": {
+                "count": {
+                  "owner": "myself"
+                },
+                "value": 150
+              }
+            }
+          }
+        },
+        {
+          "gain_budget": {
+            "target": "myself",
+            "amount": {
+              "base": 0,
+              "per": {
+                "count": {
+                  "owner": "opponent"
+                },
+                "value": 150
+              }
+            }
+          }
+        }
+      ]
+    },
+    "is_active": true
+  }
+]

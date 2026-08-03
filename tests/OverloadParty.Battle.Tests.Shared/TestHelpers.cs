@@ -536,6 +536,74 @@ public static class TestFactory
 }
 
 /// <summary>
+/// card が配布するマスターデータをファイルから読み込みます。読み込み元は CARDS_JSON_PATH /
+/// INITIATIVES_JSON_PATH で差し替えられ、未指定ならリポジトリ内のキャッシュを使います。
+/// </summary>
+public static class MasterData
+{
+    private const string CardsFileName = "cards_gen.json";
+    private const string InitiativesFileName = "initiatives_gen.json";
+
+    /// <summary>全カード定義を読み込みます。</summary>
+    /// <returns>マスターデータ上の全カード定義。</returns>
+    public static List<CardDefinition> LoadCards() =>
+        ReadEntries<ApiCard.CardDefinition>(CardsPath())
+            .Select(CardDefinitionMapper.ToCardDefinition)
+            .ToList();
+
+    /// <summary>全施策定義を読み込みます。</summary>
+    /// <returns>マスターデータ上の全施策定義。</returns>
+    public static List<Initiative> LoadInitiatives() =>
+        ReadEntries<ApiCard.Initiative>(InitiativesPath())
+            .Select(CardDefinitionMapper.ToInitiative)
+            .ToList();
+
+    private static string CardsPath() =>
+        Environment.GetEnvironmentVariable("CARDS_JSON_PATH")
+        ?? FindInCache(CardsFileName)
+        ?? throw new FileNotFoundException(
+            $"{CardsFileName} not found. Set CARDS_JSON_PATH to the card master data.");
+
+    // 施策は card の同じディレクトリで配布されるため、カード定義の隣を既定の読み込み元にする。
+    private static string InitiativesPath() =>
+        Environment.GetEnvironmentVariable("INITIATIVES_JSON_PATH")
+        ?? Path.Combine(Path.GetDirectoryName(CardsPath())!, InitiativesFileName);
+
+    private static List<T> ReadEntries<T>(string path)
+    {
+        if (!File.Exists(path))
+        {
+            throw new FileNotFoundException($"master data not found at {path}", path);
+        }
+
+        var entries = JsonSerializer.Deserialize<List<T>>(File.ReadAllText(path))
+            ?? throw new InvalidOperationException($"failed to deserialize master data from {path}");
+        if (entries.Count == 0)
+        {
+            throw new InvalidOperationException($"master data at {path} has no entries");
+        }
+        return entries;
+    }
+
+    private static string? FindInCache(string fileName)
+    {
+        // Walk up from the test binary to find the battle repo's own cache.
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            var candidate = Path.Combine(dir.FullName, "overload-party-battle",
+                "packages", "game-state-dotnet", "cache", fileName);
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+            dir = dir.Parent;
+        }
+        return null;
+    }
+}
+
+/// <summary>
 /// Builds an EffectRegistry from embedded cards_gen.json via EffectYamlLoader.
 /// </summary>
 public static class TestEffectSetup
@@ -549,13 +617,7 @@ public static class TestEffectSetup
 
     private static (EffectRegistry, ICardCache) Build()
     {
-        var cardsPath = Environment.GetEnvironmentVariable("CARDS_JSON_PATH")
-            ?? FindCardsJson()
-            ?? throw new FileNotFoundException(
-                "cards_gen.json not found. Set CARDS_JSON_PATH or run generate_from_yaml.py in the common repo.");
-
-        var wireCards = JsonSerializer.Deserialize<List<ApiCard.CardDefinition>>(File.ReadAllText(cardsPath))!;
-        var cards = wireCards.Select(CardDefinitionMapper.ToCardDefinition).ToList();
+        var cards = MasterData.LoadCards();
 
         var cardCache = new TestCardCache();
         foreach (var card in cards)
@@ -568,22 +630,5 @@ public static class TestEffectSetup
         EffectYamlLoader.LoadEffectSources(cards, registry, customEffects);
 
         return (registry, cardCache);
-    }
-
-    private static string? FindCardsJson()
-    {
-        // Walk up from the test binary to find the battle repo's own cache.
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null)
-        {
-            var candidate = Path.Combine(dir.FullName, "overload-party-battle",
-                "packages", "game-state-dotnet", "cache", "cards_gen.json");
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-            dir = dir.Parent;
-        }
-        return null;
     }
 }

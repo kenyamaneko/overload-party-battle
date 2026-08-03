@@ -51,6 +51,7 @@ Battle (このサービス, :9002)
 | 変数名 | デフォルト | 説明 |
 |---|---|---|
 | `CARDS_JSON_PATH` | *(空)* | ローカル開発モード（`ASPNETCORE_ENVIRONMENT=Development`）時のみ。card service の代わりにこの JSON ファイルからカード定義を読み込む |
+| `INITIATIVES_JSON_PATH` | *(空)* | ローカル開発モード時に `CARDS_JSON_PATH` と併せて必須。card service の代わりにこの JSON ファイルから施策定義を読み込む |
 | `NPC_AI_CONFIG_DIR` | *(必須)* | NPC AI 設定 YAML ディレクトリ。未設定または非実在パスなら起動時にエラー。コンテナイメージは同梱データを指す `/app/NpcData` を設定済み |
 
 ## 公開パッケージ
