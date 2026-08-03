@@ -69,7 +69,7 @@ var cardCache = new CardCache();
 builder.Services.AddSingleton<ICardCache>(cardCache);
 builder.Services.AddSingleton(cardCache);
 
-// 施策定義。card サービス (またはローカル JSON) から起動時に読み込む。
+// 施策定義。マスターデータから起動時に読み込む。
 // engine ファクトリはカードロード後に遅延実行されるため、この変数はその時点で確定している。
 var initiatives = new List<Initiative>();
 
@@ -132,19 +132,18 @@ builder.Services.AddSingleton<GameLogService>(sp =>
 
 var app = builder.Build();
 
-// ─── Load card cache ────────────────────────────────────────
+// ─── Load master data ───────────────────────────────────────
 
-// Local dev keeps the JSON file path so offline development doesn't require the card service
-// running. Everything else (k8s, CI) must hit the card service.
+// ローカル開発は card を起動せず対戦できるようファイルから読む。それ以外は card が
+// publish した Cloud Storage のオブジェクトから読む。
 var localCardsPath = isLocalDev ? Environment.GetEnvironmentVariable("CARDS_JSON_PATH") : null;
 var localInitiativesPath = isLocalDev ? Environment.GetEnvironmentVariable("INITIATIVES_JSON_PATH") : null;
 
-var masterJsonOptions = new JsonSerializerOptions
-{
-    PropertyNamingPolicy = JsonNamingPolicy.SnakeCaseLower,
-    PropertyNameCaseInsensitive = true,
-};
-
+// 起動時に 1 度だけ取得する。失敗したら例外を伝搬させてプロセスを落とし、Cloud Run の
+// 再起動を間隔付きの再試行として使う。ここで再試行ループを抱えると滞留が見えなくなる。
+string cardsJson;
+string initiativesJson;
+string masterDataOrigin;
 if (!string.IsNullOrEmpty(localCardsPath))
 {
     if (!File.Exists(localCardsPath))
@@ -152,55 +151,44 @@ if (!string.IsNullOrEmpty(localCardsPath))
         throw new FileNotFoundException(
             $"Card data not found at {localCardsPath}. Run 'python3 scripts/generate_cards.py' in the common repo.");
     }
-    var cards = JsonSerializer.Deserialize<List<CardDefinition>>(
-        File.ReadAllText(localCardsPath), masterJsonOptions);
-    if (cards is null)
-    {
-        throw new InvalidOperationException($"failed to deserialize cards from {localCardsPath}");
-    }
-    cardCache.LoadFromList(cards);
-    app.Logger.LogInformation("Loaded {Count} cards from {Path}", cardCache.Count, localCardsPath);
-
     if (string.IsNullOrEmpty(localInitiativesPath) || !File.Exists(localInitiativesPath))
     {
         throw new FileNotFoundException(
             $"Initiative data not found at {localInitiativesPath}. Set INITIATIVES_JSON_PATH and run 'python3 scripts/generate_products.py' in the card repo.");
     }
-    var loadedInitiatives = JsonSerializer.Deserialize<List<Initiative>>(
-        File.ReadAllText(localInitiativesPath), masterJsonOptions)
-        ?? throw new InvalidOperationException($"failed to deserialize initiatives from {localInitiativesPath}");
-    initiatives.AddRange(loadedInitiatives);
-    app.Logger.LogInformation("Loaded {Count} initiatives from {Path}", initiatives.Count, localInitiativesPath);
+    cardsJson = File.ReadAllText(localCardsPath);
+    initiativesJson = File.ReadAllText(localInitiativesPath);
+    masterDataOrigin = $"{localCardsPath} and {localInitiativesPath}";
 }
 else
 {
-    var cardServiceUrl = Environment.GetEnvironmentVariable("CARD_SERVICE_URL") ?? "http://card:9003";
-    // Cloud Run の呼び出し IAM は audience ごとの ID トークンを見るため、下流を呼ぶ経路は
-    // トークンを付与する HttpClient を通す。ローカルの card は Cloud Run ではなく
-    // 呼び出し IAM が無いため素の HttpClient を使う。
-    using var cardHttp = isLocalDev
-        ? new HttpClient()
-        : await RunAuthHttpClientFactory.CreateAsync(cardServiceUrl);
-    // 起動時に 1 度だけ取得する。失敗したら例外を伝搬させてプロセスを落とし、Cloud Run の
-    // 再起動を間隔付きの再試行として使う。ここで再試行ループを抱えると滞留が見えなくなる。
-    using var cardClient = new CardServiceClient(cardServiceUrl, cardHttp);
-    try
+    var masterDataBucket = Environment.GetEnvironmentVariable("MASTER_DATA_BUCKET");
+    if (string.IsNullOrEmpty(masterDataBucket))
     {
-        var cards = await cardClient.ListAllCardsAsync();
-        cardCache.LoadFromList(cards);
-        initiatives.AddRange(await cardClient.ListAllInitiativesAsync());
-        app.Logger.LogInformation(
-            "Loaded {CardCount} cards and {InitiativeCount} initiatives from card service at {Url}",
-            cardCache.Count, initiatives.Count, cardServiceUrl);
+        throw new InvalidOperationException("MASTER_DATA_BUCKET not set");
     }
-    catch (Exception ex)
-    {
-        // ロガーは書き込みをキューに積み、プロセスの終了に間に合わないことがあるため、
-        // 送出してランタイムに stderr へ同期で書かせる。
-        throw new InvalidOperationException(
-            $"Failed to load master data from card service at {cardServiceUrl}", ex);
-    }
+    (cardsJson, initiativesJson) = await MasterDataStorageClient.DownloadAsync(masterDataBucket);
+    masterDataOrigin = $"gs://{masterDataBucket}";
 }
+
+List<CardDefinition> masterCards;
+List<Initiative> masterInitiatives;
+try
+{
+    (masterCards, masterInitiatives) = MasterDataLoader.FromJson(cardsJson, initiativesJson);
+}
+catch (Exception ex)
+{
+    // ロガーは書き込みをキューに積み、プロセスの終了に間に合わないことがあるため、
+    // 送出してランタイムに stderr へ同期で書かせる。
+    throw new InvalidOperationException($"Failed to load master data from {masterDataOrigin}", ex);
+}
+
+cardCache.LoadFromList(masterCards);
+initiatives.AddRange(masterInitiatives);
+app.Logger.LogInformation(
+    "Loaded {CardCount} cards and {InitiativeCount} initiatives from {Origin}",
+    cardCache.Count, initiatives.Count, masterDataOrigin);
 
 // ─── Middleware ──────────────────────────────────────────────
 

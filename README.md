@@ -1,6 +1,6 @@
 # overload-party-battle
 
-C# ゲームエンジン。Gateway から HTTP RPC で呼ばれ、NPC / PvP 対戦のゲーム作成・アクション処理・状態管理を行う。カード定義は card service から起動時にロードする。
+C# ゲームエンジン。Gateway から HTTP RPC で呼ばれ、NPC / PvP 対戦のゲーム作成・アクション処理・状態管理を行う。カード定義は card が publish したマスターデータから起動時にロードする。
 
 [テスト観点カタログ](https://kenyamaneko.github.io/overload-party-battle/): テスト名から生成した、テスト済みの観点の一覧。
 
@@ -23,10 +23,10 @@ Battle (このサービス, :9002)
   ├─ PostgreSQL  battle スキーマ (games / game_npcs / game_decks /
   │                               player_summary / game_states /
   │                               game_actions / game_events)
-  └─ Card Service (:9003, 起動時 1 回の GET /internal/v1/cards)
+  └─ Cloud Storage (起動時 1 回の cards.json / initiatives.json 取得)
 ```
 
-- Gateway が唯一の呼び出し元。battle 自身は外部サービスを呼び出さない (card service への起動時フェッチを除く)
+- Gateway が唯一の呼び出し元。battle 自身は他のサービスを呼び出さない
 - Pub/Sub なし
 
 内部設計は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) を参照。
@@ -40,19 +40,14 @@ Battle (このサービス, :9002)
 | `PORT` | `9002` | リッスンポート |
 | `DATABASE_CONN` / `ConnectionStrings__DefaultConnection` | *(本番必須)* | PostgreSQL 接続文字列 (`battle` スキーマ) |
 | `DATABASE_IAM_AUTH_ENABLED` | *(必須)* | `true` なら Cloud SQL の IAM データベース認証で接続し、パスワードの代わりにアクセストークンを供給する。`false` なら接続文字列のパスワードで接続する。未設定と `true` / `false` 以外の値は起動時にエラー。`true` のときは接続文字列に接続ユーザー (`Username`) が要る |
-
-**ConfigMap (サービス URL):**
-
-| 変数名 | デフォルト | 説明 |
-|---|---|---|
-| `CARD_SERVICE_URL` | `http://card:9003` | Card Service ベース URL (起動時カードロード先) |
+| `MASTER_DATA_BUCKET` | *(必須)* | card が `cards.json` / `initiatives.json` を publish する Cloud Storage バケット。起動時に 1 回読み込む。未設定は起動時にエラー。ローカル開発モードで `CARDS_JSON_PATH` を指定したときは読まない |
 
 **ConfigMap (アプリ挙動):**
 
 | 変数名 | デフォルト | 説明 |
 |---|---|---|
-| `CARDS_JSON_PATH` | *(空)* | ローカル開発モード（`ASPNETCORE_ENVIRONMENT=Development`）時のみ。card service の代わりにこの JSON ファイルからカード定義を読み込む |
-| `INITIATIVES_JSON_PATH` | *(空)* | ローカル開発モード時に `CARDS_JSON_PATH` と併せて必須。card service の代わりにこの JSON ファイルから施策定義を読み込む |
+| `CARDS_JSON_PATH` | *(空)* | ローカル開発モード（`ASPNETCORE_ENVIRONMENT=Development`）時のみ。バケットの代わりにこの JSON ファイルからカード定義を読み込む |
+| `INITIATIVES_JSON_PATH` | *(空)* | ローカル開発モード時に `CARDS_JSON_PATH` と併せて必須。バケットの代わりにこの JSON ファイルから施策定義を読み込む |
 | `NPC_AI_CONFIG_DIR` | *(必須)* | NPC AI 設定 YAML ディレクトリ。未設定または非実在パスなら起動時にエラー。コンテナイメージは同梱データを指す `/app/NpcData` を設定済み |
 
 ## 同梱するカードマスターデータ
