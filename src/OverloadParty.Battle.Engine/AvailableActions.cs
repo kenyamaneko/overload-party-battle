@@ -216,6 +216,13 @@ public static class AvailableActions
 
             if (!TryPopulateTrashChoice(action, state, card.CardId, cc, effects)) { return null; }
 
+            // 即時型は盤面に実体を持たないまま手札から発動するので、発火元のリソースは無い。
+            if (!TryPopulateResourceChoice(
+                    action, state, card.CardId, source: null, supSource: null, cc, effects))
+            {
+                return null;
+            }
+
             return action;
         }
 
@@ -273,7 +280,7 @@ public static class AvailableActions
             .FirstOrDefault();
         if (selector is null) { return true; }
 
-        var opCtx = new OpContext(BuildIgnitionContext(state, source, supSource, cc, effects));
+        var opCtx = new OpContext(BuildIgnitionContext(state, cardId, source, supSource, cc, effects));
         var validTargets = selector.EnumerateCandidates(opCtx)
             .Select(r => r.InstanceID)
             .ToList();
@@ -540,7 +547,7 @@ public static class AvailableActions
         var reg = registry.GetRegistration(cardId, TriggerType.Ignition);
         if (reg?.Block?.Guards is not { Length: > 0 } guards) { return true; }
 
-        var ctx = BuildIgnitionContext(state, source, supSource, cc, effects);
+        var ctx = BuildIgnitionContext(state, cardId, source, supSource, cc, effects);
 
         return guards.All(g => g.Check(ctx));
     }
@@ -550,8 +557,16 @@ public static class AvailableActions
     /// Ignition は手番プレイヤーのフィールド上のカードからのみ発動するため PlayerNum を
     /// ActivePlayer で固定し、guard 述語とセレクタが参照しない Game メタデータは GameID だけ埋めます。
     /// </summary>
+    /// <param name="state">現在のゲーム状態。</param>
+    /// <param name="cardId">効果を持つカードの ID。</param>
+    /// <param name="source">効果を持つリソース。サポート由来なら null。</param>
+    /// <param name="supSource">効果を持つサポート。リソース由来なら null。</param>
+    /// <param name="cc">カード定義キャッシュ。</param>
+    /// <param name="effects">効果ハンドラのレジストリ。</param>
+    /// <returns>guard 述語とセレクタの評価に足る効果コンテキスト。</returns>
     private static EffectContext BuildIgnitionContext(
         BattleGameState state,
+        string cardId,
         DeployedResource? source,
         DeployedSupport? supSource,
         ICardCache cc,

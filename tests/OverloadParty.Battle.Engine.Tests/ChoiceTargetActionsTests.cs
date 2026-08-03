@@ -11,6 +11,7 @@ public class ChoiceTargetActionsTests
     private const string ResourceCard = "TST-0300";
     private const string IgnitionCard = "TST-0301";
     private const string SupportCard = "TST-0302";
+    private const string ImmediateCard = "TST-0303";
     private const string InitiativeId = "IN-TST01";
     private const long HealAmount = 300;
 
@@ -21,6 +22,52 @@ public class ChoiceTargetActionsTests
         _cc.Add(TestFactory.ComputeCard(cardId: ResourceCard, resizable: false));
         _cc.Add(TestFactory.ComputeCard(cardId: IgnitionCard, resizable: false));
         _cc.Add(TestFactory.PlatformCard(cardId: SupportCard));
+        _cc.Add(new CardDefinition
+        {
+            CardId = ImmediateCard,
+            CardName = "ChoiceStrategy",
+            CardType = CardTypes.Strategy,
+            DeployTurns = 0,
+        });
+    }
+
+    /// <summary>指定の効果を持つ即時カードを手札に 1 枚だけ持つ状態で、実行可能アクションを列挙する。</summary>
+    /// <param name="op">即時カードの効果として登録する op。</param>
+    /// <param name="state">対象のゲーム状態。</param>
+    /// <returns>実行可能アクション一覧。</returns>
+    private List<AvailableAction> EnumerateWithImmediateCardInHand(IEffectOp op, BattleGameState state)
+    {
+        var effects = new EffectRegistry();
+        effects.RegisterComposed(ImmediateCard, TriggerType.Ignition, op);
+        var hand = new List<UndeployedCard> { new() { InstanceID = "h_1", CardID = ImmediateCard } };
+
+        return AvailableActions.GetAllAvailableActions(
+            state, 1, state.Player1Field, state.Player2Field, hand, 5000, 0, _cc, effects);
+    }
+
+    [Fact(DisplayName = "バックエンドに限定した即時カードを手札に持つとき、バックエンドのリソースだけが候補として列挙される")]
+    public void ImmediateCard_ZoneLimited_ListsOnlyThatZone()
+    {
+        var state = TestFactory.MakeGameState(turn: 2);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: ResourceCard, instanceId: "fe_1");
+        state.Player1Field.Backend[0] = TestFactory.MakeResource(cardId: ResourceCard, instanceId: "be_1");
+
+        var actions = EnumerateWithImmediateCardInHand(ChoiceHeal(Zones.Backend), state);
+
+        var play = actions.Should().ContainSingle(a => a.Type == ActionTypes.PlayCard).Subject;
+        play.EffectTargetType.Should().Be("Choice");
+        play.ValidTargets.Should().Equal("be_1");
+    }
+
+    [Fact(DisplayName = "対象を選ぶ即時カードで選べるリソースが 1 件も無いとき、そのカードをプレイするアクションが列挙されない")]
+    public void ImmediateCard_NoValidTarget_OmitsAction()
+    {
+        var state = TestFactory.MakeGameState(turn: 2);
+        state.Player1Field.Frontend[0] = TestFactory.MakeResource(cardId: ResourceCard, instanceId: "fe_1");
+
+        var actions = EnumerateWithImmediateCardInHand(ChoiceHeal(Zones.Backend), state);
+
+        actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
     }
 
     /// <summary>選択で対象を決める回復の op を作る。</summary>
