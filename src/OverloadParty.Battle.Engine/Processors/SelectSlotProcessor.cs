@@ -73,15 +73,29 @@ public static class SelectSlotProcessor
             },
         };
 
-        if (resource.FaceUp)
+        var (onSetEvents, onSetChoice) = OnSetFiring.Fire(
+            state, game, playerNum, resource.CardID, resource.InstanceID,
+            resource, supSource: null, choiceData: null, cc, effects);
+        events.AddRange(onSetEvents);
+        if (onSetChoice is not null)
         {
-            var (_, completionEvents) = DeployCompletion.CompleteResource(
-                state, game, playerNum, resource, cc, effects);
-            events.AddRange(completionEvents);
+            state.PendingEffectChoice = onSetChoice;
+        }
+
+        if (resource.DeployingTurnsLeft > 0)
+        {
+            PassiveRecalculator.Recalculate(state, game, cc, effects);
         }
         else
         {
-            PassiveRecalculator.Recalculate(state, game, cc, effects);
+            OnSetFiring.RejectDeferredChoiceBeforeDeployCompletion(onSetChoice, resource.CardID);
+
+            // 配置時効果が残デプロイターンを 0 まで縮めた場合もその場で稼働にあたるため、表向きにしてから稼働開始処理へ渡す。
+            resource.FaceUp = true;
+
+            var (_, completionEvents) = DeployCompletion.CompleteResource(
+                state, game, playerNum, resource, cc, effects);
+            events.AddRange(completionEvents);
         }
 
         return new ActionResult

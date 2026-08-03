@@ -708,6 +708,56 @@ public class GameEngineTests
             watchedInstanceId.Should().Be(state.Player1Field.Frontend[0]!.InstanceID);
         }
 
+        [Fact(DisplayName = "効果デプロイのスロット選択を解決すると、裏向きで置かれたカードでも配置時効果が発動する")]
+        public async Task SlotSelectResolved_FaceDownResource_FiresDeployedCardsOwnSetEffect()
+        {
+            string? setInstanceId = null;
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            _effects.Register(SlowDeployCardId, TriggerType.OnSet,
+                ctx => { setInstanceId = ctx.Source?.InstanceID; return new EffectResult(); });
+            var (gameID, state) = await StartWithIgnitionSource(SlowDeployCardId);
+
+            await Ignite(gameID);
+            await SelectSlot(gameID, 1, Zones.Frontend, 0);
+
+            var deployed = state.Player1Field.Frontend[0]!;
+            deployed.FaceUp.Should().BeFalse();
+            setInstanceId.Should().Be(deployed.InstanceID);
+        }
+
+        [Fact(DisplayName = "効果デプロイで置かれたカードの配置時効果が残デプロイターンを 0 にすると、その場で表向きになり稼働実績が立つ")]
+        public async Task SlotSelectResolved_OnSetShorteningToZero_BecomesOperational()
+        {
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new RequestSlotFromRepoOp());
+            _effects.RegisterComposed(
+                SlowDeployCardId, TriggerType.OnSet, new ReduceDeployTurnsOp(new StaticAmount(1)));
+            var (gameID, state) = await StartWithIgnitionSource(SlowDeployCardId);
+
+            await Ignite(gameID);
+            await SelectSlot(gameID, 1, Zones.Frontend, 0);
+
+            var deployed = state.Player1Field.Frontend[0]!;
+            deployed.DeployingTurnsLeft.Should().Be(0);
+            deployed.FaceUp.Should().BeTrue();
+            state.Player1HasOperated.Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "デッキから自動配置する効果で裏向きに置かれたカードでも、配置時効果が発動する")]
+        public async Task ImmediateDeployFromRepo_FaceDownResource_FiresDeployedCardsOwnSetEffect()
+        {
+            string? setInstanceId = null;
+            _effects.RegisterComposed(IgnitionCardId, TriggerType.Ignition, new DeployFromRepoOp());
+            _effects.Register(SlowDeployCardId, TriggerType.OnSet,
+                ctx => { setInstanceId = ctx.Source?.InstanceID; return new EffectResult(); });
+            var (gameID, state) = await StartWithIgnitionSource(SlowDeployCardId);
+
+            await Ignite(gameID);
+
+            var deployed = state.Player1Field.Frontend[0]!;
+            deployed.FaceUp.Should().BeFalse();
+            setInstanceId.Should().Be(deployed.InstanceID);
+        }
+
         [Fact(DisplayName = "デッキから自動配置する効果で表向きに置かれると、置かれたカードのデプロイ時効果が発動し稼働実績が立つ")]
         public async Task ImmediateDeployFromRepo_FiresDeployEffectAndSetsHasOperated()
         {

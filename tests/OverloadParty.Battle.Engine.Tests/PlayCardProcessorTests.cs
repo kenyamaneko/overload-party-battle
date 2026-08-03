@@ -702,6 +702,7 @@ public class PlayCardProcessorTests
         private const string SelfShorteningResourceId = "TST-0716";
         private const string AttachmentHostId = "TST-0717";
         private const string BranchResourceId = "TST-0719";
+        private const string ImmediateBranchResourceId = "TST-0720";
 
         /// <summary>配置時効果・稼働時効果・相手のデプロイ反応リアクティブを登録した環境を作る。</summary>
         /// <returns>カード定義キャッシュと効果レジストリ。</returns>
@@ -714,6 +715,7 @@ public class PlayCardProcessorTests
             cc.Add(TestFactory.ComputeCard(cardId: SelfShorteningResourceId, deployTurns: 1));
             cc.Add(TestFactory.ComputeCard(cardId: AttachmentHostId, deployTurns: 0));
             cc.Add(TestFactory.ComputeCard(cardId: BranchResourceId, deployTurns: 2));
+            cc.Add(TestFactory.ComputeCard(cardId: ImmediateBranchResourceId, deployTurns: 0));
             cc.Add(TestFactory.PlatformCard(cardId: DeployingSupportId));
             cc.Add(TestFactory.AttachmentCard(cardId: AttachmentId));
             cc.Add(TestFactory.ReactiveCard(cardId: DeployWatcherId));
@@ -740,6 +742,9 @@ public class PlayCardProcessorTests
             };
             effects.Register(
                 BranchResourceId, TriggerType.OnSet, EffectComposer.Compose(new BranchOnChoiceOp(branches)));
+            effects.Register(
+                ImmediateBranchResourceId, TriggerType.OnSet,
+                EffectComposer.Compose(new BranchOnChoiceOp(branches)));
 
             return (cc, effects);
         }
@@ -902,6 +907,18 @@ public class PlayCardProcessorTests
 
             state.PendingEffectChoice.Should().BeNull();
             state.Player1Field.Frontend[0]!.DeployingTurnsLeft.Should().Be(1);
+        }
+
+        [Fact(DisplayName = "デプロイターン 0 のカードの配置時効果が選択を要求したとき、同じアクションで稼働まで進めないエラーになる")]
+        public void ImmediateResourceWithOnSetChoice_RejectsDeployCompletion()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(ImmediateBranchResourceId);
+
+            var act = () => Play(state, cc, effects, Zones.Frontend);
+
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*deferred on_set choice*");
         }
     }
 }

@@ -115,7 +115,24 @@ public class DeployFromRepoOp : IEffectOp
         var instance = ResourceHelpers.DeployFromRepo(
             ctx.State, ctx.PlayerNum, field, match, OverrideAV, ctx.CardCache);
 
-        if (!instance.FaceUp) { return; }
+        var (onSetEvents, onSetChoice) = OnSetFiring.Fire(
+            ctx.State, ctx.Game, ctx.PlayerNum, instance.CardID, instance.InstanceID,
+            instance, supSource: null, choiceData: null, ctx.CardCache, ctx.Effects);
+        foreach (var evt in onSetEvents)
+        {
+            ctx.AddEvent(evt);
+        }
+        if (onSetChoice is not null)
+        {
+            ctx.State.PendingEffectChoice = onSetChoice;
+        }
+
+        if (instance.DeployingTurnsLeft > 0) { return; }
+
+        OnSetFiring.RejectDeferredChoiceBeforeDeployCompletion(onSetChoice, instance.CardID);
+
+        // 配置時効果が残デプロイターンを 0 まで縮めた場合もその場で稼働にあたるため、表向きにしてから稼働開始処理へ渡す。
+        instance.FaceUp = true;
 
         var (_, events) = DeployCompletion.CompleteResource(
             ctx.State, ctx.Game, ctx.PlayerNum, instance, ctx.CardCache, ctx.Effects);
