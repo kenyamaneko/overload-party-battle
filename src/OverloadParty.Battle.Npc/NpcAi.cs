@@ -56,7 +56,7 @@ public class NpcAi : INpcStrategy
         var usedZones = new HashSet<string>();
         var actions = new List<NpcAction>();
 
-        actions.AddRange(_immediate.Decide(ctx, playActions, usedZones, activeConfig));
+        actions.AddRange(_immediate.Decide(ctx, playActions, activeConfig));
         actions.AddRange(_deploy.Decide(ctx, playActions, usedZones));
         if (_config.Attachments is not null)
         {
