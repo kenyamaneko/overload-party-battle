@@ -701,6 +701,7 @@ public class PlayCardProcessorTests
         private const string DeployWatcherId = "TST-0715";
         private const string SelfShorteningResourceId = "TST-0716";
         private const string AttachmentHostId = "TST-0717";
+        private const string BranchResourceId = "TST-0719";
 
         /// <summary>配置時効果・稼働時効果・相手のデプロイ反応リアクティブを登録した環境を作る。</summary>
         /// <returns>カード定義キャッシュと効果レジストリ。</returns>
@@ -712,6 +713,7 @@ public class PlayCardProcessorTests
             cc.Add(TestFactory.ComputeCard(cardId: BothTriggersResourceId, deployTurns: 2));
             cc.Add(TestFactory.ComputeCard(cardId: SelfShorteningResourceId, deployTurns: 1));
             cc.Add(TestFactory.ComputeCard(cardId: AttachmentHostId, deployTurns: 0));
+            cc.Add(TestFactory.ComputeCard(cardId: BranchResourceId, deployTurns: 2));
             cc.Add(TestFactory.PlatformCard(cardId: DeployingSupportId));
             cc.Add(TestFactory.AttachmentCard(cardId: AttachmentId));
             cc.Add(TestFactory.ReactiveCard(cardId: DeployWatcherId));
@@ -730,6 +732,14 @@ public class PlayCardProcessorTests
             effects.Register(
                 SelfShorteningResourceId, TriggerType.OnSet,
                 EffectComposer.Compose(new ReduceDeployTurnsOp(new StaticAmount(1))));
+
+            var branches = new Dictionary<string, List<IEffectOp>>
+            {
+                ["autopilot"] = [new ReduceDeployTurnsOp(new StaticAmount(1))],
+                ["skip"] = [],
+            };
+            effects.Register(
+                BranchResourceId, TriggerType.OnSet, EffectComposer.Compose(new BranchOnChoiceOp(branches)));
 
             return (cc, effects);
         }
@@ -862,6 +872,36 @@ public class PlayCardProcessorTests
             deployed.DeployingTurnsLeft.Should().Be(0);
             deployed.FaceUp.Should().BeTrue();
             state.GetHasOperated(1).Should().BeTrue();
+        }
+
+        [Fact(DisplayName = "配置時効果が選択を要求するカードを配置したとき、配置時トリガーの選択待ちになる")]
+        public void OnSetRequiringChoice_SuspendsForChoice()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(BranchResourceId);
+
+            Play(state, cc, effects, Zones.Frontend);
+
+            var pending = state.PendingEffectChoice;
+            pending.Should().NotBeNull();
+            pending!.Trigger.Should().Be(TriggerType.OnSet);
+            pending.ChoiceKind.Should().Be(ChoiceKinds.Branch);
+            pending.Candidates.Should().BeEquivalentTo("autopilot", "skip");
+        }
+
+        [Fact(DisplayName = "デプロイターン 2 のカードの配置時の選択待ちをデプロイ短縮で解決したとき、残デプロイターンが 1 になる")]
+        public void ResolvedOnSetChoice_ShortensPlacedCardDeployTurns()
+        {
+            var (cc, effects) = MakeEnv();
+            var state = MakeStateWithHand(BranchResourceId);
+            Play(state, cc, effects, Zones.Frontend);
+
+            ResolvePendingChoiceProcessor.Process(
+                state, TestFactory.MakeGame(), 1,
+                new ResolvePendingChoiceRequest { ChosenId = "autopilot" }, cc, effects, new FakeClock());
+
+            state.PendingEffectChoice.Should().BeNull();
+            state.Player1Field.Frontend[0]!.DeployingTurnsLeft.Should().Be(1);
         }
     }
 }
