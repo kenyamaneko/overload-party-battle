@@ -69,7 +69,7 @@ Battle (このサービス, :9002)
 同梱データを更新するには以下を実行する。3 ファイルすべてが同時に書き換わるため、記録と中身がずれない。
 
 ```
-make sync-card-data
+make sync-card-master-data
 ```
 
 card のクローンの位置は `CARD_REPO` (既定 `../overload-party-card`)、取り込むコミットは `CARD_REF` (既定 `origin/main`) で指定する。
