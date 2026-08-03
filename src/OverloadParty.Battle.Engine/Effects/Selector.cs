@@ -80,7 +80,7 @@ public class ByChoiceSelector : ISelector
     /// 選べる対象を返します。
     /// </summary>
     /// <param name="ctx">操作コンテキスト。</param>
-    /// <returns>絞り込み条件を満たすリソース一覧。</returns>
+    /// <returns>絞り込み条件を満たす表向きリソース一覧。</returns>
     public List<DeployedResource> EnumerateCandidates(OpContext ctx)
     {
         var field = Owner == "opponent" ? ctx.OpponentField : ctx.MyField;
@@ -95,6 +95,7 @@ public class ByChoiceSelector : ISelector
 
         var cc = ctx.CardCache;
         return candidates
+            .Where(r => r.FaceUp)
             .Where(r => Faction is not { Length: > 0 } || cc.MustGet(r.CardID).Faction == Faction)
             .Where(r => CardType is not { Length: > 0 }
                         || EffectHelpers.MatchesCardType(cc.MustGet(r.CardID), CardType))

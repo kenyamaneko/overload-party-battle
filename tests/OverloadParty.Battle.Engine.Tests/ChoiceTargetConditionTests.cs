@@ -100,4 +100,72 @@ public class ChoiceTargetConditionTests
 
         damage.Should().Be(200);
     }
+
+    /// <summary>相手のフロントエンドから選んで 400 ダメージを与える起動効果を、指定の表裏のリソースを選んで発動する。</summary>
+    /// <param name="faceUp">選ぶリソースが表向きか。false ならデプロイ中の裏向きとして置く。</param>
+    /// <returns>発動後に選んだリソースが受けているダメージ。</returns>
+    private static long UseDamageIgnitionOnOpponent(bool faceUp)
+    {
+        var source = TestFactory.ComputeCard(cardId: SourceCardId);
+        source.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "ignition",
+                Ops =
+                [
+                    JsonDocument.Parse(
+                        """
+                        { "deal_damage": {
+                            "selector": { "owner": "opponent", "zone": "frontend", "pick": "choice" },
+                            "amount": 400 } }
+                        """).RootElement,
+                ],
+            },
+        ];
+
+        var cc = new TestCardCache();
+        cc.Add(source);
+        cc.Add(TestFactory.ComputeCard(cardId: ChosenCardId));
+
+        var effects = new EffectRegistry();
+        EffectYamlLoader.LoadEffectSources([source], effects, new CustomEffectRegistry());
+
+        var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main);
+        state.Player1Field.Backend[2] = TestFactory.MakeResource(cardId: SourceCardId, instanceId: "src");
+
+        var chosen = TestFactory.MakeResource(
+            cardId: ChosenCardId, instanceId: "chosen", faceUp: faceUp, deployLeft: faceUp ? 0 : 1);
+        state.Player2Field.Frontend[0] = chosen;
+
+        UseIgnitionProcessor.Process(
+            state,
+            TestFactory.MakeGame(),
+            1,
+            new UseIgnitionRequest
+            {
+                InstanceID = "src",
+                ChoiceData = new Dictionary<string, object> { ["instanceId"] = "chosen" },
+            },
+            cc,
+            effects);
+
+        return chosen.Damage;
+    }
+
+    [Fact(DisplayName = "相手のフロントエンドから選んで 400 ダメージを与える効果で、表向きのリソースを選ぶと、そのリソースが 400 のダメージを受ける")]
+    public void ChoiceTarget_FaceUpResource_TakesDamage()
+    {
+        long damage = UseDamageIgnitionOnOpponent(faceUp: true);
+
+        damage.Should().Be(400);
+    }
+
+    [Fact(DisplayName = "相手のフロントエンドから選んで 400 ダメージを与える効果で、裏向き (デプロイ中) のリソースを選んでも、そのリソースはダメージを受けない")]
+    public void ChoiceTarget_FaceDownResource_TakesNoDamage()
+    {
+        long damage = UseDamageIgnitionOnOpponent(faceUp: false);
+
+        damage.Should().Be(0);
+    }
 }
