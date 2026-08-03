@@ -149,6 +149,61 @@ public class TriggeredEffectTests
         }
     }
 
+    [Trait("対象", "誘発効果の回数制限の超過")]
+    public class TriggeredEffectUseLimit
+    {
+        private const string AttackerCardId = "TST-0470";
+        private const string DefenderCardId = "TST-0471";
+
+        /// <summary>ダメージを受けたときに 1 ゲーム 1 回だけバジェットを得る防御側リソースを登録する。</summary>
+        /// <returns>カード定義キャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv()
+        {
+            var cc = new TestCardCache();
+            var registry = new EffectRegistry();
+            cc.Add(TestFactory.ComputeCard(cardId: AttackerCardId, tp: 100, mc: 0));
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.ComputeCard(cardId: DefenderCardId, av: 5000, mc: 0),
+                UseLimits.OncePerGame, TriggerTypes.OnDamaged);
+            return (cc, registry);
+        }
+
+        /// <summary>攻撃側に 2 体、防御側に耐久の高い 1 体を置いた状態を作る。</summary>
+        /// <returns>テスト用ゲーム状態。</returns>
+        private static BattleGameState MakeState()
+        {
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, activePlayer: 1, p2Budget: 0);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: AttackerCardId, instanceId: "atk_1", faceUp: true, maxTP: 100, currentTP: 100);
+            state.Player1Field.Frontend[1] = TestFactory.MakeResource(
+                cardId: AttackerCardId, instanceId: "atk_2", faceUp: true, maxTP: 100, currentTP: 100);
+            state.Player2Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: DefenderCardId, instanceId: "def", faceUp: true, maxAV: 5000, currentAV: 5000);
+            return state;
+        }
+
+        /// <summary>攻撃側のリソースで防御側のリソースを攻撃する。</summary>
+        private static ActionResult Attack(
+            BattleGameState state, TestCardCache cc, EffectRegistry registry, string attackerId) =>
+            AttackProcessor.Process(
+                state, TestFactory.MakeGame(), 1,
+                new AttackRequest { AttackerInstanceID = attackerId, TargetInstanceID = "def" }, cc, registry);
+
+        [Fact(DisplayName = "1 ゲーム 1 回の誘発効果を使い切った後でも、同じ契機のアクションは成功し効果だけが増えない")]
+        public void OncePerGame_AfterConsumed_TriggeringActionStillSucceeds()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState();
+            Attack(state, cc, registry, "atk_1");
+
+            var second = Attack(state, cc, registry, "atk_2");
+
+            second.Events.Should().Contain(e => e.EventType == ActionTypes.Attack);
+            state.Player2Budget.Should().Be(100);
+            state.Player2Field.Frontend[0]!.Damage.Should().Be(200);
+        }
+    }
+
     [Trait("対象", "破壊時の同タイプデプロイ選択")]
     public class DeploySameTypeFromHand
     {

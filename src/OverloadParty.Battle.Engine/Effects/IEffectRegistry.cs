@@ -162,6 +162,15 @@ public interface IEffectRegistry
     IEffectOp[]? GetOps(string cardId, TriggerType trigger);
 
     /// <summary>
+    /// 効果がカード記載で宣言する回数制限を返します。記載がなければ null。
+    /// 効果が複数ブロックに分かれる場合は、一部のブロックだけを使い切った状態を表せないため null を返します。
+    /// </summary>
+    /// <param name="cardId">検索対象のカード ID。</param>
+    /// <param name="trigger">検索対象のトリガー種別。</param>
+    /// <returns>宣言された回数制限。記載がない場合は null。</returns>
+    UseLimitKind? GetUseLimit(string cardId, TriggerType trigger);
+
+    /// <summary>
     /// カードが持つパッシブ効果を登録します。1 枚のカードが複数件持つ場合は呼び出しごとに積み上がります。
     /// </summary>
     /// <param name="cardId">検索対象のカード ID。</param>

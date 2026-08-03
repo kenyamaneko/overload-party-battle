@@ -33,7 +33,6 @@ public class DeployedResource
     public bool MonetizedThisTurn { get; set; }
     public bool HasAttacked { get; set; }
     public bool EffectUsedThisTurn { get; set; }
-    public bool EffectUsedThisGame { get; set; }
     public long DeployedOnTurn { get; set; }
     public long DeployOrder { get; set; }
     public long ElasticBonus { get; set; }
@@ -70,7 +69,6 @@ public class DeployedSupport
     public long DeployingTurnsLeft { get; set; }
     public long DeployOrder { get; set; }
     public bool EffectUsedThisTurn { get; set; }
-    public bool EffectUsedThisGame { get; set; }
 
     /// <summary>
     /// For Attachment cards: the instance ID of the resource this attachment targets.

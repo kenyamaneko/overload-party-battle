@@ -536,6 +536,53 @@ public static class TestFactory
 }
 
 /// <summary>
+/// カード記載の回数制限を宣言した起動効果を、本番と同じ loader 経由で登録します。
+/// 回数制限の op 合成と効果レジストリへの記録を loader に任せるため、
+/// 列挙と検証がどちらも本番と同じ登録内容を読みます。
+/// </summary>
+public static class TestUseLimitEffects
+{
+    /// <summary>効果 1 回あたりに得るバジェット。使用回数をバジェットの増分で数えられるようにする。</summary>
+    public const long GainPerUse = 100;
+
+    /// <summary>
+    /// バジェットを得るだけの効果をカードに持たせ、カードキャッシュと効果レジストリに登録します。
+    /// </summary>
+    /// <param name="cc">カード定義の登録先。</param>
+    /// <param name="registry">効果の登録先。</param>
+    /// <param name="card">効果を持たせるカード定義。</param>
+    /// <param name="useLimit">宣言する回数制限 (<see cref="UseLimits"/> の値)。制限なしなら null。</param>
+    /// <param name="trigger">効果の発動契機 (<see cref="TriggerTypes"/> の値)。</param>
+    public static void RegisterBudgetGain(
+        TestCardCache cc, EffectRegistry registry, CardDefinition card,
+        string? useLimit = null, string trigger = TriggerTypes.Ignition)
+    {
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = trigger,
+                UseLimit = useLimit,
+                Ops = [BuildGainBudgetOp()],
+            },
+        ];
+
+        cc.Add(card);
+        EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+    }
+
+    private static JsonElement BuildGainBudgetOp() =>
+        JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gain_budget"] = new Dictionary<string, object>
+            {
+                ["target"] = "myself",
+                ["amount"] = GainPerUse,
+            },
+        });
+}
+
+/// <summary>
 /// card が配布するマスターデータをファイルから読み込みます。読み込み元は CARDS_JSON_PATH /
 /// INITIATIVES_JSON_PATH で差し替えられ、未指定ならリポジトリ内のキャッシュを使います。
 /// </summary>

@@ -580,4 +580,112 @@ public class PlayCardProcessorTests
             data.Index.Should().Be(1);
         }
     }
+
+    [Trait("対象", "手札から直接発動するカードの回数制限")]
+    public class ImmediateCardUseLimit
+    {
+        private const string OncePerGameStrategyId = "TST-0460";
+        private const string NoLimitStrategyId = "TST-0461";
+        private const string IncidentCardId = "TST-0462";
+        private const string CancellingReactiveCardId = "TST-0463";
+
+        /// <summary>回数制限の記載を変えた即時カードと、インシデントを無効化するリアクティブを登録する。</summary>
+        /// <returns>カード定義キャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv()
+        {
+            var cc = new TestCardCache();
+            var registry = new EffectRegistry();
+
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, ImmediateCard(OncePerGameStrategyId, CardTypes.Strategy), UseLimits.OncePerGame);
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, ImmediateCard(NoLimitStrategyId, CardTypes.Strategy));
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, ImmediateCard(IncidentCardId, CardTypes.Incident));
+
+            cc.Add(TestFactory.ReactiveCard(cardId: CancellingReactiveCardId));
+            registry.Register(
+                CancellingReactiveCardId, TriggerType.OnIncident,
+                _ => new EffectResult { ShouldCancelAction = true });
+
+            return (cc, registry);
+        }
+
+        /// <summary>スロットを占有せず手札から直接発動するカードの定義を作る。</summary>
+        /// <param name="cardId">カード ID。</param>
+        /// <param name="cardType">カード種別 (Strategy / Incident)。</param>
+        /// <returns>カード定義。</returns>
+        private static CardDefinition ImmediateCard(string cardId, string cardType) =>
+            new() { CardId = cardId, CardName = cardId, CardType = cardType, DeployTurns = 0 };
+
+        /// <summary>手札に指定のカードを並べた、バジェット 0 の状態を作る。</summary>
+        /// <param name="handCards">手札に置くインスタンス ID とカード ID の組。</param>
+        /// <returns>テスト用ゲーム状態。</returns>
+        private static BattleGameState MakeState(params (string InstanceId, string CardId)[] handCards)
+        {
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 0);
+            foreach (var (instanceId, cardId) in handCards)
+            {
+                state.Player1Hand.Add(new UndeployedCard { InstanceID = instanceId, CardID = cardId });
+            }
+            return state;
+        }
+
+        /// <summary>手札のカードをスロット指定なしで使用する。</summary>
+        private static ActionResult Play(
+            BattleGameState state, TestCardCache cc, EffectRegistry registry, string handInstanceId) =>
+            PlayCardProcessor.Process(
+                state, TestFactory.MakeGame(), 1,
+                new PlayCardRequest { CardInstanceID = handInstanceId, Zone = "", Index = 0 }, cc, registry);
+
+        [Fact(DisplayName = "1 ゲーム 1 回の Strategy を使用した後に同名の 2 枚目を使用すると、このゲームは使用済みとして拒否される")]
+        public void OncePerGameStrategy_SecondCopyInSameGame_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(("h_1", OncePerGameStrategyId), ("h_2", OncePerGameStrategyId));
+            Play(state, cc, registry, "h_1");
+
+            var act = () => Play(state, cc, registry, "h_2");
+
+            act.Should().Throw<GameRuleException>().WithMessage("*already used this game*");
+            state.Player1Budget.Should().Be(100);
+        }
+
+        [Fact(DisplayName = "回数制限のない Strategy は、トラッシュから手札に戻した後に再び使用でき効果が 2 回分適用される")]
+        public void NoLimitStrategy_ReturnedFromTrash_CanBeUsedAgain()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(("h_1", NoLimitStrategyId));
+            Play(state, cc, registry, "h_1");
+
+            var salvaged = state.Player1Trash.Single(c => c.CardID == NoLimitStrategyId);
+            state.Player1Trash.Remove(salvaged);
+            state.Player1Hand.Add(salvaged);
+            Play(state, cc, registry, salvaged.InstanceID);
+
+            state.Player1Budget.Should().Be(200);
+        }
+
+        [Fact(DisplayName = "リアクティブで無効化されたインシデントの後でも、同じターンの 2 枚目のインシデントは使用済みとして拒否される")]
+        public void CancelledIncident_SecondIncidentInSameTurn_IsRejected()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(("h_1", IncidentCardId), ("h_2", IncidentCardId));
+            state.Player2Field.Support[0] = new DeployedSupport
+            {
+                InstanceID = "opp_react",
+                CardID = CancellingReactiveCardId,
+                FaceUp = true,
+            };
+
+            var first = Play(state, cc, registry, "h_1");
+            var act = () => Play(state, cc, registry, "h_2");
+
+            first.Events.First(e => e.EventType == ActionTypes.PlayCard)
+                .EventData.Should().BeOfType<PlayCardEventData>()
+                .Which.Cancelled.Should().Be(true);
+            state.Player1Budget.Should().Be(0);
+            act.Should().Throw<GameRuleException>().WithMessage("*incident already played this turn*");
+        }
+    }
 }

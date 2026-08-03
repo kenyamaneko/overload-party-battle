@@ -454,9 +454,6 @@ namespace OverloadParty.GameState
         [System.Text.Json.Serialization.JsonPropertyName("effectUsedThisTurn")]
         public bool EffectUsedThisTurn { get; set; } = default!;
 
-        [System.Text.Json.Serialization.JsonPropertyName("effectUsedThisGame")]
-        public bool EffectUsedThisGame { get; set; } = default!;
-
         [System.Text.Json.Serialization.JsonPropertyName("deployedOnTurn")]
         public long DeployedOnTurn { get; set; } = default!;
 
@@ -507,9 +504,6 @@ namespace OverloadParty.GameState
 
         [System.Text.Json.Serialization.JsonPropertyName("effectUsedThisTurn")]
         public bool EffectUsedThisTurn { get; set; } = default!;
-
-        [System.Text.Json.Serialization.JsonPropertyName("effectUsedThisGame")]
-        public bool EffectUsedThisGame { get; set; } = default!;
 
         /// <summary>
         /// Attachment 対象のインスタンス ID

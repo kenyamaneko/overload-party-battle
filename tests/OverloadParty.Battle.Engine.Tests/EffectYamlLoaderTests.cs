@@ -455,6 +455,74 @@ public class UnknownValueRejectionTests
         act.Should().Throw<InvalidOperationException>().WithMessage("*Unknown use_limit*");
     }
 
+    [Theory(DisplayName = "起動効果に宣言した回数制限は、効果レジストリから引ける")]
+    [InlineData(UseLimits.OncePerTurn, UseLimitKind.OncePerTurn)]
+    [InlineData(UseLimits.OncePerGame, UseLimitKind.OncePerGame)]
+    public void IgnitionUseLimit_IsExposedByRegistry(string useLimit, UseLimitKind expected)
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9210");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "ignition",
+                UseLimit = useLimit,
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":100}}""")],
+            },
+        ];
+        var registry = new EffectRegistry();
+
+        EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+
+        registry.GetUseLimit("TST-9210", TriggerType.Ignition).Should().Be(expected);
+    }
+
+    [Fact(DisplayName = "回数制限を宣言していない起動効果は、効果レジストリの回数制限が空になる")]
+    public void IgnitionWithoutUseLimit_RegistryReturnsNoLimit()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9211");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "ignition",
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":100}}""")],
+            },
+        ];
+        var registry = new EffectRegistry();
+
+        EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+
+        registry.GetUseLimit("TST-9211", TriggerType.Ignition).Should().BeNull();
+    }
+
+    [Fact(DisplayName = "回数制限のあるブロックと制限のないブロックが並ぶ起動効果は、効果レジストリの回数制限が空になる")]
+    public void IgnitionWithMixedBlocks_RegistryReturnsNoLimit()
+    {
+        var card = TestFactory.ComputeCard(cardId: "TST-9212");
+        card.Effects =
+        [
+            new EffectDef
+            {
+                Trigger = "ignition",
+                Id = "limited",
+                UseLimit = UseLimits.OncePerTurn,
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":100}}""")],
+            },
+            new EffectDef
+            {
+                Trigger = "ignition",
+                Id = "unlimited",
+                Ops = [Parse("""{"gain_budget":{"target":"myself","amount":50}}""")],
+            },
+        ];
+        var registry = new EffectRegistry();
+
+        EffectYamlLoader.LoadEffectSources([card], registry, new CustomEffectRegistry());
+
+        registry.GetUseLimit("TST-9212", TriggerType.Ignition).Should().BeNull();
+    }
+
     [Fact(DisplayName = "id の無い効果定義は、読み込みが失敗する")]
     public void MissingId_Throws()
     {

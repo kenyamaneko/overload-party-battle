@@ -192,7 +192,7 @@ public class IgnitionEffectTests
             state.PendingEffectChoice.Should().BeNull();
         }
 
-        [Fact(DisplayName = "相手に伏せリアクティブが無いとき、選択待ちにならず起動効果は使用済みになって終わる")]
+        [Fact(DisplayName = "相手に伏せリアクティブが無いとき、選択待ちにならず起動効果の使用イベントだけで終わる")]
         public void Ignition_NoFaceDown_CompletesWithoutSuspending()
         {
             var (cc, effects) = Env(TestFactory.ComputeCard(cardId: "TST-0001"), new RevealReactiveOp());
@@ -202,7 +202,6 @@ public class IgnitionEffectTests
 
             state.PendingEffectChoice.Should().BeNull();
             result.Events.Should().Contain(e => e.EventType == ActionTypes.UseIgnition);
-            state.Player1Field.Frontend[0]!.EffectUsedThisTurn.Should().BeTrue();
         }
     }
 

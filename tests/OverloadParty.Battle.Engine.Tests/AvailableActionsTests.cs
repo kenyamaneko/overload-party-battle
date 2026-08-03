@@ -3,6 +3,7 @@ using System.Text.Json;
 using OverloadParty.Battle.Engine;
 using OverloadParty.Battle.Engine.Effects;
 using OverloadParty.Battle.Engine.Effects.Ops;
+using OverloadParty.Battle.Engine.Processors;
 using OverloadParty.Battle.Models;
 
 namespace OverloadParty.Battle.Tests.Engine;
@@ -42,12 +43,16 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.Attack);
         }
 
-        [Fact(DisplayName = "バトルフェーズでは攻撃が候補になり、カードのプレイ・スケールアップ・収益化は候補にならない")]
-        public void BattlePhase_ReturnsAttackAndIgniteOnly()
+        [Fact(DisplayName = "バトルフェーズでは攻撃が候補になり、カードのプレイ・スケールアップ・収益化・起動効果の使用は候補にならない")]
+        public void BattlePhase_ReturnsAttackOnly()
         {
             var cc = new TestCardCache();
             var compute = TestFactory.ComputeCard(cardId: "TST-0001");
             cc.Add(compute);
+
+            var registry = new EffectRegistry();
+            registry.RegisterComposed("TST-0001", TriggerType.Ignition,
+                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
 
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Battle, p1Budget: 5000);
             var myField = TestFactory.MakeField();
@@ -57,12 +62,13 @@ public class AvailableActionsTests
             oppField.Frontend[0] = TestFactory.MakeResource(cardId: "TST-0001", instanceId: "opp_1");
 
             var actions = AvailableActions.GetAllAvailableActions(
-                state, 1, myField, oppField, [], 5000, 0, cc, new EffectRegistry());
+                state, 1, myField, oppField, [], 5000, 0, cc, registry);
 
             actions.Should().Contain(a => a.Type == ActionTypes.Attack);
             actions.Should().NotContain(a => a.Type == ActionTypes.PlayCard);
             actions.Should().NotContain(a => a.Type == ActionTypes.ScaleUp);
             actions.Should().NotContain(a => a.Type == ActionTypes.Monetize);
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
     }
 
@@ -1448,15 +1454,12 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
-        [Fact(DisplayName = "このターン起動効果を使用済みのリソースは起動効果の使用が候補にならない")]
-        public void UseIgnition_EffectUsedThisTurnExcluded()
+        [Fact(DisplayName = "回数制限のないリソースは、このターン起動効果を使用済みでも起動効果の使用が候補になる")]
+        public void UseIgnition_NoUseLimitAfterUse_StillIncluded()
         {
             var cc = new TestCardCache();
-            cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
-
             var registry = new EffectRegistry();
-            registry.RegisterComposed("TST-0009", TriggerType.Ignition,
-                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(200)));
+            TestUseLimitEffects.RegisterBudgetGain(cc, registry, TestFactory.ComputeCard(cardId: "TST-0009"));
 
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
             var myField = TestFactory.MakeField();
@@ -1467,7 +1470,7 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
         }
 
         [Fact(DisplayName = "起動効果を持つ稼働中のサポートカードは起動効果の使用が候補になる")]
@@ -1521,22 +1524,20 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
-        [Fact(DisplayName = "このターン起動効果を使用済みのサポートカードは起動効果の使用が候補にならない")]
-        public void UseIgnition_SupportEffectUsedThisTurnExcluded()
+        [Fact(DisplayName = "1 ターン 1 回のサポートカードは、このターン起動効果を使用済みだと起動効果の使用が候補にならない")]
+        public void UseIgnition_SupportOncePerTurnAfterUse_Excluded()
         {
             var cc = new TestCardCache();
-            cc.Add(TestFactory.PlatformCard(cardId: "TEST-0200"));
-
             var registry = new EffectRegistry();
-            registry.RegisterComposed("TEST-0200", TriggerType.Ignition,
-                new GainBudgetOp(PlayerRef.Myself, new StaticAmount(100)));
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.PlatformCard(cardId: "TST-0210"), UseLimits.OncePerTurn);
 
             var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main);
             var myField = TestFactory.MakeField();
             myField.Support[0] = new DeployedSupport
             {
                 InstanceID = "sup_1",
-                CardID = "TEST-0200",
+                CardID = "TST-0210",
                 DeployingTurnsLeft = 0,
                 EffectUsedThisTurn = true
             };
@@ -1547,10 +1548,9 @@ public class AvailableActionsTests
             actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
-        [Fact(DisplayName = "バトルフェーズでも起動効果の使用が候補になる")]
-        public void UseIgnition_AvailableInBattlePhase()
+        [Fact(DisplayName = "バトルフェーズでは起動効果の使用が候補にならない")]
+        public void UseIgnition_NotAvailableInBattlePhase()
         {
-            // 効果発動はバトルフェーズでも可能
             var cc = new TestCardCache();
             cc.Add(TestFactory.ComputeCard(cardId: "TST-0009"));
 
@@ -1565,7 +1565,7 @@ public class AvailableActionsTests
             var actions = AvailableActions.GetAllAvailableActions(
                 state, 1, myField, TestFactory.MakeField(), [], 5000, 0, cc, registry);
 
-            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "res_10");
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
 
         [Fact(DisplayName = "裏向きリソースは起動効果を使用できない")]
@@ -1949,6 +1949,88 @@ public class AvailableActionsTests
             {
                 field.Backend[i] = TestFactory.MakeResource(cardId: DeployCardId, instanceId: $"be_{i}");
             }
+        }
+    }
+
+    [Trait("対象", "回数制限による起動効果の使用の列挙")]
+    public class UseLimitEnumeration : Base
+    {
+        private const string OncePerTurnCardId = "TST-0450";
+        private const string OncePerGameCardId = "TST-0451";
+
+        /// <summary>1 ターン 1 回と 1 ゲーム 1 回のリソースを効果ごと登録する。</summary>
+        /// <returns>カード定義キャッシュと効果レジストリ。</returns>
+        private static (TestCardCache Cc, EffectRegistry Registry) MakeEnv()
+        {
+            var cc = new TestCardCache();
+            var registry = new EffectRegistry();
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.ComputeCard(cardId: OncePerTurnCardId, mc: 0, deployTurns: 0),
+                UseLimits.OncePerTurn);
+            TestUseLimitEffects.RegisterBudgetGain(
+                cc, registry, TestFactory.ComputeCard(cardId: OncePerGameCardId, mc: 0, deployTurns: 0),
+                UseLimits.OncePerGame);
+            return (cc, registry);
+        }
+
+        /// <summary>指定したカードをフロントエンドの先頭に置いた状態を作る。</summary>
+        /// <param name="cardId">配置するカードの ID。</param>
+        /// <returns>テスト用ゲーム状態。</returns>
+        private static BattleGameState MakeState(string cardId)
+        {
+            var state = TestFactory.MakeGameState(turn: 3, phase: Phase.Main, p1Budget: 0);
+            state.Player1Field.Frontend[0] =
+                TestFactory.MakeResource(cardId: cardId, instanceId: "r_1", faceUp: true);
+            return state;
+        }
+
+        /// <summary>手番プレイヤーが実行できるアクションを列挙する。</summary>
+        private static List<AvailableAction> Enumerate(
+            BattleGameState state, TestCardCache cc, EffectRegistry registry) =>
+            AvailableActions.GetAllAvailableActions(
+                state, 1, state.Player1Field, TestFactory.MakeField(), [], state.Player1Budget, 0, cc, registry);
+
+        /// <summary>フィールドのリソースから起動効果を使用する。</summary>
+        private static void Ignite(BattleGameState state, TestCardCache cc, EffectRegistry registry) =>
+            UseIgnitionProcessor.Process(
+                state, TestFactory.MakeGame(), 1, new UseIgnitionRequest { InstanceID = "r_1" }, cc, registry);
+
+        [Fact(DisplayName = "1 ターン 1 回の起動効果を未使用のリソースは、起動効果の使用が候補になる")]
+        public void OncePerTurn_NotYetUsed_Included()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(OncePerTurnCardId);
+
+            var actions = Enumerate(state, cc, registry);
+
+            actions.Should().Contain(a => a.Type == ActionTypes.UseIgnition && a.SourceInstanceID == "r_1");
+        }
+
+        [Fact(DisplayName = "1 ターン 1 回の起動効果を使用した後は、同じターンの候補から起動効果の使用が消える")]
+        public void OncePerTurn_AfterUse_Excluded()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(OncePerTurnCardId);
+            Ignite(state, cc, registry);
+
+            var actions = Enumerate(state, cc, registry);
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
+        }
+
+        [Fact(DisplayName = "1 ゲーム 1 回の起動効果を使用した後は、同名の別コピーでも候補から起動効果の使用が消える")]
+        public void OncePerGame_AfterUse_ExcludedForAnotherCopy()
+        {
+            var (cc, registry) = MakeEnv();
+            var state = MakeState(OncePerGameCardId);
+            Ignite(state, cc, registry);
+
+            state.Player1Field.Frontend[0] = null;
+            state.Player1Field.Frontend[1] =
+                TestFactory.MakeResource(cardId: OncePerGameCardId, instanceId: "r_2", faceUp: true);
+            var actions = Enumerate(state, cc, registry);
+
+            actions.Should().NotContain(a => a.Type == ActionTypes.UseIgnition);
         }
     }
 }

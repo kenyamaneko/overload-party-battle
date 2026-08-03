@@ -112,17 +112,18 @@ public class CustomFnOp(Action<OpContext> fn) : IEffectOp
 }
 
 /// <summary>
-/// Guards against re-use of an effect based on per-turn or per-game limit.
+/// カード記載の回数制限を使い切った効果の実行を止めます。
 /// </summary>
-public class CheckUseLimitOp(bool perGame) : IEffectOp
+public class CheckUseLimitOp(UseLimitKind limit) : IEffectOp
 {
+    /// <summary>この op が確かめる回数制限。</summary>
+    public UseLimitKind Limit => limit;
+
     /// <inheritdoc />
     public void Execute(OpContext ctx)
     {
-        bool used = perGame
-            ? (ctx.Source?.EffectUsedThisGame ?? false) || (ctx.SupSource?.EffectUsedThisGame ?? false)
-            : (ctx.Source?.EffectUsedThisTurn ?? false) || (ctx.SupSource?.EffectUsedThisTurn ?? false);
-
+        bool used = UseLimitRules.IsConsumed(
+            limit, ctx.State, ctx.PlayerNum, ctx.Ctx.EffectCardId, ctx.Source, ctx.SupSource);
         if (!used)
         {
             return;
@@ -132,8 +133,12 @@ public class CheckUseLimitOp(bool perGame) : IEffectOp
         // 誘発効果は契機イベントが勝手に来るため、使用済みは発動条件の不成立として扱い契機のアクションを拒否しない。
         if (ctx.Ctx.Trigger == TriggerType.Ignition)
         {
-            throw new GameRuleException(
-                perGame ? "Effect already used this game" : "Effect already used this turn");
+            throw new GameRuleException(limit switch
+            {
+                UseLimitKind.OncePerGame => "Effect already used this game",
+                UseLimitKind.OncePerTurn => "Effect already used this turn",
+                _ => throw new ArgumentOutOfRangeException(nameof(limit), limit, "unknown use limit"),
+            });
         }
 
         ctx.AbortAsConditionUnmet();
@@ -141,38 +146,16 @@ public class CheckUseLimitOp(bool perGame) : IEffectOp
 }
 
 /// <summary>
-/// Marks the source as having used its effect (per-turn or per-game).
+/// カード記載の回数制限を 1 回分使ったものとして記録します。
 /// </summary>
-public class MarkUseLimitOp(bool perGame) : IEffectOp
+public class MarkUseLimitOp(UseLimitKind limit) : IEffectOp
 {
+    /// <summary>この op が記録する回数制限。</summary>
+    public UseLimitKind Limit => limit;
+
     /// <inheritdoc />
-    public void Execute(OpContext ctx)
-    {
-        if (perGame)
-        {
-            if (ctx.Source is not null)
-            {
-                ctx.Source.EffectUsedThisGame = true;
-            }
-
-            if (ctx.SupSource is not null)
-            {
-                ctx.SupSource.EffectUsedThisGame = true;
-            }
-        }
-        else
-        {
-            if (ctx.Source is not null)
-            {
-                ctx.Source.EffectUsedThisTurn = true;
-            }
-
-            if (ctx.SupSource is not null)
-            {
-                ctx.SupSource.EffectUsedThisTurn = true;
-            }
-        }
-    }
+    public void Execute(OpContext ctx) => UseLimitRules.MarkConsumed(
+        limit, ctx.State, ctx.PlayerNum, ctx.Ctx.EffectCardId, ctx.Source, ctx.SupSource);
 }
 
 /// <summary>

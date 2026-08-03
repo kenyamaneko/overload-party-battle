@@ -114,6 +114,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 | `player1_time_bank` | BIGINT | No | Player 1 残り時間 |
 | `player1_incident_played_this_turn` | BOOLEAN | No | Player 1 がこのターンにインシデントを使用済みか |
 | `player1_has_operated` | BOOLEAN | No | Player 1 の稼働実績フラグ |
+| `player1_status` | JSONB | No | Player 1 のカード個体に紐付かない持ち越し状態 |
 | `player2_budget` | BIGINT | No | Player 2 Budget |
 | `player2_insight_pool` | BIGINT | No | Player 2 Insight Pool |
 | `player2_field` | JSONB | No | Player 2 フィールド上のカード |
@@ -123,6 +124,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 | `player2_time_bank` | BIGINT | No | Player 2 残り時間 |
 | `player2_incident_played_this_turn` | BOOLEAN | No | Player 2 がこのターンにインシデントを使用済みか |
 | `player2_has_operated` | BOOLEAN | No | Player 2 の稼働実績フラグ |
+| `player2_status` | JSONB | No | Player 2 のカード個体に紐付かない持ち越し状態 |
 | `current_action_timer` | BIGINT | Yes | アクションタイマー |
 | `next_instance_seq` | BIGINT | No | インスタンスID発番用シーケンス |
 | `turn_started_at` | TIMESTAMPTZ | No | タイムバンク減算の基準点。ターン開始時に現在時刻を入れ、以降は減算した整数秒ぶんだけ進めて 1 秒未満の端数を次回に持ち越す |

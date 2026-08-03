@@ -159,7 +159,6 @@ type DeployedResource struct {
 
 	// DeployingTurnsLeft デプロイ残りターン数 (0=アクティブ)
 	DeployingTurnsLeft int64 `json:"deployingTurnsLeft"`
-	EffectUsedThisGame bool  `json:"effectUsedThisGame"`
 	EffectUsedThisTurn bool  `json:"effectUsedThisTurn"`
 	ElasticBonus       int64 `json:"elasticBonus"`
 	FaceUp             bool  `json:"faceUp"`
@@ -183,7 +182,6 @@ type DeployedSupport struct {
 	CardID             string `json:"cardID"`
 	DeployOrder        int64  `json:"deployOrder"`
 	DeployingTurnsLeft int64  `json:"deployingTurnsLeft"`
-	EffectUsedThisGame bool   `json:"effectUsedThisGame"`
 	EffectUsedThisTurn bool   `json:"effectUsedThisTurn"`
 	FaceUp             bool   `json:"faceUp"`
 	InstanceID         string `json:"instanceID"`

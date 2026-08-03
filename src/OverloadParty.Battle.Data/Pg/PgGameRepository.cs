@@ -174,14 +174,14 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 version = $1, current_turn = $2, current_phase = $3, active_player = $4,
                 player1_budget = $5, player1_insight_pool = $6, player1_field = $7, player1_hand = $8,
                 player1_repository = $9, player1_trash = $10, player1_time_bank = $11,
-                player1_incident_played_this_turn = $12, player1_has_operated = $13,
-                player2_budget = $14, player2_insight_pool = $15, player2_field = $16, player2_hand = $17,
-                player2_repository = $18, player2_trash = $19, player2_time_bank = $20,
-                player2_incident_played_this_turn = $21, player2_has_operated = $22,
-                current_action_timer = $23, next_instance_seq = $24,
-                turn_started_at = $25, next_deploy_order_seq = $26,
-                pending_slot_selects = $27, pending_effect_choice = $28, updated_at = $29
-            WHERE game_id = $30", conn, tx))
+                player1_incident_played_this_turn = $12, player1_has_operated = $13, player1_status = $14,
+                player2_budget = $15, player2_insight_pool = $16, player2_field = $17, player2_hand = $18,
+                player2_repository = $19, player2_trash = $20, player2_time_bank = $21,
+                player2_incident_played_this_turn = $22, player2_has_operated = $23, player2_status = $24,
+                current_action_timer = $25, next_instance_seq = $26,
+                turn_started_at = $27, next_deploy_order_seq = $28,
+                pending_slot_selects = $29, pending_effect_choice = $30, updated_at = $31
+            WHERE game_id = $32", conn, tx))
         {
             AddGameStateParams(cmd, state);
             cmd.Parameters.AddWithValue(state.GameID);
@@ -319,10 +319,10 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         SELECT game_id, version, current_turn, current_phase, active_player,
                player1_budget, player1_insight_pool, player1_field, player1_hand,
                player1_repository, player1_trash, player1_time_bank,
-               player1_incident_played_this_turn, player1_has_operated,
+               player1_incident_played_this_turn, player1_has_operated, player1_status,
                player2_budget, player2_insight_pool, player2_field, player2_hand,
                player2_repository, player2_trash, player2_time_bank,
-               player2_incident_played_this_turn, player2_has_operated,
+               player2_incident_played_this_turn, player2_has_operated, player2_status,
                current_action_timer, next_instance_seq,
                turn_started_at, next_deploy_order_seq,
                pending_slot_selects, pending_effect_choice, updated_at
@@ -375,26 +375,28 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
             Player1TimeBank = r.GetInt64(11),
             Player1IncidentPlayedThisTurn = r.GetBoolean(12),
             Player1HasOperated = r.GetBoolean(13),
+            Player1Status = JsonSerializer.Deserialize<PlayerStatus>(r.GetString(14), DbJsonOptions.Default) ?? new(),
 
-            Player2Budget = r.GetInt64(14),
-            Player2InsightPool = r.GetInt64(15),
-            Player2Field = JsonSerializer.Deserialize<Field>(r.GetString(16), DbJsonOptions.Default) ?? new(),
-            Player2Hand = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(17), DbJsonOptions.Default) ?? [],
-            Player2Repository = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(18), DbJsonOptions.Default) ?? [],
-            Player2Trash = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(19), DbJsonOptions.Default) ?? [],
-            Player2TimeBank = r.GetInt64(20),
-            Player2IncidentPlayedThisTurn = r.GetBoolean(21),
-            Player2HasOperated = r.GetBoolean(22),
+            Player2Budget = r.GetInt64(15),
+            Player2InsightPool = r.GetInt64(16),
+            Player2Field = JsonSerializer.Deserialize<Field>(r.GetString(17), DbJsonOptions.Default) ?? new(),
+            Player2Hand = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(18), DbJsonOptions.Default) ?? [],
+            Player2Repository = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(19), DbJsonOptions.Default) ?? [],
+            Player2Trash = JsonSerializer.Deserialize<List<UndeployedCard>>(r.GetString(20), DbJsonOptions.Default) ?? [],
+            Player2TimeBank = r.GetInt64(21),
+            Player2IncidentPlayedThisTurn = r.GetBoolean(22),
+            Player2HasOperated = r.GetBoolean(23),
+            Player2Status = JsonSerializer.Deserialize<PlayerStatus>(r.GetString(24), DbJsonOptions.Default) ?? new(),
 
-            CurrentActionTimer = r.IsDBNull(23) ? null : r.GetInt64(23),
-            NextInstanceSeq = r.GetInt64(24),
-            TurnStartedAt = r.GetDateTime(25),
-            NextDeployOrderSeq = r.GetInt64(26),
-            PendingSlotSelects = JsonSerializer.Deserialize<List<AwaitingSlotSelect>>(r.GetString(27), DbJsonOptions.Default) ?? [],
-            PendingEffectChoice = r.IsDBNull(28)
+            CurrentActionTimer = r.IsDBNull(25) ? null : r.GetInt64(25),
+            NextInstanceSeq = r.GetInt64(26),
+            TurnStartedAt = r.GetDateTime(27),
+            NextDeployOrderSeq = r.GetInt64(28),
+            PendingSlotSelects = JsonSerializer.Deserialize<List<AwaitingSlotSelect>>(r.GetString(29), DbJsonOptions.Default) ?? [],
+            PendingEffectChoice = r.IsDBNull(30)
                 ? null
-                : JsonSerializer.Deserialize<PendingEffectChoice>(r.GetString(28), DbJsonOptions.Default),
-            UpdatedAt = r.GetDateTime(29),
+                : JsonSerializer.Deserialize<PendingEffectChoice>(r.GetString(30), DbJsonOptions.Default),
+            UpdatedAt = r.GetDateTime(31),
         };
     }
 
@@ -407,14 +409,14 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
                 game_id, initial_state, version, current_turn, current_phase, active_player,
                 player1_budget, player1_insight_pool, player1_field, player1_hand,
                 player1_repository, player1_trash, player1_time_bank,
-                player1_incident_played_this_turn, player1_has_operated,
+                player1_incident_played_this_turn, player1_has_operated, player1_status,
                 player2_budget, player2_insight_pool, player2_field, player2_hand,
                 player2_repository, player2_trash, player2_time_bank,
-                player2_incident_played_this_turn, player2_has_operated,
+                player2_incident_played_this_turn, player2_has_operated, player2_status,
                 current_action_timer, next_instance_seq,
                 turn_started_at, next_deploy_order_seq,
                 pending_slot_selects, pending_effect_choice, updated_at
-            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31)", conn, tx);
+            ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28,$29,$30,$31,$32,$33)", conn, tx);
         cmd.Parameters.AddWithValue(state.GameID);
         cmd.Parameters.Add(new NpgsqlParameter { NpgsqlDbType = NpgsqlDbType.Jsonb, Value = stateJson });
         AddGameStateParams(cmd, state);
@@ -437,6 +439,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(state.Player1TimeBank);
         cmd.Parameters.AddWithValue(state.Player1IncidentPlayedThisTurn);
         cmd.Parameters.AddWithValue(state.Player1HasOperated);
+        cmd.Parameters.Add(BuildJsonbParam(state.Player1Status));
 
         cmd.Parameters.AddWithValue(state.Player2Budget);
         cmd.Parameters.AddWithValue(state.Player2InsightPool);
@@ -447,6 +450,7 @@ public class PgGameRepository(NpgsqlDataSource ds) : IGameRepository
         cmd.Parameters.AddWithValue(state.Player2TimeBank);
         cmd.Parameters.AddWithValue(state.Player2IncidentPlayedThisTurn);
         cmd.Parameters.AddWithValue(state.Player2HasOperated);
+        cmd.Parameters.Add(BuildJsonbParam(state.Player2Status));
 
         cmd.Parameters.AddWithValue((object?)state.CurrentActionTimer ?? DBNull.Value);
         cmd.Parameters.AddWithValue(state.NextInstanceSeq);

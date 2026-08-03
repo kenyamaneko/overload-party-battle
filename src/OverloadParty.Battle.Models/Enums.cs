@@ -94,6 +94,18 @@ public enum ActionType
 }
 
 /// <summary>
+/// UseLimitKind は効果がカード記載で宣言する回数制限を表現します
+/// </summary>
+public enum UseLimitKind
+{
+    /// <summary>同一ターンに 1 回だけ使用できる。カード個体ごとに数える。</summary>
+    OncePerTurn,
+
+    /// <summary>同一ゲームに 1 回だけ使用できる。プレイヤーごとにカード名で数える。</summary>
+    OncePerGame
+}
+
+/// <summary>
 /// TriggerType は効果の発動条件を表現します
 /// </summary>
 public enum TriggerType

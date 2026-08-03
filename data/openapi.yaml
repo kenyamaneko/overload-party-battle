@@ -724,7 +724,6 @@ components:
         - damage
         - temporaryEffects
         - effectUsedThisTurn
-        - effectUsedThisGame
         - deployedOnTurn
         - deployOrder
         - elasticBonus
@@ -797,8 +796,6 @@ components:
             $ref: "#/components/schemas/TemporaryEffect"
         effectUsedThisTurn:
           type: boolean
-        effectUsedThisGame:
-          type: boolean
         deployedOnTurn:
           type: integer
           format: int64
@@ -824,7 +821,6 @@ components:
         - deployingTurnsLeft
         - deployOrder
         - effectUsedThisTurn
-        - effectUsedThisGame
       properties:
         instanceID:
           type: string
@@ -846,8 +842,6 @@ components:
           type: integer
           format: int64
         effectUsedThisTurn:
-          type: boolean
-        effectUsedThisGame:
           type: boolean
         targetInstanceID:
           type: string
