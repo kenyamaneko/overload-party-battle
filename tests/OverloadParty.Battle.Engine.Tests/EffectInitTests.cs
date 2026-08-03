@@ -75,7 +75,7 @@ public class EffectRegistrationTests
         // 各 TriggerType 種別の代表 1 件のみを残す (load の動線確認が目的、
         // カード固有挙動は別途 Card{NN}_* / SH{NN}_* Fact で検証)
         [Theory(DisplayName = "SHE 陣営のカードが指定トリガーのハンドラを登録済みである")]
-        [InlineData("SH-0006", TriggerType.OnDeploy)]
+        [InlineData("SH-0006", TriggerType.OnSet)]
         [InlineData("SH-0008", TriggerType.OnDestroy)]
         [InlineData("SH-0009", TriggerType.Ignition)]
         [InlineData("SH-0014", TriggerType.OnIncident)]
@@ -109,7 +109,7 @@ public class EffectRegistrationTests
     public class SugarFactionRegistration : Base
     {
         [Theory(DisplayName = "しゅがーらぼ 陣営のカードが指定トリガーのハンドラを登録済みである")]
-        [InlineData("SL-0004", TriggerType.OnDeploy)]
+        [InlineData("SL-0004", TriggerType.OnSet)]
         [InlineData("SL-0006", TriggerType.OnAttack)]
         [InlineData("SL-0007", TriggerType.OnDestroy)]
         [InlineData("SL-0016", TriggerType.OnEndPhase)]
@@ -211,10 +211,10 @@ public class EffectRegistrationTests
     public class ChoiceBranchOptions : Base
     {
         [Theory(DisplayName = "分岐を持つカードが期待どおりの分岐選択肢キーを返す")]
-        [InlineData("SH-0006", TriggerType.OnDeploy, new[] { "use", "skip" })]
+        [InlineData("SH-0006", TriggerType.OnSet, new[] { "use", "skip" })]
         [InlineData("SH-0010", TriggerType.OnDeploy, new[] { "memcached", "redis" })]
         [InlineData("SL-0012", TriggerType.OnDeploy, new[] { "memcached", "redis" })]
-        [InlineData("SL-0004", TriggerType.OnDeploy, new[] { "autopilot", "standard" })]
+        [InlineData("SL-0004", TriggerType.OnSet, new[] { "autopilot", "standard" })]
         public void Cards_HaveExpectedBranches(string cardId, TriggerType trigger, string[] expectedKeys)
         {
             var options = _registry.GetChoiceOptions(cardId, trigger);
