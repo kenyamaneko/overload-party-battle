@@ -1117,9 +1117,7 @@
         "custom": "cloud_shift",
         "meta": {
           "faction": "Tenki",
-          "card_type": [
-            "Compute"
-          ],
+          "card_type": "Compute",
           "deploy_discount": 500
         }
       }
@@ -1154,7 +1152,7 @@
         "custom": "cloud_shift",
         "meta": {
           "faction": "Tuners",
-          "card_type": [
+          "subtype": [
             "Database",
             "CacheDB"
           ],
@@ -1424,7 +1422,10 @@
                     "owner": "myself",
                     "zone": "backend",
                     "faction": "SHE",
-                    "subtype": "Database",
+                    "subtype": [
+                      "Database",
+                      "CacheDB"
+                    ],
                     "exclude": "source"
                   },
                   "value": 200
@@ -3233,7 +3234,10 @@
             "match": {
               "selector": "target",
               "faction": "Tenki",
-              "card_type": "DataResource"
+              "subtype": [
+                "Database",
+                "CacheDB"
+              ]
             }
           },
           {
@@ -3703,13 +3707,7 @@
               "faction": "Tenki",
               "card_type": [
                 "Compute",
-                "Container",
-                "Orchestrator",
-                "Serverless",
-                "AI/ML",
-                "Database",
-                "CacheDB",
-                "ObjectStorage"
+                "DataResource"
               ]
             }
           }
@@ -4053,7 +4051,7 @@
               "selector": {
                 "owner": "myself",
                 "faction": "Tuners",
-                "card_type": [
+                "subtype": [
                   "Database",
                   "CacheDB"
                 ]
@@ -4309,7 +4307,10 @@
             "deploy_from_repo": {
               "filter": {
                 "faction": "Tuners",
-                "subtype": "Database"
+                "subtype": [
+                  "Database",
+                  "CacheDB"
+                ]
               },
               "override_av": 200
             }
@@ -4425,7 +4426,10 @@
                 "owner": "myself",
                 "zone": "backend",
                 "faction": "Tuners",
-                "subtype": "Database",
+                "subtype": [
+                  "Database",
+                  "CacheDB"
+                ],
                 "pick": "choice"
               },
               "amount": {
@@ -4462,7 +4466,10 @@
             "match": {
               "selector": "target",
               "faction": "Tuners",
-              "subtype": "Database"
+              "subtype": [
+                "Database",
+                "CacheDB"
+              ]
             }
           }
         ],
@@ -4471,7 +4478,10 @@
             "deploy_from_hand": {
               "filter": {
                 "faction": "Tuners",
-                "subtype": "Database"
+                "subtype": [
+                  "Database",
+                  "CacheDB"
+                ]
               }
             }
           }
