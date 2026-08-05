@@ -19,6 +19,20 @@ public class ActionEventWithState
 }
 
 /// <summary>
+/// A single slot's specification for game creation. Human slots set
+/// <see cref="DeckCards"/>/<see cref="RoutineId"/>/<see cref="SpecialId"/>; NPC slots set
+/// <see cref="NpcModel"/>. Exactly one of the two must be set.
+/// </summary>
+public class GameSlotSpec
+{
+    public List<DeckSnapshotCard>? DeckCards { get; init; }
+    public string? RoutineId { get; init; }
+    public string? SpecialId { get; init; }
+    public string? NpcModel { get; init; }
+    public required PlayerSummarySnapshot Summary { get; init; }
+}
+
+/// <summary>
 /// Result of a player action.
 /// </summary>
 public class GameActionResult
@@ -67,34 +81,39 @@ public class GameService
     // ─── Game creation ──────────────────────────────────────────
 
     /// <summary>
-    /// Creates a new PvP game from matchmaking parameters (called by Gateway).
+    /// Creates a new game from slot-symmetric specifications. Each slot resolves to either a
+    /// human deck or an NPC deck; slot order determines player number (slots[0] = player 1).
     /// 対戦当時の player display 情報 (name / level) を battle が永続化する。account
     /// に同期依存せず、引数として渡された snapshot をそのまま信頼して保存する。
     /// </summary>
-    /// <param name="player1Cards">プレイヤー 1 のデッキ snapshot。</param>
-    /// <param name="player1Routine">プレイヤー 1 がセットしたルーチン施策の ID。</param>
-    /// <param name="player1Special">プレイヤー 1 がセットしたスペシャル施策の ID。</param>
-    /// <param name="player2Cards">プレイヤー 2 のデッキ snapshot。</param>
-    /// <param name="player2Routine">プレイヤー 2 がセットしたルーチン施策の ID。</param>
-    /// <param name="player2Special">プレイヤー 2 がセットしたスペシャル施策の ID。</param>
-    /// <param name="playerSummaries">両プレイヤーの表示用 summary。</param>
+    /// <param name="slots">2 スロット分のゲーム作成指定 (配列順 = プレイヤー番号)。</param>
     /// <param name="ct">キャンセル用トークン。</param>
     /// <returns>初期化済みの Game。</returns>
-    public async Task<Game> CreateGameFromMatch(
-        List<DeckSnapshotCard> player1Cards, string player1Routine, string player1Special,
-        List<DeckSnapshotCard> player2Cards, string player2Routine, string player2Special,
-        IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
-        CancellationToken ct = default)
+    public async Task<Game> CreateGame(IReadOnlyList<GameSlotSpec> slots, CancellationToken ct = default)
     {
-        var deck1 = new DeckSnapshot { Cards = player1Cards, RoutineId = player1Routine, SpecialId = player1Special };
-        var deck2 = new DeckSnapshot { Cards = player2Cards, RoutineId = player2Routine, SpecialId = player2Special };
+        if (slots.Count != 2)
+        {
+            throw new GameRuleException($"slots must contain exactly 2 entries, got {slots.Count}");
+        }
+
+        var decks = slots.Select(ResolveDeck).ToList();
+        var npcModels = slots.Select(s => s.NpcModel).ToList();
+
+        if (npcModels[0] is not null && npcModels[1] is not null)
+        {
+            throw new GameRuleException("both players are NPC");
+        }
 
         long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
 
         var gameID = await _engine.CreateNewGame(
-            deck1, deck2, firstPlayer,
+            decks[0], decks[1], firstPlayer,
+            npc1Model: npcModels[0], npc2Model: npcModels[1],
             engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
 
+        var playerSummaries = slots
+            .Select((s, i) => new PlayerSummarySnapshot { PlayerNum = i + 1, Name = s.Summary.Name, Level = s.Summary.Level })
+            .ToList();
         await _gameRepo.SavePlayerSummaries(gameID, playerSummaries, ct);
 
         var game = await _gameRepo.GetGame(gameID, ct)
@@ -105,8 +124,33 @@ public class GameService
     }
 
     /// <summary>
+    /// Creates a new PvP game from matchmaking parameters (called by Gateway).
+    /// </summary>
+    /// <param name="player1Cards">プレイヤー 1 のデッキ snapshot。</param>
+    /// <param name="player1Routine">プレイヤー 1 がセットしたルーチン施策の ID。</param>
+    /// <param name="player1Special">プレイヤー 1 がセットしたスペシャル施策の ID。</param>
+    /// <param name="player2Cards">プレイヤー 2 のデッキ snapshot。</param>
+    /// <param name="player2Routine">プレイヤー 2 がセットしたルーチン施策の ID。</param>
+    /// <param name="player2Special">プレイヤー 2 がセットしたスペシャル施策の ID。</param>
+    /// <param name="playerSummaries">両プレイヤーの表示用 summary。</param>
+    /// <param name="ct">キャンセル用トークン。</param>
+    /// <returns>初期化済みの Game。</returns>
+    public Task<Game> CreateGameFromMatch(
+        List<DeckSnapshotCard> player1Cards, string player1Routine, string player1Special,
+        List<DeckSnapshotCard> player2Cards, string player2Routine, string player2Special,
+        IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
+        CancellationToken ct = default)
+    {
+        List<GameSlotSpec> slots =
+        [
+            new() { DeckCards = player1Cards, RoutineId = player1Routine, SpecialId = player1Special, Summary = playerSummaries[0] },
+            new() { DeckCards = player2Cards, RoutineId = player2Routine, SpecialId = player2Special, Summary = playerSummaries[1] },
+        ];
+        return CreateGame(slots, ct);
+    }
+
+    /// <summary>
     /// Creates a new NPC game with fully initialized state.
-    /// 対戦当時の player summary (人間 player と NPC) を player_summary に永続化する。
     /// NPC summary は caller (gateway) が npc_model の display_name から組み立てて渡す。
     /// </summary>
     /// <param name="playerCards">人間プレイヤーのデッキ snapshot。</param>
@@ -116,43 +160,56 @@ public class GameService
     /// <param name="playerSummaries">両プレイヤー (人間と NPC) の表示用 summary。</param>
     /// <param name="ct">キャンセル用トークン。</param>
     /// <returns>初期化済みの Game。</returns>
-    public async Task<Game> StartNPCBattle(
+    public Task<Game> StartNPCBattle(
         List<DeckSnapshotCard> playerCards, string playerRoutine, string playerSpecial, string npcModel,
         IReadOnlyList<PlayerSummarySnapshot> playerSummaries,
         CancellationToken ct = default)
     {
-        if (!playerCards.Any())
+        List<GameSlotSpec> slots =
+        [
+            new() { DeckCards = playerCards, RoutineId = playerRoutine, SpecialId = playerSpecial, Summary = playerSummaries[0] },
+            new() { NpcModel = npcModel, Summary = playerSummaries[1] },
+        ];
+        return CreateGame(slots, ct);
+    }
+
+    private DeckSnapshot ResolveDeck(GameSlotSpec slot)
+    {
+        var isHuman = slot.DeckCards is not null;
+        var isNpc = slot.NpcModel is not null;
+
+        if (isHuman == isNpc)
         {
-            throw new InvalidOperationException("deck is empty");
+            throw new GameRuleException("slot must specify exactly one of deck_cards or npc_model");
         }
 
-        if (!_aiConfigs.TryGetValue(npcModel, out var npcConfig))
+        if (isNpc)
         {
-            throw new GameRuleException(
-                $"No AI config found for '{npcModel}'. Available: [{string.Join(", ", _aiConfigs.Keys)}]");
+            if (!_aiConfigs.TryGetValue(slot.NpcModel!, out var npcConfig))
+            {
+                throw new GameRuleException(
+                    $"No AI config found for '{slot.NpcModel}'. Available: [{string.Join(", ", _aiConfigs.Keys)}]");
+            }
+
+            var npcCards = npcConfig.Deck
+                .SelectMany(e => Enumerable.Repeat(new DeckSnapshotCard { CardId = e.CardId }, e.Copies))
+                .ToList();
+
+            return new DeckSnapshot
+            {
+                DeckID = $"npc-{slot.NpcModel}",
+                Cards = npcCards,
+                RoutineId = npcConfig.RoutineId,
+                SpecialId = npcConfig.SpecialId,
+            };
         }
 
-        var npcCards = npcConfig.Deck
-            .SelectMany(e => Enumerable.Repeat(new DeckSnapshotCard { CardId = e.CardId }, e.Copies))
-            .ToList();
+        if (slot.DeckCards!.Count == 0)
+        {
+            throw new GameRuleException("deck is empty");
+        }
 
-        var deck1 = new DeckSnapshot { Cards = playerCards, RoutineId = playerRoutine, SpecialId = playerSpecial };
-        var deck2 = new DeckSnapshot { DeckID = $"npc-{npcModel}", Cards = npcCards, RoutineId = npcConfig.RoutineId, SpecialId = npcConfig.SpecialId };
-
-        long firstPlayer = Random.Shared.Next(2) == 0 ? 1 : 2;
-
-        var gameID = await _engine.CreateNewGame(
-            deck1, deck2, firstPlayer,
-            npc2Model: npcModel,
-            engineVersion: EngineVersion, cardDataVersion: CardDataVersion, ct: ct);
-
-        await _gameRepo.SavePlayerSummaries(gameID, playerSummaries, ct);
-
-        var game = await _gameRepo.GetGame(gameID, ct)
-            ?? throw new InvalidOperationException($"created game {gameID} not found");
-
-        await _engine.RunAutoAdvance(game, ct);
-        return game;
+        return new DeckSnapshot { Cards = slot.DeckCards, RoutineId = slot.RoutineId ?? "", SpecialId = slot.SpecialId ?? "" };
     }
 
     // ─── Actions ────────────────────────────────────────────────

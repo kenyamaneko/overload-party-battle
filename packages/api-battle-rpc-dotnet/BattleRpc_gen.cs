@@ -328,6 +328,77 @@ namespace OverloadParty.ApiBattleRpc
     }
 
     /// <summary>
+    /// POST /api/v1/games のリクエスト body。
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class CreateGameRequest
+    {
+
+        /// <summary>
+        /// スロット番号は配列順 (先頭 = player 1)。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("slots")]
+        public System.Collections.Generic.List<GameSlotRequest> Slots { get; set; } = new System.Collections.Generic.List<GameSlotRequest>();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
+    /// ゲーム作成時の 1 スロット分の指定。人間スロット (deck_cards / routine_id / special_id)
+    /// <br/>か NPC スロット (npc_model) のどちらか一方のみを指定する。両方指定・両方欠落は 400。
+    /// <br/>
+    /// </summary>
+    [System.CodeDom.Compiler.GeneratedCode("NJsonSchema", "14.7.1.0 (NJsonSchema v11.6.1.0 (Newtonsoft.Json v13.0.0.0))")]
+    public partial class GameSlotRequest
+    {
+
+        /// <summary>
+        /// 人間スロットのみ指定。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("deck_cards")]
+        public System.Collections.Generic.List<BattleDeckCard> DeckCards { get; set; } = default!;
+
+        /// <summary>
+        /// 人間スロットのみ指定。デッキに設定されたルーチン施策の ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("routine_id")]
+        public string RoutineId { get; set; } = default!;
+
+        /// <summary>
+        /// 人間スロットのみ指定。デッキに設定されたスペシャル施策の ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("special_id")]
+        public string SpecialId { get; set; } = default!;
+
+        /// <summary>
+        /// NPC スロットのみ指定。対戦相手となる NPC モデル ID。
+        /// </summary>
+        [System.Text.Json.Serialization.JsonPropertyName("npc_model")]
+        public string NpcModel { get; set; } = default!;
+
+        [System.Text.Json.Serialization.JsonPropertyName("summary")]
+        public PlayerSummaryRequest Summary { get; set; } = new PlayerSummaryRequest();
+
+        private System.Collections.Generic.IDictionary<string, object>? _additionalProperties;
+
+        [System.Text.Json.Serialization.JsonExtensionData]
+        public System.Collections.Generic.IDictionary<string, object> AdditionalProperties
+        {
+            get { return _additionalProperties ?? (_additionalProperties = new System.Collections.Generic.Dictionary<string, object>()); }
+            set { _additionalProperties = value; }
+        }
+
+    }
+
+    /// <summary>
     /// CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
     /// <br/>battle は upstream (account 等) に依存せず、渡された値を player_summary テーブルに
     /// <br/>永続化する。NPC のように level を持たない player では level は null となる。

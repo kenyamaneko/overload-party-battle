@@ -72,6 +72,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/games": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ゲームを作成 (スロット対称) */
+        post: operations["createGame"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/games/{gameId}/actions": {
         parameters: {
             query?: never;
@@ -281,6 +298,26 @@ export interface components {
             deck2_special_id: string;
             player1_summary: components["schemas"]["PlayerSummaryRequest"];
             player2_summary: components["schemas"]["PlayerSummaryRequest"];
+        };
+        /** @description POST /api/v1/games のリクエスト body。 */
+        CreateGameRequest: {
+            /** @description スロット番号は配列順 (先頭 = player 1)。 */
+            slots: components["schemas"]["GameSlotRequest"][];
+        };
+        /**
+         * @description ゲーム作成時の 1 スロット分の指定。人間スロット (deck_cards / routine_id / special_id)
+         *     か NPC スロット (npc_model) のどちらか一方のみを指定する。両方指定・両方欠落は 400。
+         */
+        GameSlotRequest: {
+            /** @description 人間スロットのみ指定。 */
+            deck_cards?: components["schemas"]["BattleDeckCard"][];
+            /** @description 人間スロットのみ指定。デッキに設定されたルーチン施策の ID。 */
+            routine_id?: string;
+            /** @description 人間スロットのみ指定。デッキに設定されたスペシャル施策の ID。 */
+            special_id?: string;
+            /** @description NPC スロットのみ指定。対戦相手となる NPC モデル ID。 */
+            npc_model?: string;
+            summary: components["schemas"]["PlayerSummaryRequest"];
         };
         /**
          * @description CreatePvP / CreateNpc API で battle に渡す player の name と level の snapshot。
@@ -862,6 +899,37 @@ export interface operations {
                 };
             };
             /** @description デッキカードが不正 */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    createGame: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGameRequest"];
+            };
+        };
+        responses: {
+            /** @description 作成成功 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["GameCreatedResult"];
+                };
+            };
+            /** @description デッキカードが不正、NPC モデルが存在しない、またはスロット指定が不正 */
             400: {
                 headers: {
                     [name: string]: unknown;
