@@ -482,6 +482,162 @@ public class IgnitionEffectTests
             state.Player1Trash.Should().BeEmpty();
             state.GetBudget(1).Should().Be(5000);
         }
+
+        private const string ShifterCardId = "TST-0004";
+        private const string DatabaseCardId = "TST-0100";
+        private const string ObjectStorageCardId = "TST-0102";
+
+        /// <summary>手札のカードに割り当てるインスタンス ID を作る。</summary>
+        /// <param name="cardId">手札のカード ID。</param>
+        /// <returns>そのカードのインスタンス ID。</returns>
+        private static string MakeHandInstanceId(string cardId) => $"h_{cardId}";
+
+        /// <summary>
+        /// cloud_shift の起動効果を持つ発動元リソースと、指定したカードを手札に持つ状態を組む。
+        /// 効果はカード定義の読み込み経由で登録し、meta の書き方も読み込みに掛ける。
+        /// </summary>
+        /// <param name="metaJson">効果定義に書く meta。</param>
+        /// <param name="handCards">手札に置くカード定義。</param>
+        /// <returns>カードキャッシュ・効果レジストリ・ゲーム状態。</returns>
+        private static (TestCardCache Cc, EffectRegistry Effects, BattleGameState State) SetupShift(
+            string metaJson, params CardDefinition[] handCards)
+        {
+            var shifter = TestFactory.ComputeCard(cardId: ShifterCardId, name: "Shifter");
+            shifter.Effects =
+            [
+                new EffectDef
+                {
+                    Trigger = TriggerTypes.Ignition,
+                    Custom = CustomEffects.CloudShift,
+                    Meta = System.Text.Json.JsonSerializer
+                        .Deserialize<Dictionary<string, System.Text.Json.JsonElement>>(metaJson),
+                },
+            ];
+
+            var cc = new TestCardCache();
+            cc.Add(shifter);
+            var effects = new EffectRegistry();
+            EffectYamlLoader.LoadEffectSources([shifter], effects, new CustomEffectRegistry());
+
+            var state = TestFactory.MakeGameState(turn: 2, phase: Phase.Main, p1Budget: 5000);
+            state.Player1Field.Frontend[0] = TestFactory.MakeResource(
+                cardId: ShifterCardId, instanceId: "src", faceUp: true);
+            state.Player1Hand = [];
+            foreach (var card in handCards)
+            {
+                cc.Add(card);
+                state.Player1Hand.Add(new UndeployedCard
+                {
+                    InstanceID = MakeHandInstanceId(card.CardId),
+                    CardID = card.CardId,
+                });
+            }
+
+            return (cc, effects, state);
+        }
+
+        [Theory(DisplayName = "cloud_shift の meta の subtype は単一値でも配列でも、一致するリソースを手札からデプロイできる")]
+        [InlineData("""{"subtype":"Database"}""")]
+        [InlineData("""{"subtype":["Database"]}""")]
+        public void SubtypeFilter_AllowsMatchingCard(string metaJson)
+        {
+            var (cc, effects, state) = SetupShift(
+                metaJson, TestFactory.DataCard(cardId: DatabaseCardId, subtype: "Database"));
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = DatabaseCardId }), cc, effects);
+
+            state.PendingSlotSelects.Should().ContainSingle()
+                .Which.CardInstanceID.Should().Be(MakeHandInstanceId(DatabaseCardId));
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta に書いた subtype と一致しないリソースを選ぶと拒否され、続けて一致するリソースを選べばデプロイできる")]
+        public void SubtypeFilter_RejectsUnmatchedCard_ThenAllowsMatchingCard()
+        {
+            var (cc, effects, state) = SetupShift(
+                """{"subtype":["Database","CacheDB"]}""",
+                TestFactory.DataCard(cardId: DatabaseCardId, subtype: "Database"),
+                TestFactory.DataCard(cardId: ObjectStorageCardId, subtype: "ObjectStorage"));
+
+            var act = () => UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = ObjectStorageCardId }), cc, effects);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*subtype ObjectStorage*");
+            state.PendingSlotSelects.Should().BeEmpty();
+            state.Player1Field.Frontend[0]!.InstanceID.Should().Be("src");
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = DatabaseCardId }), cc, effects);
+
+            state.PendingSlotSelects.Should().ContainSingle()
+                .Which.CardInstanceID.Should().Be(MakeHandInstanceId(DatabaseCardId));
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta に card_type と subtype を両方書いたとき、card_type だけ一致するリソースは拒否される")]
+        public void CardTypeAndSubtypeFilter_RejectsCardMatchingOnlyCardType()
+        {
+            var (cc, effects, state) = SetupShift(
+                """{"card_type":"DataResource","subtype":["Database","CacheDB"]}""",
+                TestFactory.DataCard(cardId: ObjectStorageCardId, subtype: "ObjectStorage"));
+
+            var act = () => UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = ObjectStorageCardId }), cc, effects);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*subtype ObjectStorage*");
+            state.PendingSlotSelects.Should().BeEmpty();
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta に card_type と subtype を両方書いたとき、両方に一致するリソースはデプロイできる")]
+        public void CardTypeAndSubtypeFilter_AllowsCardMatchingBoth()
+        {
+            var (cc, effects, state) = SetupShift(
+                """{"card_type":"DataResource","subtype":["Database","CacheDB"]}""",
+                TestFactory.DataCard(cardId: DatabaseCardId, subtype: "Database"));
+
+            UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = DatabaseCardId }), cc, effects);
+
+            state.PendingSlotSelects.Should().ContainSingle()
+                .Which.CardInstanceID.Should().Be(MakeHandInstanceId(DatabaseCardId));
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta に card_type と subtype を両方書いたとき、subtype だけ一致するリソースは拒否される")]
+        public void CardTypeAndSubtypeFilter_RejectsCardMatchingOnlySubtype()
+        {
+            var (cc, effects, state) = SetupShift(
+                """{"card_type":"Compute","subtype":["Database","CacheDB"]}""",
+                TestFactory.DataCard(cardId: DatabaseCardId, subtype: "Database"));
+
+            var act = () => UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = DatabaseCardId }), cc, effects);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*Card type DataResource*");
+            state.PendingSlotSelects.Should().BeEmpty();
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta の subtype を文字列でも配列でもない値で書くと、効果定義の読み込みに失敗する")]
+        public void SubtypeFilter_RejectsValueThatIsNeitherStringNorArray()
+        {
+            var act = () => SetupShift("""{"subtype":1}""");
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*subtype*Number*");
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta の subtype が null のとき、効果定義の読み込みに失敗する")]
+        public void SubtypeFilter_RejectsNullValue()
+        {
+            var act = () => SetupShift("""{"subtype":null}""");
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*subtype*Null*");
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta の subtype の配列に文字列でない要素があると、効果定義の読み込みに失敗する")]
+        public void SubtypeFilter_RejectsNonStringItemInArray()
+        {
+            var act = () => SetupShift("""{"subtype":["Database",1]}""");
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*subtype*element of type Number*");
+        }
     }
 
     [Trait("対象", "peek_reactive の起動効果")]

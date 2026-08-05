@@ -902,69 +902,16 @@ public static class EffectYamlLoader
     /// lowercase "data" / "compute" は旧 YAML 互換のため category 名にエイリアスする。
     /// </summary>
     private static List<string>? ParseCardTypes(JsonElement element)
-    {
-        if (!element.TryGetProperty("card_type", out var ctElement))
-        {
-            return null;
-        }
-
-        if (ctElement.ValueKind == JsonValueKind.String)
-        {
-            string val = ctElement.GetString()!;
-            return [LowercaseCategoryAliases.GetValueOrDefault(val, val)];
-        }
-
-        if (ctElement.ValueKind == JsonValueKind.Array)
-        {
-            return ctElement.EnumerateArray()
-                .Select(e => e.GetString()!)
-                .Select(v => LowercaseCategoryAliases.GetValueOrDefault(v, v))
-                .ToList();
-        }
-
-        return null;
-    }
+        => element.GetStringListOrNull("card_type")
+            ?.Select(v => LowercaseCategoryAliases.GetValueOrDefault(v, v))
+            .ToList();
 
     /// <summary>Parses subtype from a JSON element. 値は subtype 名 (VM / Container / Database ...) を期待。</summary>
     private static List<string>? ParseSubtypes(JsonElement element)
-    {
-        if (!element.TryGetProperty("subtype", out var stElement))
-        {
-            return null;
-        }
-
-        if (stElement.ValueKind == JsonValueKind.String)
-        {
-            return [stElement.GetString()!];
-        }
-
-        if (stElement.ValueKind == JsonValueKind.Array)
-        {
-            return stElement.EnumerateArray().Select(e => e.GetString()!).ToList();
-        }
-
-        return null;
-    }
+        => element.GetStringListOrNull("subtype");
 
     private static List<string>? ParseCardIds(JsonElement element)
-    {
-        if (!element.TryGetProperty("card_id", out var idElement))
-        {
-            return null;
-        }
-
-        if (idElement.ValueKind == JsonValueKind.String)
-        {
-            return [idElement.GetString()!];
-        }
-
-        if (idElement.ValueKind == JsonValueKind.Array)
-        {
-            return idElement.EnumerateArray().Select(e => e.GetString()!).ToList();
-        }
-
-        return null;
-    }
+        => element.GetStringListOrNull("card_id");
 
     private static EffectCategory ParseEffectCategory(string s) => s switch
     {

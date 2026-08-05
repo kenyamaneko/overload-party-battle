@@ -67,18 +67,12 @@ internal static class JsonElementExtensions
         => element.TryGetProperty(propertyName, out var p)
             && p.ValueKind == JsonValueKind.True;
 
-    /// <summary>プロパティを string 配列として取得します。未指定なら null。</summary>
+    /// <summary>プロパティを string リストとして取得します。単一値・配列のどちらの書き方も受けます。</summary>
     /// <param name="element">親 JsonElement。</param>
     /// <param name="propertyName">プロパティ名。</param>
-    /// <returns>配列要素の string リスト。未指定なら null。</returns>
+    /// <returns>値の string リスト。未指定なら null。</returns>
     public static List<string>? GetStringListOrNull(this JsonElement element, string propertyName)
-    {
-        if (!element.TryGetProperty(propertyName, out var p))
-        {
-            return null;
-        }
-        return p.EnumerateArray().Select(e => e.GetString()!).ToList();
-    }
+        => element.TryGetProperty(propertyName, out var p) ? ReadStringList(p, propertyName) : null;
 
     // ─── Dictionary<string, JsonElement> 向け (custom 効果の meta) ──────────
 
@@ -105,16 +99,32 @@ internal static class JsonElementExtensions
     public static int GetInt32Or(this Dictionary<string, JsonElement> meta, string key, int defaultValue)
         => meta.TryGetValue(key, out var p) ? p.GetInt32() : defaultValue;
 
-    /// <summary>meta dictionary からキーを string 配列で取得します。未指定なら null。</summary>
+    /// <summary>meta dictionary からキーを string リストで取得します。単一値・配列のどちらの書き方も受けます。</summary>
     /// <param name="meta">meta dictionary。</param>
     /// <param name="key">キー名。</param>
-    /// <returns>配列要素の string リスト。未指定なら null。</returns>
+    /// <returns>値の string リスト。未指定なら null。</returns>
     public static List<string>? GetStringListOrNull(this Dictionary<string, JsonElement> meta, string key)
+        => meta.TryGetValue(key, out var p) ? ReadStringList(p, key) : null;
+
+    /// <summary>単一値・配列のどちらでも書ける値を string リストとして読みます。</summary>
+    /// <param name="value">読み取る値。</param>
+    /// <param name="name">エラーメッセージに出すキー名。</param>
+    /// <returns>値の string リスト。</returns>
+    private static List<string> ReadStringList(JsonElement value, string name) => value.ValueKind switch
     {
-        if (!meta.TryGetValue(key, out var p))
-        {
-            return null;
-        }
-        return p.EnumerateArray().Select(e => e.GetString()!).ToList();
-    }
+        JsonValueKind.String => [value.GetString()!],
+        JsonValueKind.Array => value.EnumerateArray().Select(e => ReadStringItem(e, name)).ToList(),
+        _ => throw new InvalidOperationException(
+            $"{name} must be a string or an array of strings but was {value.ValueKind}"),
+    };
+
+    /// <summary>配列の要素を string として読みます。</summary>
+    /// <param name="item">読み取る要素。</param>
+    /// <param name="name">エラーメッセージに出すキー名。</param>
+    /// <returns>要素の string。</returns>
+    private static string ReadStringItem(JsonElement item, string name)
+        => item.ValueKind == JsonValueKind.String
+            ? item.GetString()!
+            : throw new InvalidOperationException(
+                $"{name} must be a string or an array of strings but had an element of type {item.ValueKind}");
 }
