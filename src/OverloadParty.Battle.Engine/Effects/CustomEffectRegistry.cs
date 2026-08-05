@@ -329,8 +329,8 @@ public class CustomEffectRegistry
     // ================================================================
 
     /// <summary>
-    /// Deploy a resource from hand matching faction/card_type filter, then self-destruct the source.
-    /// meta: { faction, card_type, deploy_discount }
+    /// Deploy a resource from hand matching faction/card_type/subtype filter, then self-destruct the source.
+    /// meta: { faction, card_type, subtype, deploy_discount }
     /// </summary>
     private static Action<OpContext> BuildCloudShift(string customName, Dictionary<string, JsonElement>? meta)
     {
@@ -341,6 +341,7 @@ public class CustomEffectRegistry
 
         string? faction = meta.GetStringOrNull("faction");
         var cardTypes = meta.GetStringListOrNull("card_type");
+        var subtypes = meta.GetStringListOrNull("subtype");
         long discount = meta.GetInt64Or("deploy_discount", 0);
 
         return octx =>
@@ -363,6 +364,10 @@ public class CustomEffectRegistry
             if (cardTypes is { Count: > 0 } && !EffectHelpers.MatchesAnyCardType(card, cardTypes))
             {
                 throw new GameRuleException($"Card type {card.CardType} not allowed");
+            }
+            if (subtypes is { Count: > 0 } && !EffectHelpers.MatchesAnySubtype(card, subtypes))
+            {
+                throw new GameRuleException($"Card subtype {card.Subtype} not allowed");
             }
 
             SlotRequestHelpers.DeployFromHand(octx, choiceCardId);
