@@ -601,12 +601,42 @@ public class IgnitionEffectTests
                 .Which.CardInstanceID.Should().Be(MakeHandInstanceId(DatabaseCardId));
         }
 
+        [Fact(DisplayName = "cloud_shift の meta に card_type と subtype を両方書いたとき、subtype だけ一致するリソースは拒否される")]
+        public void CardTypeAndSubtypeFilter_RejectsCardMatchingOnlySubtype()
+        {
+            var (cc, effects, state) = SetupShift(
+                """{"card_type":"Compute","subtype":["Database","CacheDB"]}""",
+                TestFactory.DataCard(cardId: DatabaseCardId, subtype: "Database"));
+
+            var act = () => UseIgnitionProcessor.Process(state, TestFactory.MakeGame(), 1,
+                Use("src", choiceData: new Dictionary<string, object> { ["cardId"] = DatabaseCardId }), cc, effects);
+
+            act.Should().Throw<GameRuleException>().WithMessage("*Card type DataResource*");
+            state.PendingSlotSelects.Should().BeEmpty();
+        }
+
         [Fact(DisplayName = "cloud_shift の meta の subtype を文字列でも配列でもない値で書くと、効果定義の読み込みに失敗する")]
         public void SubtypeFilter_RejectsValueThatIsNeitherStringNorArray()
         {
             var act = () => SetupShift("""{"subtype":1}""");
 
             act.Should().Throw<InvalidOperationException>().WithMessage("*subtype*Number*");
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta の subtype を空にすると、効果定義の読み込みに失敗する")]
+        public void SubtypeFilter_RejectsEmptyValue()
+        {
+            var act = () => SetupShift("""{"subtype":null}""");
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*subtype*Null*");
+        }
+
+        [Fact(DisplayName = "cloud_shift の meta の subtype の配列に文字列でない要素があると、効果定義の読み込みに失敗する")]
+        public void SubtypeFilter_RejectsNonStringItemInArray()
+        {
+            var act = () => SetupShift("""{"subtype":["Database",1]}""");
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*subtype*element of type Number*");
         }
     }
 
