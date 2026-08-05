@@ -623,8 +623,8 @@ public class IgnitionEffectTests
             act.Should().Throw<InvalidOperationException>().WithMessage("*subtype*Number*");
         }
 
-        [Fact(DisplayName = "cloud_shift の meta の subtype を空にすると、効果定義の読み込みに失敗する")]
-        public void SubtypeFilter_RejectsEmptyValue()
+        [Fact(DisplayName = "cloud_shift の meta の subtype が null のとき、効果定義の読み込みに失敗する")]
+        public void SubtypeFilter_RejectsNullValue()
         {
             var act = () => SetupShift("""{"subtype":null}""");
 
