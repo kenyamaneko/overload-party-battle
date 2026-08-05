@@ -131,6 +131,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 | `next_deploy_order_seq` | BIGINT | No | デプロイ順発番用シーケンス |
 | `pending_slot_selects` | JSONB | No | 効果デプロイのスロット選択待ちキュー |
 | `pending_effect_choice` | JSONB | Yes | 効果の選択待ち状態（NULL=待ちなし） |
+| `pending_deploy_completions` | JSONB | No | 稼働開始処理が済んでいないカードのインスタンスID（DeployOrder 昇順） |
 | `updated_at` | TIMESTAMPTZ | No | 更新日時 |
 <!-- END GENERATED: game_states -->
 

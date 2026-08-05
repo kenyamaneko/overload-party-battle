@@ -225,6 +225,7 @@ public class PgGameRepositoryTests
                     Candidates = ["inst_1", "inst_2"],
                     ChoiceKind = "select_resource",
                 };
+                s.PendingDeployCompletions = ["inst_5", "inst_6"];
                 return Task.FromResult<IReadOnlyList<GameEvent>>([]);
             });
 
@@ -247,6 +248,8 @@ public class PgGameRepositoryTests
             got.PendingEffectChoice.EffectCardId.Should().Be("TST-0003");
             got.PendingEffectChoice.Trigger.Should().Be(TriggerType.OnDestroy);
             got.PendingEffectChoice.Candidates.Should().Equal("inst_1", "inst_2");
+
+            got.PendingDeployCompletions.Should().Equal("inst_5", "inst_6");
         }
 
         [Fact(DisplayName = "1 ゲーム 1 回の効果を使い終えたカードがプレイヤーごとにリロード後も保持される")]
