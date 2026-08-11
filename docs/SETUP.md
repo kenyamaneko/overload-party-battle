@@ -1,29 +1,4 @@
-# サービス間連携・環境変数・同梱するカードマスターデータ
-
-## サービス間連携
-
-```
-Gateway (:9001)
-  ├─ POST /api/v1/games/npc          ← NPC 対戦作成
-  ├─ POST /api/v1/games/pvp          ← PvP 対戦作成
-  ├─ POST /api/v1/games/{id}/actions ← アクション実行
-  ├─ POST /api/v1/games/{id}/advance-npc ← NPC ターン進行
-  ├─ GET  /api/v1/games/{id}/state/{n}   ← プレイヤー n の状態取得
-  ├─ GET  /api/v1/games/{id}/controls/{n} ← ターン制御取得
-  ├─ GET  /api/v1/games/{id}/log     ← ゲームログ (JSON)
-  ├─ GET  /api/v1/games/{id}/log/text ← ゲームログ (テキスト)
-  └─ GET  /api/v1/npc/models         ← NPC モデル一覧
-              │
-              ▼
-Battle (このサービス, :9002)
-  ├─ PostgreSQL  battle スキーマ (games / game_npcs / game_decks /
-  │                               player_summary / game_states /
-  │                               game_actions / game_events)
-  └─ Cloud Storage (起動時 1 回の cards.json / initiatives.json 取得)
-```
-
-- Gateway が唯一の呼び出し元。battle 自身は他のサービスを呼び出さない
-- Pub/Sub なし
+# セットアップ
 
 ## 環境変数
 
