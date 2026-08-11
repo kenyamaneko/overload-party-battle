@@ -29,7 +29,7 @@ Battle (このサービス, :9002)
 - Gateway が唯一の呼び出し元。battle 自身は他のサービスを呼び出さない
 - Pub/Sub なし
 
-内部設計は [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) を参照。
+詳細は [API_REFERENCE.md](docs/API_REFERENCE.md) / [データ設計書](docs/DATA_DESIGN.md) を参照。設計判断 (Why) は [common の ADR](https://github.com/kenyamaneko/overload-party-common/tree/main/docs/adr) に記録する。
 
 ## 環境変数
 
