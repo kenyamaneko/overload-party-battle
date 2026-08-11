@@ -101,7 +101,7 @@ NPC 設定。NPC 戦のみ行が存在し、PvP では行なし。
 |---|---|---|---|
 | `game_id` | VARCHAR(26) | No | 親テーブル参照 |
 | `initial_state` | JSONB | No | ゲーム開始時の初期状態スナップショット（作成後は上書きされない） |
-| `version` | BIGINT | No | 更新回数カウンタ（行ロック下で更新ごとに +1） |
+| `version` | BIGINT | No | 更新回数カウンタ（行ロック下で更新ごとに +1、障害調査で更新の進行を確認する用途） |
 | `current_turn` | BIGINT | No | 現在ターン数 |
 | `current_phase` | VARCHAR(20) | No | 'draw' / 'main' / 'battle' / 'end' |
 | `active_player` | BIGINT | No | 現在のターンプレイヤー (1 or 2) |

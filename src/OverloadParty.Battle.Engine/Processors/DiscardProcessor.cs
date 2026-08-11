@@ -6,6 +6,9 @@ namespace OverloadParty.Battle.Engine.Processors;
 /// <summary>
 /// DiscardProcessor はエンドフェーズで手札上限超過時のディスカードアクションを処理します
 /// </summary>
+/// <remarks>
+/// ターン全体のタイムバンクを時間の上限として使うため、手札破棄には個別のタイムアウトを持たせない。
+/// </remarks>
 public static class DiscardProcessor
 {
     /// <summary>

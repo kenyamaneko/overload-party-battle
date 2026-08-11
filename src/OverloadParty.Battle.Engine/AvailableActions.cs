@@ -8,6 +8,10 @@ namespace OverloadParty.Battle.Engine;
 /// <summary>
 /// AvailableAction はプレイヤーが実行可能な有効なアクションを表現します
 /// </summary>
+/// <remarks>
+/// client / NPC / 生成型 (C#・Go・TS) で辿れるようにするため、汎用の {type, value} メタデータでなく
+/// type ごとの名前付きフィールドで表現する。
+/// </remarks>
 public class AvailableAction
 {
     /// <summary>The wire action type (e.g. "play_card", "attack").</summary>
@@ -68,6 +72,9 @@ public class AvailableAction
 /// <summary>
 /// AvailableActions はゲーム状態とフェーズに基づいて実行可能なアクションを算出します
 /// </summary>
+/// <remarks>
+/// client と NPC の判定ロジックが重複しないよう、有効なアクションの算出はここに集約する。
+/// </remarks>
 public static class AvailableActions
 {
     /// <summary>Computes whether the player can end the phase and how many cards must be discarded.</summary>
