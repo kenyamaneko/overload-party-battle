@@ -69,17 +69,3 @@ make sync-card-master-data
 ```
 
 card のクローンの位置は `CARD_REPO` (既定 `../overload-party-card`)、取り込むコミットは `CARD_REF` (既定 `origin/main`) で指定する。
-
-## 公開パッケージ
-
-| パッケージ | 言語 | 説明 |
-|---|---|---|
-| `packages/api-battle-rpc-go/` | Go | gateway が import する RPC 型 |
-| `packages/api-battle-rpc-dotnet/` | NuGet | Battle 内部で使う RPC 型 |
-| `packages/game-state-dotnet/` | NuGet | ゲーム状態型 |
-| `packages/game-state-npm/` | npm | クライアント向けゲーム状態型 |
-| `packages/game-logic-constants-go/` | Go | ゲームロジック定数 |
-| `packages/game-logic-constants-dotnet/` | NuGet | ゲームロジック定数 |
-| `packages/game-logic-constants-npm/` | npm | ゲームロジック定数 |
-
-SSoT: `data/openapi.yaml` + `data/game_logic_constants.yaml` → `bash scripts/generate_types.sh` で再生成。
