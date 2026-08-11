@@ -2,7 +2,7 @@
 
 ## 環境変数
 
-**Deployment env (インフラ層):**
+**インフラ層:**
 
 | 変数名 | デフォルト | 説明 |
 |---|---|---|
@@ -11,7 +11,7 @@
 | `DATABASE_IAM_AUTH_ENABLED` | *(必須)* | `true` なら Cloud SQL の IAM データベース認証で接続し、パスワードの代わりにアクセストークンを供給する。`false` なら接続文字列のパスワードで接続する。未設定と `true` / `false` 以外の値は起動時にエラー。`true` のときは接続文字列に接続ユーザー (`Username`) が要る |
 | `MASTER_DATA_BUCKET` | *(必須)* | card が `cards.json` / `initiatives.json` を publish する Cloud Storage バケット。起動時に 1 回読み込む。未設定は起動時にエラー。ローカル開発モードで `CARDS_JSON_PATH` を指定したときは読まない |
 
-**ConfigMap (アプリ挙動):**
+**アプリ挙動:**
 
 | 変数名 | デフォルト | 説明 |
 |---|---|---|
