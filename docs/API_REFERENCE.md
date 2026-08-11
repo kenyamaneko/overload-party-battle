@@ -7,7 +7,7 @@
 Battle Service は Gateway からのみ呼ばれる内部サービス。クライアントからの直接アクセスはない。エラー時は `{"error": "..."}` 形式で返却する（`GameRuleException` → 400、それ以外 → 500）。
 
 - **Base path:** `/api/v1`
-- **認証:** アプリケーション層の認証トークン検証は持たない。呼び出し元自体の到達制御は実行基盤の呼び出し認可に委ねる（[ADR-057](https://github.com/kenyamaneko/overload-party-common/blob/main/docs/adr/057-cloudrun-service-auth-iam-and-rs256.md)、詳細は [common の認証・認可](https://github.com/kenyamaneko/overload-party-common/blob/main/docs/architecture/APPLICATION.md#認証認可) を参照）
+- **認証:** アプリケーション層の認証トークン検証は持たない。呼び出し元自体の到達制御は実行基盤の呼び出し認可に委ねる（[ADR-057](https://github.com/kenyamaneko/overload-party-common/blob/main/docs/adr/057-cloudrun-service-auth-iam-and-rs256.md)、詳細は [common の内部サービス間認証](https://github.com/kenyamaneko/overload-party-common/blob/main/docs/architecture/APPLICATION.md#内部サービス間認証) を参照）
 - **ポート:** 9002（ローカル）/ 9090（k8s）
 
 ---
