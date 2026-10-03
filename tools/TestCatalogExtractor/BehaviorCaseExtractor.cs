@@ -12,7 +12,11 @@ namespace OverloadParty.Battle.TestCatalogExtractor;
 public static class BehaviorCaseExtractor
 {
     private const string TargetTraitKey = "対象";
+    private const string SubgroupTraitKey = "小分類";
+    private const string NormalOrAbnormalTraitKey = "正常異常";
     private const string AttributeSuffix = "Attribute";
+
+    private static readonly string[] AllowedNormalOrAbnormalValues = { "正常系", "異常系" };
 
     /// <summary>
     /// 1 ファイル分の C# ソースからテスト観点レコードを抽出する。
@@ -43,13 +47,14 @@ public static class BehaviorCaseExtractor
             }
 
             var target = ResolveTarget(method, relativeSourcePath);
+            var groups = ResolveGroups(method, relativeSourcePath);
             var displayName = ResolveDisplayName(testAttribute, method, relativeSourcePath);
             var skipped = HasNamedArgument(testAttribute, "Skip");
             var rowCount = Math.Max(CountAttributes(method.AttributeLists, "InlineData"), 1);
 
             for (var i = 0; i < rowCount; i++)
             {
-                records.Add(new BehaviorCaseRecord(target, displayName, skipped, relativeSourcePath));
+                records.Add(new BehaviorCaseRecord(target, groups, displayName, skipped, relativeSourcePath));
             }
         }
 
@@ -60,7 +65,7 @@ public static class BehaviorCaseExtractor
     {
         foreach (var classNode in method.Ancestors().OfType<ClassDeclarationSyntax>())
         {
-            var traitAttribute = FindTraitAttribute(classNode.AttributeLists);
+            var traitAttribute = FindSingleTraitAttribute(classNode.AttributeLists, TargetTraitKey, method, relativeSourcePath);
             if (traitAttribute is null)
             {
                 continue;
@@ -75,6 +80,67 @@ public static class BehaviorCaseExtractor
             $"{relativeSourcePath}: {method.Identifier.Text} を含むクラスに [Trait(\"対象\", ...)] がありません。");
     }
 
+    /// <summary>
+    /// メソッドの祖先クラスを内側から外側へ辿り、小分類・正常異常の Trait を収集する。
+    /// </summary>
+    /// <returns>外側から内側の順に並べたラベルの列。小分類・正常異常が無ければ空。</returns>
+    /// <exception cref="InvalidOperationException">
+    /// <c>[Trait("小分類", ...)]</c> に値が無い、<c>[Trait("正常異常", ...)]</c> の値が
+    /// 「正常系」「異常系」のいずれでもない、同じクラスに同じキーの <c>[Trait]</c> が
+    /// 2 つ以上ある、または <c>[Trait("対象", ...)]</c> を持つクラスより外側に
+    /// <c>[Trait("小分類"|"正常異常", ...)]</c> があるとき。
+    /// </exception>
+    private static IReadOnlyList<string> ResolveGroups(MethodDeclarationSyntax method, string relativeSourcePath)
+    {
+        var collected = new List<string>();
+        var foundTarget = false;
+        foreach (var classNode in method.Ancestors().OfType<ClassDeclarationSyntax>())
+        {
+            var subgroupAttribute = FindSingleTraitAttribute(classNode.AttributeLists, SubgroupTraitKey, method, relativeSourcePath);
+            var normalOrAbnormalAttribute = FindSingleTraitAttribute(classNode.AttributeLists, NormalOrAbnormalTraitKey, method, relativeSourcePath);
+
+            if (foundTarget && (subgroupAttribute is not null || normalOrAbnormalAttribute is not null))
+            {
+                throw new InvalidOperationException(
+                    $"{relativeSourcePath}: {method.Identifier.Text} の [Trait(\"小分類\"または\"正常異常\", ...)] が [Trait(\"対象\", ...)] を持つクラスより外側にあります。");
+            }
+
+            if (!foundTarget)
+            {
+                var classLabels = new List<string>();
+
+                if (subgroupAttribute is not null)
+                {
+                    classLabels.Add(
+                        GetPositionalStringArgument(subgroupAttribute, position: 1)
+                            ?? throw new InvalidOperationException(
+                                $"{relativeSourcePath}: {method.Identifier.Text} の [Trait(\"小分類\", ...)] に値がありません。"));
+                }
+
+                if (normalOrAbnormalAttribute is not null)
+                {
+                    var value = GetPositionalStringArgument(normalOrAbnormalAttribute, position: 1);
+                    if (value is null || !AllowedNormalOrAbnormalValues.Contains(value))
+                    {
+                        throw new InvalidOperationException(
+                            $"{relativeSourcePath}: {method.Identifier.Text} の [Trait(\"正常異常\", ...)] の値が「正常系」「異常系」のいずれでもありません: {value}");
+                    }
+
+                    classLabels.Add(value);
+                }
+
+                collected.InsertRange(0, classLabels);
+            }
+
+            if (FindSingleTraitAttribute(classNode.AttributeLists, TargetTraitKey, method, relativeSourcePath) is not null)
+            {
+                foundTarget = true;
+            }
+        }
+
+        return collected;
+    }
+
     private static string ResolveDisplayName(
         AttributeSyntax testAttribute, MethodDeclarationSyntax method, string relativeSourcePath)
     {
@@ -83,13 +149,27 @@ public static class BehaviorCaseExtractor
                 $"{relativeSourcePath}: {method.Identifier.Text} に DisplayName がありません。");
     }
 
-    private static AttributeSyntax? FindTraitAttribute(SyntaxList<AttributeListSyntax> attributeLists)
+    /// <summary>
+    /// クラスの属性から、指定した key を持つ <c>[Trait]</c> を1つだけ探す。
+    /// </summary>
+    /// <exception cref="InvalidOperationException">同じ key の <c>[Trait]</c> が2つ以上あるとき。</exception>
+    private static AttributeSyntax? FindSingleTraitAttribute(
+        SyntaxList<AttributeListSyntax> attributeLists, string key, MethodDeclarationSyntax method, string relativeSourcePath)
     {
-        return attributeLists
+        var matches = attributeLists
             .SelectMany(list => list.Attributes)
-            .FirstOrDefault(attribute =>
+            .Where(attribute =>
                 GetSimpleName(attribute) == "Trait"
-                && GetPositionalStringArgument(attribute, position: 0) == TargetTraitKey);
+                && GetPositionalStringArgument(attribute, position: 0) == key)
+            .ToList();
+
+        if (matches.Count > 1)
+        {
+            throw new InvalidOperationException(
+                $"{relativeSourcePath}: {method.Identifier.Text} を含むクラスに [Trait(\"{key}\", ...)] が複数あります。");
+        }
+
+        return matches.SingleOrDefault();
     }
 
     private static AttributeSyntax? FindAttribute(SyntaxList<AttributeListSyntax> attributeLists, string simpleName)
