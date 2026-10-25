@@ -72,6 +72,8 @@ effect_durations:
 - while_on_field
 - permanent
 - next_turn
+
+engine_managed_effect_durations:
 - continuous
 
 trigger_types:
@@ -195,3 +197,7 @@ guard_types:
 selector_pick_modes:
 - all
 - choice
+
+selector_keywords:
+- source
+- target

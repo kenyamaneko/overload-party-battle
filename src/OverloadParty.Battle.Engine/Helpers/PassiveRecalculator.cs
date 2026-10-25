@@ -34,7 +34,7 @@ public static class PassiveRecalculator
     {
         foreach (var resource in FieldHelpers.AllResources(field))
         {
-            resource.TemporaryEffects.RemoveAll(e => e.Duration == EffectDurations.Continuous);
+            resource.TemporaryEffects.RemoveAll(e => e.Duration == EngineManagedEffectDurations.Continuous);
         }
     }
 
@@ -147,7 +147,7 @@ public static class PassiveRecalculator
             {
                 EffectType = application.EffectType,
                 Value = amount,
-                Duration = EffectDurations.Continuous,
+                Duration = EngineManagedEffectDurations.Continuous,
                 SourceID = ownInstanceId,
                 Mode = application.Mode,
             });

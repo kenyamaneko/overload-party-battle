@@ -2,6 +2,7 @@
 
 namespace OverloadParty.GameLogicConstants;
 
+/// <summary>Phases a turn proceeds through.</summary>
 public static class Phases
 {
     public const string Draw = "draw";
@@ -10,6 +11,7 @@ public static class Phases
     public const string End = "end";
 }
 
+/// <summary>Progress of a game: before it starts, while it is played, and after it ends.</summary>
 public static class GameStatus
 {
     public const string Waiting = "waiting";
@@ -17,6 +19,7 @@ public static class GameStatus
     public const string Finished = "finished";
 }
 
+/// <summary>Reasons a game ends.</summary>
 public static class WinReasons
 {
     public const string BudgetZero = "budget_zero";
@@ -30,6 +33,7 @@ public static class WinReasons
     public const string Surrender = "surrender";
 }
 
+/// <summary>Actions a player can send during a game.</summary>
 public static class ActionTypes
 {
     public const string PlayCard = "play_card";
@@ -48,6 +52,7 @@ public static class ActionTypes
     public const string ResolvePendingChoice = "resolve_pending_choice";
 }
 
+/// <summary>Events a game produces.</summary>
 public static class EventTypes
 {
     public const string PlayCard = "play_card";
@@ -67,6 +72,7 @@ public static class EventTypes
     public const string BattleStart = "battle_start";
 }
 
+/// <summary>Durations a card effect can specify in card data.</summary>
 public static class EffectDurations
 {
     public const string ThisTurn = "this_turn";
@@ -75,9 +81,15 @@ public static class EffectDurations
     public const string WhileOnField = "while_on_field";
     public const string Permanent = "permanent";
     public const string NextTurn = "next_turn";
+}
+
+/// <summary>Durations the engine assigns itself, which card data cannot specify.</summary>
+public static class EngineManagedEffectDurations
+{
     public const string Continuous = "continuous";
 }
 
+/// <summary>Timings at which a card effect fires.</summary>
 public static class TriggerTypes
 {
     public const string Ignition = "ignition";
@@ -95,6 +107,7 @@ public static class TriggerTypes
     public const string OnIncident = "on_incident";
 }
 
+/// <summary>Operations a card effect can perform.</summary>
 public static class EffectOps
 {
     public const string GainBudget = "gain_budget";
@@ -122,6 +135,7 @@ public static class EffectOps
     public const string ConvertAllInsight = "convert_all_insight";
 }
 
+/// <summary>Kinds of buff and debuff a card effect applies.</summary>
 public static class BuffTypes
 {
     public const string Tp = "tp";
@@ -145,12 +159,14 @@ public static class BuffTypes
     public const string TpSuppressed = "tp_suppressed";
 }
 
+/// <summary>How a buff amount is applied: as a fixed amount or as a percentage.</summary>
 public static class BuffModes
 {
     public const string Flat = "flat";
     public const string Percent = "percent";
 }
 
+/// <summary>Card effects implemented individually instead of composed from operations.</summary>
 public static class CustomEffects
 {
     public const string CancelNthDeploy = "cancel_nth_deploy";
@@ -166,6 +182,7 @@ public static class CustomEffects
     public const string TargetShield = "target_shield";
 }
 
+/// <summary>Categories that classify a card effect by what it does.</summary>
 public static class EffectCategories
 {
     public const string BudgetGain = "budget_gain";
@@ -187,6 +204,7 @@ public static class EffectCategories
     public const string Survive = "survive";
 }
 
+/// <summary>How a card effect decides its target.</summary>
 public static class EffectTargetTypes
 {
     public const string None = "none";
@@ -195,6 +213,7 @@ public static class EffectTargetTypes
     public const string Myself = "myself";
 }
 
+/// <summary>Players a card effect can refer to.</summary>
 public static class PlayerRefs
 {
     public const string Myself = "myself";
@@ -202,12 +221,14 @@ public static class PlayerRefs
     public const string Both = "both";
 }
 
+/// <summary>Limits on how often an effect can be used.</summary>
 public static class UseLimits
 {
     public const string OncePerTurn = "once_per_turn";
     public const string OncePerGame = "once_per_game";
 }
 
+/// <summary>Kinds of condition an effect checks before it takes effect.</summary>
 public static class GuardTypes
 {
     public const string Count = "count";
@@ -216,9 +237,17 @@ public static class GuardTypes
     public const string NotSame = "not_same";
 }
 
+/// <summary>Whether a selector applies to every match or to one the player chooses.</summary>
 public static class SelectorPickModes
 {
     public const string All = "all";
     public const string Choice = "choice";
+}
+
+/// <summary>Selector values that refer to the source or the target of an effect.</summary>
+public static class SelectorKeywords
+{
+    public const string Source = "source";
+    public const string Target = "target";
 }
 
