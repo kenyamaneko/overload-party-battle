@@ -2,7 +2,7 @@
 
 package game_logic
 
-// Phases.
+// Phases a turn proceeds through.
 const (
 	PhaseDraw = "draw"
 	PhaseMain = "main"
@@ -10,14 +10,14 @@ const (
 	PhaseEnd = "end"
 )
 
-// Game status.
+// Progress of a game: before it starts, while it is played, and after it ends.
 const (
 	GameStatusWaiting = "waiting"
 	GameStatusPlaying = "playing"
 	GameStatusFinished = "finished"
 )
 
-// Win reasons.
+// Reasons a game ends.
 const (
 	WinReasonBudgetZero = "budget_zero"
 	WinReasonSystemDown = "system_down"
@@ -30,7 +30,7 @@ const (
 	WinReasonSurrender = "surrender"
 )
 
-// Action types.
+// Actions a player can send during a game.
 const (
 	ActionTypePlayCard = "play_card"
 	ActionTypeAttack = "attack"
@@ -48,7 +48,7 @@ const (
 	ActionTypeResolvePendingChoice = "resolve_pending_choice"
 )
 
-// Event types.
+// Events a game produces.
 const (
 	EventTypePlayCard = "play_card"
 	EventTypeAttachCard = "attach_card"
@@ -67,7 +67,7 @@ const (
 	EventTypeBattleStart = "battle_start"
 )
 
-// Effect durations.
+// Durations a card effect can specify in card data.
 const (
 	EffectDurationThisTurn = "this_turn"
 	EffectDurationUntilNextTurnEnd = "until_next_turn_end"
@@ -75,10 +75,14 @@ const (
 	EffectDurationWhileOnField = "while_on_field"
 	EffectDurationPermanent = "permanent"
 	EffectDurationNextTurn = "next_turn"
-	EffectDurationContinuous = "continuous"
 )
 
-// Trigger types.
+// Durations the engine assigns itself, which card data cannot specify.
+const (
+	EngineManagedEffectDurationContinuous = "continuous"
+)
+
+// Timings at which a card effect fires.
 const (
 	TriggerTypeIgnition = "ignition"
 	TriggerTypePassive = "passive"
@@ -95,7 +99,7 @@ const (
 	TriggerTypeOnIncident = "on_incident"
 )
 
-// Effect operations.
+// Operations a card effect can perform.
 const (
 	EffectOpGainBudget = "gain_budget"
 	EffectOpLoseBudget = "lose_budget"
@@ -122,7 +126,7 @@ const (
 	EffectOpConvertAllInsight = "convert_all_insight"
 )
 
-// Buff types.
+// Kinds of buff and debuff a card effect applies.
 const (
 	BuffTypeTp = "tp"
 	BuffTypeYield = "yield"
@@ -145,13 +149,13 @@ const (
 	BuffTypeTpSuppressed = "tp_suppressed"
 )
 
-// Buff modes.
+// How a buff amount is applied: as a fixed amount or as a percentage.
 const (
 	BuffModeFlat = "flat"
 	BuffModePercent = "percent"
 )
 
-// Custom effects.
+// Card effects implemented individually instead of composed from operations.
 const (
 	CustomEffectCancelNthDeploy = "cancel_nth_deploy"
 	CustomEffectChainAttackBonus = "chain_attack_bonus"
@@ -166,7 +170,7 @@ const (
 	CustomEffectTargetShield = "target_shield"
 )
 
-// Effect categories.
+// Categories that classify a card effect by what it does.
 const (
 	EffectCategoryBudgetGain = "budget_gain"
 	EffectCategoryBudgetPenalty = "budget_penalty"
@@ -187,7 +191,7 @@ const (
 	EffectCategorySurvive = "survive"
 )
 
-// Effect target types.
+// How a card effect decides its target.
 const (
 	EffectTargetTypeNone = "none"
 	EffectTargetTypeChoice = "choice"
@@ -195,20 +199,20 @@ const (
 	EffectTargetTypeMyself = "myself"
 )
 
-// Player references.
+// Players a card effect can refer to.
 const (
 	PlayerRefMyself = "myself"
 	PlayerRefOpponent = "opponent"
 	PlayerRefBoth = "both"
 )
 
-// Use limits.
+// Limits on how often an effect can be used.
 const (
 	UseLimitOncePerTurn = "once_per_turn"
 	UseLimitOncePerGame = "once_per_game"
 )
 
-// Guard types.
+// Kinds of condition an effect checks before it takes effect.
 const (
 	GuardTypeCount = "count"
 	GuardTypeStat = "stat"
@@ -216,9 +220,15 @@ const (
 	GuardTypeNotSame = "not_same"
 )
 
-// Selector pick modes.
+// Whether a selector applies to every match or to one the player chooses.
 const (
 	SelectorPickModeAll = "all"
 	SelectorPickModeChoice = "choice"
+)
+
+// Selector values that refer to the source or the target of an effect.
+const (
+	SelectorKeywordSource = "source"
+	SelectorKeywordTarget = "target"
 )
 

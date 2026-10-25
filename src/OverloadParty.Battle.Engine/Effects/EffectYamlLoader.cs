@@ -477,7 +477,7 @@ public static class EffectYamlLoader
         string? sourceId = p.GetStringOrNull("source_id");
         string mode = p.GetStringOr("mode", "");
 
-        if (duration == EffectDurations.Continuous)
+        if (duration == EngineManagedEffectDurations.Continuous)
         {
             throw new InvalidOperationException(
                 "duration 'continuous' is engine-managed and cannot appear in card data");
@@ -567,8 +567,8 @@ public static class EffectYamlLoader
         {
             return element.GetString() switch
             {
-                "source" => SourceSelector.Instance,
-                "target" => TargetSelector.Instance,
+                SelectorKeywords.Source => SourceSelector.Instance,
+                SelectorKeywords.Target => TargetSelector.Instance,
                 _ => throw new InvalidOperationException($"Unknown selector keyword: {element.GetString()}"),
             };
         }
@@ -576,7 +576,7 @@ public static class EffectYamlLoader
         string? owner = element.GetStringOr("owner", PlayerRefs.Myself);
         string? zone = element.GetStringOrNull("zone");
         string? faction = element.GetStringOrNull("faction");
-        bool excludeSource = element.TryGetProperty("exclude", out var ex) && ex.GetString() == "source";
+        bool excludeSource = element.TryGetProperty("exclude", out var ex) && ex.GetString() == SelectorKeywords.Source;
         var cardTypes = ParseCardTypes(element);
         var subtypes = ParseSubtypes(element);
         var cardIds = ParseCardIds(element);
